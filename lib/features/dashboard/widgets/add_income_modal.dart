@@ -95,7 +95,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                 decoration: const InputDecoration(
                   labelText: 'Monto',
                   border: OutlineInputBorder(),
-                  prefixText: '\$ ',
+                  prefixText: '\Q ',
                 ),
                 validator: (String? value) {
                   if (value == null || value.isEmpty) return 'Monto requerido';
