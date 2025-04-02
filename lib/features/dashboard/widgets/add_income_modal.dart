@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:provider/provider.dart';
 
@@ -12,60 +13,167 @@ class AddIncomeModal extends StatefulWidget {
 }
 
 class _AddIncomeModalState extends State<AddIncomeModal> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  String _selectedCategory = 'Salario';
+
+  final List<String> _categorySuggestions = <String>[
+    'Salario',
+    'Venta',
+    'Reembolso',
+    'Inversión',
+    'Otro',
+  ];
 
   @override
   Widget build(BuildContext context) {
     final DashboardLogic logic = context.read<DashboardLogic>();
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Título del ingreso'),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        top: 16,
+        left: 16,
+        right: 16,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                width: 50,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue value) {
+                  if (value.text.isEmpty) return const Iterable<String>.empty();
+                  return _categorySuggestions.where(
+                    (String option) =>
+                        option.toLowerCase().contains(value.text.toLowerCase()),
+                  );
+                },
+                onSelected: (String value) {
+                  _titleController.text = value;
+                },
+                fieldViewBuilder: (
+                  BuildContext context,
+                  TextEditingController controller,
+                  FocusNode focusNode,
+                  _,
+                ) {
+                  return TextFormField(
+                    controller: _titleController,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Título del ingreso',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator:
+                        (String? value) =>
+                            (value == null || value.isEmpty)
+                                ? 'Requerido'
+                                : null,
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Monto',
+                  border: OutlineInputBorder(),
+                  prefixText: '\$ ',
+                ),
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) return 'Monto requerido';
+                  final double? amount = double.tryParse(value);
+                  if (amount == null || amount <= 0) return 'Monto inválido';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                items:
+                    _categorySuggestions
+                        .map(
+                          (String e) =>
+                              DropdownMenuItem(value: e, child: Text(e)),
+                        )
+                        .toList(),
+                decoration: const InputDecoration(
+                  labelText: 'Categoría',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (String? value) {
+                  if (value != null) {
+                    setState(() => _selectedCategory = value);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: <Widget>[
+                  Text(
+                    'Fecha: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now(),
+                      );
+                      if (pickedDate != null) {
+                        setState(() => _selectedDate = pickedDate);
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: const Text('Cambiar'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      logic.addIncome(
+                        _titleController.text,
+                        _amountController.text,
+                        _selectedDate,
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.check_circle),
+                  label: const Text('Agregar Ingreso'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.green,
+                  ),
+                ),
+              ),
+            ],
           ),
-          TextField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Monto'),
-          ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () async {
-              final DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: _selectedDate,
-                firstDate: DateTime(2000),
-                lastDate: DateTime.now(),
-              );
-              if (pickedDate != null) {
-                setState(() => _selectedDate = pickedDate);
-              }
-            },
-            child: Text(
-              'Seleccionar fecha: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Llamar al método addIncome
-              logic.addIncome(
-                _titleController.text,
-                _amountController.text,
-                _selectedDate,
-              );
-
-              Navigator.pop(context); // Cierra el modal
-            },
-            child: const Text('Agregar Ingreso'),
-          ),
-        ],
+        ),
       ),
     );
   }
