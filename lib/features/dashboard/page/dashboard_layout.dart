@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/dashboard/widgets/balance_card.dart';
+import 'package:personal_finance/features/dashboard/widgets/periodic_selector.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:personal_finance/utils/app_localization.dart';
@@ -43,9 +45,16 @@ class DashboardLayout extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: <Widget>[
-                  _buildBalanceCard(saldo, context),
+                  BalanceCard(balance: saldo),
                   const SizedBox(height: 16),
-                  _buildPeriodSelector(),
+                  PeriodSelector(
+                    selected: logic.selectedPeriod.name,
+                    onSelect: (String value) {
+                      final PeriodFilter period = PeriodFilter.values
+                          .firstWhere((PeriodFilter e) => e.name == value);
+                      logic.changePeriod(period);
+                    },
+                  ),
                   const SizedBox(height: 16),
                   _buildExpensesChart(expensesByCategory, totalGastos),
                   const SizedBox(height: 16),
@@ -58,55 +67,6 @@ class DashboardLayout extends StatelessWidget {
           },
         );
       },
-    );
-  }
-
-  Widget _buildBalanceCard(double balance, BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: <Widget>[
-            Text(
-              'BALANCE',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _formatCurrency(context, balance),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: balance >= 0 ? Colors.green : Colors.red,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPeriodSelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: <Widget>[
-        _buildPeriodButton('Día'),
-        _buildPeriodButton('Semana'),
-        _buildPeriodButton('Mes'),
-        _buildPeriodButton('Año'),
-        _buildPeriodButton('Período'),
-      ],
-    );
-  }
-
-  Widget _buildPeriodButton(String text) {
-    return TextButton(
-      onPressed: () {},
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 

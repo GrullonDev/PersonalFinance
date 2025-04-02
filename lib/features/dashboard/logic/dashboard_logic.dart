@@ -5,63 +5,65 @@ import 'package:hive/hive.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 
+enum PeriodFilter { dia, semana, mes, anio }
+
 class DashboardLogic extends ChangeNotifier {
-  final List<Income> _incomes = <Income>[];
-
-  List<Income> get incomes => _incomes;
-
   final Box<Expense> _expenseBox = Hive.box<Expense>('expenses');
   final Box<Income> _incomeBox = Hive.box<Income>('incomes');
 
-  double calculateTotalExpenses(List<Expense> expenses) {
-    return expenses.fold(
-      0.0,
-      (double sum, Expense expense) => sum + expense.amount,
-    );
+  PeriodFilter _selectedPeriod = PeriodFilter.mes;
+
+  PeriodFilter get selectedPeriod => _selectedPeriod;
+
+  void changePeriod(PeriodFilter period) {
+    _selectedPeriod = period;
+    notifyListeners();
   }
 
-  double calculateTotalIncome(List<Income?> incomes) {
-    return incomes.whereType<Income>().fold(
-      0.0,
-      (double sum, Income income) => sum + income.amount,
-    );
+  double calculateTotalExpenses(List<Expense> expenses) {
+    return expenses.fold(0.0, (double sum, Expense e) => sum + e.amount);
+  }
+
+  double calculateTotalIncome(List<Income> incomes) {
+    return incomes.fold(0.0, (double sum, Income i) => sum + i.amount);
   }
 
   double calculateBalance(double totalIncome, double totalExpenses) {
     return totalIncome - totalExpenses;
   }
 
-  void addExpense(String title, String amount, DateTime date) {
+  void addExpense(
+    String title,
+    String amount,
+    DateTime date,
+    String? category,
+  ) {
     if (title.isEmpty || amount.isEmpty) return;
 
     final Expense expense = Expense(
       title: title,
       amount: double.tryParse(amount) ?? 0.0,
       date: date,
-      category: getCategory(title),
+      category: category ?? getCategory(title),
     );
 
     _expenseBox.add(expense);
     notifyListeners();
   }
 
-  // Método para agregar ingresos
   void addIncome(String title, String amount, DateTime date) {
     if (title.isEmpty || amount.isEmpty) return;
 
-    final Income newIncome = Income(
+    final Income income = Income(
       title: title,
-      amount: double.parse(amount),
+      amount: double.tryParse(amount) ?? 0.0,
       date: date,
     );
 
-    // Guardar en Hive
-    _incomeBox.add(newIncome);
-
+    _incomeBox.add(income);
     notifyListeners();
   }
 
-  // Método para asignar una categoría basada en el título del gasto
   String getCategory(String title) {
     final Map<String, String> categories = <String, String>{
       'comida': 'Alimentación',
@@ -87,40 +89,59 @@ class DashboardLogic extends ChangeNotifier {
       'medicina': 'Salud',
     };
 
-    for (String key in categories.keys) {
-      if (title.toLowerCase().contains(key)) {
-        return categories[key]!;
-      }
+    for (final String key in categories.keys) {
+      if (title.toLowerCase().contains(key)) return categories[key]!;
     }
-    return 'Otros'; // Si no coincide con ninguna categoría, se asigna "Otros"
-  }
 
-  // Añade estos métodos a tu clase DashboardLogic
+    return 'Otros';
+  }
 
   Map<String, double> calculateExpensesByCategory(List<Expense> expenses) {
     final Map<String, double> result = <String, double>{};
 
-    for (final Expense expense in expenses) {
-      final String category = expense.category ?? 'Otros';
+    for (final Expense e in expenses) {
+      final String cat = e.category ?? 'Otros';
       result.update(
-        category,
-        (double value) => value + expense.amount,
-        ifAbsent: () => expense.amount,
+        cat,
+        (double val) => val + e.amount,
+        ifAbsent: () => e.amount,
       );
     }
 
     return result;
   }
 
-  List<Map<String, dynamic>> getExpensesByCategoryForChart(
-    List<Expense> expenses,
-  ) {
-    final Map<String, double> byCategory = calculateExpensesByCategory(
-      expenses,
-    );
-
-    return byCategory.entries.map((MapEntry<String, double> entry) {
-      return <String, Object>{'category': entry.key, 'amount': entry.value};
+  List<Expense> filterExpensesBySelectedPeriod() {
+    final DateTime now = DateTime.now();
+    return _expenseBox.values.where((Expense e) {
+      return _matchesPeriod(e.date, now);
     }).toList();
+  }
+
+  List<Income> filterIncomesBySelectedPeriod() {
+    final DateTime now = DateTime.now();
+    return _incomeBox.values.where((Income i) {
+      return _matchesPeriod(i.date, now);
+    }).toList();
+  }
+
+  bool _matchesPeriod(DateTime date, DateTime now) {
+    switch (_selectedPeriod) {
+      case PeriodFilter.dia:
+        return date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day;
+      case PeriodFilter.semana:
+        final DateTime startOfWeek = now.subtract(
+          Duration(days: now.weekday - 1),
+        );
+        final DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
+        return date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+            date.isBefore(endOfWeek.add(const Duration(days: 1)));
+      case PeriodFilter.mes:
+        return date.year == now.year && date.month == now.month;
+      case PeriodFilter.anio:
+        return date.year == now.year;
+    }
   }
 }
