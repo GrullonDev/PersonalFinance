@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:hive/hive.dart';
 
+import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
-
-enum PeriodFilter { dia, semana, mes, anio }
 
 class DashboardLogic extends ChangeNotifier {
   final Box<Expense> _expenseBox = Hive.box<Expense>('expenses');
@@ -15,22 +14,48 @@ class DashboardLogic extends ChangeNotifier {
 
   PeriodFilter get selectedPeriod => _selectedPeriod;
 
+  // Getters para datos filtrados
+  List<Expense> get filteredExpenses => filterExpensesBySelectedPeriod();
+  List<Income> get filteredIncomes => filterIncomesBySelectedPeriod();
+
+  // Getters para cálculos
+  double get totalExpenses => calculateTotalExpenses(filteredExpenses);
+  double get totalIncomes => calculateTotalIncome(filteredIncomes);
+  double get balance => calculateBalance(totalIncomes, totalExpenses);
+  Map<String, double> get expensesByCategory =>
+      calculateExpensesByCategory(filteredExpenses);
+
+  // Getters para transacciones ordenadas
+  List<Income> get sortedIncomes {
+    final List<Income> incomes = List<Income>.from(filteredIncomes);
+    incomes.sort((Income a, Income b) => b.date.compareTo(a.date));
+    return incomes;
+  }
+
+  List<Expense> get sortedExpenses {
+    final List<Expense> expenses = List<Expense>.from(filteredExpenses);
+    expenses.sort((Expense a, Expense b) => b.date.compareTo(a.date));
+    return expenses;
+  }
+
+  // Getters para verificar si hay datos
+  bool get hasExpenses => filteredExpenses.isNotEmpty;
+  bool get hasIncomes => filteredIncomes.isNotEmpty;
+  bool get hasData => hasExpenses || hasIncomes;
+
   void changePeriod(PeriodFilter period) {
     _selectedPeriod = period;
     notifyListeners();
   }
 
-  double calculateTotalExpenses(List<Expense> expenses) {
-    return expenses.fold(0.0, (double sum, Expense e) => sum + e.amount);
-  }
+  double calculateTotalExpenses(List<Expense> expenses) =>
+      expenses.fold(0, (double sum, Expense e) => sum + e.amount);
 
-  double calculateTotalIncome(List<Income> incomes) {
-    return incomes.fold(0.0, (double sum, Income i) => sum + i.amount);
-  }
+  double calculateTotalIncome(List<Income> incomes) =>
+      incomes.fold(0, (double sum, Income i) => sum + i.amount);
 
-  double calculateBalance(double totalIncome, double totalExpenses) {
-    return totalIncome - totalExpenses;
-  }
+  double calculateBalance(double totalIncome, double totalExpenses) =>
+      totalIncome - totalExpenses;
 
   void addExpense(
     String title,
@@ -40,9 +65,12 @@ class DashboardLogic extends ChangeNotifier {
   ) {
     if (title.isEmpty || amount.isEmpty) return;
 
+    final double parsedAmount = double.tryParse(amount) ?? 0.0;
+    if (parsedAmount <= 0) return;
+
     final Expense expense = Expense(
       title: title,
-      amount: double.tryParse(amount) ?? 0.0,
+      amount: parsedAmount,
       date: date,
       category: category ?? getCategory(title),
     );
@@ -54,9 +82,12 @@ class DashboardLogic extends ChangeNotifier {
   void addIncome(String title, String amount, DateTime date) {
     if (title.isEmpty || amount.isEmpty) return;
 
+    final double parsedAmount = double.tryParse(amount) ?? 0.0;
+    if (parsedAmount <= 0) return;
+
     final Income income = Income(
       title: title,
-      amount: double.tryParse(amount) ?? 0.0,
+      amount: parsedAmount,
       date: date,
     );
 
@@ -100,7 +131,7 @@ class DashboardLogic extends ChangeNotifier {
     final Map<String, double> result = <String, double>{};
 
     for (final Expense e in expenses) {
-      final String cat = e.category ?? 'Otros';
+      final String cat = e.category;
       result.update(
         cat,
         (double val) => val + e.amount,
@@ -113,16 +144,16 @@ class DashboardLogic extends ChangeNotifier {
 
   List<Expense> filterExpensesBySelectedPeriod() {
     final DateTime now = DateTime.now();
-    return _expenseBox.values.where((Expense e) {
-      return _matchesPeriod(e.date, now);
-    }).toList();
+    return _expenseBox.values
+        .where((Expense e) => _matchesPeriod(e.date, now))
+        .toList();
   }
 
   List<Income> filterIncomesBySelectedPeriod() {
     final DateTime now = DateTime.now();
-    return _incomeBox.values.where((Income i) {
-      return _matchesPeriod(i.date, now);
-    }).toList();
+    return _incomeBox.values
+        .where((Income i) => _matchesPeriod(i.date, now))
+        .toList();
   }
 
   bool _matchesPeriod(DateTime date, DateTime now) {
@@ -144,4 +175,79 @@ class DashboardLogic extends ChangeNotifier {
         return date.year == now.year;
     }
   }
+
+  // Métodos para obtener colores de categorías
+  Color getCategoryColor(String category) {
+    final Map<String, MaterialColor> colors = <String, MaterialColor>{
+      'Alimentación': Colors.orange,
+      'Transporte': Colors.blue,
+      'Hogar': Colors.purple,
+      'Entretenimiento': Colors.pink,
+      'Compras': Colors.teal,
+      'Salud': Colors.red,
+      'Créditos': Colors.indigo,
+      'Otros': Colors.grey,
+    };
+    return colors[category] ?? Colors.grey;
+  }
+
+  // Métodos para datos del gráfico
+  List<ChartData> getChartData() {
+    if (expensesByCategory.isEmpty) return <ChartData>[];
+
+    return expensesByCategory.entries
+        .map(
+          (MapEntry<String, double> e) => ChartData(
+            category: e.key,
+            amount: e.value,
+            color: getCategoryColor(e.key),
+          ),
+        )
+        .toList();
+  }
+
+  // Métodos para transacciones
+  List<TransactionItem> getIncomeTransactions({int limit = 5}) =>
+      sortedIncomes
+          .take(limit)
+          .map(
+            (Income i) => TransactionItem(
+              title: i.title,
+              amount: i.amount,
+              date: i.date,
+              isIncome: true,
+            ),
+          )
+          .toList();
+
+  List<TransactionItem> getExpenseTransactions({int limit = 5}) =>
+      sortedExpenses
+          .take(limit)
+          .map(
+            (Expense e) => TransactionItem(
+              title: e.title,
+              amount: e.amount,
+              date: e.date,
+              isIncome: false,
+            ),
+          )
+          .toList();
+
+  // Métodos para formateo de datos
+  String formatCurrency(double amount) => '\$${amount.toStringAsFixed(2)}';
+
+  String formatPercentage(double value, double total) {
+    if (total == 0) return '0%';
+    return '${(value / total * 100).toStringAsFixed(0)}%';
+  }
+
+  String formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+
+  // Métodos para validaciones
+  bool get shouldShowExpensesChart =>
+      hasExpenses && expensesByCategory.isNotEmpty;
+  bool get shouldShowExpensesList =>
+      hasExpenses && expensesByCategory.isNotEmpty;
+  bool get shouldShowIncomesList => hasIncomes;
+  bool get shouldShowTransactions => hasExpenses || hasIncomes;
 }
