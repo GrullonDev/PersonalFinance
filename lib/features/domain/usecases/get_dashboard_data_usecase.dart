@@ -7,10 +7,7 @@ class DashboardParams {
   final DateTime startDate;
   final DateTime endDate;
 
-  const DashboardParams({
-    required this.startDate,
-    required this.endDate,
-  });
+  const DashboardParams({required this.startDate, required this.endDate});
 }
 
 /// Resultado del dashboard
@@ -41,17 +38,23 @@ class GetDashboardDataUseCase {
   Future<DashboardResult> execute(DashboardParams params) async {
     try {
       // Obtener datos en paralelo para mejor rendimiento
-      final Future<List<ExpenseEntity>> expensesFuture = 
-          repository.getExpensesByPeriod(params.startDate, params.endDate);
-      final Future<List<IncomeEntity>> incomesFuture = 
-          repository.getIncomesByPeriod(params.startDate, params.endDate);
+      final Future<List<ExpenseEntity>> expensesFuture = repository
+          .getExpensesByPeriod(params.startDate, params.endDate);
+      final Future<List<IncomeEntity>> incomesFuture = repository
+          .getIncomesByPeriod(params.startDate, params.endDate);
 
       final List<ExpenseEntity> expenses = await expensesFuture;
       final List<IncomeEntity> incomes = await incomesFuture;
 
       // Calcular totales
-      final double totalExpenses = expenses.fold(0, (sum, expense) => sum + expense.amount);
-      final double totalIncomes = incomes.fold(0, (sum, income) => sum + income.amount);
+      final double totalExpenses = expenses.fold(
+        0,
+        (double sum, ExpenseEntity expense) => sum + expense.amount,
+      );
+      final double totalIncomes = incomes.fold(
+        0,
+        (double sum, IncomeEntity income) => sum + income.amount,
+      );
       final double balance = totalIncomes - totalExpenses;
 
       return DashboardResult(
@@ -65,4 +68,4 @@ class GetDashboardDataUseCase {
       throw Exception('Error al obtener datos del dashboard: $e');
     }
   }
-} 
+}

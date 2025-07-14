@@ -17,7 +17,7 @@ abstract class TransactionEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, title, amount, date, description];
+  List<Object?> get props => <Object?>[id, title, amount, date, description];
 
   /// Verifica si la transacción es válida
   bool get isValid => title.isNotEmpty && amount > 0;

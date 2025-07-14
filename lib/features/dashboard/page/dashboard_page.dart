@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
 import 'package:personal_finance/features/dashboard/page/dashboard_layout.dart';
 import 'package:personal_finance/features/dashboard/widgets/add_transaction_button.dart';
+import 'package:provider/provider.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});

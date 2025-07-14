@@ -8,9 +8,7 @@ class AppLocalizations {
 
   AppLocalizations(this.locale);
 
-  static AppLocalizations? of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations);
-  }
+  static AppLocalizations? of(BuildContext context) => Localizations.of<AppLocalizations>(context, AppLocalizations);
 
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
@@ -30,9 +28,7 @@ class AppLocalizations {
     }
   }
 
-  NumberFormat get currencyFormatter {
-    return NumberFormat.currency(symbol: currencySymbol, decimalDigits: 2);
-  }
+  NumberFormat get currencyFormatter => NumberFormat.currency(symbol: currencySymbol, decimalDigits: 2);
 }
 
 class _AppLocalizationsDelegate
@@ -40,14 +36,10 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) {
-    return <String>['en', 'es'].contains(locale.languageCode);
-  }
+  bool isSupported(Locale locale) => <String>['en', 'es'].contains(locale.languageCode);
 
   @override
-  Future<AppLocalizations> load(Locale locale) {
-    return SynchronousFuture<AppLocalizations>(AppLocalizations(locale));
-  }
+  Future<AppLocalizations> load(Locale locale) => SynchronousFuture<AppLocalizations>(AppLocalizations(locale));
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;

@@ -25,8 +25,7 @@ class MyHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildWelcomeCard(ThemeData theme) {
-    return Card(
+  Widget _buildWelcomeCard(ThemeData theme) => Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -46,10 +45,8 @@ class MyHomePage extends StatelessWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildStartButton(BuildContext context) {
-    return SizedBox(
+  Widget _buildStartButton(BuildContext context) => SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed:
@@ -72,5 +69,4 @@ class MyHomePage extends StatelessWidget {
         ),
       ),
     );
-  }
 }

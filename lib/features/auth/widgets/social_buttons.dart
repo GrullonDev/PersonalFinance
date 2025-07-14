@@ -1,17 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class SocialLoginButtons extends StatelessWidget {
   const SocialLoginButtons({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
+  Widget build(BuildContext context) => Consumer<AuthProvider>(
       builder: (BuildContext context, AuthProvider provider, _) {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -73,5 +70,4 @@ class SocialLoginButtons extends StatelessWidget {
         );
       },
     );
-  }
 }

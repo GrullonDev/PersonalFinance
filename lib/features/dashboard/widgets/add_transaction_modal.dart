@@ -22,8 +22,8 @@ class AddTransactionModal extends StatelessWidget {
             height: 500, // Ajusta este valor si necesitas más espacio
             child: TabBarView(
               children: <Widget>[
-                AddExpenseModal(key: ValueKey('expense')),
-                AddIncomeModal(key: ValueKey('income')),
+                AddExpenseModal(key: ValueKey<String>('expense')),
+                AddIncomeModal(key: ValueKey<String>('income')),
               ],
             ),
           ),

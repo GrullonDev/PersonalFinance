@@ -67,7 +67,7 @@ class AppLogger {
       debugPrint(logMessage.toString());
     } else {
       // En producción, podrías enviar a un servicio de logging
-      print(logMessage.toString());
+      debugPrint(logMessage.toString());
     }
   }
   

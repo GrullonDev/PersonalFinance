@@ -10,8 +10,7 @@ class AppLoadingWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
+  Widget build(BuildContext context) => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -39,5 +38,4 @@ class AppLoadingWidget extends StatelessWidget {
         ],
       ),
     );
-  }
 } 

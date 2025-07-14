@@ -19,7 +19,7 @@ class IncomeEntity extends TransactionEntity {
   String get transactionType => 'income';
 
   @override
-  List<Object?> get props => [...super.props, source, notes];
+  List<Object?> get props => <Object?>[...super.props, source, notes];
 
   /// Verifica si el ingreso proviene de una fuente específica
   bool isFromSource(String sourceName) => 
@@ -53,8 +53,7 @@ class IncomeEntity extends TransactionEntity {
     String? source,
     String? description,
     String? notes,
-  }) {
-    return IncomeEntity(
+  }) => IncomeEntity(
       id: id ?? this.id,
       title: title ?? this.title,
       amount: amount ?? this.amount,
@@ -63,5 +62,4 @@ class IncomeEntity extends TransactionEntity {
       description: description ?? this.description,
       notes: notes ?? this.notes,
     );
-  }
 } 

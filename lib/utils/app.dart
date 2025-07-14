@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
-
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
@@ -12,13 +8,14 @@ import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
+import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
+  Widget build(BuildContext context) => MultiProvider(
       providers: <SingleChildWidget>[
         Provider<AuthRepository>(create: (_) => getIt<AuthRepository>()),
         ChangeNotifierProvider<AuthProvider>(
@@ -50,10 +47,8 @@ class MyApp extends StatelessWidget {
         locale: const Locale('es', 'GT'),
       ),
     );
-  }
 
-  ThemeData _buildLightTheme() {
-    return ThemeData(
+  ThemeData _buildLightTheme() => ThemeData(
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       textTheme: GoogleFonts.manropeTextTheme(),
@@ -64,10 +59,8 @@ class MyApp extends StatelessWidget {
         elevation: 0,
       ),
     );
-  }
 
-  ThemeData _buildDarkTheme() {
-    return ThemeData(
+  ThemeData _buildDarkTheme() => ThemeData(
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
         seedColor: Colors.deepPurple,
@@ -75,5 +68,4 @@ class MyApp extends StatelessWidget {
       ),
       textTheme: GoogleFonts.manropeTextTheme(ThemeData.dark().textTheme),
     );
-  }
 }

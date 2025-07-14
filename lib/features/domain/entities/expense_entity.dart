@@ -19,7 +19,7 @@ class ExpenseEntity extends TransactionEntity {
   String get transactionType => 'expense';
 
   @override
-  List<Object?> get props => [...super.props, category, notes];
+  List<Object?> get props => <Object?>[...super.props, category, notes];
 
   /// Verifica si el gasto es de una categoría específica
   bool isCategory(String categoryName) => 
@@ -57,8 +57,7 @@ class ExpenseEntity extends TransactionEntity {
     String? category,
     String? description,
     String? notes,
-  }) {
-    return ExpenseEntity(
+  }) => ExpenseEntity(
       id: id ?? this.id,
       title: title ?? this.title,
       amount: amount ?? this.amount,
@@ -67,5 +66,4 @@ class ExpenseEntity extends TransactionEntity {
       description: description ?? this.description,
       notes: notes ?? this.notes,
     );
-  }
 } 

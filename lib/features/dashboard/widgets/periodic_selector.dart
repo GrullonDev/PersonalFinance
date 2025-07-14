@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
-
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
+import 'package:provider/provider.dart';
 
 class PeriodSelector extends StatelessWidget {
   final String selected;
@@ -57,7 +55,6 @@ class PeriodSelector extends StatelessWidget {
               backgroundColor: Colors.white,
               side: BorderSide(
                 color: isSelected ? Colors.blue : Colors.grey[300]!,
-                width: 1,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),

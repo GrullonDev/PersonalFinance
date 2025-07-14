@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
 import 'package:provider/provider.dart';
 
+/// Modal para agregar un nuevo ingreso.
+/// Permite ingresar título, monto, categoría y fecha del ingreso.
 class AddIncomeModal extends StatefulWidget {
   const AddIncomeModal({super.key});
 
@@ -62,24 +64,25 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                 onSelected: (String value) {
                   _titleController.text = value;
                 },
-                fieldViewBuilder: (
-                  BuildContext context,
-                  TextEditingController controller,
-                  FocusNode focusNode,
-                  _,
-                ) => TextFormField(
-                    controller: _titleController,
-                    focusNode: focusNode,
-                    decoration: const InputDecoration(
-                      labelText: 'Título del ingreso',
-                      border: OutlineInputBorder(),
+                fieldViewBuilder:
+                    (
+                      BuildContext context,
+                      TextEditingController controller,
+                      FocusNode focusNode,
+                      _,
+                    ) => TextFormField(
+                      controller: _titleController,
+                      focusNode: focusNode,
+                      decoration: const InputDecoration(
+                        labelText: 'Título del ingreso',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator:
+                          (String? value) =>
+                              (value == null || value.isEmpty)
+                                  ? 'Requerido'
+                                  : null,
                     ),
-                    validator:
-                        (String? value) =>
-                            (value == null || value.isEmpty)
-                                ? 'Requerido'
-                                : null,
-                  ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -106,8 +109,10 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                 items:
                     _categorySuggestions
                         .map(
-                          (String e) =>
-                              DropdownMenuItem(value: e, child: Text(e)),
+                          (String e) => DropdownMenuItem<String>(
+                            value: e,
+                            child: Text(e),
+                          ),
                         )
                         .toList(),
                 decoration: const InputDecoration(
@@ -151,7 +156,9 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      await Future.delayed(const Duration(milliseconds: 50)); // Da tiempo a notifyListeners
+                      await Future<void>.delayed(
+                        const Duration(milliseconds: 50),
+                      ); // Da tiempo a notifyListeners
                       logic.addIncome(
                         _titleController.text,
                         _amountController.text,
@@ -164,6 +171,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                         _selectedDate = DateTime.now();
                         _selectedCategory = 'Salario';
                       });
+                      if (!mounted) return;
                       Navigator.pop(context);
                     }
                   },

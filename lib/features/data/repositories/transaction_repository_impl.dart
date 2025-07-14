@@ -15,7 +15,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<List<ExpenseEntity>> getExpenses() async {
     try {
-      return _expenseBox.values.map((expense) => _mapExpenseToEntity(expense)).toList();
+      return _expenseBox.values
+          .map((Expense expense) => _mapExpenseToEntity(expense))
+          .toList();
     } catch (e) {
       throw Exception('Error al obtener gastos: $e');
     }
@@ -24,7 +26,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<List<IncomeEntity>> getIncomes() async {
     try {
-      return _incomeBox.values.map((income) => _mapIncomeToEntity(income)).toList();
+      return _incomeBox.values
+          .map((Income income) => _mapIncomeToEntity(income))
+          .toList();
     } catch (e) {
       throw Exception('Error al obtener ingresos: $e');
     }
@@ -53,7 +57,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> updateExpense(ExpenseEntity expense) async {
     try {
-      final int index = _expenseBox.values.toList().indexWhere((e) => e.title == expense.title);
+      final int index = _expenseBox.values.toList().indexWhere(
+        (Expense e) => e.title == expense.title,
+      );
       if (index != -1) {
         final Expense expenseModel = _mapEntityToExpense(expense);
         await _expenseBox.putAt(index, expenseModel);
@@ -66,7 +72,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> updateIncome(IncomeEntity income) async {
     try {
-      final int index = _incomeBox.values.toList().indexWhere((i) => i.title == income.title);
+      final int index = _incomeBox.values.toList().indexWhere(
+        (Income i) => i.title == income.title,
+      );
       if (index != -1) {
         final Income incomeModel = _mapEntityToIncome(income);
         await _incomeBox.putAt(index, incomeModel);
@@ -79,7 +87,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> deleteExpense(String id) async {
     try {
-      final int index = _expenseBox.values.toList().indexWhere((e) => e.title == id);
+      final int index = _expenseBox.values.toList().indexWhere(
+        (Expense e) => e.title == id,
+      );
       if (index != -1) {
         await _expenseBox.deleteAt(index);
       }
@@ -91,7 +101,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> deleteIncome(String id) async {
     try {
-      final int index = _incomeBox.values.toList().indexWhere((i) => i.title == id);
+      final int index = _incomeBox.values.toList().indexWhere(
+        (Income i) => i.title == id,
+      );
       if (index != -1) {
         await _incomeBox.deleteAt(index);
       }
@@ -101,12 +113,18 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<List<ExpenseEntity>> getExpensesByPeriod(DateTime start, DateTime end) async {
+  Future<List<ExpenseEntity>> getExpensesByPeriod(
+    DateTime start,
+    DateTime end,
+  ) async {
     try {
       return _expenseBox.values
-          .where((expense) => expense.date.isAfter(start.subtract(const Duration(days: 1))) && 
-                              expense.date.isBefore(end.add(const Duration(days: 1))))
-          .map((expense) => _mapExpenseToEntity(expense))
+          .where(
+            (Expense expense) =>
+                expense.date.isAfter(start.subtract(const Duration(days: 1))) &&
+                expense.date.isBefore(end.add(const Duration(days: 1))),
+          )
+          .map((Expense expense) => _mapExpenseToEntity(expense))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener gastos por período: $e');
@@ -114,12 +132,18 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<List<IncomeEntity>> getIncomesByPeriod(DateTime start, DateTime end) async {
+  Future<List<IncomeEntity>> getIncomesByPeriod(
+    DateTime start,
+    DateTime end,
+  ) async {
     try {
       return _incomeBox.values
-          .where((income) => income.date.isAfter(start.subtract(const Duration(days: 1))) && 
-                            income.date.isBefore(end.add(const Duration(days: 1))))
-          .map((income) => _mapIncomeToEntity(income))
+          .where(
+            (Income income) =>
+                income.date.isAfter(start.subtract(const Duration(days: 1))) &&
+                income.date.isBefore(end.add(const Duration(days: 1))),
+          )
+          .map((Income income) => _mapIncomeToEntity(income))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener ingresos por período: $e');
@@ -130,8 +154,11 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<List<ExpenseEntity>> getExpensesByCategory(String category) async {
     try {
       return _expenseBox.values
-          .where((expense) => expense.category.toLowerCase() == category.toLowerCase())
-          .map((expense) => _mapExpenseToEntity(expense))
+          .where(
+            (Expense expense) =>
+                expense.category.toLowerCase() == category.toLowerCase(),
+          )
+          .map((Expense expense) => _mapExpenseToEntity(expense))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener gastos por categoría: $e');
@@ -142,8 +169,11 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<List<IncomeEntity>> getIncomesBySource(String source) async {
     try {
       return _incomeBox.values
-          .where((income) => income.title.toLowerCase().contains(source.toLowerCase()))
-          .map((income) => _mapIncomeToEntity(income))
+          .where(
+            (Income income) =>
+                income.title.toLowerCase().contains(source.toLowerCase()),
+          )
+          .map((Income income) => _mapIncomeToEntity(income))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener ingresos por fuente: $e');
@@ -153,8 +183,14 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<double> getTotalExpenses(DateTime start, DateTime end) async {
     try {
-      final List<ExpenseEntity> expenses = await getExpensesByPeriod(start, end);
-      return expenses.fold<double>(0, (sum, expense) => sum + expense.amount);
+      final List<ExpenseEntity> expenses = await getExpensesByPeriod(
+        start,
+        end,
+      );
+      return expenses.fold<double>(
+        0,
+        (double sum, ExpenseEntity expense) => sum + expense.amount,
+      );
     } catch (e) {
       throw Exception('Error al calcular total de gastos: $e');
     }
@@ -164,7 +200,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<double> getTotalIncomes(DateTime start, DateTime end) async {
     try {
       final List<IncomeEntity> incomes = await getIncomesByPeriod(start, end);
-      return incomes.fold<double>(0, (sum, income) => sum + income.amount);
+      return incomes.fold<double>(
+        0,
+        (double sum, IncomeEntity income) => sum + income.amount,
+      );
     } catch (e) {
       throw Exception('Error al calcular total de ingresos: $e');
     }
@@ -173,8 +212,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<double> getBalance(DateTime start, DateTime end) async {
     try {
-      final totalIncomes = await getTotalIncomes(start, end);
-      final totalExpenses = await getTotalExpenses(start, end);
+      final double totalIncomes = await getTotalIncomes(start, end);
+      final double totalExpenses = await getTotalExpenses(start, end);
       return totalIncomes - totalExpenses;
     } catch (e) {
       throw Exception('Error al calcular balance: $e');
@@ -182,44 +221,29 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   // Métodos de mapeo entre entidades y modelos
-  ExpenseEntity _mapExpenseToEntity(Expense expense) {
-    return ExpenseEntity(
-      id: expense.title, // Usando title como ID temporal
-      title: expense.title,
-      amount: expense.amount,
-      date: expense.date,
-      category: expense.category,
-      description: null,
-      notes: null,
-    );
-  }
+  ExpenseEntity _mapExpenseToEntity(Expense expense) => ExpenseEntity(
+    id: expense.title, // Usando title como ID temporal
+    title: expense.title,
+    amount: expense.amount,
+    date: expense.date,
+    category: expense.category,
+  );
 
-  IncomeEntity _mapIncomeToEntity(Income income) {
-    return IncomeEntity(
-      id: income.title, // Usando title como ID temporal
-      title: income.title,
-      amount: income.amount,
-      date: income.date,
-      source: income.title, // Usando title como source temporal
-      description: null,
-      notes: null,
-    );
-  }
+  IncomeEntity _mapIncomeToEntity(Income income) => IncomeEntity(
+    id: income.title, // Usando title como ID temporal
+    title: income.title,
+    amount: income.amount,
+    date: income.date,
+    source: income.title, // Usando title como source temporal
+  );
 
-  Expense _mapEntityToExpense(ExpenseEntity entity) {
-    return Expense(
-      title: entity.title,
-      amount: entity.amount,
-      date: entity.date,
-      category: entity.category,
-    );
-  }
+  Expense _mapEntityToExpense(ExpenseEntity entity) => Expense(
+    title: entity.title,
+    amount: entity.amount,
+    date: entity.date,
+    category: entity.category,
+  );
 
-  Income _mapEntityToIncome(IncomeEntity entity) {
-    return Income(
-      title: entity.title,
-      amount: entity.amount,
-      date: entity.date,
-    );
-  }
-} 
+  Income _mapEntityToIncome(IncomeEntity entity) =>
+      Income(title: entity.title, amount: entity.amount, date: entity.date);
+}

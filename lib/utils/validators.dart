@@ -32,9 +32,7 @@ class AppValidators {
   }
   
   /// Valida un título de transacción
-  static String? validateTransactionTitle(String? value) {
-    return validateLength(value, 'Título', 1, AppConstants.maxTitleLength);
-  }
+  static String? validateTransactionTitle(String? value) => validateLength(value, 'Título', 1, AppConstants.maxTitleLength);
   
   /// Valida una descripción
   static String? validateDescription(String? value) {
@@ -101,7 +99,7 @@ class AppValidators {
     }
     
     final DateTime now = DateTime.now();
-    final DateTime minDate = DateTime(2000, 1, 1);
+    final DateTime minDate = DateTime(2000);
     final DateTime maxDate = DateTime(now.year + 10, 12, 31);
     
     if (date.isBefore(minDate)) {
@@ -180,15 +178,13 @@ class AppValidators {
     DateTime? date,
     String? category,
     String? description,
-  }) {
-    return {
+  }) => <String, String?>{
       'title': validateTransactionTitle(title),
       'amount': validateAmount(amount),
       'date': validateDate(date, 'Fecha'),
       'category': validateExpenseCategory(category),
       'description': validateDescription(description),
     };
-  }
   
   /// Valida un ingreso completo
   static Map<String, String?> validateIncome({
@@ -197,20 +193,16 @@ class AppValidators {
     DateTime? date,
     String? source,
     String? description,
-  }) {
-    return {
+  }) => <String, String?>{
       'title': validateTransactionTitle(title),
       'amount': validateAmount(amount),
       'date': validateDate(date, 'Fecha'),
       'source': validateIncomeSource(source),
       'description': validateDescription(description),
     };
-  }
   
   /// Verifica si hay errores en un mapa de validaciones
-  static bool hasErrors(Map<String, String?> validations) {
-    return validations.values.any((error) => error != null);
-  }
+  static bool hasErrors(Map<String, String?> validations) => validations.values.any((String? error) => error != null);
   
   /// Obtiene el primer error de un mapa de validaciones
   static String? getFirstError(Map<String, String?> validations) {
@@ -221,10 +213,8 @@ class AppValidators {
   }
   
   /// Obtiene todos los errores de un mapa de validaciones
-  static List<String> getAllErrors(Map<String, String?> validations) {
-    return validations.values
-        .where((error) => error != null)
-        .map((error) => error!)
+  static List<String> getAllErrors(Map<String, String?> validations) => validations.values
+        .where((String? error) => error != null)
+        .map((String? error) => error!)
         .toList();
-  }
 } 

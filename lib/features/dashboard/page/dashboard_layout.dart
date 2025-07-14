@@ -1,27 +1,22 @@
 import 'package:flutter/material.dart';
-
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
-import 'package:provider/provider.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
-
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/dashboard/widgets/balance_card.dart';
 import 'package:personal_finance/features/dashboard/widgets/periodic_selector.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class DashboardLayout extends StatelessWidget {
   const DashboardLayout({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<DashboardLogic>(
-      builder: (BuildContext context, DashboardLogic logic, _) {
-        return ValueListenableBuilder<Box<Expense>>(
+  Widget build(BuildContext context) => Consumer<DashboardLogic>(
+      builder: (BuildContext context, DashboardLogic logic, _) => ValueListenableBuilder<Box<Expense>>(
           valueListenable: Hive.box<Expense>('expenses').listenable(),
-          builder: (BuildContext context, Box<Expense> expenseBox, _) {
-            return ValueListenableBuilder<Box<Income>>(
+          builder: (BuildContext context, Box<Expense> expenseBox, _) => ValueListenableBuilder<Box<Income>>(
               valueListenable: Hive.box<Income>('incomes').listenable(),
               builder: (BuildContext context, Box<Income> incomeBox, _) {
 
@@ -96,15 +91,11 @@ class DashboardLayout extends StatelessWidget {
                   ),
                 );
               },
-            );
-          },
-        );
-      },
+            ),
+        ),
     );
-  }
 
-  Widget _buildSummaryCards(DashboardLogic logic) {
-    return Row(
+  Widget _buildSummaryCards(DashboardLogic logic) => Row(
       children: <Widget>[
         Expanded(
           child: _buildSummaryCard(
@@ -133,15 +124,13 @@ class DashboardLayout extends StatelessWidget {
         ),
       ],
     );
-  }
 
   Widget _buildSummaryCard({
     required String title,
     required double amount,
     required IconData icon,
     required LinearGradient gradient,
-  }) {
-    return Card(
+  }) => Card(
       elevation: 6,
       shadowColor: Colors.black26,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -150,7 +139,7 @@ class DashboardLayout extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: gradient,
-          boxShadow: [
+          boxShadow: <BoxShadow>[
             BoxShadow(
               color: Colors.black.withAlpha(20),
               blurRadius: 10,
@@ -212,7 +201,6 @@ class DashboardLayout extends StatelessWidget {
         ),
       ),
     );
-  }
 
   Widget _buildExpensesChart(DashboardLogic logic) {
     final List<ChartData> chartData = logic.getChartData();
@@ -275,13 +263,12 @@ class DashboardLayout extends StatelessWidget {
                       ),
                     ),
                     innerRadius: '60%',
-                    radius: '80%',
                   ),
                 ],
-                legend: Legend(
+                legend: const Legend(
                   isVisible: true,
                   position: LegendPosition.bottom,
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -356,7 +343,7 @@ class DashboardLayout extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: logic.getCategoryColor(entry.key),
                         shape: BoxShape.circle,
-                        boxShadow: [
+                        boxShadow: <BoxShadow>[
                           BoxShadow(
                             color: logic.getCategoryColor(entry.key).withAlpha(50),
                             blurRadius: 4,
@@ -467,7 +454,7 @@ class DashboardLayout extends StatelessWidget {
                         decoration: const BoxDecoration(
                           color: Colors.green,
                           shape: BoxShape.circle,
-                          boxShadow: [
+                          boxShadow: <BoxShadow>[
                             BoxShadow(
                               color: Colors.green,
                               blurRadius: 4,
@@ -545,8 +532,7 @@ class DashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionsList(DashboardLogic logic) {
-    return Column(
+  Widget _buildTransactionsList(DashboardLogic logic) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         const Text(
@@ -583,7 +569,6 @@ class DashboardLayout extends StatelessWidget {
         ],
       ],
     );
-  }
 
   Widget _buildTransactionSection(
     String title,
@@ -591,8 +576,7 @@ class DashboardLayout extends StatelessWidget {
     Color color,
     List<TransactionItem> transactions,
     DashboardLogic logic,
-  ) {
-    return Card(
+  ) => Card(
       elevation: 4,
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -658,7 +642,7 @@ class DashboardLayout extends StatelessWidget {
                     color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: color.withAlpha(30)),
-                    boxShadow: [
+                    boxShadow: <BoxShadow>[
                       BoxShadow(
                         color: Colors.black.withAlpha(5),
                         blurRadius: 4,
@@ -752,5 +736,4 @@ class DashboardLayout extends StatelessWidget {
         ),
       ),
     );
-  }
 }

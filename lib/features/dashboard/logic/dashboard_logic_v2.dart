@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+
+import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
 import 'package:personal_finance/features/domain/usecases/get_dashboard_data_usecase.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
-
-
 
 /// Lógica del dashboard mejorada siguiendo Clean Architecture
 class DashboardLogicV2 extends ChangeNotifier {
@@ -15,13 +14,13 @@ class DashboardLogicV2 extends ChangeNotifier {
   DashboardLogicV2({
     required GetDashboardDataUseCase getDashboardDataUseCase,
     required AddTransactionUseCase addTransactionUseCase,
-  })  : _getDashboardDataUseCase = getDashboardDataUseCase,
-        _addTransactionUseCase = addTransactionUseCase;
+  }) : _getDashboardDataUseCase = getDashboardDataUseCase,
+       _addTransactionUseCase = addTransactionUseCase;
 
   // Estado privado
   PeriodFilter _selectedPeriod = PeriodFilter.mes;
-  List<ExpenseEntity> _expenses = [];
-  List<IncomeEntity> _incomes = [];
+  List<ExpenseEntity> _expenses = <ExpenseEntity>[];
+  List<IncomeEntity> _incomes = <IncomeEntity>[];
   bool _isLoading = false;
   String? _error;
 
@@ -37,26 +36,33 @@ class DashboardLogicV2 extends ChangeNotifier {
   bool get hasExpenses => _expenses.isNotEmpty;
   bool get hasIncomes => _incomes.isNotEmpty;
 
-  double get totalExpenses => _expenses.fold<double>(0, (sum, expense) => sum + expense.amount);
-  double get totalIncomes => _incomes.fold<double>(0, (sum, income) => sum + income.amount);
+  double get totalExpenses => _expenses.fold<double>(
+    0,
+    (double sum, ExpenseEntity expense) => sum + expense.amount,
+  );
+  double get totalIncomes => _incomes.fold<double>(
+    0,
+    (double sum, IncomeEntity income) => sum + income.amount,
+  );
   double get balance => totalIncomes - totalExpenses;
 
   List<ExpenseEntity> get sortedExpenses {
-    final List<ExpenseEntity> sorted = List.from(_expenses);
-    sorted.sort((a, b) => b.date.compareTo(a.date));
+    final List<ExpenseEntity> sorted = List<ExpenseEntity>.from(_expenses);
+    sorted.sort((ExpenseEntity a, ExpenseEntity b) => b.date.compareTo(a.date));
     return sorted;
   }
 
   List<IncomeEntity> get sortedIncomes {
-    final List<IncomeEntity> sorted = List.from(_incomes);
-    sorted.sort((a, b) => b.date.compareTo(a.date));
+    final List<IncomeEntity> sorted = List<IncomeEntity>.from(_incomes);
+    sorted.sort((IncomeEntity a, IncomeEntity b) => b.date.compareTo(a.date));
     return sorted;
   }
 
   Map<String, double> get expensesByCategory {
     final Map<String, double> categoryMap = <String, double>{};
     for (final ExpenseEntity expense in _expenses) {
-      categoryMap[expense.category] = (categoryMap[expense.category] ?? 0) + expense.amount;
+      categoryMap[expense.category] =
+          (categoryMap[expense.category] ?? 0) + expense.amount;
     }
     return categoryMap;
   }
@@ -64,7 +70,7 @@ class DashboardLogicV2 extends ChangeNotifier {
   List<ChartData> get chartData {
     final Map<String, double> categoryMap = expensesByCategory;
     final List<ChartData> data = <ChartData>[];
-    final List<Color> colors = [
+    final List<Color> colors = <Color>[
       Colors.red,
       Colors.blue,
       Colors.green,
@@ -77,34 +83,44 @@ class DashboardLogicV2 extends ChangeNotifier {
 
     int colorIndex = 0;
     categoryMap.forEach((String category, double amount) {
-      data.add(ChartData(
-        category: category,
-        amount: amount,
-        color: colors[colorIndex % colors.length],
-      ));
+      data.add(
+        ChartData(
+          category: category,
+          amount: amount,
+          color: colors[colorIndex % colors.length],
+        ),
+      );
       colorIndex++;
     });
 
     return data;
   }
 
-  List<TransactionItem> getIncomeTransactions() {
-    return sortedIncomes.take(5).map((IncomeEntity income) => TransactionItem(
-      title: income.title,
-      amount: income.amount,
-      date: income.date,
-      isIncome: true,
-    )).toList();
-  }
+  List<TransactionItem> getIncomeTransactions() =>
+      sortedIncomes
+          .take(5)
+          .map(
+            (IncomeEntity income) => TransactionItem(
+              title: income.title,
+              amount: income.amount,
+              date: income.date,
+              isIncome: true,
+            ),
+          )
+          .toList();
 
-  List<TransactionItem> getExpenseTransactions() {
-    return sortedExpenses.take(5).map((ExpenseEntity expense) => TransactionItem(
-      title: expense.title,
-      amount: expense.amount,
-      date: expense.date,
-      isIncome: false,
-    )).toList();
-  }
+  List<TransactionItem> getExpenseTransactions() =>
+      sortedExpenses
+          .take(5)
+          .map(
+            (ExpenseEntity expense) => TransactionItem(
+              title: expense.title,
+              amount: expense.amount,
+              date: expense.date,
+              isIncome: false,
+            ),
+          )
+          .toList();
 
   // Métodos públicos
   Future<void> loadDashboardData() async {
@@ -118,11 +134,13 @@ class DashboardLogicV2 extends ChangeNotifier {
         endDate: dateRange.end,
       );
 
-      final DashboardResult result = await _getDashboardDataUseCase.execute(params);
-      
+      final DashboardResult result = await _getDashboardDataUseCase.execute(
+        params,
+      );
+
       _expenses = result.expenses;
       _incomes = result.incomes;
-      
+
       notifyListeners();
     } catch (e) {
       _setError('Error al cargar datos: $e');
@@ -200,21 +218,31 @@ class DashboardLogicV2 extends ChangeNotifier {
 
   // Métodos de utilidad
   String formatCurrency(double amount) => '\$${amount.toStringAsFixed(2)}';
-  
+
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';
     final double percentage = (value / total) * 100;
     return '${percentage.toStringAsFixed(1)}%';
   }
-  
+
   String formatDate(DateTime date) {
-    final List<String> months = [
-      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    final List<String> months = <String>[
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return '${date.day} ${months[date.month - 1]}';
   }
-  
+
   Color getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'alimentación':
@@ -241,7 +269,7 @@ class DashboardLogicV2 extends ChangeNotifier {
   DateTimeRange _getDateRangeForPeriod(PeriodFilter period) {
     final DateTime now = DateTime.now();
     final DateTime startOfDay = DateTime(now.year, now.month, now.day);
-    
+
     switch (period) {
       case PeriodFilter.dia:
         return DateTimeRange(
@@ -249,20 +277,22 @@ class DashboardLogicV2 extends ChangeNotifier {
           end: startOfDay.add(const Duration(days: 1)),
         );
       case PeriodFilter.semana:
-        final DateTime startOfWeek = startOfDay.subtract(Duration(days: now.weekday - 1));
+        final DateTime startOfWeek = startOfDay.subtract(
+          Duration(days: now.weekday - 1),
+        );
         return DateTimeRange(
           start: startOfWeek,
           end: startOfWeek.add(const Duration(days: 7)),
         );
       case PeriodFilter.mes:
-        final DateTime startOfMonth = DateTime(now.year, now.month, 1);
+        final DateTime startOfMonth = DateTime(now.year, now.month);
         final DateTime endOfMonth = DateTime(now.year, now.month + 1, 0);
         return DateTimeRange(
           start: startOfMonth,
           end: endOfMonth.add(const Duration(days: 1)),
         );
       case PeriodFilter.anio:
-        final DateTime startOfYear = DateTime(now.year, 1, 1);
+        final DateTime startOfYear = DateTime(now.year);
         final DateTime endOfYear = DateTime(now.year, 12, 31);
         return DateTimeRange(
           start: startOfYear,
@@ -285,4 +315,4 @@ class DashboardLogicV2 extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-} 
+}

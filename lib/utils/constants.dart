@@ -17,12 +17,12 @@ class AppConstants {
   static const String settingsBoxName = 'settings';
   
   // ===== CONSTANTES DE UI =====
-  static const double defaultPadding = 16.0;
-  static const double smallPadding = 8.0;
-  static const double largePadding = 24.0;
-  static const double defaultRadius = 12.0;
-  static const double cardRadius = 16.0;
-  static const double buttonRadius = 8.0;
+  static const double defaultPadding = 16;
+  static const double smallPadding = 8;
+  static const double largePadding = 24;
+  static const double defaultRadius = 12;
+  static const double cardRadius = 16;
+  static const double buttonRadius = 8;
   
   // ===== CONSTANTES DE ANIMACIÓN =====
   static const Duration shortAnimation = Duration(milliseconds: 200);
@@ -36,7 +36,7 @@ class AppConstants {
   static const double maxAmount = 999999.99;
   
   // ===== CONSTANTES DE CATEGORÍAS =====
-  static const List<String> expenseCategories = [
+  static const List<String> expenseCategories = <String>[
     'Alimentación',
     'Transporte',
     'Hogar',
@@ -47,7 +47,7 @@ class AppConstants {
     'Otros',
   ];
   
-  static const List<String> incomeSources = [
+  static const List<String> incomeSources = <String>[
     'Salario',
     'Freelance',
     'Inversiones',
@@ -66,7 +66,7 @@ class AppConstants {
   static const Color infoColor = Colors.blue;
   
   // ===== MAPA DE COLORES POR CATEGORÍA =====
-  static const Map<String, Color> categoryColors = {
+  static const Map<String, Color> categoryColors = <String, Color>{
     'Alimentación': Colors.orange,
     'Transporte': Colors.blue,
     'Hogar': Colors.purple,
@@ -78,7 +78,7 @@ class AppConstants {
   };
   
   // ===== MAPA DE COLORES POR FUENTE DE INGRESO =====
-  static const Map<String, Color> sourceColors = {
+  static const Map<String, Color> sourceColors = <String, Color>{
     'Salario': Colors.green,
     'Freelance': Colors.blue,
     'Inversiones': Colors.orange,
@@ -94,7 +94,7 @@ class AppConstants {
   static const String dateTimeFormat = 'dd/MM/yyyy HH:mm';
   
   // ===== CONSTANTES DE PERÍODOS =====
-  static const List<String> periodNames = [
+  static const List<String> periodNames = <String>[
     'Día',
     'Semana',
     'Mes',
@@ -118,29 +118,19 @@ class AppConstants {
   // ===== MÉTODOS DE UTILIDAD =====
   
   /// Obtiene el color para una categoría
-  static Color getCategoryColor(String category) {
-    return categoryColors[category] ?? Colors.grey;
-  }
+  static Color getCategoryColor(String category) => categoryColors[category] ?? Colors.grey;
   
   /// Obtiene el color para una fuente de ingreso
-  static Color getSourceColor(String source) {
-    return sourceColors[source] ?? Colors.green;
-  }
+  static Color getSourceColor(String source) => sourceColors[source] ?? Colors.green;
   
   /// Valida si un monto es válido
-  static bool isValidAmount(double amount) {
-    return amount >= minAmount && amount <= maxAmount;
-  }
+  static bool isValidAmount(double amount) => amount >= minAmount && amount <= maxAmount;
   
   /// Valida si un título es válido
-  static bool isValidTitle(String title) {
-    return title.isNotEmpty && title.length <= maxTitleLength;
-  }
+  static bool isValidTitle(String title) => title.isNotEmpty && title.length <= maxTitleLength;
   
   /// Formatea un monto como moneda
-  static String formatCurrency(double amount) {
-    return '$currencySymbol${amount.toStringAsFixed(2)}';
-  }
+  static String formatCurrency(double amount) => '$currencySymbol${amount.toStringAsFixed(2)}';
   
   /// Obtiene el nombre del período
   static String getPeriodName(int index) {

@@ -110,7 +110,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     _categorySuggestions
                         .map(
                           (String e) =>
-                              DropdownMenuItem(value: e, child: Text(e)),
+                              DropdownMenuItem<String>(value: e, child: Text(e)),
                         )
                         .toList(),
                 decoration: const InputDecoration(
@@ -233,7 +233,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                           'Créditos',
                           'Otros',
                         ]
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
                         .toList(),
                 onChanged: (value) {
                   if (value != null) {

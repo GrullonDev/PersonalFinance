@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic_v2.dart';
 import 'package:personal_finance/features/dashboard/page/dashboard_layout.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart';
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:provider/provider.dart';
 
 /// Página del dashboard que usa la nueva arquitectura limpia
 class DashboardPageV2 extends StatefulWidget {
@@ -25,8 +24,7 @@ class _DashboardPageV2State extends State<DashboardPageV2> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<DashboardLogicV2>(
+  Widget build(BuildContext context) => Consumer<DashboardLogicV2>(
       builder: (BuildContext context, DashboardLogicV2 logic, _) {
         // Mostrar loading si está cargando
         if (logic.isLoading) {
@@ -48,10 +46,9 @@ class _DashboardPageV2State extends State<DashboardPageV2> {
         }
 
         // Mostrar dashboard normal
-        return Scaffold(
+        return const Scaffold(
           body: DashboardLayout(),
         );
       },
     );
-  }
 } 

@@ -1,17 +1,16 @@
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
 import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
+import 'package:personal_finance/features/dashboard/logic/dashboard_logic_v2.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:personal_finance/features/data/repositories/transaction_repository_impl.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
 import 'package:personal_finance/features/domain/usecases/get_dashboard_data_usecase.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_logic_v2.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GetIt getIt = GetIt.instance;
 

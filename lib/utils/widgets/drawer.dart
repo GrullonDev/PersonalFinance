@@ -161,8 +161,7 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
+  Widget _buildSectionTitle(String title) => Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       child: Text(
         title,
@@ -173,15 +172,13 @@ class CustomDrawer extends StatelessWidget {
         ),
       ),
     );
-  }
 
   Widget _buildHeader(
     BuildContext context,
     Color primaryColor,
     NumberFormat currencyFormat,
     bool isIOS,
-  ) {
-    return Container(
+  ) => Container(
       height: 220,
       decoration: BoxDecoration(
         color: isIOS ? primaryColor.withValues() : primaryColor,
@@ -266,7 +263,6 @@ class CustomDrawer extends StatelessWidget {
         ],
       ),
     );
-  }
 
   // _buildTile y _buildFooter similares al ejemplo anterior, pero con soporte para trailingText
   Widget _buildTile(
@@ -339,15 +335,13 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context, bool isIOS) {
-    return const Padding(
-      padding: EdgeInsets.all(16.0),
+  Widget _buildFooter(BuildContext context, bool isIOS) => const Padding(
+      padding: EdgeInsets.all(16),
       child: Text(
         'Finanzas Personales v1.0',
         style: TextStyle(fontSize: 12, color: Colors.grey),
       ),
     );
-  }
 
   void _navigateTo(BuildContext context, String routeName) {
     Navigator.pop(context);
