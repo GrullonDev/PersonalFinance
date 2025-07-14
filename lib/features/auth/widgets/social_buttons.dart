@@ -11,30 +11,67 @@ class SocialLoginButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AuthProvider provider = context.read<AuthProvider>();
-
-    return Column(
-      children: <Widget>[
-        ElevatedButton.icon(
-          icon: const Icon(Icons.g_mobiledata),
-          label: const Text('Continuar con Google'),
-          onPressed: () => provider.signInWithGoogle(context),
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.facebook),
-          label: const Text('Continuar con Facebook'),
-          onPressed: () => provider.signInWithFacebook(context),
-        ),
-        if (Platform.isIOS) ...<Widget>[
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.apple),
-            label: const Text('Continuar con Apple'),
-            onPressed: () => provider.signInWithApple(context),
-          ),
-        ],
-      ],
+    return Consumer<AuthProvider>(
+      builder: (BuildContext context, AuthProvider provider, _) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (provider.errorMessage != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(provider.errorMessage!)));
+            provider.clearError();
+          });
+        }
+        return Column(
+          children: <Widget>[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.g_mobiledata),
+                label: const Text('Continuar con Google'),
+                onPressed:
+                    provider.isLoading
+                        ? null
+                        : () async {
+                          final bool success =
+                              await provider.signInWithGoogle();
+                          if (success && context.mounted) {
+                            Navigator.pushReplacementNamed(
+                              context,
+                              '/dashboard',
+                            );
+                          }
+                        },
+              ),
+            ),
+            if (Platform.isIOS) ...<Widget>[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.apple),
+                  label: const Text('Continuar con Apple'),
+                  onPressed:
+                      provider.isLoading
+                          ? null
+                          : () async {
+                            final bool success =
+                                await provider.signInWithApple();
+                            if (success && context.mounted) {
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/dashboard',
+                              );
+                            }
+                          },
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
