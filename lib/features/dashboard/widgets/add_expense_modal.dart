@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:provider/provider.dart';
 
 class AddExpenseModal extends StatefulWidget {
   const AddExpenseModal({super.key});
@@ -15,7 +13,7 @@ class AddExpenseModal extends StatefulWidget {
 class _AddExpenseModalState extends State<AddExpenseModal> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'Otros';
 
@@ -46,7 +44,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: <Widget>[
               Container(
                 width: 50,
                 height: 5,
@@ -72,8 +70,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   TextEditingController controller,
                   FocusNode focusNode,
                   _,
-                ) {
-                  return TextFormField(
+                ) => TextFormField(
                     controller: _titleController,
                     focusNode: focusNode,
                     decoration: const InputDecoration(
@@ -85,8 +82,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                             (value == null || value.isEmpty)
                                 ? 'Requerido'
                                 : null,
-                  );
-                },
+                  ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -98,7 +94,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 decoration: const InputDecoration(
                   labelText: 'Monto',
                   border: OutlineInputBorder(),
-                  prefixText: '\Q ',
+                  prefixText: 'Q ',
                 ),
                 validator: (String? value) {
                   if (value == null || value.isEmpty) return 'Monto requerido';
@@ -129,7 +125,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
               ),
               const SizedBox(height: 16),
               Row(
-                children: [
+                children: <Widget>[
                   Text(
                     'Fecha: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
@@ -158,11 +154,19 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      logic.addIncome(
+                      logic.addExpense(
                         _titleController.text,
                         _amountController.text,
                         _selectedDate,
+                        _selectedCategory,
                       );
+                      // Limpiar campos después de agregar
+                      _titleController.clear();
+                      _amountController.clear();
+                      setState(() {
+                        _selectedDate = DateTime.now();
+                        _selectedCategory = 'Otros';
+                      });
                       Navigator.pop(context);
                     }
                   },
@@ -170,7 +174,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   label: const Text('Agregar Gasto'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green,
+                    backgroundColor: Colors.red,
                   ),
                 ),
               ),
