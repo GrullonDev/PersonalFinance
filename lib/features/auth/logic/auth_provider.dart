@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -9,26 +7,50 @@ class AuthProvider extends ChangeNotifier {
 
   final AuthRepository authRepository;
 
-  Future<void> signInWithGoogle(BuildContext context) async {
-    await authRepository.signInWithGoogle();
-    await _persistLogin();
-    Navigator.pushReplacementNamed(context, '/dashboard');
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+
+  Future<bool> signInWithGoogle() async {
+    _setLoading(true);
+    try {
+      _setLoading(false);
+      _setError(null);
+      return true;
+    } catch (e) {
+      _setLoading(false);
+      _setError(e.toString());
+      return false;
+    }
   }
 
-  Future<void> signInWithFacebook(BuildContext context) async {
-    await authRepository.signInWithFacebook();
-    await _persistLogin();
-    Navigator.pushReplacementNamed(context, '/dashboard');
+  Future<bool> signInWithApple() async {
+    _setLoading(true);
+    try {
+      await authRepository.signInWithApple();
+      _setLoading(false);
+      _setError(null);
+      return true;
+    } catch (e) {
+      _setLoading(false);
+      _setError(e.toString());
+      return false;
+    }
   }
 
-  Future<void> signInWithApple(BuildContext context) async {
-    await authRepository.signInWithApple();
-    await _persistLogin();
-    Navigator.pushReplacementNamed(context, '/dashboard');
+  void clearError() {
+    _setError(null);
   }
 
-  Future<void> _persistLogin() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  void _setError(String? message) {
+    _errorMessage = message;
+    notifyListeners();
   }
 }

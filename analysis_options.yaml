@@ -17,6 +17,10 @@ analyzer:
     strict-casts: true
     strict-inference: true
     strict-raw-types: true
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated_plugin_registrant.dart"
 
 linter:
   # The lint rules applied to this project can be customized in the
@@ -30,15 +34,95 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
-    always_put_required_named_parameters_first: true  # Uncomment to enable the `always_put_required_named_parameters_first` rule
-    prefer_const_constructors: true  # Uncomment to enable the `prefer_const_constructors` rule
-    always_specify_types: true  # Ensure all types are explicitly specified
-    prefer_const_literals_to_create_immutables: true  # Use const for immutable collections
-    require_trailing_commas: true  # Enforce trailing commas for better readability
-    avoid_redundant_argument_values: true  # Avoid passing default values explicitly
-    prefer_typing_uninitialized_variables: true  # Prefer typing for uninitialized variables
+    # ===== REGLAS DE ESTILO Y FORMATO =====
+    prefer_single_quotes: true  # Usar comillas simples
+    always_put_required_named_parameters_first: true  # Parámetros requeridos primero
+    prefer_const_constructors: true  # Usar constructores const
+    prefer_const_literals_to_create_immutables: true  # Usar const para colecciones inmutables
+    require_trailing_commas: true  # Comas finales para mejor legibilidad
+    prefer_const_declarations: true  # Declaraciones const cuando sea posible
+    prefer_final_fields: true  # Campos finales cuando sea posible
+    prefer_final_locals: true  # Variables locales finales cuando sea posible
+    prefer_collection_literals: true  # Usar literales de colección
+    prefer_expression_function_bodies: true  # Funciones de expresión cuando sea posible
+    prefer_if_null_operators: true  # Usar operadores ?? cuando sea posible
+    prefer_is_empty: true  # Usar isEmpty en lugar de length == 0
+    prefer_is_not_empty: true  # Usar isNotEmpty en lugar de length > 0
+    prefer_contains: true  # Usar contains en lugar de indexOf != -1
+    prefer_adjacent_string_concatenation: true  # Concatenación de strings adyacentes
+    prefer_interpolation_to_compose_strings: true  # Interpolación en lugar de concatenación
+    
+    # ===== REGLAS DE TIPADO =====
+    always_specify_types: true  # Especificar tipos explícitamente
+    prefer_typing_uninitialized_variables: true  # Tipado para variables no inicializadas
+    avoid_dynamic_calls: true  # Evitar llamadas dinámicas
+    avoid_web_libraries_in_flutter: true  # Evitar librerías web en Flutter
+    avoid_empty_else: true  # Evitar else vacíos
+    avoid_relative_lib_imports: true  # Evitar imports relativos de lib
+    avoid_returning_null_for_future: true  # Evitar retornar null para Future
+    avoid_returning_null_for_void: true  # Evitar retornar null para void
+    avoid_returning_this: true  # Evitar retornar this
+    avoid_slow_async_io: true  # Evitar operaciones I/O lentas en async
+    avoid_type_to_string: true  # Evitar Type.toString()
+    avoid_unnecessary_containers: true  # Evitar containers innecesarios
+    avoid_unused_constructor_parameters: true  # Evitar parámetros de constructor no usados
+    avoid_void_async: true  # Evitar async void
+    
+    # ===== REGLAS DE RENDIMIENTO =====
+    avoid_redundant_argument_values: true  # Evitar valores de argumento redundantes
+    cancel_subscriptions: true  # Cancelar suscripciones
+    close_sinks: true  # Cerrar sinks
+    comment_references: true  # Referencias en comentarios
+    control_flow_in_finally: true  # Control de flujo en finally
+    directives_ordering: true  # Orden de directivas
+    no_duplicate_case_values: true  # Sin valores duplicados en case
+    prefer_foreach: true  # Preferir forEach
+    prefer_generic_function_type_aliases: true  # Preferir alias de tipo de función genérica
+    prefer_inlined_adds: true  # Preferir adds inline
+    prefer_initializing_formals: true  # Preferir formales de inicialización
+    prefer_int_literals: true  # Preferir literales int
+    prefer_iterable_whereType: true  # Preferir whereType en iterables
+    prefer_mixin: true  # Preferir mixin
+    prefer_null_aware_operators: true  # Preferir operadores null-aware
+    prefer_spread_collections: true  # Preferir spread de colecciones
+    prefer_void_to_null: true  # Preferir void a null
+    
+    # ===== REGLAS DE SEGURIDAD =====
+    avoid_print: true  # Evitar print (usar logger)
+    avoid_escaping_inner_quotes: true  # Evitar escapar comillas internas
+    avoid_field_initializers_in_const_classes: true  # Evitar inicializadores de campo en clases const
+    avoid_function_literals_in_foreach_calls: true  # Evitar literales de función en forEach
+    avoid_implementing_value_types: true  # Evitar implementar tipos de valor
+    avoid_init_to_null: true  # Evitar inicializar a null
+    avoid_multiple_declarations_per_line: true  # Evitar múltiples declaraciones por línea
+    avoid_null_checks_in_equality_operators: true  # Evitar null checks en operadores de igualdad
+    avoid_positional_boolean_parameters: true  # Evitar parámetros booleanos posicionales
+    avoid_private_typedef_functions: true  # Evitar typedef de funciones privadas
+    avoid_renaming_method_parameters: true  # Evitar renombrar parámetros de método
+    avoid_return_types_on_setters: true  # Evitar tipos de retorno en setters
+    avoid_returning_null: true  # Evitar retornar null
+    avoid_setters_without_getters: true  # Evitar setters sin getters
+    avoid_shadowing_type_parameters: true  # Evitar sombrear parámetros de tipo
+    
+    # ===== REGLAS DE DOCUMENTACIÓN =====
+    public_member_api_docs: true  # Documentar APIs públicas
+    sort_constructors_first: true  # Ordenar constructores primero
+    sort_unnamed_constructors_first: true  # Ordenar constructores sin nombre primero
+    use_build_context_synchronously: true  # Usar BuildContext de forma síncrona
+    use_decorated_box: true  # Usar DecoratedBox
+    use_full_hex_values_for_flutter_colors: true  # Usar valores hex completos para colores Flutter
+    use_function_type_syntax_for_parameters: true  # Usar sintaxis de tipo de función para parámetros
+    use_if_null_to_convert_nulls_to_bools: true  # Usar if null para convertir nulls a bools
+    use_is_even_rather_than_modulo: true  # Usar isEven en lugar de módulo
+    use_key_in_widget_constructors: true  # Usar key en constructores de widget
+    use_late_for_private_fields_and_variables: true  # Usar late para campos y variables privados
+    use_named_constants: true  # Usar constantes nombradas
+    use_raw_strings: true  # Usar strings raw
+    use_rethrow_when_possible: true  # Usar rethrow cuando sea posible
+    use_setters_to_change_properties: true  # Usar setters para cambiar propiedades
+    use_string_buffers: true  # Usar StringBuffer
+    use_test_throws_matchers: true  # Usar matchers de test throws
+    use_to_and_as_if_applicable: true  # Usar to y as cuando sea aplicable
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

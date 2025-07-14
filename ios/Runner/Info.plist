@@ -45,5 +45,22 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Esta app necesita acceso a la red local para depuración y comunicación con servicios locales.</string>
+	<key>GIDClientID</key>
+	<string>tu-client-id-de-google.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.297362519599-4kboksjb1rs02vq3gakm6gqcqlhmqmql</string>
+			</array>
+		</dict>
+	</array>
+	<key>google</key>
+	<string>com.googleusercontent.apps.297362519599-4kboksjb1rs02vq3gakm6gqcqlhmqmql</string>
 </dict>
 </plist>

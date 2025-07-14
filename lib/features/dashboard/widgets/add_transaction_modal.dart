@@ -7,8 +7,7 @@ class AddTransactionModal extends StatelessWidget {
   const AddTransactionModal({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const DefaultTabController(
+  Widget build(BuildContext context) => const DefaultTabController(
       length: 2,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -22,11 +21,13 @@ class AddTransactionModal extends StatelessWidget {
           SizedBox(
             height: 500, // Ajusta este valor si necesitas más espacio
             child: TabBarView(
-              children: <Widget>[AddExpenseModal(), AddIncomeModal()],
+              children: <Widget>[
+                AddExpenseModal(key: ValueKey('expense')),
+                AddIncomeModal(key: ValueKey('income')),
+              ],
             ),
           ),
         ],
       ),
     );
-  }
 }

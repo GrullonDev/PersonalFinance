@@ -1,34 +1,62 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Interfaz abstracta para servicios de autenticación.
+/// 
+/// Define los métodos requeridos para autenticación con proveedores externos
+/// como Google y Apple, así como para el cierre de sesión.
 abstract class AuthDataSource {
+  /// Inicia sesión usando Google Sign-In.
   Future<void> signInWithGoogle();
-  Future<void> signInWithFacebook();
+  
+  /// Inicia sesión usando Apple Sign-In.
   Future<void> signInWithApple();
+  
+  /// Cierra la sesión del usuario actual.
   Future<void> logout();
 }
-/* 
+
+/// Implementación local de almacenamiento de datos de autenticación.
+/// 
+/// Gestiona el estado de autenticación y onboarding usando SharedPreferences
+/// para almacenamiento local en el dispositivo.
 class AuthLocalDataSource {
+  /// Verifica si es la primera vez que el usuario abre la aplicación.
+  /// 
+  /// Returns `true` si es la primera vez, `false` si ya completó el onboarding.
   Future<bool> getIsFirstTime() async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isFirstTime') ?? true;
   }
 
+  /// Marca el onboarding como completado.
+  /// 
+  /// Actualiza el estado local para indicar que el usuario ya no es nuevo.
   Future<void> setNotFirstTime() async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isFirstTime', false);
   }
 
+  /// Verifica si el usuario está autenticado.
+  /// 
+  /// Returns `true` si el usuario está logueado, `false` en caso contrario.
   Future<bool> getIsLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isLoggedIn') ?? false;
   }
 
+  /// Marca al usuario como autenticado.
+  /// 
+  /// Actualiza el estado local para indicar que el usuario ha iniciado sesión.
   Future<void> setLogin() async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
   }
 
+  /// Marca al usuario como no autenticado.
+  /// 
+  /// Actualiza el estado local para indicar que el usuario ha cerrado sesión.
   Future<void> setLogout() async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
   }
 }
- */

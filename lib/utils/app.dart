@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:nested/nested.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
@@ -22,7 +22,10 @@ class MyApp extends StatelessWidget {
       providers: <SingleChildWidget>[
         Provider<AuthRepository>(create: (_) => getIt<AuthRepository>()),
         ChangeNotifierProvider<AuthProvider>(
-          create: (_) => AuthProvider(authRepository: getIt<AuthRepository>()),
+          create:
+              (_) => AuthProvider(
+                authRepository: getIt<AuthRepository>(),
+              ),
         ),
         ChangeNotifierProvider<DashboardLogic>(create: (_) => DashboardLogic()),
       ],
@@ -33,7 +36,7 @@ class MyApp extends StatelessWidget {
         darkTheme: _buildDarkTheme(),
         initialRoute: RoutePath.home,
         onGenerateRoute: RouteSwitch.generateRoute,
-        localizationsDelegates: const <LocalizationsDelegate>[
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

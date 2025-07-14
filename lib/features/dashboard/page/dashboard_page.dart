@@ -10,21 +10,19 @@ class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<DashboardLogic>(
-      create: (BuildContext context) => DashboardLogic(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Hero(
-            tag: 'start-button',
-            child: Text('Finanzas Personales'),
-          ),
-          centerTitle: true,
-          elevation: 0,
+  Widget build(BuildContext context) => ChangeNotifierProvider<DashboardLogic>(
+    create: (BuildContext context) => DashboardLogic(),
+    child: Scaffold(
+      appBar: AppBar(
+        title: const Hero(
+          tag: 'start-button',
+          child: Text('Finanzas Personales'),
         ),
-        body: const DashboardLayout(),
-        floatingActionButton: const AddTransactionButton(),
+        centerTitle: true,
+        elevation: 0,
       ),
-    );
-  }
+      body: const DashboardLayout(),
+      floatingActionButton: const AddTransactionButton(),
+    ),
+  );
 }

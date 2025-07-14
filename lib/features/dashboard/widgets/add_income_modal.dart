@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:provider/provider.dart';
 
 class AddIncomeModal extends StatefulWidget {
   const AddIncomeModal({super.key});
@@ -69,8 +67,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                   TextEditingController controller,
                   FocusNode focusNode,
                   _,
-                ) {
-                  return TextFormField(
+                ) => TextFormField(
                     controller: _titleController,
                     focusNode: focusNode,
                     decoration: const InputDecoration(
@@ -82,8 +79,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                             (value == null || value.isEmpty)
                                 ? 'Requerido'
                                 : null,
-                  );
-                },
+                  ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -95,7 +91,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                 decoration: const InputDecoration(
                   labelText: 'Monto',
                   border: OutlineInputBorder(),
-                  prefixText: '\Q ',
+                  prefixText: 'Q ',
                 ),
                 validator: (String? value) {
                   if (value == null || value.isEmpty) return 'Monto requerido';
@@ -153,13 +149,21 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
+                      await Future.delayed(const Duration(milliseconds: 50)); // Da tiempo a notifyListeners
                       logic.addIncome(
                         _titleController.text,
                         _amountController.text,
                         _selectedDate,
                       );
+                      // Limpiar campos después de agregar
+                      _titleController.clear();
+                      _amountController.clear();
+                      setState(() {
+                        _selectedDate = DateTime.now();
+                        _selectedCategory = 'Salario';
+                      });
                       Navigator.pop(context);
                     }
                   },
