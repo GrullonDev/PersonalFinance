@@ -5,6 +5,7 @@ import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:personal_finance/utils/app.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +17,10 @@ Future<void> main() async {
   Hive.registerAdapter(IncomeAdapter());
   await Hive.openBox<Income>('incomes');
 
-  // Inicializa Firebase
-  await Firebase.initializeApp();
+  // Inicializa Firebase con opciones por plataforma
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Configura dependencias
   await initDependencies();

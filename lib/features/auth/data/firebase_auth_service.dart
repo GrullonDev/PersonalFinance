@@ -15,10 +15,13 @@ class FirebaseAuthService implements AuthDataSource {
   @override
   Future<User?> signInWithGoogle() async {
     try {
-      await GoogleSignIn.instance.initialize(serverClientId: 'TU_SERVER_CLIENT_ID');
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        throw Exception('Inicio de sesión cancelado');
+      }
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
       final UserCredential userCredential = await _auth.signInWithCredential(credential);

@@ -23,15 +23,15 @@ class SocialLoginButtons extends StatelessWidget {
         }
         return Column(
           children: <Widget>[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.g_mobiledata),
-                label: const Text('Continuar con Google'),
-                onPressed:
-                    provider.isLoading
-                        ? null
-                        : () async {
+            if (Platform.isAndroid)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.g_mobiledata),
+                  label: const Text('Continuar con Google'),
+                  onPressed: provider.isLoading
+                      ? null
+                      : () async {
                           final bool success =
                               await provider.signInWithGoogle();
                           if (success && context.mounted) {
@@ -41,8 +41,8 @@ class SocialLoginButtons extends StatelessWidget {
                             );
                           }
                         },
+                ),
               ),
-            ),
             if (Platform.isIOS) ...<Widget>[
               const SizedBox(height: 12),
               SizedBox(
