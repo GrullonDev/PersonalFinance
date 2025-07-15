@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -11,18 +12,27 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 /// utilizando Firebase Auth como backend de autenticación.
 class FirebaseAuthService implements AuthDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
-  Future<User?> signInWithGoogle() async {
+  Future<void> signInWithGoogle() async {
     try {
-      await GoogleSignIn.instance.initialize(serverClientId: 'TU_SERVER_CLIENT_ID');
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        throw Exception('Google sign-in aborted');
+      }
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
-      return userCredential.user;
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      final User? user = userCredential.user;
+      if (user != null) {
+        await _saveUser(user);
+      }
     } catch (e) {
       throw Exception('Error al iniciar sesión con Google: $e');
     }
@@ -47,7 +57,12 @@ class FirebaseAuthService implements AuthDataSource {
         idToken: appleCredential.identityToken,
         accessToken: appleCredential.authorizationCode,
       );
-      await _auth.signInWithCredential(oauthCredential);
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(oauthCredential);
+      final User? user = userCredential.user;
+      if (user != null) {
+        await _saveUser(user);
+      }
     } catch (e) {
       throw Exception('Error al iniciar sesión con Apple: $e');
     }
@@ -59,5 +74,20 @@ class FirebaseAuthService implements AuthDataSource {
       _auth.signOut(),
       GoogleSignIn.instance.disconnect(),
     ]);
+  }
+
+  Future<void> _saveUser(User user) async {
+    final DocumentReference<Map<String, dynamic>> ref =
+        _firestore.collection('users').doc(user.uid);
+    await ref.set(<String, dynamic>{
+      'uid': user.uid,
+      'name': user.displayName,
+      'email': user.email,
+      'photoURL': user.photoURL,
+      'provider': user.providerData.isNotEmpty
+          ? user.providerData.first.providerId
+          : null,
+    },
+        SetOptions(merge: true));
   }
 }
