@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
@@ -16,6 +18,10 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     try {
+      if (!Platform.isAndroid) {
+        throw Exception('Google Sign-In no soportado en esta plataforma');
+      }
+      await authRepository.signInWithGoogle();
       _setLoading(false);
       _setError(null);
       return true;
@@ -29,6 +35,9 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithApple() async {
     _setLoading(true);
     try {
+      if (!Platform.isIOS) {
+        throw Exception('Sign in with Apple no soportado en esta plataforma');
+      }
       await authRepository.signInWithApple();
       _setLoading(false);
       _setError(null);
