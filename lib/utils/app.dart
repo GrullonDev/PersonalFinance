@@ -29,7 +29,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<TipProvider>(create: (_) => TipProvider()),
       ],
       child: MaterialApp(
-        title: 'Finanzas Personales',
+        onGenerateTitle: (BuildContext context) =>
+            AppLocalizations.of(context)!.appTitle,
         debugShowCheckedModeBanner: false,
         theme: _buildLightTheme(),
         darkTheme: _buildDarkTheme(),
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
           Locale('es', 'MX'),
           Locale('en', 'US'),
         ],
-        locale: const Locale('es', 'GT'),
+        locale: WidgetsBinding.instance.platformDispatcher.locale,
       ),
     );
 

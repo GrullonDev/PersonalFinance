@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:intl/intl.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({
@@ -335,13 +336,13 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context, bool isIOS) => const Padding(
-      padding: EdgeInsets.all(16),
-      child: Text(
-        'Finanzas Personales v1.0',
-        style: TextStyle(fontSize: 12, color: Colors.grey),
-      ),
-    );
+  Widget _buildFooter(BuildContext context, bool isIOS) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          '${AppLocalizations.of(context)!.appTitle} v1.0',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+      );
 
   void _navigateTo(BuildContext context, String routeName) {
     Navigator.pop(context);

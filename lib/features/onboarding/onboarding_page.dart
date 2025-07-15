@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -12,10 +13,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _controller = PageController();
   int _index = 0;
 
-  final List<_OnboardStep> _steps = const <_OnboardStep>[
-    _OnboardStep(title: 'Registra tus gastos', description: 'Añade transacciones de forma rápida y sencilla.'),
-    _OnboardStep(title: 'Visualiza tu progreso', description: 'Consulta tu balance diario, semanal o mensual.'),
-    _OnboardStep(title: 'Aprende consejos', description: 'Recibe tips financieros personalizados cada día.'),
+  final List<_OnboardStep> _steps = <_OnboardStep>[
+    const _OnboardStep(titleKey: 'step1Title', descriptionKey: 'step1Desc'),
+    const _OnboardStep(titleKey: 'step2Title', descriptionKey: 'step2Desc'),
+    const _OnboardStep(titleKey: 'step3Title', descriptionKey: 'step3Desc'),
   ];
 
   @override
@@ -37,9 +38,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         children: <Widget>[
                           Icon(Icons.savings, size: 80, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(height: 20),
-                          Text(step.title, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+                          Text(AppLocalizations.of(context)!.translate(step.titleKey),
+                              style: Theme.of(context).textTheme.headlineSmall,
+                              textAlign: TextAlign.center),
                           const SizedBox(height: 12),
-                          Text(step.description, textAlign: TextAlign.center),
+                          Text(AppLocalizations.of(context)!.translate(step.descriptionKey), textAlign: TextAlign.center),
                         ],
                       ),
                     );
@@ -55,7 +58,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         onPressed: () {
                           _controller.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                         },
-                        child: const Text('Atrás'),
+                        child: Text(AppLocalizations.of(context)!.back),
                       ),
                     const Spacer(),
                     ElevatedButton(
@@ -66,7 +69,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                         }
                       },
-                      child: Text(_index == _steps.length - 1 ? 'Comenzar' : 'Siguiente'),
+                      child: Text(_index == _steps.length - 1
+                          ? AppLocalizations.of(context)!.getStarted
+                          : AppLocalizations.of(context)!.next),
                     )
                   ],
                 ),
@@ -78,7 +83,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 }
 
 class _OnboardStep {
-  final String title;
-  final String description;
-  const _OnboardStep({required this.title, required this.description});
+  final String titleKey;
+  final String descriptionKey;
+  const _OnboardStep({required this.titleKey, required this.descriptionKey});
 }

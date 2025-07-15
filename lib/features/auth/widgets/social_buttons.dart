@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:provider/provider.dart';
 
 class SocialLoginButtons extends StatelessWidget {
@@ -27,7 +28,7 @@ class SocialLoginButtons extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.g_mobiledata),
-                label: const Text('Continuar con Google'),
+                label: Text(AppLocalizations.of(context)!.continueWithGoogle),
                 onPressed:
                     provider.isLoading
                         ? null
@@ -49,7 +50,7 @@ class SocialLoginButtons extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.apple),
-                  label: const Text('Continuar con Apple'),
+                  label: Text(AppLocalizations.of(context)!.continueWithApple),
                   onPressed:
                       provider.isLoading
                           ? null

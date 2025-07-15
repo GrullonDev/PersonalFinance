@@ -49,7 +49,7 @@ class BalanceCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'BALANCE TOTAL',
+                  AppLocalizations.of(context)!.totalBalance,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -85,7 +85,9 @@ class BalanceCard extends StatelessWidget {
                 border: Border.all(color: balanceColor.withAlpha(50)),
               ),
               child: Text(
-                isPositive ? 'Saldo Positivo' : 'Saldo Negativo',
+                isPositive
+                    ? AppLocalizations.of(context)!.positiveBalance
+                    : AppLocalizations.of(context)!.negativeBalance,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
