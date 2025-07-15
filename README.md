@@ -16,6 +16,8 @@ Proyecto creado y mantenido por **[Jorge Marroquín](https://github.com/GrullonD
 - Registro rápido de ingresos y gastos
 - Visualización de reportes y gráficos interactivos
 - Categorías personalizables para tus transacciones
+- Consejos financieros diarios integrados
+- Onboarding educativo para nuevos usuarios
 - Interfaz intuitiva, profesional y responsiva
 - Soporte multiplataforma: **Android** e **iOS**
 - Persistencia local con Hive

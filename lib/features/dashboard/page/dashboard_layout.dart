@@ -8,6 +8,7 @@ import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:personal_finance/features/tips/tip_card.dart';
 
 class DashboardLayout extends StatelessWidget {
   const DashboardLayout({super.key});
@@ -60,6 +61,8 @@ class DashboardLayout extends StatelessWidget {
                     child: SingleChildScrollView(
                       child: Column(
                         children: <Widget>[
+                          const TipCard(),
+                          const SizedBox(height: 16),
                           BalanceCard(balance: logic.balance),
                           const SizedBox(height: 16),
                           PeriodSelector(

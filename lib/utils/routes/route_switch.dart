@@ -4,6 +4,7 @@ import 'package:personal_finance/features/auth/pages/auth_page.dart';
 import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
 import 'package:personal_finance/features/dashboard/widgets/add_expense_modal.dart';
 import 'package:personal_finance/features/home.dart';
+import 'package:personal_finance/features/onboarding/onboarding_page.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
 class RouteSwitch {
@@ -15,6 +16,8 @@ class RouteSwitch {
         return MaterialPageRoute(builder: (BuildContext _) => const DashboardPage());
       case RoutePath.addExpense:
         return MaterialPageRoute(builder: (BuildContext _) => const AddExpenseModal());
+      case RoutePath.onboarding:
+        return MaterialPageRoute(builder: (BuildContext _) => const OnboardingPage());
       case RoutePath.login:
         return MaterialPageRoute(builder: (BuildContext _) => const LoginPage());
       default:
