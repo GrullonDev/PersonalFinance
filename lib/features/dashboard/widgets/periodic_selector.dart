@@ -50,7 +50,25 @@ class PeriodSelector extends StatelessWidget {
                 ),
               ),
               selected: isSelected,
-              onSelected: (_) => logic.changePeriod(p),
+              onSelected: (_) async {
+                if (p == PeriodFilter.personalizado) {
+                  final DateTimeRange? picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(),
+                    initialDateRange: logic.customPeriod ??
+                        DateTimeRange(
+                          start: DateTime.now().subtract(const Duration(days: 7)),
+                          end: DateTime.now(),
+                        ),
+                  );
+                  if (picked != null) {
+                    logic.changePeriod(p, range: picked);
+                  }
+                } else {
+                  logic.changePeriod(p);
+                }
+              },
               selectedColor: Colors.blue,
               backgroundColor: Colors.white,
               side: BorderSide(
@@ -77,6 +95,8 @@ class PeriodSelector extends StatelessWidget {
         return 'Mes';
       case PeriodFilter.anio:
         return 'Año';
+      case PeriodFilter.personalizado:
+        return 'Período';
     }
   }
 }

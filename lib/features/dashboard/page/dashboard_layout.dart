@@ -4,10 +4,13 @@ import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/dashboard/widgets/balance_card.dart';
 import 'package:personal_finance/features/dashboard/widgets/periodic_selector.dart';
+import 'package:personal_finance/features/dashboard/widgets/category_selector.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+
+void _noop(String _) {}
 
 class DashboardLayout extends StatelessWidget {
   const DashboardLayout({super.key});
@@ -62,13 +65,12 @@ class DashboardLayout extends StatelessWidget {
                         children: <Widget>[
                           BalanceCard(balance: logic.balance),
                           const SizedBox(height: 16),
-                          PeriodSelector(
-                            selected: logic.selectedPeriod.name,
-                            onSelect: (String value) {
-                              final PeriodFilter period = PeriodFilter.values.firstWhere((PeriodFilter e) => e.name == value);
-                              logic.changePeriod(period);
-                            },
+                          const PeriodSelector(
+                            selected: '',
+                            onSelect: _noop,
                           ),
+                          const SizedBox(height: 8),
+                          const CategorySelector(),
                           const SizedBox(height: 16),
                           _buildSummaryCards(logic),
                           const SizedBox(height: 16),
