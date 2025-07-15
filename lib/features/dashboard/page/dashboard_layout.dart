@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/dashboard/widgets/balance_card.dart';
 import 'package:personal_finance/features/dashboard/widgets/periodic_selector.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
-import 'package:provider/provider.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:personal_finance/features/tips/tip_card.dart';
 
 class DashboardLayout extends StatelessWidget {

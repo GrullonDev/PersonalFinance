@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hive/hive.dart';
+
 import 'pending_action.dart';
 
 class OfflineSyncService {
@@ -9,7 +11,7 @@ class OfflineSyncService {
   OfflineSyncService._internal();
 
   late Box<PendingAction> _actionBox;
-  late StreamSubscription _connectivitySub;
+  late StreamSubscription<ConnectivityResult> _connectivitySub;
 
   Future<void> init() async {
     _actionBox = await Hive.openBox<PendingAction>('pending_actions');
@@ -25,9 +27,7 @@ class OfflineSyncService {
     await _actionBox.add(action);
   }
 
-  Future<List<PendingAction>> getPendingActions() async {
-    return _actionBox.values.where((a) => a.status == 'pending').toList();
-  }
+  Future<List<PendingAction>> getPendingActions() async => _actionBox.values.where((PendingAction a) => a.status == 'pending').toList();
 
   Future<void> _onConnectivityChanged(ConnectivityResult result) async {
     if (result != ConnectivityResult.none) {
@@ -36,8 +36,8 @@ class OfflineSyncService {
   }
 
   Future<void> syncPendingActions() async {
-    final actions = await getPendingActions();
-    for (var action in actions) {
+    final List<PendingAction> actions = await getPendingActions();
+    for (PendingAction action in actions) {
       try {
         // Aquí deberías llamar a tu backend según el tipo de acción
         // await sendToBackend(action);

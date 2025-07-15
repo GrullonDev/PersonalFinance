@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:personal_finance/utils/app_localization.dart';
 
 import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/offline_sync_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
 
@@ -238,10 +238,9 @@ class DashboardLogic extends ChangeNotifier {
           .toList();
 
   // Métodos para formateo de datos
-  String formatCurrency(double amount) =>
-      AppLocalizations(
-        Locale(Intl.getCurrentLocale()),
-      ).currencyFormatter.format(amount);
+  String formatCurrency(double amount) => AppLocalizations(
+    Locale(Intl.getCurrentLocale()),
+  ).currencyFormatter.format(amount);
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';
@@ -252,9 +251,8 @@ class DashboardLogic extends ChangeNotifier {
     return percentFormatter.format(value / total);
   }
 
-  String formatDate(DateTime date) => AppLocalizations(
-        Locale(Intl.getCurrentLocale()),
-      ).formatDate(date);
+  String formatDate(DateTime date) =>
+      AppLocalizations(Locale(Intl.getCurrentLocale())).formatDate(date);
 
   // Métodos para validaciones
   bool get shouldShowExpensesChart =>
@@ -268,7 +266,7 @@ class DashboardLogic extends ChangeNotifier {
   Future<void> agregarGasto(Map<String, dynamic> gasto) async {
     // ... lógica normal ...
     // Si no hay conexión, registrar acción pendiente
-    final action = PendingAction(
+    final PendingAction action = PendingAction(
       type: 'create',
       data: gasto,
       timestamp: DateTime.now(),

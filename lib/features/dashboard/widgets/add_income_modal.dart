@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'package:provider/provider.dart';
+
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
 import 'package:personal_finance/utils/app_localization.dart';
-import 'package:provider/provider.dart';
 
 /// Modal para agregar un nuevo ingreso.
 /// Permite ingresar título, monto, categoría y fecha del ingreso.
