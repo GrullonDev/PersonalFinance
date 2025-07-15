@@ -11,8 +11,12 @@ class DashboardLogic extends ChangeNotifier {
   final Box<Income> _incomeBox = Hive.box<Income>('incomes');
 
   PeriodFilter _selectedPeriod = PeriodFilter.mes;
+  DateTimeRange? _customPeriod;
+  String? _categoryFilter;
 
   PeriodFilter get selectedPeriod => _selectedPeriod;
+  DateTimeRange? get customPeriod => _customPeriod;
+  String? get selectedCategory => _categoryFilter;
 
   // Getters para datos filtrados
   List<Expense> get filteredExpenses => filterExpensesBySelectedPeriod();
@@ -24,6 +28,10 @@ class DashboardLogic extends ChangeNotifier {
   double get balance => calculateBalance(totalIncomes, totalExpenses);
   Map<String, double> get expensesByCategory =>
       calculateExpensesByCategory(filteredExpenses);
+  List<String> get availableCategories => <String>{
+        'Todas',
+        ..._expenseBox.values.map((Expense e) => e.category),
+      }.toList();
 
   // Getters para transacciones ordenadas
   List<Income> get sortedIncomes {
@@ -43,8 +51,16 @@ class DashboardLogic extends ChangeNotifier {
   bool get hasIncomes => filteredIncomes.isNotEmpty;
   bool get hasData => hasExpenses || hasIncomes;
 
-  void changePeriod(PeriodFilter period) {
+  void changePeriod(PeriodFilter period, {DateTimeRange? range}) {
     _selectedPeriod = period;
+    if (range != null) {
+      _customPeriod = range;
+    }
+    notifyListeners();
+  }
+
+  void changeCategory(String? category) {
+    _categoryFilter = category == 'Todas' ? null : category;
     notifyListeners();
   }
 
@@ -146,6 +162,10 @@ class DashboardLogic extends ChangeNotifier {
     final DateTime now = DateTime.now();
     return _expenseBox.values
         .where((Expense e) => _matchesPeriod(e.date, now))
+        .where(
+          (Expense e) =>
+              _categoryFilter == null || e.category == _categoryFilter,
+        )
         .toList();
   }
 
@@ -173,6 +193,10 @@ class DashboardLogic extends ChangeNotifier {
         return date.year == now.year && date.month == now.month;
       case PeriodFilter.anio:
         return date.year == now.year;
+      case PeriodFilter.personalizado:
+        if (_customPeriod == null) return true;
+        return date.isAfter(_customPeriod!.start.subtract(const Duration(days: 1))) &&
+            date.isBefore(_customPeriod!.end.add(const Duration(days: 1)));
     }
   }
 

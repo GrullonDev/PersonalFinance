@@ -19,6 +19,8 @@ class DashboardLogicV2 extends ChangeNotifier {
 
   // Estado privado
   PeriodFilter _selectedPeriod = PeriodFilter.mes;
+  DateTimeRange? _customPeriod;
+  String? _categoryFilter;
   List<ExpenseEntity> _expenses = <ExpenseEntity>[];
   List<IncomeEntity> _incomes = <IncomeEntity>[];
   bool _isLoading = false;
@@ -26,6 +28,8 @@ class DashboardLogicV2 extends ChangeNotifier {
 
   // Getters públicos
   PeriodFilter get selectedPeriod => _selectedPeriod;
+  DateTimeRange? get customPeriod => _customPeriod;
+  String? get selectedCategory => _categoryFilter;
   List<ExpenseEntity> get expenses => _expenses;
   List<IncomeEntity> get incomes => _incomes;
   bool get isLoading => _isLoading;
@@ -66,6 +70,11 @@ class DashboardLogicV2 extends ChangeNotifier {
     }
     return categoryMap;
   }
+
+  List<String> get availableCategories => <String>{
+        'Todas',
+        ..._expenses.map((ExpenseEntity e) => e.category),
+      }.toList();
 
   List<ChartData> get chartData {
     final Map<String, double> categoryMap = expensesByCategory;
@@ -138,7 +147,10 @@ class DashboardLogicV2 extends ChangeNotifier {
         params,
       );
 
-      _expenses = result.expenses;
+      _expenses = result.expenses
+          .where((ExpenseEntity e) =>
+              _categoryFilter == null || e.category == _categoryFilter)
+          .toList();
       _incomes = result.incomes;
 
       notifyListeners();
@@ -209,11 +221,19 @@ class DashboardLogicV2 extends ChangeNotifier {
     }
   }
 
-  void changePeriod(PeriodFilter period) {
-    if (_selectedPeriod != period) {
+  void changePeriod(PeriodFilter period, {DateTimeRange? range}) {
+    if (_selectedPeriod != period || range != null) {
       _selectedPeriod = period;
+      if (range != null) {
+        _customPeriod = range;
+      }
       loadDashboardData();
     }
+  }
+
+  void changeCategory(String? category) {
+    _categoryFilter = category == 'Todas' ? null : category;
+    loadDashboardData();
   }
 
   // Métodos de utilidad
@@ -298,6 +318,9 @@ class DashboardLogicV2 extends ChangeNotifier {
           start: startOfYear,
           end: endOfYear.add(const Duration(days: 1)),
         );
+      case PeriodFilter.personalizado:
+        return _customPeriod ??
+            DateTimeRange(start: startOfDay, end: startOfDay.add(const Duration(days: 1)));
     }
   }
 

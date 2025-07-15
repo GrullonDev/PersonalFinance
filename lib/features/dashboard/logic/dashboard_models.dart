@@ -6,6 +6,7 @@ enum PeriodFilter {
   semana,
   mes,
   anio,
+  personalizado,
 }
 
 /// Datos para el gráfico
