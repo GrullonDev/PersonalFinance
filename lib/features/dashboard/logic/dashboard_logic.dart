@@ -5,6 +5,8 @@ import 'package:hive/hive.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/utils/offline_sync_service.dart';
+import 'package:personal_finance/utils/pending_action.dart';
 
 class DashboardLogic extends ChangeNotifier {
   final Box<Expense> _expenseBox = Hive.box<Expense>('expenses');
@@ -250,4 +252,16 @@ class DashboardLogic extends ChangeNotifier {
       hasExpenses && expensesByCategory.isNotEmpty;
   bool get shouldShowIncomesList => hasIncomes;
   bool get shouldShowTransactions => hasExpenses || hasIncomes;
+
+  // Ejemplo dentro de una función que agrega un gasto
+  Future<void> agregarGasto(Map<String, dynamic> gasto) async {
+    // ... lógica normal ...
+    // Si no hay conexión, registrar acción pendiente
+    final action = PendingAction(
+      type: 'create',
+      data: gasto,
+      timestamp: DateTime.now(),
+    );
+    await OfflineSyncService().addPendingAction(action);
+  }
 }

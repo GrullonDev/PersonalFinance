@@ -1,41 +1,41 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'expense.dart';
+part of 'pending_action.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class ExpenseAdapter extends TypeAdapter<Expense> {
+class PendingActionAdapter extends TypeAdapter<PendingAction> {
   @override
   final int typeId = 0;
 
   @override
-  Expense read(BinaryReader reader) {
+  PendingAction read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Expense(
-      title: fields[0] as String,
-      amount: fields[1] as double,
-      date: fields[2] as DateTime,
-      category: fields[3] as String,
+    return PendingAction(
+      type: fields[0] as String,
+      data: (fields[1] as Map).cast<String, dynamic>(),
+      timestamp: fields[2] as DateTime,
+      status: fields[3] as String,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Expense obj) {
+  void write(BinaryWriter writer, PendingAction obj) {
     writer
       ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.title)
+      ..write(obj.type)
       ..writeByte(1)
-      ..write(obj.amount)
+      ..write(obj.data)
       ..writeByte(2)
-      ..write(obj.date)
+      ..write(obj.timestamp)
       ..writeByte(3)
-      ..write(obj.category);
+      ..write(obj.status);
   }
 
   @override
@@ -44,7 +44,7 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ExpenseAdapter &&
+      other is PendingActionAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
