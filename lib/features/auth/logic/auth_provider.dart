@@ -16,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     try {
+      await authRepository.signInWithGoogle();
       _setLoading(false);
       _setError(null);
       return true;
