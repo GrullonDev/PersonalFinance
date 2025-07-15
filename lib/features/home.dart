@@ -50,7 +50,7 @@ class MyHomePage extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton(
         onPressed:
-            () => Navigator.pushReplacementNamed(context, RoutePath.login),
+            () => Navigator.pushReplacementNamed(context, RoutePath.onboarding),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
           backgroundColor: Colors.deepPurple,
