@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
@@ -15,7 +16,7 @@ class MyHomePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              _buildWelcomeCard(theme),
+              _buildWelcomeCard(context, theme),
               const SizedBox(height: 40),
               _buildStartButton(context),
             ],
@@ -25,7 +26,7 @@ class MyHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildWelcomeCard(ThemeData theme) => Card(
+  Widget _buildWelcomeCard(BuildContext context, ThemeData theme) => Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -35,7 +36,7 @@ class MyHomePage extends StatelessWidget {
             Icon(Icons.savings, size: 64, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text(
-              'Bienvenido a tu app de finanzas personales!',
+              AppLocalizations.of(context)!.welcome,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -59,9 +60,9 @@ class MyHomePage extends StatelessWidget {
           ),
           elevation: 6,
         ),
-        child: const Text(
-          'Iniciar',
-          style: TextStyle(
+        child: Text(
+          AppLocalizations.of(context)!.start,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,

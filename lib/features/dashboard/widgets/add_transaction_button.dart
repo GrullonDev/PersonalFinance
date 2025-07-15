@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:personal_finance/features/dashboard/widgets/add_transaction_modal.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 
 /// Botón flotante para agregar nuevas transacciones (gastos o ingresos).
 /// 
@@ -21,6 +22,6 @@ class AddTransactionButton extends StatelessWidget {
           builder: (BuildContext context) => const AddTransactionModal(),
         ),
     icon: const Icon(Icons.add),
-    label: const Text('Agregar'),
+    label: Text(AppLocalizations.of(context)!.add),
   );
 }

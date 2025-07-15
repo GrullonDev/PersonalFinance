@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:provider/provider.dart';
 
 /// Modal para agregar un nuevo ingreso.
@@ -176,7 +177,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                     }
                   },
                   icon: const Icon(Icons.check_circle),
-                  label: const Text('Agregar Ingreso'),
+                  label: Text(AppLocalizations.of(context)!.addIncome),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: Colors.green,

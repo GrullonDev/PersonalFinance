@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 
 import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
@@ -236,14 +238,23 @@ class DashboardLogic extends ChangeNotifier {
           .toList();
 
   // Métodos para formateo de datos
-  String formatCurrency(double amount) => '\$${amount.toStringAsFixed(2)}';
+  String formatCurrency(double amount) =>
+      AppLocalizations(
+        Locale(Intl.getCurrentLocale()),
+      ).currencyFormatter.format(amount);
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';
-    return '${(value / total * 100).toStringAsFixed(0)}%';
+    final NumberFormat percentFormatter = NumberFormat.decimalPercentPattern(
+      locale: Intl.getCurrentLocale(),
+      decimalDigits: 0,
+    );
+    return percentFormatter.format(value / total);
   }
 
-  String formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+  String formatDate(DateTime date) => AppLocalizations(
+        Locale(Intl.getCurrentLocale()),
+      ).formatDate(date);
 
   // Métodos para validaciones
   bool get shouldShowExpensesChart =>

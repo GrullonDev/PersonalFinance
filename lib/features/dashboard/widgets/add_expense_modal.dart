@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:provider/provider.dart';
 
 class AddExpenseModal extends StatefulWidget {
@@ -171,7 +172,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     }
                   },
                   icon: const Icon(Icons.check_circle),
-                  label: const Text('Agregar Gasto'),
+                  label: Text(AppLocalizations.of(context)!.addExpense),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: Colors.red,
@@ -271,7 +272,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     Navigator.pop(context);
                   }
                 },
-                child: const Text('Agregar Gasto'),
+                child: Text(AppLocalizations.of(context)!.addExpense),
               ),
             ],
           ),
