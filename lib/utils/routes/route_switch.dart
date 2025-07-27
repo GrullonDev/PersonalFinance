@@ -9,7 +9,6 @@ class RouteSwitch {
   static Route<dynamic> generateRoute(final RouteSettings settings) {
     switch (settings.name) {
       case RoutePath.home:
-      case RoutePath.dashboard:
         return MaterialPageRoute(
           builder: (BuildContext _) => const HomePage(),
         );
