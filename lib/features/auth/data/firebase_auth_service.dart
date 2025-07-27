@@ -15,7 +15,7 @@ class FirebaseAuthService implements AuthDataSource {
   @override
   Future<User?> signInWithGoogle() async {
     try {
-      await GoogleSignIn.instance.initialize(serverClientId: 'TU_SERVER_CLIENT_ID');
+      await GoogleSignIn.instance.initialize(serverClientId: '689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com');
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(

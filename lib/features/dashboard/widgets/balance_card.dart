@@ -9,8 +9,10 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     final bool isPositive = balance >= 0;
-    final Color balanceColor = isPositive ? Colors.green : Colors.red;
+    final Color balanceColor =
+        isPositive ? theme.colorScheme.secondary : theme.colorScheme.error;
 
     return Card(
       elevation: 6,
@@ -43,6 +45,7 @@ class BalanceCard extends StatelessWidget {
                   ),
                   child: Icon(
                     isPositive ? Icons.trending_up : Icons.trending_down,
+                    
                     color: balanceColor,
                     size: 24,
                   ),
@@ -50,10 +53,9 @@ class BalanceCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   AppLocalizations.of(context)!.totalBalance,
-                  style: TextStyle(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.grey[700],
+                    color: theme.colorScheme.onSurface,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -68,9 +70,8 @@ class BalanceCard extends StatelessWidget {
               child: Text(
                 '${isPositive ? '+' : ''}${AppLocalizations.of(context)!.currencyFormatter.format(balance)}',
                 key: ValueKey<double>(balance),
-                style: TextStyle(
+                style: theme.textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 32,
                   color: balanceColor,
                   letterSpacing: 0.5,
                 ),
@@ -88,8 +89,7 @@ class BalanceCard extends StatelessWidget {
                 isPositive
                     ? AppLocalizations.of(context)!.positiveBalance
                     : AppLocalizations.of(context)!.negativeBalance,
-                style: TextStyle(
-                  fontSize: 12,
+                style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: balanceColor,
                 ),

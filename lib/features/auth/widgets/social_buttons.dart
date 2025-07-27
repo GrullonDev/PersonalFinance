@@ -12,7 +12,12 @@ class SocialLoginButtons extends StatelessWidget {
   Widget build(BuildContext context) => Consumer<AuthProvider>(
       builder: (BuildContext context, AuthProvider provider, _) {
         if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+              strokeWidth: 4,
+            ),
+          );
         }
         if (provider.errorMessage != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -27,7 +32,7 @@ class SocialLoginButtons extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.g_mobiledata),
+                icon: const Icon(Icons.login, size: 24),
                 label: Text(AppLocalizations.of(context)!.continueWithGoogle),
                 onPressed:
                     provider.isLoading
@@ -49,7 +54,7 @@ class SocialLoginButtons extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.apple),
+                  icon: const Icon(Icons.apple, size: 24),
                   label: Text(AppLocalizations.of(context)!.continueWithApple),
                   onPressed:
                       provider.isLoading

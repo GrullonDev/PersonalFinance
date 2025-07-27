@@ -46,7 +46,7 @@ class CustomDrawer extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 physics: const BouncingScrollPhysics(),
                 children: <Widget>[
-                  _buildSectionTitle('Resumen Financiero'),
+                  _buildSectionTitle(context, 'Resumen Financiero'),
                   _buildTile(
                     context,
                     title: 'Dashboard',
@@ -64,7 +64,7 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateTo(context, '/balance'),
                   ),
 
-                  _buildSectionTitle('Transacciones'),
+                  _buildSectionTitle(context, 'Transacciones'),
                   _buildTile(
                     context,
                     title: 'Ingresos',
@@ -96,7 +96,7 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateTo(context, '/categories'),
                   ),
 
-                  _buildSectionTitle('Planificación'),
+                  _buildSectionTitle(context, 'Planificación'),
                   _buildTile(
                     context,
                     title: 'Presupuestos',
@@ -119,7 +119,7 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateTo(context, '/investments'),
                   ),
 
-                  _buildSectionTitle('Configuración'),
+                  _buildSectionTitle(context, 'Configuración'),
                   _buildTile(
                     context,
                     title: 'Perfil',
@@ -162,14 +162,13 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) => Padding(
+  Widget _buildSectionTitle(BuildContext context, String title) => Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 14,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colors.grey,
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
         ),
       ),
     );
@@ -213,9 +212,8 @@ class CustomDrawer extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       userName,
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.white,
-                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -224,9 +222,8 @@ class CustomDrawer extends StatelessWidget {
                     ), // Espacio adicional entre nombre y email
                     Text(
                       userEmail,
-                      style: TextStyle(
-                        color: Colors.white.withValues(),
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withOpacity(0.85),
                       ),
                     ),
                   ],
@@ -271,10 +268,10 @@ class CustomDrawer extends StatelessWidget {
     required String title,
     required IconData icon,
     bool isSelected = false,
-    int badgeCount = 0,
-    String? trailingText,
     bool isIOS = false,
     Color? color,
+    String? trailingText,
+    int badgeCount = 0,
     VoidCallback? onTap,
   }) {
     final ThemeData theme = Theme.of(context);
@@ -286,7 +283,7 @@ class CustomDrawer extends StatelessWidget {
             isSelected
                 ? (isIOS
                     ? CupertinoColors.activeBlue.withOpacity(0.1)
-                    : theme.primaryColor.withValues())
+                    : theme.colorScheme.primary.withOpacity(0.08))
                 : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
@@ -295,15 +292,15 @@ class CustomDrawer extends StatelessWidget {
           icon,
           color:
               color ??
-              (isIOS ? CupertinoColors.activeBlue : theme.primaryColor),
+              (isIOS ? CupertinoColors.activeBlue : theme.colorScheme.primary),
         ),
         title: Text(
           title,
-          style: TextStyle(
+          style: theme.textTheme.bodyLarge?.copyWith(
             color:
                 color ??
                 (isSelected
-                    ? (isIOS ? CupertinoColors.activeBlue : theme.primaryColor)
+                    ? (isIOS ? CupertinoColors.activeBlue : theme.colorScheme.primary)
                     : theme.textTheme.bodyLarge?.color),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -313,18 +310,18 @@ class CustomDrawer extends StatelessWidget {
                 ? Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: theme.colorScheme.error,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     badgeCount.toString(),
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
                   ),
                 )
                 : trailingText != null
                 ? Text(
                   trailingText,
-                  style: TextStyle(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: color ?? theme.textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.bold,
                   ),

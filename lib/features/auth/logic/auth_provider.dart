@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:personal_finance/features/auth/data/local_auth_service.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -16,6 +17,8 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     try {
+      await authRepository.signInWithGoogle();
+      await LocalAuthService().login();
       _setLoading(false);
       _setError(null);
       return true;
@@ -30,6 +33,7 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       await authRepository.signInWithApple();
+      await LocalAuthService().login();
       _setLoading(false);
       _setError(null);
       return true;

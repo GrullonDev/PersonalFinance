@@ -15,7 +15,11 @@ class LoginLayout extends StatelessWidget {
         children: <Widget>[
           Text(
             AppLocalizations.of(context)!.signInToContinue,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 40),
           const SocialLoginButtons(),

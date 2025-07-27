@@ -23,21 +23,21 @@ class AppErrorWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.red.withAlpha(20),
+                color: Theme.of(context).colorScheme.error.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon ?? Icons.error_outline,
                 size: 48,
-                color: Colors.red,
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               '¡Ups! Algo salió mal',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                color: Theme.of(context).colorScheme.onError,
               ),
             ),
             const SizedBox(height: 8),
@@ -45,7 +45,7 @@ class AppErrorWidget extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onError.withOpacity(0.8),
               ),
             ),
             if (onRetry != null) ...<Widget>[
