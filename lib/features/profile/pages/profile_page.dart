@@ -15,10 +15,37 @@ class ProfilePage extends StatelessWidget {
   Future<void> _pickImage(BuildContext context) async {
     final ProfileProvider provider = context.read<ProfileProvider>();
     final ImagePicker picker = ImagePicker();
-    final XFile? file = await picker.pickImage(source: ImageSource.gallery);
-    if (file != null) {
-      await provider.uploadPhoto(File(file.path));
-    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Usar cámara'),
+            onTap: () async {
+              Navigator.pop(context);
+              final XFile? file = await picker.pickImage(source: ImageSource.camera);
+              if (file != null) {
+                await provider.uploadPhoto(File(file.path));
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Seleccionar de galería'),
+            onTap: () async {
+              Navigator.pop(context);
+              final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+              if (file != null) {
+                await provider.uploadPhoto(File(file.path));
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -30,56 +57,93 @@ class ProfilePage extends StatelessWidget {
           provider.loadProfile();
           return provider;
         },
-        builder: (BuildContext context, _) =>
-            Consumer2<AuthProvider, ProfileProvider>(
+        builder: (BuildContext context, _) => Consumer2<AuthProvider, ProfileProvider>(
           builder: (
             BuildContext context,
             AuthProvider auth,
             ProfileProvider profile,
             _,
-          ) => Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: <Widget>[
-                GestureDetector(
-                  onTap: () => _pickImage(context),
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: profile.profile?.photoUrl != null
-                        ? NetworkImage(profile.profile!.photoUrl!)
-                        : null,
-                    child: profile.profile?.photoUrl == null
-                        ? const Icon(Icons.person, size: 40)
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  profile.profile != null
-                      ? '${profile.profile!.firstName} ${profile.profile!.lastName}'
-                      : 'Usuario Invitado',
-                ),
-                if (profile.profile != null) ...<Widget>[
-                  const SizedBox(height: 4),
-                  Text(profile.profile!.email),
-                ],
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: auth.isLoading
-                      ? null
-                      : () async {
-                          await auth.logout();
-                          if (context.mounted) {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              RoutePath.login,
-                            );
-                          }
-                        },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Cerrar sesión'),
+          ) => Scaffold(
+            appBar: AppBar(
+              actions: [
+                Switch(
+                  value: Theme.of(context).brightness == Brightness.dark,
+                  onChanged: (bool value) {
+                    final ThemeMode mode = value ? ThemeMode.dark : ThemeMode.light;
+                    Provider.of<AuthProvider>(context, listen: false).setThemeMode(mode);
+                  },
                 ),
               ],
+              automaticallyImplyLeading: false, // Eliminate the back arrow
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => _pickImage(context),
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundImage: profile.profile?.photoUrl != null
+                            ? NetworkImage(profile.profile!.photoUrl!)
+                            : null,
+                        child: profile.profile?.photoUrl == null
+                            ? const Icon(Icons.person, size: 40)
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      profile.profile != null
+                          ? '${profile.profile!.firstName} ${profile.profile!.lastName}'
+                          : 'Usuario Invitado',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                    ),
+                  ),
+                  if (profile.profile != null) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Center(
+                      child: Text(
+                        profile.profile!.email,
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[300]
+                              : Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  const Spacer(),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: auth.isLoading
+                          ? null
+                          : () async {
+                              await auth.logout();
+                              if (context.mounted) {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  RoutePath.login,
+                                );
+                              }
+                            },
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Cerrar sesión'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

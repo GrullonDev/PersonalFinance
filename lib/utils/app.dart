@@ -30,33 +30,37 @@ class MyApp extends StatelessWidget {
         create: (_) => NavigationProvider(),
       ),
     ],
-    child: MaterialApp(
-      onGenerateTitle:
-          (BuildContext context) => AppLocalizations.of(context)!.appTitle,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
+    child: Consumer<AuthProvider>(
+      builder: (BuildContext context, AuthProvider authProvider, _) => MaterialApp(
+        themeMode: authProvider.themeMode,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+          ),
         ),
+        darkTheme: ThemeData.dark(),
+        onGenerateTitle:
+            (BuildContext context) => AppLocalizations.of(context)!.appTitle,
+        debugShowCheckedModeBanner: false,
+        initialRoute: RoutePath.login,
+        onGenerateRoute: RouteSwitch.generateRoute,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const <Locale>[
+          Locale('es', 'GT'),
+          Locale('es', 'MX'),
+          Locale('en', 'US'),
+        ],
+        locale: WidgetsBinding.instance.platformDispatcher.locale,
       ),
-      initialRoute: RoutePath.login,
-      onGenerateRoute: RouteSwitch.generateRoute,
-      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const <Locale>[
-        Locale('es', 'GT'),
-        Locale('es', 'MX'),
-        Locale('en', 'US'),
-      ],
-      locale: WidgetsBinding.instance.platformDispatcher.locale,
     ),
   );
 }
