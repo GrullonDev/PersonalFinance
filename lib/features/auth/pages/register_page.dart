@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
+import 'package:personal_finance/features/profile/domain/profile_repository.dart';
+import 'package:personal_finance/features/profile/model/user_profile.dart';
+import 'package:personal_finance/utils/injection_container.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:personal_finance/utils/validators.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -25,6 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isConfirmPasswordVisible = false;
 
   final FirebaseAuthService authService = FirebaseAuthService();
+  final ProfileRepository profileRepository = getIt<ProfileRepository>();
 
   Future<void> _selectBirthDate() async {
     final DateTime? pickedDate = await showDatePicker(
@@ -116,6 +121,19 @@ class _RegisterPageState extends State<RegisterPage> {
         emailController.text,
         passwordController.text,
       );
+
+      final String uid = FirebaseAuth.instance.currentUser!.uid;
+      await profileRepository.saveProfile(
+        UserProfile(
+          id: uid,
+          firstName: firstNameController.text,
+          lastName: lastNameController.text,
+          birthDate: DateTime.parse(birthDateController.text),
+          username: usernameController.text,
+          email: emailController.text,
+        ),
+      );
+
       Navigator.pushNamed(context, '/login');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
