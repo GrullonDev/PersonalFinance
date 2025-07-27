@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/features/alerts/alert_item.dart';
 import 'package:personal_finance/utils/app.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/pending_action.dart';
@@ -25,6 +26,8 @@ Future<void> main() async {
   await Hive.openBox<Expense>('expenses');
   Hive.registerAdapter(IncomeAdapter());
   await Hive.openBox<Income>('incomes');
+  Hive.registerAdapter(AlertItemAdapter());
+  await Hive.openBox<AlertItem>('alerts');
   if (!Hive.isAdapterRegistered(0)) {
     Hive.registerAdapter(PendingActionAdapter());
   }
