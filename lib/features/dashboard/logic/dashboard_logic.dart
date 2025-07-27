@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/utils/app_localization.dart';
+import 'package:personal_finance/utils/offline_sync_service.dart';
+import 'package:personal_finance/utils/pending_action.dart';
 
 class DashboardLogic extends ChangeNotifier {
   final Box<Expense> _expenseBox = Hive.box<Expense>('expenses');
@@ -73,12 +77,12 @@ class DashboardLogic extends ChangeNotifier {
   double calculateBalance(double totalIncome, double totalExpenses) =>
       totalIncome - totalExpenses;
 
-  void addExpense(
+  Future<void> addExpense(
     String title,
     String amount,
     DateTime date,
     String? category,
-  ) {
+  ) async {
     if (title.isEmpty || amount.isEmpty) return;
 
     final double parsedAmount = double.tryParse(amount) ?? 0.0;
@@ -91,11 +95,11 @@ class DashboardLogic extends ChangeNotifier {
       category: category ?? getCategory(title),
     );
 
-    _expenseBox.add(expense);
+    await _expenseBox.add(expense);
     notifyListeners();
   }
 
-  void addIncome(String title, String amount, DateTime date) {
+  Future<void> addIncome(String title, String amount, DateTime date) async {
     if (title.isEmpty || amount.isEmpty) return;
 
     final double parsedAmount = double.tryParse(amount) ?? 0.0;
@@ -107,7 +111,7 @@ class DashboardLogic extends ChangeNotifier {
       date: date,
     );
 
-    _incomeBox.add(income);
+    await _incomeBox.add(income);
     notifyListeners();
   }
 
@@ -258,14 +262,21 @@ class DashboardLogic extends ChangeNotifier {
           .toList();
 
   // Métodos para formateo de datos
-  String formatCurrency(double amount) => '\$${amount.toStringAsFixed(2)}';
+  String formatCurrency(double amount) => AppLocalizations(
+    Locale(Intl.getCurrentLocale()),
+  ).currencyFormatter.format(amount);
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';
-    return '${(value / total * 100).toStringAsFixed(0)}%';
+    final NumberFormat percentFormatter = NumberFormat.decimalPercentPattern(
+      locale: Intl.getCurrentLocale(),
+      decimalDigits: 0,
+    );
+    return percentFormatter.format(value / total);
   }
 
-  String formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+  String formatDate(DateTime date) =>
+      AppLocalizations(Locale(Intl.getCurrentLocale())).formatDate(date);
 
   // Métodos para validaciones
   bool get shouldShowExpensesChart =>
@@ -274,4 +285,16 @@ class DashboardLogic extends ChangeNotifier {
       hasExpenses && expensesByCategory.isNotEmpty;
   bool get shouldShowIncomesList => hasIncomes;
   bool get shouldShowTransactions => hasExpenses || hasIncomes;
+
+  // Ejemplo dentro de una función que agrega un gasto
+  Future<void> agregarGasto(Map<String, dynamic> gasto) async {
+    // ... lógica normal ...
+    // Si no hay conexión, registrar acción pendiente
+    final PendingAction action = PendingAction(
+      type: 'create',
+      data: gasto,
+      timestamp: DateTime.now(),
+    );
+    await OfflineSyncService().addPendingAction(action);
+  }
 }

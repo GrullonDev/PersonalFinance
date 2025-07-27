@@ -16,17 +16,11 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-
     return Expense(
-      title:
-          fields[0] as String? ??
-          'Default Title', // Valor predeterminado si es null
-      amount: fields[1] as double? ?? 0.0, // Valor predeterminado si es null
-      date:
-          fields[2] as DateTime? ??
-          DateTime.now(), // Valor predeterminado si es null
-      category:
-          fields[3] as String? ?? 'Otros', // Valor predeterminado si es null
+      title: fields[0] as String,
+      amount: fields[1] as double,
+      date: fields[2] as DateTime,
+      category: fields[3] as String,
     );
   }
 
@@ -35,13 +29,13 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
     writer
       ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.title) // Asegúrate de que `obj.title` no sea null
+      ..write(obj.title)
       ..writeByte(1)
-      ..write(obj.amount) // Asegúrate de que `obj.amount` no sea null
+      ..write(obj.amount)
       ..writeByte(2)
-      ..write(obj.date) // Asegúrate de que `obj.date` no sea null
+      ..write(obj.date)
       ..writeByte(3)
-      ..write(obj.category); // Asegúrate de que `obj.category` no sea null
+      ..write(obj.category);
   }
 
   @override

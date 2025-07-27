@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:personal_finance/features/auth/data/local_auth_service.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -15,13 +16,20 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+    ThemeMode _themeMode = ThemeMode.system;
+
+  ThemeMode get themeMode => _themeMode;
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    notifyListeners();
+  }
+
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     try {
-      if (!Platform.isAndroid) {
-        throw Exception('Google Sign-In no soportado en esta plataforma');
-      }
       await authRepository.signInWithGoogle();
+      await LocalAuthService().login();
       _setLoading(false);
       _setError(null);
       return true;
@@ -39,6 +47,7 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Sign in with Apple no soportado en esta plataforma');
       }
       await authRepository.signInWithApple();
+      await LocalAuthService().login();
       _setLoading(false);
       _setError(null);
       return true;
@@ -46,6 +55,18 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       _setError(e.toString());
       return false;
+    }
+  }
+
+  Future<void> logout() async {
+    _setLoading(true);
+    try {
+      await authRepository.logout();
+      await LocalAuthService().logout();
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
     }
   }
 

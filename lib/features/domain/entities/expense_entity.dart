@@ -22,7 +22,7 @@ class ExpenseEntity extends TransactionEntity {
   List<Object?> get props => <Object?>[...super.props, category, notes];
 
   /// Verifica si el gasto es de una categoría específica
-  bool isCategory(String categoryName) => 
+  bool isCategory(String categoryName) =>
       category.toLowerCase() == categoryName.toLowerCase();
 
   /// Obtiene el color asociado a la categoría
@@ -58,12 +58,12 @@ class ExpenseEntity extends TransactionEntity {
     String? description,
     String? notes,
   }) => ExpenseEntity(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      amount: amount ?? this.amount,
-      date: date ?? this.date,
-      category: category ?? this.category,
-      description: description ?? this.description,
-      notes: notes ?? this.notes,
-    );
-} 
+    id: id ?? this.id,
+    title: title ?? this.title,
+    amount: amount ?? this.amount,
+    date: date ?? this.date,
+    category: category ?? this.category,
+    description: description ?? this.description,
+    notes: notes ?? this.notes,
+  );
+}

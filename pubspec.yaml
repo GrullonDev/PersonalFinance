@@ -29,15 +29,25 @@ dependencies:
   sign_in_with_apple: ^7.0.1
   google_sign_in: ^7.1.0
   firebase_core: ^3.13.0
+  connectivity_plus: ^5.0.2
+  cloud_firestore: ^5.6.11
+  firebase_storage: ^12.0.0
+  image_picker: ^1.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
-  build_runner: ^2.4.15
-  hive_generator: any
+  build_runner: ^2.4.6
+  hive_generator: ^2.0.1
 
 flutter:
 
   uses-material-design: true
+
+
+  assets:
+    - assets/logo.png
+    - assets/images/
+    - assets/icons/

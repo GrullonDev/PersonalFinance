@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Enumeración para filtros de período
-enum PeriodFilter {
-  dia,
-  semana,
-  mes,
-  anio,
-  personalizado,
+enum PeriodFilter { dia, semana, mes, anio,   personalizado,
 }
 
 /// Datos para el gráfico
@@ -35,4 +30,4 @@ class TransactionItem {
     required this.date,
     required this.isIncome,
   });
-} 
+}

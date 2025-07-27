@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:personal_finance/features/alerts/alerts_provider.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/navigation/navigation_provider.dart';
+import 'package:personal_finance/features/tips/tip_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
@@ -16,22 +18,35 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MultiProvider(
-      providers: <SingleChildWidget>[
-        Provider<AuthRepository>(create: (_) => getIt<AuthRepository>()),
-        ChangeNotifierProvider<AuthProvider>(
-          create:
-              (_) => AuthProvider(
-                authRepository: getIt<AuthRepository>(),
-              ),
+    providers: <SingleChildWidget>[
+      Provider<AuthRepository>(create: (_) => getIt<AuthRepository>()),
+      ChangeNotifierProvider<AuthProvider>(
+        create: (_) => AuthProvider(authRepository: getIt<AuthRepository>()),
+      ),
+      ChangeNotifierProvider<DashboardLogic>(create: (_) => DashboardLogic()),
+      ChangeNotifierProvider<TipProvider>(create: (_) => TipProvider()),
+      ChangeNotifierProvider<AlertsProvider>(create: (_) => AlertsProvider()),
+      ChangeNotifierProvider<NavigationProvider>(
+        create: (_) => NavigationProvider(),
+      ),
+    ],
+    child: Consumer<AuthProvider>(
+      builder: (BuildContext context, AuthProvider authProvider, _) => MaterialApp(
+        themeMode: authProvider.themeMode,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+          ),
         ),
-        ChangeNotifierProvider<DashboardLogic>(create: (_) => DashboardLogic()),
-      ],
-      child: MaterialApp(
-        title: 'Finanzas Personales',
+        darkTheme: ThemeData.dark(),
+        onGenerateTitle:
+            (BuildContext context) => AppLocalizations.of(context)!.appTitle,
         debugShowCheckedModeBanner: false,
-        theme: _buildLightTheme(),
-        darkTheme: _buildDarkTheme(),
-        initialRoute: RoutePath.home,
+        initialRoute: RoutePath.login,
         onGenerateRoute: RouteSwitch.generateRoute,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           AppLocalizations.delegate,
@@ -44,28 +59,8 @@ class MyApp extends StatelessWidget {
           Locale('es', 'MX'),
           Locale('en', 'US'),
         ],
-        locale: const Locale('es', 'GT'),
+        locale: WidgetsBinding.instance.platformDispatcher.locale,
       ),
-    );
-
-  ThemeData _buildLightTheme() => ThemeData(
-      brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      textTheme: GoogleFonts.manropeTextTheme(),
-      scaffoldBackgroundColor: const Color(0xFFF6F6F6),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-    );
-
-  ThemeData _buildDarkTheme() => ThemeData(
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.deepPurple,
-        brightness: Brightness.dark,
-      ),
-      textTheme: GoogleFonts.manropeTextTheme(ThemeData.dark().textTheme),
-    );
+    ),
+  );
 }

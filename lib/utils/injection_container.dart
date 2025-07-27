@@ -6,10 +6,14 @@ import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic_v2.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/features/alerts/alert_item.dart';
 import 'package:personal_finance/features/data/repositories/transaction_repository_impl.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
 import 'package:personal_finance/features/domain/usecases/get_dashboard_data_usecase.dart';
+import 'package:personal_finance/features/profile/data/firebase_profile_service.dart';
+import 'package:personal_finance/features/profile/domain/profile_datasource.dart';
+import 'package:personal_finance/features/profile/domain/profile_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final GetIt getIt = GetIt.instance;
@@ -33,6 +37,20 @@ Future<void> initDependencies() async {
     );
   }
 
+  // Profile DataSource
+  if (!getIt.isRegistered<ProfileDataSource>()) {
+    getIt.registerLazySingleton<ProfileDataSource>(
+      () => FirebaseProfileService(),
+    );
+  }
+
+  // Profile Repository
+  if (!getIt.isRegistered<ProfileRepository>()) {
+    getIt.registerLazySingleton<ProfileRepository>(
+      () => ProfileRepositoryImpl(getIt<ProfileDataSource>()),
+    );
+  }
+
   // AuthProvider
   /*   if (!getIt.isRegistered<AuthProvider>()) {
     getIt.registerFactory<AuthProvider>(
@@ -42,11 +60,19 @@ Future<void> initDependencies() async {
 
   // Hive Boxes
   if (!getIt.isRegistered<Box<Expense>>()) {
-    getIt.registerLazySingleton<Box<Expense>>(() => Hive.box<Expense>('expenses'));
+    getIt.registerLazySingleton<Box<Expense>>(
+      () => Hive.box<Expense>('expenses'),
+    );
   }
 
   if (!getIt.isRegistered<Box<Income>>()) {
     getIt.registerLazySingleton<Box<Income>>(() => Hive.box<Income>('incomes'));
+  }
+
+  if (!getIt.isRegistered<Box<AlertItem>>()) {
+    getIt.registerLazySingleton<Box<AlertItem>>(
+      () => Hive.box<AlertItem>('alerts'),
+    );
   }
 
   // Transaction Repository

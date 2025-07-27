@@ -56,11 +56,11 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.297362519599-4kboksjb1rs02vq3gakm6gqcqlhmqmql</string>
+				<string>689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com</string>
 			</array>
 		</dict>
 	</array>
 	<key>google</key>
-	<string>com.googleusercontent.apps.297362519599-4kboksjb1rs02vq3gakm6gqcqlhmqmql</string>
+	<string>689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com</string>
 </dict>
 </plist>

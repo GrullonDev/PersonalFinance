@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/navigation/navigation_provider.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:provider/provider.dart';
 
 /// Modal para agregar un nuevo ingreso.
@@ -156,10 +158,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      await Future<void>.delayed(
-                        const Duration(milliseconds: 50),
-                      ); // Da tiempo a notifyListeners
-                      logic.addIncome(
+                      await logic.addIncome(
                         _titleController.text,
                         _amountController.text,
                         _selectedDate,
@@ -172,11 +171,17 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                         _selectedCategory = 'Salario';
                       });
                       if (!mounted) return;
-                      Navigator.pop(context);
+
+                      // Navegar al dashboard después de agregar el ingreso
+                      Navigator.of(context).pop();
+                      Provider.of<NavigationProvider>(
+                        context,
+                        listen: false,
+                      ).setIndex(0);
                     }
                   },
                   icon: const Icon(Icons.check_circle),
-                  label: const Text('Agregar Ingreso'),
+                  label: Text(AppLocalizations.of(context)!.addIncome),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: Colors.green,

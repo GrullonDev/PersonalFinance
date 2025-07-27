@@ -34,4 +34,4 @@ abstract class TransactionEntity extends Equatable {
     final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
     return date.isAfter(sevenDaysAgo);
   }
-} 
+}
