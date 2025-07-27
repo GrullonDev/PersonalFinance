@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-
 import 'package:personal_finance/features/alerts/pages/alerts_page.dart';
-import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
+import 'package:personal_finance/features/dashboard/page/dashboard_layout.dart';
 import 'package:personal_finance/features/profile/pages/profile_page.dart';
 import 'package:personal_finance/features/reports/pages/reports_page.dart';
+import 'package:personal_finance/features/transactions/pages/add_transaction_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,8 +16,9 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const <Widget>[
-    DashboardPage(),
+    DashboardLayout(),
     ReportsPage(),
+    AddTransactionPage(),
     AlertsPage(),
     ProfilePage(),
   ];

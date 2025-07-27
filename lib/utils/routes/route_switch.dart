@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:personal_finance/features/auth/pages/auth_page.dart';
-import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
+import 'package:personal_finance/features/home/pages/home_page.dart';
 import 'package:personal_finance/features/onboarding/onboarding_page.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
@@ -10,7 +10,7 @@ class RouteSwitch {
     switch (settings.name) {
       case RoutePath.home:
         return MaterialPageRoute(
-          builder: (BuildContext _) => const DashboardPage(),
+          builder: (BuildContext _) => const HomePage(),
         );
       case RoutePath.onboarding:
         return MaterialPageRoute(
