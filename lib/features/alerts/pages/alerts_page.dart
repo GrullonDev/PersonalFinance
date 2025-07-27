@@ -4,8 +4,5 @@ class AlertsPage extends StatelessWidget {
   const AlertsPage({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Alertas')),
-    body: const Center(child: Text('Contenido de Alertas')),
-  );
+  Widget build(BuildContext context) => const Center(child: Text('Contenido de Alertas'));
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:provider/provider.dart';
 
@@ -31,7 +32,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
 
   @override
   Widget build(BuildContext context) {
-    final DashboardLogic logic = context.read<DashboardLogic>();
+    final DashboardLogic dashboardLogic = context.read<DashboardLogic>();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -156,14 +157,16 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      logic.addExpense(
+                      // Agregar el gasto
+                      await dashboardLogic.addExpense(
                         _titleController.text,
                         _amountController.text,
                         _selectedDate,
                         _selectedCategory,
                       );
+
                       // Limpiar campos después de agregar
                       _titleController.clear();
                       _amountController.clear();
@@ -171,7 +174,12 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                         _selectedDate = DateTime.now();
                         _selectedCategory = 'Otros';
                       });
-                      Navigator.pop(context);
+                      
+                      if (context.mounted) {
+                        // Navegar al dashboard
+                        Navigator.of(context).pop();
+                        context.read<NavigationProvider>().setIndex(0);
+                      }
                     }
                   },
                   icon: const Icon(Icons.check_circle),

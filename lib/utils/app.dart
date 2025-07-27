@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/features/tips/tip_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
@@ -24,6 +25,9 @@ class MyApp extends StatelessWidget {
       ),
       ChangeNotifierProvider<DashboardLogic>(create: (_) => DashboardLogic()),
       ChangeNotifierProvider<TipProvider>(create: (_) => TipProvider()),
+      ChangeNotifierProvider<NavigationProvider>(
+        create: (_) => NavigationProvider(),
+      ),
     ],
     child: MaterialApp(
       onGenerateTitle:

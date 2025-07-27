@@ -61,12 +61,12 @@ class DashboardLogic extends ChangeNotifier {
   double calculateBalance(double totalIncome, double totalExpenses) =>
       totalIncome - totalExpenses;
 
-  void addExpense(
+  Future<void> addExpense(
     String title,
     String amount,
     DateTime date,
     String? category,
-  ) {
+  ) async {
     if (title.isEmpty || amount.isEmpty) return;
 
     final double parsedAmount = double.tryParse(amount) ?? 0.0;
@@ -79,11 +79,11 @@ class DashboardLogic extends ChangeNotifier {
       category: category ?? getCategory(title),
     );
 
-    _expenseBox.add(expense);
+    await _expenseBox.add(expense);
     notifyListeners();
   }
 
-  void addIncome(String title, String amount, DateTime date) {
+  Future<void> addIncome(String title, String amount, DateTime date) async {
     if (title.isEmpty || amount.isEmpty) return;
 
     final double parsedAmount = double.tryParse(amount) ?? 0.0;
@@ -95,7 +95,7 @@ class DashboardLogic extends ChangeNotifier {
       date: date,
     );
 
-    _incomeBox.add(income);
+    await _incomeBox.add(income);
     notifyListeners();
   }
 

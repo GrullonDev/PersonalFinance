@@ -5,25 +5,45 @@ import 'package:personal_finance/features/dashboard/widgets/add_income_modal.dar
 class AddTransactionPage extends StatelessWidget {
   const AddTransactionPage({super.key});
 
+  void _showExpenseModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) => const AddExpenseModal(),
+    );
+  }
+
+  void _showIncomeModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) => const AddIncomeModal(),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => DefaultTabController(
-    length: 2,
-    child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Agregar'),
-        bottom: const TabBar(
-          tabs: <Widget>[
-            Tab(icon: Icon(Icons.arrow_downward), text: 'Gasto'),
-            Tab(icon: Icon(Icons.arrow_upward), text: 'Ingreso'),
+  Widget build(BuildContext context) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton.icon(
+              onPressed: () => _showExpenseModal(context),
+              icon: const Icon(Icons.arrow_downward),
+              label: const Text('Agregar Gasto'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(20),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () => _showIncomeModal(context),
+              icon: const Icon(Icons.arrow_upward),
+              label: const Text('Agregar Ingreso'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(20),
+              ),
+            ),
           ],
         ),
-      ),
-      body: const TabBarView(
-        children: <Widget>[
-          AddExpenseModal(key: ValueKey<String>('expense')),
-          AddIncomeModal(key: ValueKey<String>('income')),
-        ],
-      ),
-    ),
-  );
+      );
 }
