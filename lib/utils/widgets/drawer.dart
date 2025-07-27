@@ -163,15 +163,15 @@ class CustomDrawer extends StatelessWidget {
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-        ),
+    padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+    child: Text(
+      title,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
       ),
-    );
+    ),
+  );
 
   Widget _buildHeader(
     BuildContext context,
@@ -179,88 +179,88 @@ class CustomDrawer extends StatelessWidget {
     NumberFormat currencyFormat,
     bool isIOS,
   ) => Container(
-      height: 220,
-      decoration: BoxDecoration(
-        color: isIOS ? primaryColor.withValues() : primaryColor,
-      ),
-      padding: EdgeInsets.only(
-        top:
-            MediaQuery.of(context).padding.top +
-            20, // Añade espacio para la barra de estado
-        left: 16,
-        right: 16,
-        bottom: 16,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // Avatar y información de usuario
-          Row(
-            children: <Widget>[
-              GestureDetector(
-                onTap: onProfileTap ?? () => _navigateTo(context, '/profile'),
-                child: CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.person, size: 30, color: primaryColor),
-                ),
+    height: 220,
+    decoration: BoxDecoration(
+      color: isIOS ? primaryColor.withValues() : primaryColor,
+    ),
+    padding: EdgeInsets.only(
+      top:
+          MediaQuery.of(context).padding.top +
+          20, // Añade espacio para la barra de estado
+      left: 16,
+      right: 16,
+      bottom: 16,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Avatar y información de usuario
+        Row(
+          children: <Widget>[
+            GestureDetector(
+              onTap: onProfileTap ?? () => _navigateTo(context, '/profile'),
+              child: CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, size: 30, color: primaryColor),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      userName,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    userName,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(
-                      height: 4,
-                    ), // Espacio adicional entre nombre y email
-                    Text(
-                      userEmail,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.85),
-                      ),
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ), // Espacio adicional entre nombre y email
+                  Text(
+                    userEmail,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withOpacity(0.85),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24), // Espacio antes del balance
+        // Tarjeta de balance
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              const Text(
+                'Balance Total:',
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+              Text(
+                currencyFormat.format(currentBalance),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 24), // Espacio antes del balance
-          // Tarjeta de balance
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                const Text(
-                  'Balance Total:',
-                  style: TextStyle(color: Colors.black, fontSize: 16),
-                ),
-                Text(
-                  currencyFormat.format(currentBalance),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
 
   // _buildTile y _buildFooter similares al ejemplo anterior, pero con soporte para trailingText
   Widget _buildTile(
@@ -300,7 +300,9 @@ class CustomDrawer extends StatelessWidget {
             color:
                 color ??
                 (isSelected
-                    ? (isIOS ? CupertinoColors.activeBlue : theme.colorScheme.primary)
+                    ? (isIOS
+                        ? CupertinoColors.activeBlue
+                        : theme.colorScheme.primary)
                     : theme.textTheme.bodyLarge?.color),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -315,7 +317,9 @@ class CustomDrawer extends StatelessWidget {
                   ),
                   child: Text(
                     badgeCount.toString(),
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                    ),
                   ),
                 )
                 : trailingText != null
@@ -334,12 +338,12 @@ class CustomDrawer extends StatelessWidget {
   }
 
   Widget _buildFooter(BuildContext context, bool isIOS) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          '${AppLocalizations.of(context)!.appTitle} v1.0',
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-      );
+    padding: const EdgeInsets.all(16),
+    child: Text(
+      '${AppLocalizations.of(context)!.appTitle} v1.0',
+      style: const TextStyle(fontSize: 12, color: Colors.grey),
+    ),
+  );
 
   void _navigateTo(BuildContext context, String routeName) {
     Navigator.pop(context);

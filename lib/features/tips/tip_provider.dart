@@ -14,7 +14,8 @@ class TipProvider extends ChangeNotifier {
     'Revisa tus suscripciones y cancela las que no uses.',
   ];
 
-  late final String _todayTip = _tips[Random(DateTime.now().day).nextInt(_tips.length)];
+  late final String _todayTip =
+      _tips[Random(DateTime.now().day).nextInt(_tips.length)];
 
   String get todayTip => _todayTip;
 }

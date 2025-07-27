@@ -35,34 +35,39 @@ class PeriodSelector extends StatelessWidget {
       child: Wrap(
         spacing: 4,
         alignment: WrapAlignment.center,
-        children: PeriodFilter.values.map((PeriodFilter p) {
-          final String label = _getLabel(p);
-          final bool isSelected = period == p;
+        children:
+            PeriodFilter.values.map((PeriodFilter p) {
+              final String label = _getLabel(p);
+              final bool isSelected = period == p;
 
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            child: ChoiceChip(
-              label: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 13,
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                child: ChoiceChip(
+                  label: Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                  selected: isSelected,
+                  onSelected: (_) => logic.changePeriod(p),
+                  selectedColor: Colors.blue,
+                  backgroundColor: Colors.white,
+                  side: BorderSide(
+                    color: isSelected ? Colors.blue : Colors.grey[300]!,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
-              ),
-              selected: isSelected,
-              onSelected: (_) => logic.changePeriod(p),
-              selectedColor: Colors.blue,
-              backgroundColor: Colors.white,
-              side: BorderSide(
-                color: isSelected ? Colors.blue : Colors.grey[300]!,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-          );
-        }).toList(),
+              );
+            }).toList(),
       ),
     );
   }

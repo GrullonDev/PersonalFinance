@@ -13,57 +13,59 @@ class AppLocalizations {
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
 
-  static const Map<String, Map<String, String>> _localizedValues = <String, Map<String, String>>{
-    'en': <String, String>{
-      'welcome': 'Welcome to your personal finance app!',
-      'start': 'Start',
-      'appTitle': 'Personal Finance',
-      'back': 'Back',
-      'next': 'Next',
-      'getStarted': 'Get Started',
-      'signInToContinue': 'Sign in to continue',
-      'continueWithGoogle': 'Continue with Google',
-      'continueWithApple': 'Continue with Apple',
-      'totalBalance': 'TOTAL BALANCE',
-      'positiveBalance': 'Positive Balance',
-      'negativeBalance': 'Negative Balance',
-      'add': 'Add',
-      'addIncome': 'Add Income',
-      'addExpense': 'Add Expense',
-      'step1Title': 'Track your expenses',
-      'step1Desc': 'Add transactions quickly and easily.',
-      'step2Title': 'See your progress',
-      'step2Desc': 'Check your daily, weekly or monthly balance.',
-      'step3Title': 'Learn tips',
-      'step3Desc': 'Get personalized financial advice every day.',
-    },
-    'es': <String, String>{
-      'welcome': '¡Bienvenido a tu app de finanzas personales!',
-      'start': 'Iniciar',
-      'appTitle': 'Finanzas Personales',
-      'back': 'Atrás',
-      'next': 'Siguiente',
-      'getStarted': 'Comenzar',
-      'signInToContinue': 'Inicia sesión para continuar',
-      'continueWithGoogle': 'Continuar con Google',
-      'continueWithApple': 'Continuar con Apple',
-      'totalBalance': 'BALANCE TOTAL',
-      'positiveBalance': 'Saldo Positivo',
-      'negativeBalance': 'Saldo Negativo',
-      'add': 'Agregar',
-      'addIncome': 'Agregar Ingreso',
-      'addExpense': 'Agregar Gasto',
-      'step1Title': 'Registra tus gastos',
-      'step1Desc': 'Añade transacciones de forma rápida y sencilla.',
-      'step2Title': 'Visualiza tu progreso',
-      'step2Desc': 'Consulta tu balance diario, semanal o mensual.',
-      'step3Title': 'Aprende consejos',
-      'step3Desc': 'Recibe tips financieros personalizados cada día.',
-    },
-  };
+  static const Map<String, Map<String, String>> _localizedValues =
+      <String, Map<String, String>>{
+        'en': <String, String>{
+          'welcome': 'Welcome to your personal finance app!',
+          'start': 'Start',
+          'appTitle': 'Personal Finance',
+          'back': 'Back',
+          'next': 'Next',
+          'getStarted': 'Get Started',
+          'signInToContinue': 'Sign in to continue',
+          'continueWithGoogle': 'Continue with Google',
+          'continueWithApple': 'Continue with Apple',
+          'totalBalance': 'TOTAL BALANCE',
+          'positiveBalance': 'Positive Balance',
+          'negativeBalance': 'Negative Balance',
+          'add': 'Add',
+          'addIncome': 'Add Income',
+          'addExpense': 'Add Expense',
+          'step1Title': 'Track your expenses',
+          'step1Desc': 'Add transactions quickly and easily.',
+          'step2Title': 'See your progress',
+          'step2Desc': 'Check your daily, weekly or monthly balance.',
+          'step3Title': 'Learn tips',
+          'step3Desc': 'Get personalized financial advice every day.',
+        },
+        'es': <String, String>{
+          'welcome': '¡Bienvenido a tu app de finanzas personales!',
+          'start': 'Iniciar',
+          'appTitle': 'Finanzas Personales',
+          'back': 'Atrás',
+          'next': 'Siguiente',
+          'getStarted': 'Comenzar',
+          'signInToContinue': 'Inicia sesión para continuar',
+          'continueWithGoogle': 'Continuar con Google',
+          'continueWithApple': 'Continuar con Apple',
+          'totalBalance': 'BALANCE TOTAL',
+          'positiveBalance': 'Saldo Positivo',
+          'negativeBalance': 'Saldo Negativo',
+          'add': 'Agregar',
+          'addIncome': 'Agregar Ingreso',
+          'addExpense': 'Agregar Gasto',
+          'step1Title': 'Registra tus gastos',
+          'step1Desc': 'Añade transacciones de forma rápida y sencilla.',
+          'step2Title': 'Visualiza tu progreso',
+          'step2Desc': 'Consulta tu balance diario, semanal o mensual.',
+          'step3Title': 'Aprende consejos',
+          'step3Desc': 'Recibe tips financieros personalizados cada día.',
+        },
+      };
 
   String _text(String key) =>
-      _localizedValues[locale.languageCode]?[key] ?? _localizedValues['es']![key]!;
+      _localizedValues[locale.languageCode]?[key] ??
+      _localizedValues['es']![key]!;
 
   /// Returns the localized string for the given [key].
   String translate(String key) => _text(key);
@@ -105,7 +107,8 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'es'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'es'].contains(locale.languageCode);
 
   @override
   Future<AppLocalizations> load(Locale locale) =>

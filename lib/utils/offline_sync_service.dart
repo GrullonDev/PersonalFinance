@@ -15,7 +15,9 @@ class OfflineSyncService {
 
   Future<void> init() async {
     _actionBox = await Hive.openBox<PendingAction>('pending_actions');
-    _connectivitySub = Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
+    _connectivitySub = Connectivity().onConnectivityChanged.listen(
+      _onConnectivityChanged,
+    );
   }
 
   Future<void> dispose() async {
@@ -27,7 +29,10 @@ class OfflineSyncService {
     await _actionBox.add(action);
   }
 
-  Future<List<PendingAction>> getPendingActions() async => _actionBox.values.where((PendingAction a) => a.status == 'pending').toList();
+  Future<List<PendingAction>> getPendingActions() async =>
+      _actionBox.values
+          .where((PendingAction a) => a.status == 'pending')
+          .toList();
 
   Future<void> _onConnectivityChanged(ConnectivityResult result) async {
     if (result != ConnectivityResult.none) {
@@ -49,4 +54,4 @@ class OfflineSyncService {
       }
     }
   }
-} 
+}

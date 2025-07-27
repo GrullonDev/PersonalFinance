@@ -8,26 +8,26 @@ class AddTransactionModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const DefaultTabController(
-      length: 2,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          TabBar(
-            tabs: <Widget>[
-              Tab(icon: Icon(Icons.arrow_downward), text: 'Gasto'),
-              Tab(icon: Icon(Icons.arrow_upward), text: 'Ingreso'),
+    length: 2,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        TabBar(
+          tabs: <Widget>[
+            Tab(icon: Icon(Icons.arrow_downward), text: 'Gasto'),
+            Tab(icon: Icon(Icons.arrow_upward), text: 'Ingreso'),
+          ],
+        ),
+        SizedBox(
+          height: 500, // Ajusta este valor si necesitas más espacio
+          child: TabBarView(
+            children: <Widget>[
+              AddExpenseModal(key: ValueKey<String>('expense')),
+              AddIncomeModal(key: ValueKey<String>('income')),
             ],
           ),
-          SizedBox(
-            height: 500, // Ajusta este valor si necesitas más espacio
-            child: TabBarView(
-              children: <Widget>[
-                AddExpenseModal(key: ValueKey<String>('expense')),
-                AddIncomeModal(key: ValueKey<String>('income')),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
 }

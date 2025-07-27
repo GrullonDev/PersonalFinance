@@ -6,7 +6,7 @@ import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Implementación de AuthDataSource usando Firebase Authentication.
-/// 
+///
 /// Proporciona métodos para autenticación con Google, Apple y cierre de sesión
 /// utilizando Firebase Auth como backend de autenticación.
 class FirebaseAuthService implements AuthDataSource {
@@ -15,13 +15,19 @@ class FirebaseAuthService implements AuthDataSource {
   @override
   Future<User?> signInWithGoogle() async {
     try {
-      await GoogleSignIn.instance.initialize(serverClientId: '689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com');
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+      await GoogleSignIn.instance.initialize(
+        serverClientId:
+            '689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com',
+      );
+      final GoogleSignInAccount googleUser =
+          await GoogleSignIn.instance.authenticate();
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
       return userCredential.user;
     } catch (e) {
       throw Exception('Error al iniciar sesión con Google: $e');

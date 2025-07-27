@@ -58,10 +58,7 @@ class _DashboardPageState extends State<DashboardPage> {
         currentIndex: _selectedIndex > 2 ? _selectedIndex + 1 : _selectedIndex,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
             label: 'Reportes',
@@ -74,10 +71,7 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: Icon(Icons.notifications),
             label: 'Alertas',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
     ),

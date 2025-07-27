@@ -66,24 +66,25 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 onSelected: (String value) {
                   _titleController.text = value;
                 },
-                fieldViewBuilder: (
-                  BuildContext context,
-                  TextEditingController controller,
-                  FocusNode focusNode,
-                  _,
-                ) => TextFormField(
-                    controller: _titleController,
-                    focusNode: focusNode,
-                    decoration: const InputDecoration(
-                      labelText: 'Título del gasto',
-                      border: OutlineInputBorder(),
+                fieldViewBuilder:
+                    (
+                      BuildContext context,
+                      TextEditingController controller,
+                      FocusNode focusNode,
+                      _,
+                    ) => TextFormField(
+                      controller: _titleController,
+                      focusNode: focusNode,
+                      decoration: const InputDecoration(
+                        labelText: 'Título del gasto',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator:
+                          (String? value) =>
+                              (value == null || value.isEmpty)
+                                  ? 'Requerido'
+                                  : null,
                     ),
-                    validator:
-                        (String? value) =>
-                            (value == null || value.isEmpty)
-                                ? 'Requerido'
-                                : null,
-                  ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -110,8 +111,10 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 items:
                     _categorySuggestions
                         .map(
-                          (String e) =>
-                              DropdownMenuItem<String>(value: e, child: Text(e)),
+                          (String e) => DropdownMenuItem<String>(
+                            value: e,
+                            child: Text(e),
+                          ),
                         )
                         .toList(),
                 decoration: const InputDecoration(

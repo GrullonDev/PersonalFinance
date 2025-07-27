@@ -105,4 +105,4 @@ class AddTransactionUseCase {
       throw Exception('Error al agregar ingreso: $e');
     }
   }
-} 
+}

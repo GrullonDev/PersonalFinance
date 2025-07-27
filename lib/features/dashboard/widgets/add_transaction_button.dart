@@ -4,7 +4,7 @@ import 'package:personal_finance/features/dashboard/widgets/add_transaction_moda
 import 'package:personal_finance/utils/app_localization.dart';
 
 /// Botón flotante para agregar nuevas transacciones (gastos o ingresos).
-/// 
+///
 /// Muestra un modal bottom sheet cuando se presiona, permitiendo al usuario
 /// elegir entre agregar un gasto o un ingreso.
 class AddTransactionButton extends StatelessWidget {
@@ -13,7 +13,8 @@ class AddTransactionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FloatingActionButton.extended(
-    onPressed: () => showModalBottomSheet<void>(
+    onPressed:
+        () => showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
           shape: const RoundedRectangleBorder(

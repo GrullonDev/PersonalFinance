@@ -22,7 +22,7 @@ class IncomeEntity extends TransactionEntity {
   List<Object?> get props => <Object?>[...super.props, source, notes];
 
   /// Verifica si el ingreso proviene de una fuente específica
-  bool isFromSource(String sourceName) => 
+  bool isFromSource(String sourceName) =>
       source.toLowerCase() == sourceName.toLowerCase();
 
   /// Obtiene el color asociado a la fuente de ingreso
@@ -54,12 +54,12 @@ class IncomeEntity extends TransactionEntity {
     String? description,
     String? notes,
   }) => IncomeEntity(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      amount: amount ?? this.amount,
-      date: date ?? this.date,
-      source: source ?? this.source,
-      description: description ?? this.description,
-      notes: notes ?? this.notes,
-    );
-} 
+    id: id ?? this.id,
+    title: title ?? this.title,
+    amount: amount ?? this.amount,
+    date: date ?? this.date,
+    source: source ?? this.source,
+    description: description ?? this.description,
+    notes: notes ?? this.notes,
+  );
+}

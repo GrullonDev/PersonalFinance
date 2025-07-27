@@ -42,7 +42,9 @@ Future<void> initDependencies() async {
 
   // Hive Boxes
   if (!getIt.isRegistered<Box<Expense>>()) {
-    getIt.registerLazySingleton<Box<Expense>>(() => Hive.box<Expense>('expenses'));
+    getIt.registerLazySingleton<Box<Expense>>(
+      () => Hive.box<Expense>('expenses'),
+    );
   }
 
   if (!getIt.isRegistered<Box<Income>>()) {

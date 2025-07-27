@@ -22,7 +22,9 @@ class TipCard extends StatelessWidget {
             Expanded(
               child: Text(
                 tip,
-                style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
           ],

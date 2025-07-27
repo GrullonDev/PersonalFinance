@@ -45,7 +45,7 @@ class BalanceCard extends StatelessWidget {
                   ),
                   child: Icon(
                     isPositive ? Icons.trending_up : Icons.trending_down,
-                    
+
                     color: balanceColor,
                     size: 24,
                   ),

@@ -22,4 +22,4 @@ class PendingAction extends HiveObject {
     required this.timestamp,
     this.status = 'pending',
   });
-} 
+}
