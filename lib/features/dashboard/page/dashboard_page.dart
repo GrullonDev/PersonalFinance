@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+
 import 'package:personal_finance/features/dashboard/page/dashboard_layout.dart';
-import 'package:personal_finance/utils/app_localization.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});  @override
