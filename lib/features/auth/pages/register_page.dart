@@ -24,9 +24,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
-  bool isPasswordVisible = false;
-  bool isConfirmPasswordVisible = false;
-
   final FirebaseAuthService authService = FirebaseAuthService();
   final ProfileRepository profileRepository = getIt<ProfileRepository>();
 
@@ -43,18 +40,6 @@ class _RegisterPageState extends State<RegisterPage> {
             pickedDate.toLocal().toString().split(' ')[0];
       });
     }
-  }
-
-  void _togglePasswordVisibility() {
-    setState(() {
-      isPasswordVisible = !isPasswordVisible;
-    });
-  }
-
-  void _toggleConfirmPasswordVisibility() {
-    setState(() {
-      isConfirmPasswordVisible = !isConfirmPasswordVisible;
-    });
   }
 
   Future<void> _validateAndRegister() async {
@@ -142,86 +127,156 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Registro')),
-    body: SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: firstNameController,
-              decoration: const InputDecoration(labelText: 'Nombres'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: lastNameController,
-              decoration: const InputDecoration(labelText: 'Apellidos'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: birthDateController,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Fecha de Nacimiento',
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      image: DecorationImage(
+        image: AssetImage('assets/logo.png'),
+        fit: BoxFit.cover,
+        colorFilter: ColorFilter.mode(
+          Colors.white.withOpacity(0.1),
+          BlendMode.dstATop,
+        ),
+      ),
+    ),
+    child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Sign Up'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: <Widget>[
+              const Text(
+                'Your information is safe with us',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                ),
+                textAlign: TextAlign.center,
               ),
-              onTap: _selectBirthDate,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: usernameController,
-              decoration: const InputDecoration(labelText: 'Usuario'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Correo Electrónico',
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: confirmEmailController,
-              decoration: const InputDecoration(
-                labelText: 'Confirmar Correo Electrónico',
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: passwordController,
-              obscureText: !isPasswordVisible,
-              decoration: InputDecoration(
-                labelText: 'Contraseña',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+              const SizedBox(height: 20),
+              TextField(
+                controller: firstNameController,
+                decoration: InputDecoration(
+                  labelText: 'First Name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  onPressed: _togglePasswordVisibility,
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: confirmPasswordController,
-              obscureText: !isConfirmPasswordVisible,
-              decoration: InputDecoration(
-                labelText: 'Confirmar Contraseña',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    isConfirmPasswordVisible
-                        ? Icons.visibility
-                        : Icons.visibility_off,
+              const SizedBox(height: 20),
+              TextField(
+                controller: lastNameController,
+                decoration: InputDecoration(
+                  labelText: 'Last Name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  onPressed: _toggleConfirmPasswordVisibility,
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _validateAndRegister,
-              child: const Text('Registrarse'),
-            ),
-          ],
+              const SizedBox(height: 20),
+              TextField(
+                controller: birthDateController,
+                decoration: InputDecoration(
+                  labelText: 'Date of Birth',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                onTap: _selectBirthDate,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: confirmEmailController,
+                decoration: InputDecoration(
+                  labelText: 'Confirm Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _validateAndRegister,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text('Sign Up', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
         ),
       ),
     ),
