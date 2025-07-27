@@ -29,8 +29,15 @@ class MyApp extends StatelessWidget {
       onGenerateTitle:
           (BuildContext context) => AppLocalizations.of(context)!.appTitle,
       debugShowCheckedModeBanner: false,
-      theme: _buildLightTheme(),
-      darkTheme: _buildDarkTheme(),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+        ),
+      ),
       initialRoute: RoutePath.home,
       onGenerateRoute: RouteSwitch.generateRoute,
       localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
