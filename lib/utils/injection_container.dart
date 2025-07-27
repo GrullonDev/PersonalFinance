@@ -6,6 +6,7 @@ import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/dashboard/logic/dashboard_logic_v2.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/features/alerts/alert_item.dart';
 import 'package:personal_finance/features/data/repositories/transaction_repository_impl.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
@@ -66,6 +67,12 @@ Future<void> initDependencies() async {
 
   if (!getIt.isRegistered<Box<Income>>()) {
     getIt.registerLazySingleton<Box<Income>>(() => Hive.box<Income>('incomes'));
+  }
+
+  if (!getIt.isRegistered<Box<AlertItem>>()) {
+    getIt.registerLazySingleton<Box<AlertItem>>(
+      () => Hive.box<AlertItem>('alerts'),
+    );
   }
 
   // Transaction Repository
