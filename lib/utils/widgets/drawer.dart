@@ -347,6 +347,6 @@ class CustomDrawer extends StatelessWidget {
 
   void _navigateTo(BuildContext context, String routeName) {
     Navigator.pop(context);
-    Navigator.pushNamed(context, routeName);
+    Navigator.pushReplacementNamed(context, routeName);
   }
 }
