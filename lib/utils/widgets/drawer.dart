@@ -168,7 +168,7 @@ class CustomDrawer extends StatelessWidget {
       title,
       style: Theme.of(context).textTheme.labelLarge?.copyWith(
         fontWeight: FontWeight.bold,
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
       ),
     ),
   );
@@ -223,7 +223,7 @@ class CustomDrawer extends StatelessWidget {
                   Text(
                     userEmail,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                     ),
                   ),
                 ],
@@ -283,7 +283,7 @@ class CustomDrawer extends StatelessWidget {
             isSelected
                 ? (isIOS
                     ? CupertinoColors.activeBlue.withOpacity(0.1)
-                    : theme.colorScheme.primary.withOpacity(0.08))
+                    : theme.colorScheme.primary.withValues(alpha: 0.8))
                 : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),

@@ -19,20 +19,17 @@ class UserProfile {
     this.photoUrl,
   });
 
-  factory UserProfile.fromMap(String id, Map<String, dynamic> map) {
-    return UserProfile(
+  factory UserProfile.fromMap(String id, Map<String, dynamic> map) => UserProfile(
       id: id,
-      firstName: map['firstName'] ?? '',
-      lastName: map['lastName'] ?? '',
+      firstName: (map['firstName'] ?? '') as String,
+      lastName: (map['lastName'] ?? '') as String,
       birthDate: (map['birthDate'] as Timestamp).toDate(),
-      username: map['username'] ?? '',
-      email: map['email'] ?? '',
+      username: (map['username'] ?? '') as String,
+      email: (map['email'] ?? '') as String,
       photoUrl: map['photoUrl'] as String?,
     );
-  }
 
-  Map<String, dynamic> toMap() {
-    return {
+  Map<String, dynamic> toMap() => <String, dynamic>{
       'firstName': firstName,
       'lastName': lastName,
       'birthDate': Timestamp.fromDate(birthDate),
@@ -40,10 +37,8 @@ class UserProfile {
       'email': email,
       'photoUrl': photoUrl,
     };
-  }
 
-  UserProfile copyWith({String? photoUrl}) {
-    return UserProfile(
+  UserProfile copyWith({String? photoUrl}) => UserProfile(
       id: id,
       firstName: firstName,
       lastName: lastName,
@@ -52,5 +47,4 @@ class UserProfile {
       email: email,
       photoUrl: photoUrl ?? this.photoUrl,
     );
-  }
 }

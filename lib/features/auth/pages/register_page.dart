@@ -1,10 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
 import 'package:personal_finance/features/profile/domain/profile_repository.dart';
 import 'package:personal_finance/features/profile/model/user_profile.dart';
 import 'package:personal_finance/utils/injection_container.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:personal_finance/utils/validators.dart';
 
 class RegisterPage extends StatefulWidget {
