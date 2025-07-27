@@ -10,6 +10,9 @@ import 'package:personal_finance/features/data/repositories/transaction_reposito
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
 import 'package:personal_finance/features/domain/usecases/get_dashboard_data_usecase.dart';
+import 'package:personal_finance/features/profile/data/firebase_profile_service.dart';
+import 'package:personal_finance/features/profile/domain/profile_datasource.dart';
+import 'package:personal_finance/features/profile/domain/profile_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final GetIt getIt = GetIt.instance;
@@ -30,6 +33,20 @@ Future<void> initDependencies() async {
   if (!getIt.isRegistered<AuthRepository>()) {
     getIt.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(getIt<AuthDataSource>()),
+    );
+  }
+
+  // Profile DataSource
+  if (!getIt.isRegistered<ProfileDataSource>()) {
+    getIt.registerLazySingleton<ProfileDataSource>(
+      () => FirebaseProfileService(),
+    );
+  }
+
+  // Profile Repository
+  if (!getIt.isRegistered<ProfileRepository>()) {
+    getIt.registerLazySingleton<ProfileRepository>(
+      () => ProfileRepositoryImpl(getIt<ProfileDataSource>()),
     );
   }
 
