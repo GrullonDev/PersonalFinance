@@ -26,10 +26,7 @@ class _HomePageState extends State<HomePage> {
   Widget _getTitle(int index) {
     switch (index) {
       case 0:
-        return Hero(
-          tag: 'start-button',
-          child: const Text('Personal Finance'),
-        );
+        return const Hero(tag: 'start-button', child: Text('Personal Finance'));
       case 1:
         return const Text('Reportes');
       case 2:
