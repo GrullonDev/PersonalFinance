@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Implementación de AuthDataSource usando Firebase Authentication.
 ///
@@ -14,56 +10,29 @@ class FirebaseAuthService implements AuthDataSource {
 
   @override
   Future<User?> signInWithGoogle() async {
-    try {
-      await GoogleSignIn.instance.initialize(
-        serverClientId:
-            '689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com',
-      );
-      final GoogleSignInAccount googleUser =
-          await GoogleSignIn.instance.authenticate();
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
-      final UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
-      return userCredential.user;
-    } catch (e) {
-      throw Exception('Error al iniciar sesión con Google: $e');
-    }
+    throw UnimplementedError('Autenticación con Google eliminada.');
   }
 
   @override
   Future<void> signInWithApple() async {
-    if (!Platform.isIOS) {
-      throw Exception('Apple Sign-In no soportado en esta plataforma');
-    }
-    try {
-      final AuthorizationCredentialAppleID appleCredential =
-          await SignInWithApple.getAppleIDCredential(
-            scopes: <AppleIDAuthorizationScopes>[
-              AppleIDAuthorizationScopes.email,
-              AppleIDAuthorizationScopes.fullName,
-            ],
-          );
-      final OAuthCredential oauthCredential = OAuthProvider(
-        'apple.com',
-      ).credential(
-        idToken: appleCredential.identityToken,
-        accessToken: appleCredential.authorizationCode,
-      );
-      await _auth.signInWithCredential(oauthCredential);
-    } catch (e) {
-      throw Exception('Error al iniciar sesión con Apple: $e');
-    }
+    throw UnimplementedError('Autenticación con Apple eliminada.');
   }
 
   @override
   Future<void> logout() async {
-    await Future.wait<void>(<Future<void>>[
-      _auth.signOut(),
-      GoogleSignIn.instance.disconnect(),
-    ]);
+    await _auth.signOut();
+  }
+
+  Future<void> registerUser(String email, String password) async {
+    await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  Future<User?> loginUser(String email, String password) async {
+    final UserCredential userCredential = await _auth
+        .signInWithEmailAndPassword(email: email, password: password);
+    return userCredential.user;
   }
 }

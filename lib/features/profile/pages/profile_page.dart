@@ -8,10 +8,10 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Consumer<AuthProvider>(
-        builder: (BuildContext context, AuthProvider provider, _) => Padding(
+    builder:
+        (BuildContext context, AuthProvider provider, _) => Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               const CircleAvatar(
                 radius: 40,
@@ -21,22 +21,23 @@ class ProfilePage extends StatelessWidget {
               const Text('Usuario Invitado'),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: provider.isLoading
-                    ? null
-                    : () async {
-                        await provider.logout();
-                        if (context.mounted) {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            RoutePath.login,
-                          );
-                        }
-                      },
+                onPressed:
+                    provider.isLoading
+                        ? null
+                        : () async {
+                          await provider.logout();
+                          if (context.mounted) {
+                            Navigator.pushReplacementNamed(
+                              context,
+                              RoutePath.login,
+                            );
+                          }
+                        },
                 icon: const Icon(Icons.logout),
                 label: const Text('Cerrar sesión'),
               ),
             ],
           ),
         ),
-      );
+  );
 }

@@ -5,7 +5,7 @@ class NavigationProvider extends ChangeNotifier {
 
   int get currentIndex => _currentIndex;
 
-  static const int maxIndex = 4;  // Número de páginas - 1
+  static const int maxIndex = 4; // Número de páginas - 1
 
   void setIndex(int index) {
     if (_currentIndex != index && index >= 0 && index <= maxIndex) {

@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
-import 'package:personal_finance/utils/app_localization.dart';
 import 'package:provider/provider.dart';
 
 class SocialLoginButtons extends StatelessWidget {
@@ -29,47 +26,8 @@ class SocialLoginButtons extends StatelessWidget {
           provider.clearError();
         });
       }
-      return Column(
-        children: <Widget>[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.login, size: 24),
-              label: Text(AppLocalizations.of(context)!.continueWithGoogle),
-              onPressed:
-                  provider.isLoading
-                      ? null
-                      : () async {
-                        final bool success = await provider.signInWithGoogle();
-                        if (success && context.mounted) {
-                          Navigator.pushReplacementNamed(context, '/dashboard');
-                        }
-                      },
-            ),
-          ),
-          if (Platform.isIOS) ...<Widget>[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.apple, size: 24),
-                label: Text(AppLocalizations.of(context)!.continueWithApple),
-                onPressed:
-                    provider.isLoading
-                        ? null
-                        : () async {
-                          final bool success = await provider.signInWithApple();
-                          if (success && context.mounted) {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              '/dashboard',
-                            );
-                          }
-                        },
-              ),
-            ),
-          ],
-        ],
+      return const Column(
+        
       );
     },
   );

@@ -23,27 +23,23 @@ class AddTransactionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton.icon(
-              onPressed: () => _showExpenseModal(context),
-              icon: const Icon(Icons.arrow_downward),
-              label: const Text('Agregar Gasto'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () => _showIncomeModal(context),
-              icon: const Icon(Icons.arrow_upward),
-              label: const Text('Agregar Ingreso'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-              ),
-            ),
-          ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        ElevatedButton.icon(
+          onPressed: () => _showExpenseModal(context),
+          icon: const Icon(Icons.arrow_downward),
+          label: const Text('Agregar Gasto'),
+          style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(20)),
         ),
-      );
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () => _showIncomeModal(context),
+          icon: const Icon(Icons.arrow_upward),
+          label: const Text('Agregar Ingreso'),
+          style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(20)),
+        ),
+      ],
+    ),
+  );
 }

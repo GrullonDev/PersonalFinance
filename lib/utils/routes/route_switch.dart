@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:personal_finance/features/auth/pages/auth_page.dart';
+import 'package:personal_finance/features/auth/pages/register_page.dart';
 import 'package:personal_finance/features/home/pages/home_page.dart';
 import 'package:personal_finance/features/onboarding/onboarding_page.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
@@ -8,10 +9,8 @@ import 'package:personal_finance/utils/routes/route_path.dart';
 class RouteSwitch {
   static Route<dynamic> generateRoute(final RouteSettings settings) {
     switch (settings.name) {
-      case RoutePath.home:
-        return MaterialPageRoute(
-          builder: (BuildContext _) => const HomePage(),
-        );
+      case RoutePath.dashboard:
+        return MaterialPageRoute(builder: (BuildContext _) => const HomePage());
       case RoutePath.onboarding:
         return MaterialPageRoute(
           builder: (BuildContext _) => const OnboardingPage(),
@@ -20,6 +19,8 @@ class RouteSwitch {
         return MaterialPageRoute(
           builder: (BuildContext _) => const LoginPage(),
         );
+      case RoutePath.register:
+        return MaterialPageRoute(builder: (BuildContext _) => const RegisterPage());
       default:
         return MaterialPageRoute(
           builder:

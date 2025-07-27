@@ -171,10 +171,13 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                         _selectedCategory = 'Salario';
                       });
                       if (!mounted) return;
-                      
+
                       // Navegar al dashboard después de agregar el ingreso
                       Navigator.of(context).pop();
-                      Provider.of<NavigationProvider>(context, listen: false).setIndex(0);
+                      Provider.of<NavigationProvider>(
+                        context,
+                        listen: false,
+                      ).setIndex(0);
                     }
                   },
                   icon: const Icon(Icons.check_circle),

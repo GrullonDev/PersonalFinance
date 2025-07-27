@@ -9,24 +9,24 @@ class AlertsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Consumer<AlertsProvider>(
-        builder: (BuildContext context, AlertsProvider provider, _) {
-          if (provider.alerts.isEmpty) {
-            return const Center(child: Text('Sin alertas por el momento'));
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: provider.alerts.length,
-            itemBuilder: (BuildContext context, int index) {
-              final AlertItem alert = provider.alerts[index];
-              return ListTile(
-                leading: const Icon(Icons.notifications_active),
-                title: Text(alert.title),
-                subtitle: Text(alert.description),
-                trailing: Text(DateFormat('dd/MM').format(alert.date)),
-              );
-            },
-            separatorBuilder: (_, __) => const Divider(),
+    builder: (BuildContext context, AlertsProvider provider, _) {
+      if (provider.alerts.isEmpty) {
+        return const Center(child: Text('Sin alertas por el momento'));
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: provider.alerts.length,
+        itemBuilder: (BuildContext context, int index) {
+          final AlertItem alert = provider.alerts[index];
+          return ListTile(
+            leading: const Icon(Icons.notifications_active),
+            title: Text(alert.title),
+            subtitle: Text(alert.description),
+            trailing: Text(DateFormat('dd/MM').format(alert.date)),
           );
         },
+        separatorBuilder: (_, _) => const Divider(),
       );
+    },
+  );
 }

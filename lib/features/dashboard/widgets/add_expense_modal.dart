@@ -174,7 +174,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                         _selectedDate = DateTime.now();
                         _selectedCategory = 'Otros';
                       });
-                      
+
                       if (context.mounted) {
                         // Navegar al dashboard
                         Navigator.of(context).pop();

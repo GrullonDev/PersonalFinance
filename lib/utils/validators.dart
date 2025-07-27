@@ -152,6 +152,26 @@ class AppValidators {
     return null;
   }
 
+  /// Valida si una fecha de nacimiento es válida
+  static String? validateBirthDate(DateTime? date, String fieldName) {
+    if (date == null) {
+      return '$fieldName es requerido';
+    }
+
+    final DateTime minDate = DateTime(1900);
+    final DateTime maxDate = DateTime.now();
+
+    if (date.isBefore(minDate)) {
+      return '$fieldName no puede ser anterior al año 1900';
+    }
+
+    if (date.isAfter(maxDate)) {
+      return '$fieldName no puede ser posterior a hoy';
+    }
+
+    return null;
+  }
+
   // ===== VALIDACIONES DE CATEGORÍAS =====
 
   /// Valida una categoría de gasto
@@ -175,6 +195,25 @@ class AppValidators {
 
     if (!AppConstants.incomeSources.contains(value)) {
       return 'Fuente de ingreso no válida';
+    }
+
+    return null;
+  }
+
+  // ===== VALIDACIONES DE CORREO =====
+
+  /// Valida si un correo electrónico es válido
+  static String? validateEmail(String? email) {
+    if (email == null || email.trim().isEmpty) {
+      return 'Correo Electrónico es requerido';
+    }
+
+    final RegExp emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+
+    if (!emailRegex.hasMatch(email)) {
+      return 'Correo Electrónico no es válido';
     }
 
     return null;

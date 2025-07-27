@@ -56,6 +56,7 @@ class _HomePageState extends State<HomePage> {
         title: _getTitle(provider.currentIndex),
         centerTitle: true,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: _pages[provider.currentIndex],
       bottomNavigationBar: BottomNavigationBar(
