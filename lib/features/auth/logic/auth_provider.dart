@@ -44,6 +44,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> logout() async {
+    _setLoading(true);
+    try {
+      await authRepository.logout();
+      await LocalAuthService().logout();
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   void clearError() {
     _setError(null);
   }
