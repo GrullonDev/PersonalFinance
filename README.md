@@ -43,7 +43,7 @@ Proyecto creado y mantenido por **[Jorge Marroquín](https://github.com/GrullonD
 ### 1. Clona el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/personal_finance.git
+git clone https://github.com/GrullonDev/personal_finance.git
 cd personal_finance
 ```
 
@@ -141,5 +141,11 @@ Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE)
 
 ---
 
-¡Gracias por tu interés y por ayudar a crecer este proyecto!  
-Si te gusta, dale ⭐️ al repositorio y compártelo.
+## 🌟 ¡Ayúdanos a crecer!
+
+Si te gusta este proyecto, dale ⭐️ al repositorio y compártelo con tus amigos y colegas.  
+Tu apoyo nos ayuda a llegar a más personas y hacer que esta aplicación sea la más profesional y gratuita para todos.
+
+---
+
+¡Gracias por tu interés y por ayudar a crecer este proyecto!
