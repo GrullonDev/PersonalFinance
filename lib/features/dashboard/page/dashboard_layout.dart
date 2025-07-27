@@ -74,6 +74,8 @@ class DashboardLayout extends StatelessWidget {
                           const SizedBox(height: 16),
                           _buildSummaryCards(logic),
                           const SizedBox(height: 16),
+                          _buildIncomeExpenseChart(logic),
+                          const SizedBox(height: 16),
                           if (logic.shouldShowExpensesChart) ...<Widget>[
                             _buildExpensesChart(logic),
                             const SizedBox(height: 16),
@@ -203,6 +205,74 @@ class DashboardLayout extends StatelessWidget {
         ),
       ),
     );
+
+  Widget _buildIncomeExpenseChart(DashboardLogic logic) {
+    final List<ChartData> data = <ChartData>[
+      ChartData(category: 'INGRESOS', amount: logic.totalIncomes, color: Colors.green),
+      ChartData(category: 'GASTOS', amount: logic.totalExpenses, color: Colors.red),
+    ];
+
+    if (logic.totalIncomes == 0 && logic.totalExpenses == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.bar_chart,
+                    color: Colors.purple,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'INGRESOS VS GASTOS',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.grey,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 220,
+              child: SfCartesianChart(
+                primaryXAxis: CategoryAxis(),
+                series: <ChartSeries<ChartData, String>>[
+                  ColumnSeries<ChartData, String>(
+                    dataSource: data,
+                    xValueMapper: (ChartData d, _) => d.category,
+                    yValueMapper: (ChartData d, _) => d.amount,
+                    pointColorMapper: (ChartData d, _) => d.color,
+                    dataLabelSettings: const DataLabelSettings(isVisible: true),
+                    width: 0.6,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildExpensesChart(DashboardLogic logic) {
     final List<ChartData> chartData = logic.getChartData();
