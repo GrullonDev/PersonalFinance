@@ -219,6 +219,86 @@ class AppValidators {
     return null;
   }
 
+  // ===== VALIDACIONES DE CONTRASEÑA =====
+
+  /// Valida una contraseña con requisitos de seguridad
+  static String? validatePassword(String? password) {
+    if (password == null || password.trim().isEmpty) {
+      return 'Contraseña es requerida';
+    }
+
+    if (password.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
+    }
+
+    // Verificar que contenga al menos una mayúscula
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return 'La contraseña debe contener al menos una mayúscula';
+    }
+
+    // Verificar que contenga al menos un número
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return 'La contraseña debe contener al menos un número';
+    }
+
+    // Verificar que contenga al menos una minúscula
+    if (!RegExp(r'[a-z]').hasMatch(password)) {
+      return 'La contraseña debe contener al menos una minúscula';
+    }
+
+    return null;
+  }
+
+  /// Valida que las contraseñas coincidan
+  static String? validatePasswordConfirmation(String? password, String? confirmPassword) {
+    if (confirmPassword == null || confirmPassword.trim().isEmpty) {
+      return 'Confirmación de contraseña es requerida';
+    }
+
+    if (password != confirmPassword) {
+      return 'Las contraseñas no coinciden';
+    }
+
+    return null;
+  }
+
+  /// Valida un nombre de usuario
+  static String? validateUsername(String? username) {
+    if (username == null || username.trim().isEmpty) {
+      return 'Nombre de usuario es requerido';
+    }
+
+    if (username.length < 3) {
+      return 'El nombre de usuario debe tener al menos 3 caracteres';
+    }
+
+    if (username.length > 20) {
+      return 'El nombre de usuario no puede tener más de 20 caracteres';
+    }
+
+    // Solo permitir letras, números y guiones bajos
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
+      return 'El nombre de usuario solo puede contener letras, números y guiones bajos';
+    }
+
+    return null;
+  }
+
+  /// Valida que el email o username sea válido para login
+  static String? validateEmailOrUsername(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email o nombre de usuario es requerido';
+    }
+
+    // Si contiene @ es un email, validar como email
+    if (value.contains('@')) {
+      return validateEmail(value);
+    } else {
+      // Si no contiene @ es un username, validar como username
+      return validateUsername(value);
+    }
+  }
+
   // ===== VALIDACIONES COMPUESTAS =====
 
   /// Valida una transacción completa

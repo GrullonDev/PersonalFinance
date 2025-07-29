@@ -1,4 +1,4 @@
-package com.example.personal_finance
+package com.GrullonDev.personal_finance
 
 import android.app.Application
 
@@ -7,4 +7,4 @@ class MyApplication : Application() {
         super.onCreate()
         // Inicialización de Firebase se hace automáticamente
     }
-} 
+}

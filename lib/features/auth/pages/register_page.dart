@@ -55,9 +55,8 @@ class _RegisterPageState extends State<RegisterPage> {
       DateTime.tryParse(birthDateController.text),
       'Fecha de Nacimiento',
     );
-    final String? usernameError = AppValidators.validateRequired(
+    final String? usernameError = AppValidators.validateUsername(
       usernameController.text,
-      'Usuario',
     );
     final String? emailError =
         AppValidators.validateRequired(
@@ -69,14 +68,13 @@ class _RegisterPageState extends State<RegisterPage> {
         emailController.text != confirmEmailController.text
             ? 'Los correos no coinciden'
             : null;
-    final String? passwordError = AppValidators.validateRequired(
+    final String? passwordError = AppValidators.validatePassword(
       passwordController.text,
-      'Contraseña',
     );
-    final String? confirmPasswordError =
-        passwordController.text != confirmPasswordController.text
-            ? 'Las contraseñas no coinciden'
-            : null;
+    final String? confirmPasswordError = AppValidators.validatePasswordConfirmation(
+      passwordController.text,
+      confirmPasswordController.text,
+    );
 
     final List<String?> errors = <String?>[
       firstNameError,
@@ -96,6 +94,22 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      return;
+    }
+
+    // Verificar si el username ya existe
+    try {
+      final bool usernameExists = await authService.isUsernameExists(usernameController.text);
+      if (usernameExists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('El nombre de usuario ya está en uso')),
+        );
+        return;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al verificar nombre de usuario: ${e.toString()}')),
+      );
       return;
     }
 
@@ -231,10 +245,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   colorScheme: colorScheme,
                 ),
                 const SizedBox(height: 20),
-                _buildTextField(
+                _buildPasswordField(
                   controller: passwordController,
                   labelText: 'Password',
-                  obscureText: true,
                   isDarkMode: isDarkMode,
                   colorScheme: colorScheme,
                 ),
@@ -323,4 +336,152 @@ class _RegisterPageState extends State<RegisterPage> {
         fillColor: isDarkMode ? colorScheme.surface : Colors.white,
       ),
     );
+
+  /// Widget especializado para el campo de contraseña con indicadores visuales
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String labelText,
+    required bool isDarkMode,
+    required ColorScheme colorScheme,
+  }) {
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setState) {
+        final String password = controller.text;
+        final bool hasMinLength = password.length >= 8;
+        final bool hasUppercase = RegExp(r'[A-Z]').hasMatch(password);
+        final bool hasNumber = RegExp(r'[0-9]').hasMatch(password);
+        final bool hasLowercase = RegExp(r'[a-z]').hasMatch(password);
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            TextField(
+              controller: controller,
+              obscureText: true,
+              onChanged: (String value) => setState(() {}),
+              style: TextStyle(
+                color: isDarkMode ? colorScheme.onSurface : Colors.black87,
+              ),
+              decoration: InputDecoration(
+                labelText: labelText,
+                labelStyle: TextStyle(
+                  color: isDarkMode
+                      ? colorScheme.onSurface.withValues(alpha: 0.7)
+                      : Colors.black54,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: isDarkMode ? colorScheme.outline : Colors.grey,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: isDarkMode ? colorScheme.outline : Colors.grey,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+              ),
+            ),
+            if (password.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? colorScheme.surface.withValues(alpha: 0.8)
+                      : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDarkMode ? colorScheme.outline : Colors.grey[300]!,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Requisitos de contraseña:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? colorScheme.onSurface : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildPasswordRequirement(
+                      'Al menos 8 caracteres',
+                      hasMinLength,
+                      isDarkMode,
+                      colorScheme,
+                    ),
+                    _buildPasswordRequirement(
+                      'Al menos una mayúscula',
+                      hasUppercase,
+                      isDarkMode,
+                      colorScheme,
+                    ),
+                    _buildPasswordRequirement(
+                      'Al menos un número',
+                      hasNumber,
+                      isDarkMode,
+                      colorScheme,
+                    ),
+                    _buildPasswordRequirement(
+                      'Al menos una minúscula',
+                      hasLowercase,
+                      isDarkMode,
+                      colorScheme,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Widget para mostrar cada requisito de contraseña
+  Widget _buildPasswordRequirement(
+    String text,
+    bool isValid,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            isValid ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 16,
+            color: isValid
+                ? Colors.green
+                : (isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.5) : Colors.grey),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: isValid
+                  ? Colors.green
+                  : (isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.7) : Colors.grey[600]),
+              fontWeight: isValid ? FontWeight.w500 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

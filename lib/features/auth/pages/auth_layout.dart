@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/utils/validators.dart';
 
 class LoginLayout extends StatelessWidget {
   LoginLayout({super.key});
@@ -55,12 +56,19 @@ class LoginLayout extends StatelessWidget {
                   color: isDarkMode ? colorScheme.onSurface : Colors.black87,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Email',
+                  labelText: 'Email o Usuario',
+                  hintText: 'Ingresa tu email o nombre de usuario',
                   labelStyle: TextStyle(
                     color:
                         isDarkMode
                             ? colorScheme.onSurface.withValues(alpha: 0.7)
                             : Colors.black54,
+                  ),
+                  hintStyle: TextStyle(
+                    color:
+                        isDarkMode
+                            ? colorScheme.onSurface.withValues(alpha: 0.5)
+                            : Colors.black38,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -143,9 +151,32 @@ class LoginLayout extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
+                    // Validar campos antes de enviar
+                    final String? emailOrUsernameError = AppValidators.validateEmailOrUsername(
+                      emailController.text,
+                    );
+                    final String? passwordError = AppValidators.validateRequired(
+                      passwordController.text,
+                      'Contraseña',
+                    );
+
+                    if (emailOrUsernameError != null || passwordError != null) {
+                      final List<String> errors = <String>[
+                        if (emailOrUsernameError != null) emailOrUsernameError,
+                        if (passwordError != null) passwordError,
+                      ];
+                      
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(errors.join('\n'))),
+                        );
+                      }
+                      return;
+                    }
+
                     try {
                       final User? user = await authService.loginUser(
-                        emailController.text,
+                        emailController.text.trim(),
                         passwordController.text,
                       );
                       if (user != null) {
@@ -159,15 +190,29 @@ class LoginLayout extends StatelessWidget {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Invalid credentials'),
+                              content: Text('Credenciales inválidas'),
                             ),
                           );
                         }
                       }
                     } catch (e) {
                       if (context.mounted) {
+                        String errorMessage = 'Error al iniciar sesión';
+                        
+                        if (e.toString().contains('Usuario no encontrado')) {
+                          errorMessage = 'Usuario no encontrado';
+                        } else if (e.toString().contains('wrong-password')) {
+                          errorMessage = 'Contraseña incorrecta';
+                        } else if (e.toString().contains('user-not-found')) {
+                          errorMessage = 'Usuario no encontrado';
+                        } else if (e.toString().contains('invalid-email')) {
+                          errorMessage = 'Email inválido';
+                        } else if (e.toString().contains('too-many-requests')) {
+                          errorMessage = 'Demasiados intentos. Intenta más tarde';
+                        }
+                        
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: ${e.toString()}')),
+                          SnackBar(content: Text(errorMessage)),
                         );
                       }
                     }
