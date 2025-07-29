@@ -127,158 +127,198 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      image: DecorationImage(
-        image: AssetImage('assets/logo.png'),
-        fit: BoxFit.cover,
-        colorFilter: ColorFilter.mode(
-          Colors.white.withOpacity(0.1),
-          BlendMode.dstATop,
-        ),
+  Widget build(BuildContext context) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? colorScheme.surface : Colors.grey[50],
+        image: isDarkMode 
+          ? null 
+          : DecorationImage(
+              image: const AssetImage('assets/logo.png'),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.white.withValues(alpha: 0.1),
+                BlendMode.dstATop,
+              ),
+            ),
       ),
-    ),
-    child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign Up'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: <Widget>[
-              const Text(
-                'Your information is safe with us',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
+        appBar: AppBar(
+          title: Text(
+            'Sign Up',
+            style: TextStyle(
+              color: isDarkMode ? colorScheme.onSurface : Colors.black87,
+            ),
+          ),
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: isDarkMode ? colorScheme.onSurface : Colors.black87,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: <Widget>[
+                Text(
+                  'Your information is safe with us',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.7) : Colors.black54,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: firstNameController,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: firstNameController,
                   labelText: 'First Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: lastNameController,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: lastNameController,
                   labelText: 'Last Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: birthDateController,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: birthDateController,
                   labelText: 'Date of Birth',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  onTap: _selectBirthDate,
+                  readOnly: true,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-                onTap: _selectBirthDate,
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: usernameController,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: usernameController,
                   labelText: 'Username',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: emailController,
                   labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  keyboardType: TextInputType.emailAddress,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: confirmEmailController,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: confirmEmailController,
                   labelText: 'Confirm Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  keyboardType: TextInputType.emailAddress,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: passwordController,
                   labelText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  obscureText: true,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: confirmPasswordController,
-                obscureText: true,
-                decoration: InputDecoration(
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: confirmPasswordController,
                   labelText: 'Confirm Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  obscureText: true,
+                  isDarkMode: isDarkMode,
+                  colorScheme: colorScheme,
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _validateAndRegister,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _validateAndRegister,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 2,
+                    ),
+                    child: const Text(
+                      'Sign Up', 
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Sign Up', style: TextStyle(color: Colors.white)),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required bool isDarkMode,
+    required ColorScheme colorScheme,
+    bool obscureText = false,
+    bool readOnly = false,
+    TextInputType? keyboardType,
+    VoidCallback? onTap,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      readOnly: readOnly,
+      keyboardType: keyboardType,
+      onTap: onTap,
+      style: TextStyle(
+        color: isDarkMode ? colorScheme.onSurface : Colors.black87,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: TextStyle(
+          color: isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.7) : Colors.black54,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: isDarkMode ? colorScheme.outline : Colors.grey,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: isDarkMode ? colorScheme.outline : Colors.grey,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        filled: true,
+        fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+      ),
+    );
+  }
 }

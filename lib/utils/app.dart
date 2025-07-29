@@ -35,14 +35,55 @@ class MyApp extends StatelessWidget {
         themeMode: authProvider.themeMode,
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          brightness: Brightness.light,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.light,
+          ),
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+          ),
+          // Configuraciones adicionales para mejor contraste en tema claro
+          inputDecorationTheme: InputDecorationTheme(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue, width: 2),
+            ),
+            labelStyle: const TextStyle(color: Colors.black54),
+            hintStyle: const TextStyle(color: Colors.black38),
+          ),
+          textTheme: const TextTheme(
+            bodyLarge: TextStyle(color: Colors.black87),
+            bodyMedium: TextStyle(color: Colors.black87),
+            bodySmall: TextStyle(color: Colors.black54),
+            titleLarge: TextStyle(color: Colors.black87),
+            titleMedium: TextStyle(color: Colors.black87),
+            titleSmall: TextStyle(color: Colors.black87),
+          ),
+        ),
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ),
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
             showSelectedLabels: true,
             showUnselectedLabels: true,
             type: BottomNavigationBarType.fixed,
           ),
         ),
-        darkTheme: ThemeData.dark(),
         onGenerateTitle:
             (BuildContext context) => AppLocalizations.of(context)!.appTitle,
         debugShowCheckedModeBanner: false,
