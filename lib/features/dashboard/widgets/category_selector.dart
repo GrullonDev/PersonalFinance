@@ -13,12 +13,13 @@ class CategorySelector extends StatelessWidget {
 
     return DropdownButton<String>(
       value: selected,
-      items: categories
-          .map((String cat) => DropdownMenuItem<String>(
-                value: cat,
-                child: Text(cat),
-              ))
-          .toList(),
+      items:
+          categories
+              .map(
+                (String cat) =>
+                    DropdownMenuItem<String>(value: cat, child: Text(cat)),
+              )
+              .toList(),
       onChanged: (String? value) {
         if (value != null) {
           logic.changeCategory(value);
@@ -27,4 +28,3 @@ class CategorySelector extends StatelessWidget {
     );
   }
 }
-

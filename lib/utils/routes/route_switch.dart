@@ -20,7 +20,9 @@ class RouteSwitch {
           builder: (BuildContext _) => const LoginPage(),
         );
       case RoutePath.register:
-        return MaterialPageRoute(builder: (BuildContext _) => const RegisterPage());
+        return MaterialPageRoute(
+          builder: (BuildContext _) => const RegisterPage(),
+        );
       default:
         return MaterialPageRoute(
           builder:

@@ -32,7 +32,8 @@ class DashboardLogic extends ChangeNotifier {
   double get balance => calculateBalance(totalIncomes, totalExpenses);
   Map<String, double> get expensesByCategory =>
       calculateExpensesByCategory(filteredExpenses);
-  List<String> get availableCategories => <String>{
+  List<String> get availableCategories =>
+      <String>{
         'Todas',
         ..._expenseBox.values.map((Expense e) => e.category),
       }.toList();
@@ -199,7 +200,9 @@ class DashboardLogic extends ChangeNotifier {
         return date.year == now.year;
       case PeriodFilter.personalizado:
         if (_customPeriod == null) return true;
-        return date.isAfter(_customPeriod!.start.subtract(const Duration(days: 1))) &&
+        return date.isAfter(
+              _customPeriod!.start.subtract(const Duration(days: 1)),
+            ) &&
             date.isBefore(_customPeriod!.end.add(const Duration(days: 1)));
     }
   }

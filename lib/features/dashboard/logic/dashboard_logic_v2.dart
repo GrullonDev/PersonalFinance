@@ -71,7 +71,8 @@ class DashboardLogicV2 extends ChangeNotifier {
     return categoryMap;
   }
 
-  List<String> get availableCategories => <String>{
+  List<String> get availableCategories =>
+      <String>{
         'Todas',
         ..._expenses.map((ExpenseEntity e) => e.category),
       }.toList();
@@ -147,10 +148,13 @@ class DashboardLogicV2 extends ChangeNotifier {
         params,
       );
 
-      _expenses = result.expenses
-          .where((ExpenseEntity e) =>
-              _categoryFilter == null || e.category == _categoryFilter)
-          .toList();
+      _expenses =
+          result.expenses
+              .where(
+                (ExpenseEntity e) =>
+                    _categoryFilter == null || e.category == _categoryFilter,
+              )
+              .toList();
       _incomes = result.incomes;
 
       notifyListeners();
@@ -320,7 +324,10 @@ class DashboardLogicV2 extends ChangeNotifier {
         );
       case PeriodFilter.personalizado:
         return _customPeriod ??
-            DateTimeRange(start: startOfDay, end: startOfDay.add(const Duration(days: 1)));
+            DateTimeRange(
+              start: startOfDay,
+              end: startOfDay.add(const Duration(days: 1)),
+            );
     }
   }
 

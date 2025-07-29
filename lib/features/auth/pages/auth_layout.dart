@@ -14,19 +14,20 @@ class LoginLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDarkMode 
-            ? [
-                colorScheme.primary.withValues(alpha: 0.8),
-                colorScheme.secondary.withValues(alpha: 0.8),
-              ]
-            : [
-                const Color(0xFF4CAF50), // Verde
-                const Color(0xFF2196F3), // Azul
-              ],
+          colors:
+              isDarkMode
+                  ? <Color>[
+                    colorScheme.primary.withValues(alpha: 0.8),
+                    colorScheme.secondary.withValues(alpha: 0.8),
+                  ]
+                  : <Color>[
+                    const Color(0xFF4CAF50), // Verde
+                    const Color(0xFF2196F3), // Azul
+                  ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -37,10 +38,7 @@ class LoginLayout extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Image.asset(
-                'assets/logo.png',
-                height: 100,
-              ),
+              Image.asset('assets/logo.png', height: 100),
               const SizedBox(height: 20),
               Text(
                 'Welcome back',
@@ -59,7 +57,10 @@ class LoginLayout extends StatelessWidget {
                 decoration: InputDecoration(
                   labelText: 'Email',
                   labelStyle: TextStyle(
-                    color: isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.7) : Colors.black54,
+                    color:
+                        isDarkMode
+                            ? colorScheme.onSurface.withValues(alpha: 0.7)
+                            : Colors.black54,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -94,7 +95,10 @@ class LoginLayout extends StatelessWidget {
                 decoration: InputDecoration(
                   labelText: 'Password',
                   labelStyle: TextStyle(
-                    color: isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.7) : Colors.black54,
+                    color:
+                        isDarkMode
+                            ? colorScheme.onSurface.withValues(alpha: 0.7)
+                            : Colors.black54,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -146,12 +150,17 @@ class LoginLayout extends StatelessWidget {
                       );
                       if (user != null) {
                         if (context.mounted) {
-                          Navigator.pushReplacementNamed(context, RoutePath.dashboard);
+                          Navigator.pushReplacementNamed(
+                            context,
+                            RoutePath.dashboard,
+                          );
                         }
                       } else {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Invalid credentials')),
+                            const SnackBar(
+                              content: Text('Invalid credentials'),
+                            ),
                           );
                         }
                       }
@@ -173,11 +182,8 @@ class LoginLayout extends StatelessWidget {
                     elevation: 2,
                   ),
                   child: const Text(
-                    'Log in', 
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    'Log in',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

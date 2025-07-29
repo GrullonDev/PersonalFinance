@@ -130,20 +130,21 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode ? colorScheme.surface : Colors.grey[50],
-        image: isDarkMode 
-          ? null 
-          : DecorationImage(
-              image: const AssetImage('assets/logo.png'),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(
-                Colors.white.withValues(alpha: 0.1),
-                BlendMode.dstATop,
-              ),
-            ),
+        image:
+            isDarkMode
+                ? null
+                : DecorationImage(
+                  image: const AssetImage('assets/logo.png'),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.white.withValues(alpha: 0.1),
+                    BlendMode.dstATop,
+                  ),
+                ),
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -176,7 +177,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.7) : Colors.black54,
+                    color:
+                        isDarkMode
+                            ? colorScheme.onSurface.withValues(alpha: 0.7)
+                            : Colors.black54,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -257,7 +261,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       elevation: 2,
                     ),
                     child: const Text(
-                      'Sign Up', 
+                      'Sign Up',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -282,8 +286,7 @@ class _RegisterPageState extends State<RegisterPage> {
     bool readOnly = false,
     TextInputType? keyboardType,
     VoidCallback? onTap,
-  }) {
-    return TextField(
+  }) => TextField(
       controller: controller,
       obscureText: obscureText,
       readOnly: readOnly,
@@ -295,7 +298,10 @@ class _RegisterPageState extends State<RegisterPage> {
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: TextStyle(
-          color: isDarkMode ? colorScheme.onSurface.withValues(alpha: 0.7) : Colors.black54,
+          color:
+              isDarkMode
+                  ? colorScheme.onSurface.withValues(alpha: 0.7)
+                  : Colors.black54,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -311,14 +317,10 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         filled: true,
         fillColor: isDarkMode ? colorScheme.surface : Colors.white,
       ),
     );
-  }
 }

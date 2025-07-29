@@ -24,10 +24,8 @@ class FirebaseAuthService implements AuthDataSource {
   }
 
   Future<void> registerUser(String email, String password) async {
-    final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    final UserCredential userCredential = await _auth
+        .createUserWithEmailAndPassword(email: email, password: password);
 
     // Enviar correo de verificación
     if (userCredential.user != null && !userCredential.user!.emailVerified) {

@@ -18,7 +18,8 @@ class AlertsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Consumer<AlertsProvider>(
-        builder: (BuildContext context, AlertsProvider provider, _) => Stack(
+    builder:
+        (BuildContext context, AlertsProvider provider, _) => Stack(
           children: <Widget>[
             if (provider.alerts.isEmpty)
               const Center(child: Text('Sin alertas por el momento'))
@@ -47,5 +48,5 @@ class AlertsPage extends StatelessWidget {
             ),
           ],
         ),
-      );
+  );
 }

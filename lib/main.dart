@@ -1,11 +1,9 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
-
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-
 import 'package:personal_finance/features/alerts/alert_item.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
