@@ -23,7 +23,9 @@ class AppErrorWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
+              color: Theme.of(
+                context,
+              ).colorScheme.error.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -45,7 +47,9 @@ class AppErrorWidget extends StatelessWidget {
             message,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onError.withValues(alpha: 0.8),
+              color: Theme.of(
+                context,
+              ).colorScheme.onError.withValues(alpha: 0.8),
             ),
           ),
           if (onRetry != null) ...<Widget>[

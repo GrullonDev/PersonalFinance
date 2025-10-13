@@ -47,8 +47,9 @@ class _AddAlertModalState extends State<AddAlertModal> {
                   labelText: 'Título',
                   border: OutlineInputBorder(),
                 ),
-                validator: (String? value) =>
-                    (value == null || value.isEmpty) ? 'Requerido' : null,
+                validator:
+                    (String? value) =>
+                        (value == null || value.isEmpty) ? 'Requerido' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(

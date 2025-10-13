@@ -107,7 +107,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items:
                     _categorySuggestions
                         .map(

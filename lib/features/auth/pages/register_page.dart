@@ -130,7 +130,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage('assets/logo.png'),
+        image: const AssetImage('assets/logo.png'),
         fit: BoxFit.cover,
         colorFilter: ColorFilter.mode(
           Colors.white.withOpacity(0.1),
@@ -273,7 +273,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Sign Up', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Sign Up',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),

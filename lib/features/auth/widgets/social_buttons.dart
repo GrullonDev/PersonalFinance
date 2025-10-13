@@ -26,9 +26,7 @@ class SocialLoginButtons extends StatelessWidget {
           provider.clearError();
         });
       }
-      return const Column(
-        
-      );
+      return const Column();
     },
   );
 }

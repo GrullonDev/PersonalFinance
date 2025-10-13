@@ -15,7 +15,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
   ProfileRepositoryImpl(this.dataSource);
 
   @override
-  Future<void> saveProfile(UserProfile profile) => dataSource.saveProfile(profile);
+  Future<void> saveProfile(UserProfile profile) =>
+      dataSource.saveProfile(profile);
 
   @override
   Future<UserProfile?> getProfile(String uid) => dataSource.getProfile(uid);

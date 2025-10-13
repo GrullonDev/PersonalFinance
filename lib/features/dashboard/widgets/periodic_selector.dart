@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
-import 'package:provider/provider.dart';
 
 class PeriodSelector extends StatelessWidget {
   final String selected;
-  final void Function(String) onSelect;
+  final Function(String) onSelect;
 
   const PeriodSelector({
     required this.selected,
@@ -13,75 +10,140 @@ class PeriodSelector extends StatelessWidget {
     super.key,
   });
 
-  static const List<String> periods = <String>[
-    'Día',
-    'Semana',
-    'Mes',
-    'Año',
-    'Período',
-  ];
-
   @override
-  Widget build(BuildContext context) {
-    final DashboardLogic logic = context.watch<DashboardLogic>();
-    final PeriodFilter period = logic.selectedPeriod;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 12),
+        child: Text(
+          'Presupuesto Semanal',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
       ),
-      child: Wrap(
-        spacing: 4,
-        alignment: WrapAlignment.center,
-        children:
-            PeriodFilter.values.map((PeriodFilter p) {
-              final String label = _getLabel(p);
-              final bool isSelected = period == p;
-
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                child: ChoiceChip(
-                  label: Text(
-                    label,
+      Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: <Widget>[
+            _buildOption(context, 'day', 'Hoy'),
+            _buildOption(context, 'week', 'Semana'),
+            _buildOption(context, 'month', 'Mes'),
+            _buildOption(context, 'year', 'Año'),
+            _buildOption(context, 'all', 'Todo'),
+          ],
+        ),
+      ),
+      const SizedBox(height: 8),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.blue.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    '\$200 de \$300',
                     style: TextStyle(
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 13,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  selected: isSelected,
-                  onSelected: (_) => logic.changePeriod(p),
-                  selectedColor: Colors.blue,
-                  backgroundColor: Colors.white,
-                  side: BorderSide(
-                    color: isSelected ? Colors.blue : Colors.grey[300]!,
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: 0.66,
+                      backgroundColor: Colors.grey.shade200,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.blue,
+                      ),
+                      minHeight: 8,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  '66%',
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
-              );
-            }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildOption(BuildContext context, String value, String label) {
+    final bool isSelected = selected == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onSelect(value),
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color:
+                isSelected
+                    ? Theme.of(context).primaryColor
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow:
+                isSelected
+                    ? <BoxShadow>[
+                      BoxShadow(
+                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                    : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.grey[800],
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 14,
+            ),
+          ),
+        ),
       ),
     );
-  }
-
-  String _getLabel(PeriodFilter filter) {
-    switch (filter) {
-      case PeriodFilter.dia:
-        return 'Día';
-      case PeriodFilter.semana:
-        return 'Semana';
-      case PeriodFilter.mes:
-        return 'Mes';
-      case PeriodFilter.anio:
-        return 'Año';
-    }
   }
 }

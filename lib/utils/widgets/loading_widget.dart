@@ -18,7 +18,9 @@ class AppLoadingWidget extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.15),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),

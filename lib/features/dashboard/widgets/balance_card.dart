@@ -15,13 +15,13 @@ class BalanceCard extends StatelessWidget {
         isPositive ? theme.colorScheme.secondary : theme.colorScheme.error;
 
     return Card(
-      elevation: 6,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 10,
+      shadowColor: Colors.black38,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             colors:
                 isPositive
@@ -31,12 +31,27 @@ class BalanceCard extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
           border: Border.all(color: balanceColor.withAlpha(100)),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: balanceColor.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Column(
           children: <Widget>[
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
+                Text(
+                  AppLocalizations.of(context)!.totalBalance,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
@@ -45,18 +60,8 @@ class BalanceCard extends StatelessWidget {
                   ),
                   child: Icon(
                     isPositive ? Icons.trending_up : Icons.trending_down,
-
                     color: balanceColor,
                     size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  AppLocalizations.of(context)!.totalBalance,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -73,7 +78,7 @@ class BalanceCard extends StatelessWidget {
                 style: theme.textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: balanceColor,
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.8,
                 ),
               ),
             ),
@@ -82,7 +87,7 @@ class BalanceCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: balanceColor.withAlpha(20),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: balanceColor.withAlpha(50)),
               ),
               child: Text(

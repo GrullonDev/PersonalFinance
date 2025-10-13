@@ -6,4 +6,5 @@ class RoutePath {
   static const String splash = '/splash';
   static const String dashboard = '/dashboard';
   static const String addExpense = '/addExpense';
+  static const String settings = '/settings';
 }
