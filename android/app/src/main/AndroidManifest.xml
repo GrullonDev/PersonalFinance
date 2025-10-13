@@ -4,7 +4,7 @@
     <!-- android/app/src/main/AndroidManifest.xml -->
     <application
         android:name=".MyApplication"
-        android:label="personal_finance"
+        android:label="Finanzas Maestras"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
 
