@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../domain/profile_repository.dart';
 import '../model/user_profile.dart';
@@ -21,7 +22,21 @@ class ProfileProvider extends ChangeNotifier {
     final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     _setLoading(true);
-    _profile = await repository.getProfile(user.uid);
+    try {
+      _profile = await repository.getProfile(user.uid);
+    } catch (e) {
+      debugPrint('Error al cargar perfil: $e');
+      // Crear un perfil por defecto si hay error de permisos
+      _profile = UserProfile(
+        id: user.uid,
+        firstName: user.displayName ?? 'Usuario',
+        lastName: user.displayName ?? '',
+        email: user.email ?? '',
+        photoUrl: user.photoURL ?? '',
+        username: user.displayName ?? '',
+        birthDate: DateTime.now(),
+      );
+    }
     _setLoading(false);
   }
 
@@ -29,10 +44,20 @@ class ProfileProvider extends ChangeNotifier {
     final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     _setLoading(true);
-    final String url = await repository.uploadProfilePicture(user.uid, image);
-    if (_profile != null) {
-      _profile = _profile!.copyWith(photoUrl: url);
-      await repository.saveProfile(_profile!);
+    try {
+      final String url = await repository.uploadProfilePicture(user.uid, image);
+      if (_profile != null) {
+        _profile = _profile!.copyWith(photoUrl: url);
+        try {
+          await repository.saveProfile(_profile!);
+        } catch (e) {
+          debugPrint('Error al guardar perfil: $e');
+          // Continuar sin guardar en Firestore
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al subir foto: $e');
+      // Mostrar mensaje de error si es necesario
     }
     _setLoading(false);
   }
