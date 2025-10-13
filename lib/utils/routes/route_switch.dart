@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:personal_finance/features/auth/pages/auth_page.dart';
 import 'package:personal_finance/features/auth/pages/register_page.dart';
+import 'package:personal_finance/features/goals/pages/goals_page.dart';
 import 'package:personal_finance/features/home/pages/home_page.dart';
 import 'package:personal_finance/features/onboarding/pages/onboarding_page.dart';
 import 'package:personal_finance/features/settings/pages/settings_page.dart';
@@ -32,6 +33,10 @@ class RouteSwitch {
       case RoutePath.settings:
         return MaterialPageRoute(
           builder: (BuildContext _) => const SettingsPage(),
+        );
+      case RoutePath.goals:
+        return MaterialPageRoute(
+          builder: (BuildContext _) => const GoalsPage(),
         );
       default:
         return MaterialPageRoute(
