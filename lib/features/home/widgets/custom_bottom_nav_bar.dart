@@ -37,9 +37,9 @@ class CustomBottomNavBar extends StatelessWidget {
               index: 0,
             ),
             _buildNavItem(
-              icon: Icons.receipt_long_outlined,
-              activeIcon: Icons.receipt_long,
-              label: 'Gastos',
+              icon: Icons.pie_chart_outline,
+              activeIcon: Icons.pie_chart,
+              label: 'Presupuestos',
               index: 1,
             ),
             // Espacio para el botón flotante

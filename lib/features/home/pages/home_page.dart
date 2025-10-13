@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
-import 'package:personal_finance/features/expenses/pages/expenses_page.dart';
+import 'package:personal_finance/features/budgets/pages/budgets_page.dart';
 import 'package:personal_finance/features/goals/pages/goals_page.dart';
 import 'package:personal_finance/features/home/widgets/custom_bottom_nav_bar.dart';
 import 'package:personal_finance/features/profile/pages/profile_page.dart';
@@ -16,16 +16,16 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const <Widget>[
-    DashboardPage(),
-    ExpensesPage(),
-    GoalsPage(),
-    ProfilePage(),
+  final List<Widget> _pages = <Widget>[
+    const DashboardPage(),
+    const BudgetsPage(),
+    const GoalsPage(),
+    const ProfilePage(),
   ];
 
   final List<String> _titles = <String>[
     'Finanzas',
-    'Gastos',
+    'Presupuestos',
     'Metas',
     'Perfil',
   ];

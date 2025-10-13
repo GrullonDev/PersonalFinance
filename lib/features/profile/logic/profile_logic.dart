@@ -37,7 +37,7 @@ class ProfileLogic extends ChangeNotifier {
     try {
       // TODO: Implementar carga de datos del perfil
       await Future<void>.delayed(const Duration(seconds: 1)); // Simulación
-      _photoUrl = 'https://via.placeholder.com/150';
+      _photoUrl = null; // Default to showing the icon instead of a placeholder image
       _name = 'Usuario';
       _email = 'usuario@example.com';
       notifyListeners();
