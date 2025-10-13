@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
-
 import 'package:personal_finance/features/alerts/alerts_provider.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/logic/auth_provider.dart';
@@ -15,6 +11,8 @@ import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
+import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

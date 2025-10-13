@@ -1,8 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 import '../domain/profile_repository.dart';
 import '../model/user_profile.dart';

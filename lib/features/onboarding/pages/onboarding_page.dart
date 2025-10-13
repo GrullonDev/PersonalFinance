@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:personal_finance/features/onboarding/models/onboarding_page_model.dart';
 import 'package:personal_finance/features/onboarding/widgets/onboarding_content.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});

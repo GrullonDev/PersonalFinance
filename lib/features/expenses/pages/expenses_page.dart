@@ -10,123 +10,128 @@ class ExpensesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: ValueListenableBuilder<Box<Expense>>(
-        valueListenable: Hive.box<Expense>('expenses').listenable(),
-        builder: (BuildContext context, Box<Expense> box, _) {
-          final List<Expense> expenses =
-              box.values.toList()
-                ..sort((Expense a, Expense b) => b.date.compareTo(a.date));
+    backgroundColor: Colors.grey[50],
+    body: ValueListenableBuilder<Box<Expense>>(
+      valueListenable: Hive.box<Expense>('expenses').listenable(),
+      builder: (BuildContext context, Box<Expense> box, _) {
+        final List<Expense> expenses =
+            box.values.toList()
+              ..sort((Expense a, Expense b) => b.date.compareTo(a.date));
 
-          if (expenses.isEmpty) {
-            return _buildEmptyState();
-          }
+        if (expenses.isEmpty) {
+          return _buildEmptyState();
+        }
 
-          // Agrupar por mes
-          final Map<String, List<Expense>> expensesByMonth = _groupByMonth(
-            expenses,
-          );
+        // Agrupar por mes
+        final Map<String, List<Expense>> expensesByMonth = _groupByMonth(
+          expenses,
+        );
 
-          return CustomScrollView(
-            slivers: <Widget>[
-              // Header
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: <Color>[Colors.red.shade700, Colors.red.shade500],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          const Text(
-                            'Gastos',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${expenses.length} transacciones',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Total de gastos
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(30),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[
-                                const Text(
-                                  'Total gastado',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  '\$${_calculateTotal(expenses).toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+        return CustomScrollView(
+          slivers: <Widget>[
+            // Header
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[Colors.red.shade700, Colors.red.shade500],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-              ),
-
-              // Lista de gastos agrupados por mes
-              SliverToBoxAdapter(
-                child: Transform.translate(
-                  offset: const Offset(0, -20),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
-                      ),
-                    ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
                     child: Column(
-                      children:
-                          expensesByMonth.entries.map((MapEntry<String, List<Expense>> entry) => _buildMonthSection(
-                              context,
-                              entry.key,
-                              entry.value,
-                            )).toList(),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Text(
+                          'Gastos',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${expenses.length} transacciones',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Total de gastos
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(30),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              const Text(
+                                'Total gastado',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                '\$${_calculateTotal(expenses).toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      ),
-    );
+            ),
+
+            // Lista de gastos agrupados por mes
+            SliverToBoxAdapter(
+              child: Transform.translate(
+                offset: const Offset(0, -20),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    children:
+                        expensesByMonth.entries
+                            .map(
+                              (MapEntry<String, List<Expense>> entry) =>
+                                  _buildMonthSection(
+                                    context,
+                                    entry.key,
+                                    entry.value,
+                                  ),
+                            )
+                            .toList(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
 
   Widget _buildEmptyState() => Center(
     child: Column(
@@ -196,112 +201,115 @@ class ExpensesPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...expenses.map((Expense expense) => _buildExpenseItem(context, expense)),
+          ...expenses.map(
+            (Expense expense) => _buildExpenseItem(context, expense),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildExpenseItem(BuildContext context, Expense expense) => GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute<void>(
-            builder:
-                (BuildContext context) => TransactionDetailPage(
-                  transaction: TransactionDetail.fromExpense(expense),
-                ),
+  Widget _buildExpenseItem(BuildContext context, Expense expense) =>
+      GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder:
+                  (BuildContext context) => TransactionDetailPage(
+                    transaction: TransactionDetail.fromExpense(expense),
+                  ),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withAlpha(5),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.withAlpha(20),
-                borderRadius: BorderRadius.circular(12),
+          child: Row(
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _getCategoryIcon(expense.category),
+                  color: Colors.red,
+                  size: 24,
+                ),
               ),
-              child: Icon(
-                _getCategoryIcon(expense.category),
-                color: Colors.red,
-                size: 24,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      expense.title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          expense.category,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          ' • ',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                        Text(
+                          DateFormat('d MMM', 'es').format(expense.date),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: <Widget>[
                   Text(
-                    expense.title,
+                    '-\$${expense.amount.toStringAsFixed(2)}',
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.red,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        expense.category,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        ' • ',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                      Text(
-                        DateFormat('d MMM', 'es').format(expense.date),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
                 ],
               ),
-            ),
-            Row(
-              children: <Widget>[
-                Text(
-                  '-\$${expense.amount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
 
   Map<String, List<Expense>> _groupByMonth(List<Expense> expenses) {
     final Map<String, List<Expense>> grouped = <String, List<Expense>>{};
@@ -323,10 +331,8 @@ class ExpensesPage extends StatelessWidget {
     return grouped;
   }
 
-  double _calculateTotal(List<Expense> expenses) => expenses.fold(
-      0,
-      (double sum, Expense expense) => sum + expense.amount,
-    );
+  double _calculateTotal(List<Expense> expenses) =>
+      expenses.fold(0, (double sum, Expense expense) => sum + expense.amount);
 
   IconData _getCategoryIcon(String category) {
     final Map<String, IconData> icons = <String, IconData>{

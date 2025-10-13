@@ -85,10 +85,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       appBar: AppBar(
         title: const Text(
           'Detalle de Transacción',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
         elevation: 0,
@@ -111,11 +108,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       color: amountColor.withAlpha(30),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      categoryIcon,
-                      color: amountColor,
-                      size: 24,
-                    ),
+                    child: Icon(categoryIcon, color: amountColor, size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -132,8 +125,10 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          DateFormat("d 'de' MMMM, yyyy", 'es')
-                              .format(widget.transaction.date),
+                          DateFormat(
+                            "d 'de' MMMM, yyyy",
+                            'es',
+                          ).format(widget.transaction.date),
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[600],
@@ -171,12 +166,17 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: <Widget>[
-                  _buildCompactDetailRow('Categoría', widget.transaction.category),
+                  _buildCompactDetailRow(
+                    'Categoría',
+                    widget.transaction.category,
+                  ),
                   const SizedBox(height: 12),
                   _buildCompactDetailRow(
                     'Fecha',
-                    DateFormat("d 'de' MMMM, yyyy", 'es')
-                        .format(widget.transaction.date),
+                    DateFormat(
+                      "d 'de' MMMM, yyyy",
+                      'es',
+                    ).format(widget.transaction.date),
                   ),
                   const SizedBox(height: 12),
                   _buildCompactDetailRow(
@@ -236,108 +236,99 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     ],
   );
 
-  Widget _buildSplitTransactionSection() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(Icons.call_split, color: Colors.blue[700], size: 20),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Dividir Transacción',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+  Widget _buildSplitTransactionSection() => Container(
+    color: Colors.white,
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(Icons.call_split, color: Colors.blue[700], size: 20),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Dividir Transacción',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
-              Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Asigna partes de esta transacción a diferentes categorías o presupuestos',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-              height: 1.4,
             ),
+            Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Asigna partes de esta transacción a diferentes categorías o presupuestos',
+          style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.4),
+        ),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () {
+            // Mostrar diálogo para dividir transacción
+            _showSplitDialog();
+          },
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.blue,
+            padding: EdgeInsets.zero,
           ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () {
-              // Mostrar diálogo para dividir transacción
-              _showSplitDialog();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.blue,
-              padding: EdgeInsets.zero,
-            ),
-            child: const Text(
-              'Añadir división',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          child: const Text(
+            'Añadir división',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 
-  Widget _buildReceiptSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Text(
-            'Recibo',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+  Widget _buildReceiptSection() => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const Text(
+          'Recibo',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[300]!, width: 2),
-            ),
-            child: _receiptImagePath != null
-                ? _buildReceiptPreview()
-                : _buildAddReceiptButton(),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[300]!, width: 2),
           ),
-        ],
-      ),
-    );
-  }
+          child:
+              _receiptImagePath != null
+                  ? _buildReceiptPreview()
+                  : _buildAddReceiptButton(),
+        ),
+      ],
+    ),
+  );
 
   void _showSplitDialog() {
     showDialog<void>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Dividir Transacción'),
-        content: const Text(
-          'Esta funcionalidad te permitirá dividir esta transacción en múltiples categorías.\n\nPróximamente disponible.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: const Text('Dividir Transacción'),
+            content: const Text(
+              'Esta funcionalidad te permitirá dividir esta transacción en múltiples categorías.\n\nPróximamente disponible.',
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 

@@ -50,30 +50,29 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: _currentIndex == 0 ? null : AppBar(
-        title: Text(_titles[_currentIndex]),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black87,
-      ),
-      body: _pages[_currentIndex],
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavTap,
-        onAddPressed: _onAddPressed,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onAddPressed,
-        backgroundColor: Colors.blue,
-        elevation: 4,
-        child: const Icon(
-          Icons.add,
-          size: 32,
-          color: Colors.white,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
+    backgroundColor: Colors.grey[50],
+    appBar:
+        _currentIndex == 0
+            ? null
+            : AppBar(
+              title: Text(_titles[_currentIndex]),
+              centerTitle: true,
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.black87,
+            ),
+    body: _pages[_currentIndex],
+    bottomNavigationBar: CustomBottomNavBar(
+      currentIndex: _currentIndex,
+      onTap: _onNavTap,
+      onAddPressed: _onAddPressed,
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: _onAddPressed,
+      backgroundColor: Colors.blue,
+      elevation: 4,
+      child: const Icon(Icons.add, size: 32, color: Colors.white),
+    ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+  );
 }
