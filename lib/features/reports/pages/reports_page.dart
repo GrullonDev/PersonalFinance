@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
+
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+
+import 'package:personal_finance/features/dashboard/logic/dashboard_models.dart';
+import 'package:personal_finance/features/reports/logic/reports_logic.dart';
 
 class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
@@ -25,74 +27,85 @@ class ReportsPage extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => Consumer<DashboardLogic>(
-    builder: (BuildContext context, DashboardLogic logic, _) {
-      if (!logic.hasData) {
-        return const Center(child: Text('Sin datos para mostrar'));
-      }
-      final List<ChartData> data = logic.getChartData();
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: _buildSummary(
-                    'Ingresos',
-                    logic.totalIncomes,
-                    Colors.green,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildSummary(
-                    'Gastos',
-                    logic.totalExpenses,
-                    Colors.red,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const Text(
-                      'Distribucion de gastos',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+  Widget build(BuildContext context) => ChangeNotifierProvider(
+    create: (_) => ReportsLogic()..loadReportData(),
+    child: Consumer<ReportsLogic>(
+      builder: (BuildContext context, ReportsLogic logic, _) {
+        if (logic.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (logic.error != null) {
+          return Center(child: Text(logic.error!));
+        }
+
+        if (!logic.hasData) {
+          return const Center(child: Text('Sin datos para mostrar'));
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _buildSummary(
+                      'Ingresos',
+                      logic.totalIncomes,
+                      Colors.green,
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 200,
-                      child: SfCircularChart(
-                        series: <CircularSeries<ChartData, String>>[
-                          DoughnutSeries<ChartData, String>(
-                            dataSource: data,
-                            xValueMapper: (ChartData d, _) => d.category,
-                            yValueMapper: (ChartData d, _) => d.amount,
-                            pointColorMapper: (ChartData d, _) => d.color,
-                            dataLabelSettings: const DataLabelSettings(
-                              isVisible: true,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSummary(
+                      'Gastos',
+                      logic.totalExpenses,
+                      Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      const Text(
+                        'Distribución de gastos',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 200,
+                        child: SfCircularChart(
+                          series: <CircularSeries<ChartData, String>>[
+                            DoughnutSeries<ChartData, String>(
+                              dataSource: logic.chartData,
+                              xValueMapper: (ChartData d, _) => d.category,
+                              yValueMapper: (ChartData d, _) => d.amount,
+                              pointColorMapper: (ChartData d, _) => d.color,
+                              dataLabelSettings: const DataLabelSettings(
+                                isVisible: true,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
+            ],
+          ),
+        );
+      },
+    ),
   );
 }

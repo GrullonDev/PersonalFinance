@@ -1,6 +1,18 @@
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 
+class TransactionDivision {
+  final String category;
+  final double amount;
+  final String? description;
+
+  const TransactionDivision({
+    required this.category,
+    required this.amount,
+    this.description,
+  });
+}
+
 class TransactionDetail {
   final String id;
   final String title;
@@ -10,6 +22,7 @@ class TransactionDetail {
   final bool isExpense;
   final String? notes;
   final String? receiptImagePath;
+  final List<TransactionDivision> divisions;
 
   TransactionDetail({
     required this.id,
@@ -20,6 +33,7 @@ class TransactionDetail {
     required this.isExpense,
     this.notes,
     this.receiptImagePath,
+    this.divisions = const <TransactionDivision>[],
   });
 
   factory TransactionDetail.fromExpense(
@@ -27,6 +41,7 @@ class TransactionDetail {
     String? id,
     String? notes,
     String? receiptImagePath,
+    List<TransactionDivision> divisions = const <TransactionDivision>[],
   }) => TransactionDetail(
     id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
     title: expense.title,
@@ -36,12 +51,14 @@ class TransactionDetail {
     isExpense: true,
     notes: notes,
     receiptImagePath: receiptImagePath,
+    divisions: divisions,
   );
 
   factory TransactionDetail.fromIncome(
     Income income, {
     String? id,
     String? notes,
+    List<TransactionDivision> divisions = const <TransactionDivision>[],
   }) => TransactionDetail(
     id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
     title: income.title,
@@ -50,5 +67,6 @@ class TransactionDetail {
     category: 'Ingreso',
     isExpense: false,
     notes: notes,
+    divisions: divisions,
   );
 }

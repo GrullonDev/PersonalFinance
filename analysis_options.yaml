@@ -4,6 +4,7 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   errors:
     use_build_context_synchronously: ignore
+    directives_ordering: ignore ignore
   strong-mode:
     implicit-casts: false
     implicit-dynamic: false
