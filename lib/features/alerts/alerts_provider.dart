@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
-import 'alert_item.dart';
+import 'package:personal_finance/features/alerts/alert_item.dart';
 
 class AlertsProvider extends ChangeNotifier {
   AlertsProvider() {

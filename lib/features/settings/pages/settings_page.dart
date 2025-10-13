@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-
+import 'package:personal_finance/features/settings/logic/settings_provider.dart';
+import 'package:personal_finance/features/settings/pages/help_detail_page.dart';
+import 'package:personal_finance/features/settings/pages/notifications_detail_page.dart';
+import 'package:personal_finance/features/settings/pages/profile_detail_page.dart';
+import 'package:personal_finance/features/settings/pages/security_detail_page.dart';
 import 'package:provider/provider.dart';
-
-import '../logic/settings_provider.dart';
-
-import 'help_detail_page.dart';
-import 'notifications_detail_page.dart';
-import 'profile_detail_page.dart';
-import 'security_detail_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});

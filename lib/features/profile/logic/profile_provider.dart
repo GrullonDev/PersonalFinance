@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../domain/profile_repository.dart';
-import '../model/user_profile.dart';
+import 'package:personal_finance/features/profile/domain/profile_repository.dart';
+import 'package:personal_finance/features/profile/model/user_profile.dart';
 
 class ProfileProvider extends ChangeNotifier {
   ProfileProvider({required this.repository});

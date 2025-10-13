@@ -2,11 +2,9 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-
+import 'package:personal_finance/features/profile/domain/profile_datasource.dart';
+import 'package:personal_finance/features/profile/model/user_profile.dart';
 import 'package:personal_finance/utils/firebase_error_handler.dart';
-
-import '../domain/profile_datasource.dart';
-import '../model/user_profile.dart';
 
 class FirebaseProfileService implements ProfileDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
