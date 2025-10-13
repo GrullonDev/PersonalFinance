@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
+
 import 'package:personal_finance/features/budgets/pages/budgets_page.dart';
+import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
 import 'package:personal_finance/features/goals/pages/goals_page.dart';
 import 'package:personal_finance/features/home/widgets/custom_bottom_nav_bar.dart';
 import 'package:personal_finance/features/profile/pages/profile_page.dart';
-import 'package:personal_finance/features/transactions/pages/add_transaction_page.dart';
+import 'package:personal_finance/features/transactions/widgets/add_transaction_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,13 +38,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onAddPressed() {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => const AddTransactionPage(),
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (BuildContext context) => const AddTransactionModal(),
     ).then((_) {
-      // Actualizar después de agregar transacción
       setState(() {});
     });
   }
