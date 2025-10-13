@@ -1,164 +1,210 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-
-import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/profile/logic/profile_logic.dart';
+import 'package:personal_finance/features/profile/models/user_profile.dart';
+import 'package:personal_finance/features/profile/widgets/profile_menu_item.dart';
+import 'package:personal_finance/features/profile/widgets/recent_activity_list.dart';
+import 'package:provider/provider.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
-  Future<void> _pickImage(BuildContext context) async {
-    final ProfileLogic logic = context.read<ProfileLogic>();
-    final ImagePicker picker = ImagePicker();
-
-    showModalBottomSheet<void>(
-      context: context,
-      builder:
-          (BuildContext context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Usar cámara'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final XFile? file = await picker.pickImage(
-                    source: ImageSource.camera,
-                  );
-                  if (file != null) {
-                    await logic.uploadPhoto(File(file.path));
-                  }
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Seleccionar de galería'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final XFile? file = await picker.pickImage(
-                    source: ImageSource.gallery,
-                  );
-                  if (file != null) {
-                    await logic.uploadPhoto(File(file.path));
-                  }
-                },
-              ),
-            ],
-          ),
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final ProfileLogic logic = context.watch<ProfileLogic>();
+  Widget build(BuildContext context) => Consumer<ProfileLogic>(
+    builder: (BuildContext context, ProfileLogic logic, _) {
+      if (logic.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-    if (logic.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+      final UserProfile? profile = logic.profile;
+      if (profile == null) {
+        return const Center(child: Text('No hay perfil disponible'));
+      }
 
-    if (logic.error != null) {
-      return Center(child: Text(logic.error!));
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: <Widget>[
-          GestureDetector(
-            onTap: () => _pickImage(context),
-            child: Stack(
-              children: <Widget>[
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage:
-                      logic.photoUrl != null
-                          ? NetworkImage(logic.photoUrl!)
-                          : null,
-                  child:
-                      logic.photoUrl == null
-                          ? const Icon(Icons.person, size: 50)
-                          : null,
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Card(
+      return CustomScrollView(
+        slivers: <Widget>[
+          SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: <Widget>[
-                  ListTile(
-                    leading: const Icon(Icons.person),
-                    title: const Text('Nombre'),
-                    subtitle: Text(logic.name ?? 'No disponible'),
-                    trailing: const Icon(Icons.edit),
+                  // Profile Header
+                  Row(
+                    children: <Widget>[
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundImage:
+                            profile.photoUrl != null
+                                ? NetworkImage(profile.photoUrl!)
+                                : null,
+                        child:
+                            profile.photoUrl == null
+                                ? Text(
+                                  profile.name[0].toUpperCase(),
+                                  style: const TextStyle(fontSize: 24),
+                                )
+                                : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              profile.name,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              profile.email,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Quick Actions
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      _QuickActionButton(
+                        icon: Icons.dashboard,
+                        label: 'Dashboard',
+                        onTap: () {
+                          // TODO: Implementar navegación al dashboard
+                        },
+                      ),
+                      _QuickActionButton(
+                        icon: Icons.library_books,
+                        label: 'Presupuestos',
+                        onTap: () {
+                          // TODO: Implementar navegación a presupuestos
+                        },
+                      ),
+                      _QuickActionButton(
+                        icon: Icons.flag,
+                        label: 'Metas',
+                        onTap: () {
+                          // TODO: Implementar navegación a metas
+                        },
+                      ),
+                      _QuickActionButton(
+                        icon: Icons.person,
+                        label: 'Cuenta',
+                        onTap: () {
+                          // TODO: Implementar navegación a cuenta
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Menu Items
+                  ProfileMenuItem(
+                    icon: Icons.person_outline,
+                    title: 'Editar perfil',
                     onTap: () {
-                      // TODO: Implementar edición de nombre
+                      // TODO: Implementar edición de perfil
                     },
                   ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.email),
-                    title: const Text('Email'),
-                    subtitle: Text(logic.email ?? 'No disponible'),
+                  ProfileMenuItem(
+                    icon: Icons.notifications_none,
+                    title: 'Notificaciones',
+                    onTap: () {
+                      // TODO: Implementar configuración de notificaciones
+                    },
+                  ),
+                  ProfileMenuItem(
+                    icon: Icons.lock_outline,
+                    title: 'Privacidad y seguridad',
+                    onTap: () {
+                      // TODO: Implementar configuración de privacidad
+                    },
+                  ),
+                  ProfileMenuItem(
+                    icon: Icons.help_outline,
+                    title: 'Centro de ayuda',
+                    onTap: () {
+                      // TODO: Implementar centro de ayuda
+                    },
+                  ),
+                  ProfileMenuItem(
+                    icon: Icons.people_outline,
+                    title: 'Contáctanos',
+                    onTap: () {
+                      // TODO: Implementar contacto
+                    },
+                  ),
+                  ProfileMenuItem(
+                    icon: Icons.logout,
+                    title: 'Cerrar Sesión',
+                    onTap: () async {
+                      await logic.signOut();
+                      // TODO: Implementar navegación al login
+                    },
+                    showDivider: false,
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          Card(
-            child: Column(
-              children: <Widget>[
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Configuración'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Implementar navegación a configuración
-                  },
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'ACTIVIDAD RECIENTE',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.help),
-                  title: const Text('Ayuda'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Implementar navegación a ayuda
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.exit_to_app),
-                  title: const Text('Cerrar sesión'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => logic.signOut(),
-                ),
-              ],
+              ),
             ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: RecentActivityList(activities: logic.recentActivity),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _QuickActionButton extends StatelessWidget {
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Theme.of(context).primaryColor),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
