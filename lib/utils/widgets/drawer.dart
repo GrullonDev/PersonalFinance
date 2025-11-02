@@ -86,7 +86,7 @@ class CustomDrawer extends StatelessWidget {
                     title: 'Historial',
                     icon: Icons.history,
                     isIOS: isIOS,
-                    onTap: () => _navigateTo(context, '/history'),
+                    onTap: () => _navigateTo(context, '/transactions-crud'),
                   ),
                   _buildTile(
                     context,
@@ -102,14 +102,14 @@ class CustomDrawer extends StatelessWidget {
                     title: 'Presupuestos',
                     icon: Icons.pie_chart,
                     isIOS: isIOS,
-                    onTap: () => _navigateTo(context, '/budgets'),
+                    onTap: () => _navigateTo(context, '/budgets-crud'),
                   ),
                   _buildTile(
                     context,
                     title: 'Metas',
                     icon: Icons.flag,
                     isIOS: isIOS,
-                    onTap: () => _navigateTo(context, '/goals'),
+                    onTap: () => _navigateTo(context, '/goals-crud'),
                   ),
                   _buildTile(
                     context,

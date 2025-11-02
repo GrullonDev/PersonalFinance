@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
+
 import 'package:personal_finance/features/alerts/presentation/providers/alerts_provider.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
+import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
+import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
+import 'package:personal_finance/features/categories/presentation/providers/categories_provider.dart';
+import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/tips/tip_provider.dart';
+import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
+    as tx_backend;
+import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
-import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -21,12 +29,23 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MultiProvider(
     providers: <SingleChildWidget>[
       Provider<AuthRepository>(create: (_) => getIt<AuthRepository>()),
+      Provider<CategoryRepository>(create: (_) => getIt<CategoryRepository>()),
+      Provider<BudgetRepository>(create: (_) => getIt<BudgetRepository>()),
+      Provider<GoalRepository>(create: (_) => getIt<GoalRepository>()),
+      Provider<tx_backend.TransactionBackendRepository>(
+        create: (_) => getIt<tx_backend.TransactionBackendRepository>(),
+      ),
       ChangeNotifierProvider<AuthProvider>(
         create: (_) => AuthProvider(authRepository: getIt<AuthRepository>()),
       ),
       ChangeNotifierProvider<DashboardLogic>(create: (_) => DashboardLogic()),
       ChangeNotifierProvider<TipProvider>(create: (_) => TipProvider()),
       ChangeNotifierProvider<AlertsProvider>(create: (_) => AlertsProvider()),
+      // Global providers still used across screens
+      ChangeNotifierProvider<CategoriesProvider>(
+        create:
+            (_) => CategoriesProvider(repository: getIt<CategoryRepository>()),
+      ),
       ChangeNotifierProvider<NavigationProvider>(
         create: (_) => NavigationProvider(),
       ),

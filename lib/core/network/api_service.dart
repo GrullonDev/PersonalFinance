@@ -3,12 +3,16 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Servicio base para realizar peticiones HTTP reutilizables en la aplicación.
 class ApiService {
-  ApiService({http.Client? client}) : _client = client ?? http.Client();
+  ApiService({http.Client? client, SharedPreferences? prefs})
+    : _client = client ?? http.Client(),
+      _prefs = prefs;
 
   final http.Client _client;
+  final SharedPreferences? _prefs;
 
   String get _baseUrl {
     final String? url = dotenv.env['API_BASE_URL'];
@@ -37,7 +41,10 @@ class ApiService {
     Map<String, String>? headers,
   }) async {
     final Uri uri = _buildUri(path, queryParameters);
-    final http.Response response = await _client.get(uri, headers: headers);
+    final http.Response response = await _client.get(
+      uri,
+      headers: _withAuthHeaders(headers),
+    );
     _logRequest('GET', uri, headers: headers);
     _logResponse(response);
     return response;
@@ -97,6 +104,16 @@ class ApiService {
   Map<String, String> _withJsonHeaders(Map<String, String>? headers) =>
       <String, String>{
         'Content-Type': 'application/json',
+        if (_prefs?.getString('access_token') != null)
+          'Authorization': 'Bearer ${_prefs!.getString('access_token')}',
+        if (headers != null) ...headers,
+      };
+
+  Map<String, String> _withAuthHeaders(Map<String, String>? headers) =>
+      <String, String>{
+        'Accept': 'application/json',
+        if (_prefs?.getString('access_token') != null)
+          'Authorization': 'Bearer ${_prefs!.getString('access_token')}',
         if (headers != null) ...headers,
       };
 
@@ -111,7 +128,15 @@ class ApiService {
     }
     debugPrint('[ApiService][$method] ${uri.toString()}');
     if (headers != null && headers.isNotEmpty) {
-      debugPrint('Headers: ${headers.toString()}');
+      final Map<String, String> safeHeaders = Map<String, String>.from(headers);
+      if (safeHeaders.containsKey('Authorization')) {
+        final String auth = safeHeaders['Authorization']!;
+        final String masked = auth.length > 16
+            ? auth.substring(0, 16) + '...' // avoid logging full token
+            : auth;
+        safeHeaders['Authorization'] = masked;
+      }
+      debugPrint('Headers: ${safeHeaders.toString()}');
     }
     if (body != null && body.isNotEmpty) {
       debugPrint('Body: ${jsonEncode(body)}');

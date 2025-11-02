@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'package:personal_finance/features/auth/presentation/pages/auth_page.dart';
 import 'package:personal_finance/features/auth/presentation/pages/register_page.dart';
-import 'package:personal_finance/features/goals/presentation/pages/goals_page.dart';
+import 'package:personal_finance/features/budgets/presentation/pages/budgets_crud_page.dart';
+import 'package:personal_finance/features/categories/presentation/pages/categories_page.dart';
+import 'package:personal_finance/features/goals/presentation/pages/goals_crud_page.dart';
 import 'package:personal_finance/features/home/pages/home_page.dart';
 import 'package:personal_finance/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/settings_page.dart';
 import 'package:personal_finance/features/splash/splash_screen.dart';
+import 'package:personal_finance/features/transactions/presentation/pages/transactions_crud_page.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
 class RouteSwitch {
@@ -38,15 +41,32 @@ class RouteSwitch {
         );
       case RoutePath.goals:
         return MaterialPageRoute<void>(
-          builder: (BuildContext context) => const GoalsPage(),
+          builder: (BuildContext context) => const GoalsCrudPage(),
+        );
+      case RoutePath.categories:
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const CategoriesPage(),
+        );
+      case RoutePath.budgetsCrud:
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const BudgetsCrudPage(),
+        );
+      case RoutePath.goalsCrud:
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const GoalsCrudPage(),
+        );
+      case RoutePath.transactionsCrud:
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const TransactionsCrudPage(),
         );
       default:
         return MaterialPageRoute<void>(
-          builder: (BuildContext context) => Scaffold(
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
-            ),
-          ),
+          builder:
+              (BuildContext context) => Scaffold(
+                body: Center(
+                  child: Text('No route defined for ${settings.name}'),
+                ),
+              ),
         );
     }
   }

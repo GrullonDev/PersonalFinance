@@ -8,4 +8,8 @@ class RoutePath {
   static const String addExpense = '/addExpense';
   static const String settings = '/settings';
   static const String goals = '/goals';
+  static const String categories = '/categories';
+  static const String budgetsCrud = '/budgets-crud';
+  static const String goalsCrud = '/goals-crud';
+  static const String transactionsCrud = '/transactions-crud';
 }
