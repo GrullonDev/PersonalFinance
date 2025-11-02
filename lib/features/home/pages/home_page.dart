@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:personal_finance/features/budgets/pages/budgets_page.dart';
-import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
-import 'package:personal_finance/features/goals/pages/goals_page.dart';
+import 'package:personal_finance/features/budgets/presentation/pages/budgets_page.dart';
+import 'package:personal_finance/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:personal_finance/features/goals/presentation/pages/goals_page.dart';
 import 'package:personal_finance/features/home/widgets/custom_bottom_nav_bar.dart';
-import 'package:personal_finance/features/profile/pages/profile_page.dart';
-import 'package:personal_finance/features/transactions/widgets/add_transaction_modal.dart';
+import 'package:personal_finance/features/profile/presentation/pages/profile_page.dart';
+import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -54,16 +54,14 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.grey[50],
-    appBar:
-        _currentIndex == 0
-            ? null
-            : AppBar(
-              title: Text(_titles[_currentIndex]),
-              centerTitle: true,
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.black87,
-            ),
+    appBar: AppBar(
+      automaticallyImplyLeading: false,
+      title: Text(_titles[_currentIndex]),
+      centerTitle: true,
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.black87,
+    ),
     body: _pages[_currentIndex],
     bottomNavigationBar: CustomBottomNavBar(
       currentIndex: _currentIndex,

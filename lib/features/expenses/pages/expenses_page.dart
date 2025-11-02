@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
-import 'package:personal_finance/features/transactions/models/transaction_detail.dart';
-import 'package:personal_finance/features/transactions/pages/transaction_detail_page.dart';
+import 'package:personal_finance/features/transactions/domain/entities/transaction_detail.dart';
+import 'package:personal_finance/features/transactions/presentation/pages/transaction_detail_page.dart';
 
 class ExpensesPage extends StatelessWidget {
   const ExpensesPage({super.key});

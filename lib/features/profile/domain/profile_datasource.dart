@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:personal_finance/features/profile/model/user_profile.dart';
+import 'package:personal_finance/features/profile/domain/entities/user_profile.dart';
 
 abstract class ProfileDataSource {
   Future<void> saveProfile(UserProfile profile);
