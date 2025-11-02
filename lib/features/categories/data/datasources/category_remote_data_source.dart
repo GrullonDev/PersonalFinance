@@ -1,0 +1,113 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' show Response;
+
+import 'package:personal_finance/core/error/exceptions.dart';
+import 'package:personal_finance/core/network/api_service.dart';
+import 'package:personal_finance/features/categories/data/models/category_model.dart';
+
+abstract class CategoryRemoteDataSource {
+  Future<List<CategoryModel>> getCategories();
+  Future<CategoryModel> createCategory(CategoryModel category);
+  Future<CategoryModel> updateCategory(int categoryId, CategoryModel category);
+  Future<void> deleteCategory(int categoryId);
+}
+
+class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
+  CategoryRemoteDataSourceImpl(this._apiService);
+
+  final ApiService _apiService;
+
+  @override
+  Future<List<CategoryModel>> getCategories() async {
+    final Response response = await _apiService.get('/api/v1/categories');
+    if (response.statusCode == 200) {
+      final List<dynamic> decoded =
+          response.body.isEmpty
+              ? <dynamic>[]
+              : jsonDecode(response.body) as List<dynamic>;
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(CategoryModel.fromJson)
+          .toList();
+    }
+    throw ApiException(
+      message: 'Error al cargar categorías',
+      statusCode: response.statusCode,
+    );
+  }
+
+  @override
+  Future<CategoryModel> createCategory(CategoryModel category) async {
+    final Response response = await _apiService.post(
+      '/api/v1/categories',
+      body:
+          category.toJson()
+            ..remove('id')
+            ..remove('profile_id'),
+    );
+    if (response.statusCode == 201) {
+      return CategoryModel.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    throw ApiException(
+      message: _extractDetailMessage(response.body),
+      statusCode: response.statusCode,
+    );
+  }
+
+  @override
+  Future<CategoryModel> updateCategory(
+    int categoryId,
+    CategoryModel category,
+  ) async {
+    final Response response = await _apiService.put(
+      '/api/v1/categories/$categoryId',
+      body: <String, dynamic>{'nombre': category.nombre, 'tipo': category.tipo},
+    );
+    if (response.statusCode == 200) {
+      return CategoryModel.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    throw ApiException(
+      message: _extractDetailMessage(response.body),
+      statusCode: response.statusCode,
+    );
+  }
+
+  @override
+  Future<void> deleteCategory(int categoryId) async {
+    final Response response = await _apiService.delete(
+      '/api/v1/categories/$categoryId',
+    );
+    if (response.statusCode == 204) {
+      return;
+    }
+    throw ApiException(
+      message: _extractDetailMessage(
+        response.body.isEmpty ? '{}' : response.body,
+      ),
+      statusCode: response.statusCode,
+    );
+  }
+
+  String _extractDetailMessage(String body) {
+    try {
+      final dynamic decoded = body.isNotEmpty ? jsonDecode(body) : null;
+      if (decoded is Map<String, dynamic>) {
+        final dynamic detail = decoded['detail'];
+        if (detail is String) return detail;
+        if (detail is List) {
+          return detail
+              .whereType<Map<String, dynamic>>()
+              .map((Map<String, dynamic> e) => e['msg']?.toString() ?? '')
+              .where((String e) => e.isNotEmpty)
+              .join('\n');
+        }
+      }
+    } catch (_) {}
+    return 'Error desconocido en solicitud de categorías';
+  }
+}
