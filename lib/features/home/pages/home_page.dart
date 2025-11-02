@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:personal_finance/features/budgets/presentation/pages/budgets_page.dart';
+import 'package:personal_finance/features/budgets/presentation/pages/budgets_crud_page.dart';
 import 'package:personal_finance/features/dashboard/presentation/pages/dashboard_page.dart';
-import 'package:personal_finance/features/goals/presentation/pages/goals_page.dart';
+import 'package:personal_finance/features/goals/presentation/pages/goals_crud_page.dart';
 import 'package:personal_finance/features/home/widgets/custom_bottom_nav_bar.dart';
 import 'package:personal_finance/features/profile/presentation/pages/profile_page.dart';
 import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
@@ -19,8 +19,8 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = <Widget>[
     const DashboardPage(),
-    const BudgetsPage(),
-    const GoalsPage(),
+    const BudgetsCrudPage(),
+    const GoalsCrudPage(),
     const ProfilePage(),
   ];
 

@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/profile/presentation/providers/profile_logic.dart';
-import 'package:personal_finance/features/profile/domain/entities/user_profile.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/widgets/profile_menu_item.dart';
-import 'package:personal_finance/features/profile/presentation/widgets/recent_activity_list.dart';
-import 'package:provider/provider.dart';
+// import 'package:personal_finance/features/profile/presentation/widgets/recent_activity_list.dart';
+import 'package:personal_finance/features/profile/presentation/widgets/quick_add_category.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
-  Widget build(BuildContext context) => Consumer<ProfileLogic>(
-    builder: (BuildContext context, ProfileLogic logic, _) {
-      if (logic.isLoading) {
+  Widget build(BuildContext context) => BlocBuilder<ProfileBloc, ProfileState>(
+    builder: (BuildContext context, ProfileState state) {
+      if (state.loading) {
         return const Center(child: CircularProgressIndicator());
       }
 
-      final UserProfile? profile = logic.profile;
-      if (profile == null) {
-        return const Center(child: Text('No hay perfil disponible'));
+      if (state.error != null) {
+        return Center(child: Text(state.error!));
       }
+
+      final String fullName = state.info?.fullName ?? '';
+      final String email = state.info?.email ?? '';
 
       return CustomScrollView(
         slivers: <Widget>[
@@ -32,17 +34,10 @@ class ProfileView extends StatelessWidget {
                     children: <Widget>[
                       CircleAvatar(
                         radius: 30,
-                        backgroundImage:
-                            profile.photoUrl != null
-                                ? NetworkImage(profile.photoUrl!)
-                                : null,
-                        child:
-                            profile.photoUrl == null
-                                ? Text(
-                                  profile.name[0].toUpperCase(),
-                                  style: const TextStyle(fontSize: 24),
-                                )
-                                : null,
+                        child: Text(
+                          (fullName.isNotEmpty ? fullName[0] : '?').toUpperCase(),
+                          style: const TextStyle(fontSize: 24),
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -50,12 +45,12 @@ class ProfileView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              profile.name,
+                              fullName,
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              profile.email,
+                              email,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
@@ -137,36 +132,14 @@ class ProfileView extends StatelessWidget {
                       // TODO: Implementar contacto
                     },
                   ),
-                  ProfileMenuItem(
-                    icon: Icons.logout,
-                    title: 'Cerrar Sesión',
-                    onTap: () async {
-                      await logic.signOut();
-                      // TODO: Implementar navegación al login
-                    },
-                    showDivider: false,
-                  ),
+                  // Add logout or other actions via AuthProvider/BLoC if needed
                 ],
               ),
             ),
           ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'ACTIVIDAD RECIENTE',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
-                ),
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: RecentActivityList(activities: logic.recentActivity),
-          ),
+          // Quick add category section
+          const SliverToBoxAdapter(child: QuickAddCategory()),
+          // Recent activity section can be wired later when backend supports it
         ],
       );
     },
@@ -196,7 +169,7 @@ class _QuickActionButton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: Theme.of(context).primaryColor),

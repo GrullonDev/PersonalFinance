@@ -107,50 +107,53 @@ class SettingsPage extends StatelessWidget {
         builder:
             (BuildContext context, SettingsProvider settings, Widget? child) =>
                 Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: <Widget>[
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.dark_mode, color: Colors.blue),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const Text(
-                          'Modo Oscuro',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        Text(
-                          'Activa o desactiva el modo oscuro',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                        child: const Icon(Icons.dark_mode, color: Colors.blue),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            const Text(
+                              'Modo Oscuro',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              'Activa o desactiva el modo oscuro',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Switch(
+                        value: settings.darkMode,
+                        onChanged: (_) async {
+                          await settings.toggleDarkMode();
+                        },
+                        activeThumbColor: Colors.blue,
+                      ),
+                    ],
                   ),
-                  Switch(
-                    value: settings.darkMode,
-                    onChanged: (_) async {
-                      await settings.toggleDarkMode();
-                    },
-                    activeThumbColor: Colors.blue,
-                  ),
-                ],
-              ),
-            ),
+                ),
       );
 
   Widget _buildSettingItem(
