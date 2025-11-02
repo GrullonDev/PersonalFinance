@@ -18,16 +18,14 @@ class LoginUserRequest {
 
   factory LoginUserRequest.fromJson(Map<String, dynamic> json) =>
       _$LoginUserRequestFromJson(json);
-      
+
   LoginUserRequest copyWith({
     String? email,
     String? password,
     String? firebaseUid,
-  }) {
-    return LoginUserRequest(
-      email: email ?? this.email,
-      password: password ?? this.password,
-      firebaseUid: firebaseUid ?? this.firebaseUid,
-    );
-  }
+  }) => LoginUserRequest(
+    email: email ?? this.email,
+    password: password ?? this.password,
+    firebaseUid: firebaseUid ?? this.firebaseUid,
+  );
 }

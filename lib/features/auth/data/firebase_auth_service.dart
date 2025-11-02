@@ -49,18 +49,17 @@ class FirebaseAuthService implements AuthDataSource {
     required String email,
     required String password,
   }) async {
-    final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    
+    final UserCredential userCredential = await _auth
+        .signInWithEmailAndPassword(email: email, password: password);
+
     if (userCredential.user?.uid == null) {
       throw FirebaseAuthException(
         code: 'unknown-error',
-        message: 'No se pudo obtener el UID del usuario de Firebase después del inicio de sesión.',
+        message:
+            'No se pudo obtener el UID del usuario de Firebase después del inicio de sesión.',
       );
     }
-    
+
     return userCredential.user!.uid;
   }
 }

@@ -22,15 +22,15 @@ class CurrentUserResponse {
   CurrentUserResponse({
     required this.email,
     required this.fullName,
-    this.phoneNumber,
     required this.isActive,
     required this.isSuperuser,
     required this.id,
     required this.createdAt,
     required this.updatedAt,
+    this.phoneNumber,
   });
 
-  factory CurrentUserResponse.fromJson(Map<String, dynamic> json) => 
+  factory CurrentUserResponse.fromJson(Map<String, dynamic> json) =>
       _$CurrentUserResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$CurrentUserResponseToJson(this);

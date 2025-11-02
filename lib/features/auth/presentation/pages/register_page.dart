@@ -15,10 +15,11 @@ class RegisterPage extends StatelessWidget {
     final ProfileRepository profileRepository = getIt<ProfileRepository>();
 
     return ChangeNotifierProvider<RegisterProvider>(
-      create: (_) => RegisterProvider(
-        authProvider: authProvider,
-        profileRepository: profileRepository,
-      ),
+      create:
+          (_) => RegisterProvider(
+            authProvider: authProvider,
+            profileRepository: profileRepository,
+          ),
       child: const RegisterLayout(),
     );
   }

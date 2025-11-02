@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:dartz/dartz.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:personal_finance/features/auth/data/models/response/refresh_token_response.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:personal_finance/features/auth/data/local_auth_service.dart';
@@ -114,16 +115,17 @@ class AuthProvider extends ChangeNotifier {
         _isLoading = true;
         notifyListeners();
 
-        final result = await authRepository.refreshToken(_refreshToken!);
+        final Either<AuthFailure, RefreshTokenResponse> result =
+            await authRepository.refreshToken(_refreshToken!);
 
         return result.fold(
-          (failure) {
+          (AuthFailure failure) {
             // If refresh fails, clear auth data
             _clearAuthData();
             _errorMessage = failure.message;
             return false;
           },
-          (response) {
+          (RefreshTokenResponse response) {
             _accessToken = response.accessToken;
             _refreshToken = response.refreshToken;
             if (_accessToken != null) {
@@ -400,36 +402,44 @@ class AuthProvider extends ChangeNotifier {
           // Handle different types of authentication failures
           final String errorMessage;
           bool shouldNavigateToRegister = false;
-          
+
           if (failure.statusCode == 400 || failure.statusCode == 401) {
             // Invalid credentials
-            errorMessage = 'Correo o contraseña incorrectos. ¿Desea crear una cuenta?';
+            errorMessage =
+                'Correo o contraseña incorrectos. ¿Desea crear una cuenta?';
             shouldNavigateToRegister = true;
           } else if (failure.statusCode == 500) {
             // Server error
-            errorMessage = 'Error en el servidor. Por favor, intente más tarde.';
+            errorMessage =
+                'Error en el servidor. Por favor, intente más tarde.';
           } else if (failure.statusCode == 403) {
             // Account not verified
-            errorMessage = 'Su cuenta no ha sido verificada. Por favor, revise su correo.';
+            errorMessage =
+                'Su cuenta no ha sido verificada. Por favor, revise su correo.';
           } else if (failure.statusCode == 429) {
             // Too many requests
-            errorMessage = 'Demasiados intentos. Por favor, espere un momento antes de intentar de nuevo.';
+            errorMessage =
+                'Demasiados intentos. Por favor, espere un momento antes de intentar de nuevo.';
           } else if (failure.message.toLowerCase().contains('network')) {
             // Network error
-            errorMessage = 'Error de conexión. Por favor, verifique su conexión a internet.';
+            errorMessage =
+                'Error de conexión. Por favor, verifique su conexión a internet.';
           } else {
             // Default error message
-            errorMessage = failure.message.isNotEmpty 
-                ? failure.message 
-                : 'Error al iniciar sesión. Por favor, intente nuevamente.';
+            errorMessage =
+                failure.message.isNotEmpty
+                    ? failure.message
+                    : 'Error al iniciar sesión. Por favor, intente nuevamente.';
           }
-          
+
           _setError(errorMessage);
-          return Left(AuthFailure(
-            message: errorMessage,
-            statusCode: failure.statusCode,
-            shouldNavigateToRegister: shouldNavigateToRegister,
-          ));
+          return Left(
+            AuthFailure(
+              message: errorMessage,
+              statusCode: failure.statusCode,
+              shouldNavigateToRegister: shouldNavigateToRegister,
+            ),
+          );
         },
         (LoginUserResponse response) async {
           _setError(null);

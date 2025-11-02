@@ -21,31 +21,31 @@ class User {
 
   @JsonKey(name: 'id')
   final int id;
-  
+
   @JsonKey(name: 'firebase_uid')
   final String firebaseUid;
-  
+
   @JsonKey(name: 'email')
   final String email;
-  
+
   @JsonKey(name: 'username')
   final String username;
-  
+
   @JsonKey(name: 'nombres')
   final String nombres;
-  
+
   @JsonKey(name: 'apellidos')
   final String apellidos;
-  
+
   @JsonKey(name: 'nombre_completo')
   final String nombreCompleto;
-  
+
   @JsonKey(name: 'fecha_nacimiento')
   final String fechaNacimiento;
-  
+
   @JsonKey(name: 'fecha_creacion')
   final String fechaCreacion;
-  
+
   @JsonKey(name: 'fecha_actualizacion')
   final String fechaActualizacion;
 
@@ -63,10 +63,10 @@ class LoginUserResponse {
 
   @JsonKey(name: 'access_token')
   final String accessToken;
-  
+
   @JsonKey(name: 'token_type')
   final String tokenType;
-  
+
   @JsonKey(name: 'user')
   final User user;
 

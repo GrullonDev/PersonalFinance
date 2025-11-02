@@ -15,20 +15,22 @@ abstract class AuthRepository {
   Future<Either<AuthFailure, RegisterUserResponse>> registerUser(
     RegisterUserRequest request,
   );
-  
+
   Future<Either<AuthFailure, LoginUserResponse>> loginUser(
     LoginUserRequest request,
   );
-  
+
   Future<Either<AuthFailure, Unit>> recoverPassword(String email);
-  
+
   Future<Either<AuthFailure, Unit>> resetPassword({
     required String token,
     required String newPassword,
     required String confirmPassword,
   });
 
-  Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(String refreshToken);
-  
+  Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(
+    String refreshToken,
+  );
+
   Future<Either<AuthFailure, CurrentUserResponse>> getCurrentUser();
 }

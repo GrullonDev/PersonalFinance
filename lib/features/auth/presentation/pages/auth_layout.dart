@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:personal_finance/features/auth/domain/auth_failure.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
-import 'forgot_password_page.dart';
+import 'package:personal_finance/features/auth/presentation/pages/forgot_password_page.dart';
 
 class AuthLayout extends StatelessWidget {
   const AuthLayout({super.key});
@@ -163,7 +163,8 @@ class AuthLayout extends StatelessWidget {
                               // Replace with your actual registration route
                               Navigator.pushReplacementNamed(
                                 context,
-                                RoutePath.register, // Make sure this route is defined in your RoutePath
+                                RoutePath
+                                    .register, // Make sure this route is defined in your RoutePath
                               );
                             },
                           ),
@@ -172,9 +173,9 @@ class AuthLayout extends StatelessWidget {
                       );
                     } else {
                       // Show regular error message
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(failure.message)),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(failure.message)));
                     }
                   },
                   (_) {

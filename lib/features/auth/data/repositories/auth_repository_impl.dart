@@ -40,7 +40,12 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ApiException catch (e) {
       return left(AuthFailure(message: e.message));
     } catch (e) {
-      return left(const AuthFailure(message: 'Ocurrió un error inesperado. Por favor, intente nuevamente.'));
+      return left(
+        const AuthFailure(
+          message:
+              'Ocurrió un error inesperado. Por favor, intente nuevamente.',
+        ),
+      );
     }
   }
 
@@ -62,7 +67,12 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ApiException catch (e) {
       return left(AuthFailure(message: e.message));
     } catch (e) {
-      return left(const AuthFailure(message: 'Ocurrió un error inesperado. Por favor, intente nuevamente.'));
+      return left(
+        const AuthFailure(
+          message:
+              'Ocurrió un error inesperado. Por favor, intente nuevamente.',
+        ),
+      );
     }
   }
 
@@ -91,9 +101,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } catch (e) {
       return Left<AuthFailure, RegisterUserResponse>(
-        AuthFailure(
-          message: 'Error inesperado al registrar usuario: $e',
-        ),
+        AuthFailure(message: 'Error inesperado al registrar usuario: $e'),
       );
     }
   }
@@ -104,10 +112,11 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     try {
       // First authenticate with Firebase and get the UID
-      final String firebaseUid = await _firebaseDataSource.signInWithEmailAndPassword(
-        email: request.email,
-        password: request.password,
-      );
+      final String firebaseUid = await _firebaseDataSource
+          .signInWithEmailAndPassword(
+            email: request.email,
+            password: request.password,
+          );
 
       // Then get the JWT token from our backend, including the Firebase UID
       final LoginUserResponse response = await _backendDataSource.loginUser(
@@ -126,36 +135,42 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } catch (e) {
       return Left<AuthFailure, LoginUserResponse>(
-        AuthFailure(
-          message: 'Error inesperado al iniciar sesión: $e',
-        ),
+        AuthFailure(message: 'Error inesperado al iniciar sesión: $e'),
       );
     }
   }
 
   @override
-  Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(String refreshToken) async {
+  Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(
+    String refreshToken,
+  ) async {
     try {
-      final response = await _backendDataSource.refreshToken(
-        RefreshTokenRequest(refreshToken: refreshToken),
-      );
+      final RefreshTokenResponse response = await _backendDataSource
+          .refreshToken(RefreshTokenRequest(refreshToken: refreshToken));
       return right(response);
     } on ApiException catch (e) {
       return left(AuthFailure(message: e.message));
     } catch (e) {
-      return left(const AuthFailure(message: 'Error al actualizar el token de acceso'));
+      return left(
+        const AuthFailure(message: 'Error al actualizar el token de acceso'),
+      );
     }
   }
 
   @override
   Future<Either<AuthFailure, CurrentUserResponse>> getCurrentUser() async {
     try {
-      final response = await _backendDataSource.getCurrentUser();
+      final CurrentUserResponse response =
+          await _backendDataSource.getCurrentUser();
       return right(response);
     } on ApiException catch (e) {
       return left(AuthFailure(message: e.message));
     } catch (e) {
-      return left(const AuthFailure(message: 'Error al obtener la información del usuario'));
+      return left(
+        const AuthFailure(
+          message: 'Error al obtener la información del usuario',
+        ),
+      );
     }
   }
 }

@@ -25,8 +25,8 @@ class RegisterProvider extends ChangeNotifier {
   RegisterProvider({
     required AuthProvider authProvider,
     required ProfileRepository profileRepository,
-  })  : _authProvider = authProvider,
-        _profileRepository = profileRepository;
+  }) : _authProvider = authProvider,
+       _profileRepository = profileRepository;
 
   final AuthProvider _authProvider;
   final ProfileRepository _profileRepository;
@@ -83,16 +83,14 @@ class RegisterProvider extends ChangeNotifier {
       passwordConfirmacion: confirmPasswordController.text,
     );
 
-    final Either<AuthFailure, RegisterUserResponse> result =
-        await _authProvider.registerUser(request);
+    final Either<AuthFailure, RegisterUserResponse> result = await _authProvider
+        .registerUser(request);
 
     return result.fold<Future<RegisterResult>>(
-      (AuthFailure failure) => Future<RegisterResult>.value(
-        RegisterResult.failure(failure.message),
-      ),
-      (RegisterUserResponse response) => _handleSuccessfulRegistration(
-        response,
-      ),
+      (AuthFailure failure) =>
+          Future<RegisterResult>.value(RegisterResult.failure(failure.message)),
+      (RegisterUserResponse response) =>
+          _handleSuccessfulRegistration(response),
     );
   }
 
@@ -168,8 +166,7 @@ class RegisterProvider extends ChangeNotifier {
     ];
   }
 
-  String _formatDate(DateTime date) =>
-      date.toLocal().toString().split(' ')[0];
+  String _formatDate(DateTime date) => date.toLocal().toString().split(' ')[0];
 
   @override
   void dispose() {

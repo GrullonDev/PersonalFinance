@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Interfaz abstracta para servicios de autenticación.

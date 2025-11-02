@@ -8,14 +8,12 @@ class RegisterLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final RegisterProvider registerProvider =
-        context.watch<RegisterProvider>();
+    final RegisterProvider registerProvider = context.watch<RegisterProvider>();
     final bool isLoading = context.watch<AuthProvider>().isLoading;
 
     Future<void> handleSelectBirthDate() async {
       FocusScope.of(context).unfocus();
-      final DateTime initialDate =
-          registerProvider.birthDate ?? DateTime.now();
+      final DateTime initialDate = registerProvider.birthDate ?? DateTime.now();
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: initialDate,
@@ -34,14 +32,14 @@ class RegisterLayout extends StatelessWidget {
         return;
       }
       if (result.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registro exitoso')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Registro exitoso')));
         Navigator.pushNamed(context, '/login');
       } else if (result.message?.isNotEmpty ?? false) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.message!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result.message!)));
       }
     }
 
@@ -194,20 +192,22 @@ class RegisterLayout extends StatelessWidget {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                    child:
+                        isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Text(
+                              'Sign Up',
+                              style: TextStyle(color: Colors.white),
                             ),
-                          )
-                        : const Text(
-                            'Sign Up',
-                            style: TextStyle(color: Colors.white),
-                          ),
                   ),
                 ),
               ],

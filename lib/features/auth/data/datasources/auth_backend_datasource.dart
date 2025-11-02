@@ -130,15 +130,34 @@ class AuthBackendDataSource {
   }
 
   Future<CurrentUserResponse> getCurrentUser() async {
-    final Response httpResponse = await _apiService.get(
-      '/api/v1/users/me',
-    );
+    // Use profiles/me per backend contract
+    final Response httpResponse = await _apiService.get('/api/v1/profiles/me');
 
     final dynamic decodedBody =
         httpResponse.body.isNotEmpty ? jsonDecode(httpResponse.body) : null;
 
     if (httpResponse.statusCode == 200 && decodedBody is Map<String, dynamic>) {
-      return CurrentUserResponse.fromJson(decodedBody);
+      // Normalize potential Spanish keys to expected snake_case keys
+      final Map<String, dynamic> map = Map<String, dynamic>.from(decodedBody);
+
+      // Map nombre_completo -> full_name
+      if (!map.containsKey('full_name') && map.containsKey('nombre_completo')) {
+        map['full_name'] = map['nombre_completo'];
+      }
+      // Map fecha_creacion/fecha_actualizacion -> created_at/updated_at
+      if (!map.containsKey('created_at') && map.containsKey('fecha_creacion')) {
+        map['created_at'] = map['fecha_creacion'];
+      }
+      if (!map.containsKey('updated_at') && map.containsKey('fecha_actualizacion')) {
+        map['updated_at'] = map['fecha_actualizacion'];
+      }
+      // Defaults if backend omits some fields
+      map['is_active'] = map['is_active'] ?? true;
+      map['is_superuser'] = map['is_superuser'] ?? false;
+      map['id'] = map['id'] ?? (map['profile_id'] ?? 0);
+      map['phone_number'] = map['phone_number'] ?? map['telefono'];
+
+      return CurrentUserResponse.fromJson(map);
     }
 
     final String detailMessage = _extractDetailMessage(decodedBody);

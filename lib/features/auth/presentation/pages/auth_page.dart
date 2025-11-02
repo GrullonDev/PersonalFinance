@@ -10,16 +10,10 @@ class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider(authRepository: getIt<AuthRepository>()),
-      child: const Scaffold(
-        body: Padding(
-          padding: EdgeInsets.all(24),
-          child: AuthLayout(),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ChangeNotifierProvider(
+    create: (_) => AuthProvider(authRepository: getIt<AuthRepository>()),
+    child: const Scaffold(
+      body: Padding(padding: EdgeInsets.all(24), child: AuthLayout()),
+    ),
+  );
 }
-

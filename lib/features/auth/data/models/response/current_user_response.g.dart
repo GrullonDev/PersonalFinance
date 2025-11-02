@@ -19,14 +19,14 @@ CurrentUserResponse _$CurrentUserResponseFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$CurrentUserResponseToJson(
-        CurrentUserResponse instance) =>
-    <String, dynamic>{
-      'email': instance.email,
-      'full_name': instance.fullName,
-      'phone_number': instance.phoneNumber,
-      'is_active': instance.isActive,
-      'is_superuser': instance.isSuperuser,
-      'id': instance.id,
-      'created_at': instance.createdAt.toIso8601String(),
-      'updated_at': instance.updatedAt.toIso8601String(),
-    };
+  CurrentUserResponse instance,
+) => <String, dynamic>{
+  'email': instance.email,
+  'full_name': instance.fullName,
+  'phone_number': instance.phoneNumber,
+  'is_active': instance.isActive,
+  'is_superuser': instance.isSuperuser,
+  'id': instance.id,
+  'created_at': instance.createdAt.toIso8601String(),
+  'updated_at': instance.updatedAt.toIso8601String(),
+};

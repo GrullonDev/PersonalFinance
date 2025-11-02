@@ -9,9 +9,9 @@ class ResetPasswordRequest {
     required this.confirmPassword,
   });
 
-  Map<String, dynamic> toJson() => {
-        'token': token,
-        'new_password': newPassword,
-        'confirm_password': confirmPassword,
-      };
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'token': token,
+    'new_password': newPassword,
+    'confirm_password': confirmPassword,
+  };
 }

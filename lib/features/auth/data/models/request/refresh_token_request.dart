@@ -3,7 +3,7 @@ class RefreshTokenRequest {
 
   RefreshTokenRequest({required this.refreshToken});
 
-  Map<String, dynamic> toJson() => {
-        'refresh_token': refreshToken,
-      };
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'refresh_token': refreshToken,
+  };
 }
