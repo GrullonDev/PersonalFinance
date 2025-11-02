@@ -137,10 +137,9 @@ class _TransactionFiltersView extends StatelessWidget {
                 (String category) => FilterChip(
                   selected: logic.selectedCategories.contains(category),
                   label: Text(category),
-                  onSelected: (bool selected) => logic.selectCategory(
-                    category,
-                    isSelected: selected,
-                  ),
+                  onSelected:
+                      (bool selected) =>
+                          logic.selectCategory(category, isSelected: selected),
                   backgroundColor: Colors.grey[100],
                   selectedColor: Colors.blue[100],
                   checkmarkColor: Colors.blue,
