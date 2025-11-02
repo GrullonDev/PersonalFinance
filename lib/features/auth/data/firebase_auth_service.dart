@@ -23,7 +23,11 @@ class FirebaseAuthService implements AuthDataSource {
     await _auth.signOut();
   }
 
-  Future<void> registerUser(String email, String password) async {
+  @override
+  Future<String> registerWithEmail({
+    required String email,
+    required String password,
+  }) async {
     final UserCredential userCredential = await _auth
         .createUserWithEmailAndPassword(email: email, password: password);
 
@@ -31,11 +35,32 @@ class FirebaseAuthService implements AuthDataSource {
     if (userCredential.user != null && !userCredential.user!.emailVerified) {
       await userCredential.user!.sendEmailVerification();
     }
+    if (userCredential.user?.uid == null) {
+      throw FirebaseAuthException(
+        code: 'unknown-error',
+        message: 'No se pudo obtener el uid del usuario de Firebase.',
+      );
+    }
+    return userCredential.user!.uid;
   }
 
-  Future<User?> loginUser(String email, String password) async {
-    final UserCredential userCredential = await _auth
-        .signInWithEmailAndPassword(email: email, password: password);
-    return userCredential.user;
+  @override
+  Future<String> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    
+    if (userCredential.user?.uid == null) {
+      throw FirebaseAuthException(
+        code: 'unknown-error',
+        message: 'No se pudo obtener el UID del usuario de Firebase después del inicio de sesión.',
+      );
+    }
+    
+    return userCredential.user!.uid;
   }
 }

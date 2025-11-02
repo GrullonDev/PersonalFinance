@@ -13,6 +13,23 @@ abstract class AuthDataSource {
 
   /// Cierra la sesión del usuario actual.
   Future<void> logout();
+
+  /// Registra un usuario utilizando email y contraseña en el proveedor de autenticación.
+  ///
+  /// Retorna el uid asignado por el proveedor una vez finaliza el registro.
+  Future<String> registerWithEmail({
+    required String email,
+    required String password,
+  });
+
+  /// Signs in a user with email and password.
+  ///
+  /// Returns the Firebase UID if successful.
+  /// Throws [FirebaseAuthException] if sign in fails.
+  Future<String> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  });
 }
 
 /// Implementación local de almacenamiento de datos de autenticación.
