@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:personal_finance/features/auth/pages/auth_page.dart';
-import 'package:personal_finance/features/auth/pages/register_page.dart';
-import 'package:personal_finance/features/goals/pages/goals_page.dart';
+import 'package:personal_finance/features/auth/presentation/pages/auth_page.dart';
+import 'package:personal_finance/features/auth/presentation/pages/register_page.dart';
+import 'package:personal_finance/features/goals/presentation/pages/goals_page.dart';
 import 'package:personal_finance/features/home/pages/home_page.dart';
-import 'package:personal_finance/features/onboarding/pages/onboarding_page.dart';
-import 'package:personal_finance/features/settings/pages/settings_page.dart';
+import 'package:personal_finance/features/onboarding/presentation/pages/onboarding_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/settings_page.dart';
 import 'package:personal_finance/features/splash/splash_screen.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
@@ -13,39 +13,40 @@ class RouteSwitch {
   static Route<dynamic> generateRoute(final RouteSettings settings) {
     switch (settings.name) {
       case RoutePath.splash:
-        return MaterialPageRoute(
-          builder: (BuildContext _) => const SplashScreen(),
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const SplashScreen(),
         );
       case RoutePath.dashboard:
-        return MaterialPageRoute(builder: (BuildContext _) => const HomePage());
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const HomePage(),
+        );
       case RoutePath.onboarding:
-        return MaterialPageRoute(
-          builder: (BuildContext _) => const OnboardingPage(),
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const OnboardingPage(),
         );
       case RoutePath.login:
-        return MaterialPageRoute(
-          builder: (BuildContext _) => const LoginPage(),
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const LoginPage(),
         );
       case RoutePath.register:
-        return MaterialPageRoute(
-          builder: (BuildContext _) => const RegisterPage(),
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const RegisterPage(),
         );
       case RoutePath.settings:
-        return MaterialPageRoute(
-          builder: (BuildContext _) => const SettingsPage(),
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const SettingsPage(),
         );
       case RoutePath.goals:
-        return MaterialPageRoute(
-          builder: (BuildContext _) => const GoalsPage(),
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const GoalsPage(),
         );
       default:
-        return MaterialPageRoute(
-          builder:
-              (BuildContext _) => Scaffold(
-                body: Center(
-                  child: Text('No route defined for ${settings.name}'),
-                ),
-              ),
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => Scaffold(
+            body: Center(
+              child: Text('No route defined for ${settings.name}'),
+            ),
+          ),
         );
     }
   }

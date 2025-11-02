@@ -282,7 +282,7 @@ class CustomDrawer extends StatelessWidget {
         color:
             isSelected
                 ? (isIOS
-                    ? CupertinoColors.activeBlue.withOpacity(0.1)
+                    ? CupertinoColors.activeBlue.withValues(alpha: 0.1)
                     : theme.colorScheme.primary.withValues(alpha: 0.8))
                 : Colors.transparent,
         borderRadius: BorderRadius.circular(12),

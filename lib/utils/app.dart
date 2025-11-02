@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:personal_finance/features/alerts/alerts_provider.dart';
+import 'package:personal_finance/features/alerts/presentation/providers/alerts_provider.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
-import 'package:personal_finance/features/auth/logic/auth_provider.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/navigation/navigation_provider.dart';
-import 'package:personal_finance/features/settings/logic/settings_provider.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/tips/tip_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';

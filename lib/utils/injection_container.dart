@@ -1,10 +1,13 @@
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:personal_finance/features/alerts/alert_item.dart';
+import 'package:personal_finance/core/network/api_service.dart';
+import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
+import 'package:personal_finance/features/auth/data/datasources/auth_backend_datasource.dart';
 import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
+import 'package:personal_finance/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_logic_v2.dart';
+import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic_v2.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:personal_finance/features/data/repositories/transaction_repository_impl.dart';
@@ -25,15 +28,30 @@ Future<void> initDependencies() async {
     getIt.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
   }
 
+  // ApiService
+  if (!getIt.isRegistered<ApiService>()) {
+    getIt.registerLazySingleton<ApiService>(ApiService.new);
+  }
+
   // AuthDataSource
   if (!getIt.isRegistered<AuthDataSource>()) {
     getIt.registerLazySingleton<AuthDataSource>(() => FirebaseAuthService());
   }
 
+  // Auth Backend DataSource
+  if (!getIt.isRegistered<AuthBackendDataSource>()) {
+    getIt.registerLazySingleton<AuthBackendDataSource>(
+      () => AuthBackendDataSource(getIt<ApiService>()),
+    );
+  }
+
   // AuthRepository
   if (!getIt.isRegistered<AuthRepository>()) {
     getIt.registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(getIt<AuthDataSource>()),
+      () => AuthRepositoryImpl(
+        getIt<AuthDataSource>(),
+        getIt<AuthBackendDataSource>(),
+      ),
     );
   }
 
