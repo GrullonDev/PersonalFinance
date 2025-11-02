@@ -52,8 +52,7 @@ class AlertsView extends StatelessWidget {
                 ),
               );
             },
-            separatorBuilder: (BuildContext context, int _) =>
-                const Divider(),
+            separatorBuilder: (BuildContext context, int _) => const Divider(),
           ),
         Positioned(
           bottom: 16,
