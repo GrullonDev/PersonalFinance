@@ -18,7 +18,9 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
     as tx_backend;
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/utils/app_localization.dart';
+import 'package:personal_finance/utils/widgets/app_lifecycle_listener.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
 
@@ -60,36 +62,39 @@ class MyApp extends StatelessWidget {
             AuthProvider authProvider,
             SettingsProvider settingsProvider,
             _,
-          ) => MaterialApp(
-            themeMode: settingsProvider.themeMode,
-            theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-              bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-                showSelectedLabels: true,
-                showUnselectedLabels: true,
-                type: BottomNavigationBarType.fixed,
-              ),
+          ) => AppLifecycleWrapper(
+            child: MaterialApp(
+              themeMode: settingsProvider.themeMode,
+              theme: AppTheme.light(),
+              darkTheme: AppTheme.dark(),
+              onGenerateTitle:
+                  (BuildContext context) =>
+                      AppLocalizations.of(context)!.appTitle,
+              debugShowCheckedModeBanner: false,
+              // Global builder to clamp text scale (prevents layout overflow)
+              builder: (BuildContext context, Widget? child) {
+                final MediaQueryData mq = MediaQuery.of(context);
+                final double clamped = mq.textScaleFactor.clamp(0.9, 1.2);
+                return MediaQuery(
+                  data: mq.copyWith(textScaleFactor: clamped),
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
+              initialRoute: RoutePath.splash,
+              onGenerateRoute: RouteSwitch.generateRoute,
+              localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const <Locale>[
+                Locale('es', 'GT'),
+                Locale('es', 'MX'),
+                Locale('en', 'US'),
+              ],
+              locale: WidgetsBinding.instance.platformDispatcher.locale,
             ),
-            darkTheme: ThemeData.dark(),
-            onGenerateTitle:
-                (BuildContext context) =>
-                    AppLocalizations.of(context)!.appTitle,
-            debugShowCheckedModeBanner: false,
-            initialRoute: RoutePath.splash,
-            onGenerateRoute: RouteSwitch.generateRoute,
-            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const <Locale>[
-              Locale('es', 'GT'),
-              Locale('es', 'MX'),
-              Locale('en', 'US'),
-            ],
-            locale: WidgetsBinding.instance.platformDispatcher.locale,
           ),
     ),
   );

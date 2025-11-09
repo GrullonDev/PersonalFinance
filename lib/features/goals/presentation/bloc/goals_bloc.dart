@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/core/error/failures.dart';
 
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
@@ -58,20 +60,20 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
   final GoalRepository _repo;
 
   Future<void> _onLoad(GoalsLoad event, Emitter<GoalsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final r = await _repo.getGoals();
+    emit(state.copyWith(loading: true));
+    final Either<Failure, List<Goal>> r = await _repo.getGoals();
     r.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (list) => emit(state.copyWith(loading: false, items: list)),
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (List<Goal> list) => emit(state.copyWith(loading: false, items: list)),
     );
   }
 
   Future<void> _onCreate(GoalCreate event, Emitter<GoalsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final r = await _repo.createGoal(event.payload);
+    emit(state.copyWith(loading: true));
+    final Either<Failure, Goal> r = await _repo.createGoal(event.payload);
     r.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (g) => emit(
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Goal g) => emit(
         state.copyWith(
           loading: false,
           items: List<Goal>.from(state.items)..add(g),
@@ -81,28 +83,28 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
   }
 
   Future<void> _onUpdate(GoalUpdate event, Emitter<GoalsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final r = await _repo.updateGoal(event.payload);
+    emit(state.copyWith(loading: true));
+    final Either<Failure, Goal> r = await _repo.updateGoal(event.payload);
     r.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (g) => emit(
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Goal g) => emit(
         state.copyWith(
           loading: false,
-          items: state.items.map((e) => e.id == g.id ? g : e).toList(),
+          items: state.items.map((Goal e) => e.id == g.id ? g : e).toList(),
         ),
       ),
     );
   }
 
   Future<void> _onDelete(GoalDelete event, Emitter<GoalsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final r = await _repo.deleteGoal(event.id);
+    emit(state.copyWith(loading: true));
+    final Either<Failure, void> r = await _repo.deleteGoal(event.id);
     r.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
       (_) => emit(
         state.copyWith(
           loading: false,
-          items: state.items.where((e) => e.id != event.id).toList(),
+          items: state.items.where((Goal e) => e.id != event.id).toList(),
         ),
       ),
     );

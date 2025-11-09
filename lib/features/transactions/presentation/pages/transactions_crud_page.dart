@@ -9,6 +9,7 @@ import 'package:personal_finance/features/transactions/domain/entities/transacti
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 
 class TransactionsCrudPage extends StatelessWidget {
   const TransactionsCrudPage({super.key});
@@ -37,6 +38,18 @@ class TransactionsCrudPage extends StatelessWidget {
                       child: ew.AppErrorWidget(message: state.error!),
                     );
                   }
+                  if (state.items.isEmpty) {
+                    return EmptyState(
+                      title: 'Sin transacciones',
+                      message:
+                          'Agrega tu primera transacción para comenzar a llevar control.',
+                      action: FilledButton.icon(
+                        onPressed: () => _openDialog(context),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar transacción'),
+                      ),
+                    );
+                  }
                   return RefreshIndicator(
                     onRefresh:
                         () async => context.read<TransactionsBloc>().add(
@@ -51,7 +64,7 @@ class TransactionsCrudPage extends StatelessWidget {
                         final bool isIngreso =
                             t.tipo.toLowerCase() == 'ingreso';
                         final String amount =
-                            (isIngreso ? '+' : '-') + '\$' + t.montoAsDouble.toStringAsFixed(2);
+                            '${isIngreso ? '+' : '-'}\$${t.montoAsDouble.toStringAsFixed(2)}';
                         return Dismissible(
                           key: ValueKey<int?>(t.id),
                           direction: DismissDirection.endToStart,

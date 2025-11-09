@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/core/error/failures.dart';
 
 import 'package:personal_finance/features/profile/domain/entities/profile_info.dart';
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
@@ -14,11 +16,7 @@ class ProfileLoadMe extends ProfileEvent {}
 
 // State
 class ProfileState extends Equatable {
-  const ProfileState({
-    this.loading = false,
-    this.error,
-    this.info,
-  });
+  const ProfileState({this.loading = false, this.error, this.info});
 
   final bool loading;
   final String? error;
@@ -46,12 +44,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ProfileLoadMe event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.getMe();
+    emit(state.copyWith(loading: true));
+    final Either<Failure, ProfileInfo> res = await _repo.getMe();
     res.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (r) => emit(state.copyWith(loading: false, info: r)),
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (ProfileInfo r) => emit(state.copyWith(loading: false, info: r)),
     );
   }
 }
-

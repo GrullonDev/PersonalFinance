@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/core/error/failures.dart';
 
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
@@ -58,20 +60,20 @@ class BudgetsBloc extends Bloc<BudgetsEvent, BudgetsState> {
   final BudgetRepository _repo;
 
   Future<void> _onLoad(BudgetsLoad event, Emitter<BudgetsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.getBudgets();
+    emit(state.copyWith(loading: true));
+    final Either<Failure, List<Budget>> res = await _repo.getBudgets();
     res.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (r) => emit(state.copyWith(loading: false, items: r)),
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (List<Budget> r) => emit(state.copyWith(loading: false, items: r)),
     );
   }
 
   Future<void> _onCreate(BudgetCreate event, Emitter<BudgetsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.createBudget(event.payload);
+    emit(state.copyWith(loading: true));
+    final Either<Failure, Budget> res = await _repo.createBudget(event.payload);
     res.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (r) => emit(
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Budget r) => emit(
         state.copyWith(
           loading: false,
           items: List<Budget>.from(state.items)..add(r),
@@ -81,28 +83,28 @@ class BudgetsBloc extends Bloc<BudgetsEvent, BudgetsState> {
   }
 
   Future<void> _onUpdate(BudgetUpdate event, Emitter<BudgetsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.updateBudget(event.payload);
+    emit(state.copyWith(loading: true));
+    final Either<Failure, Budget> res = await _repo.updateBudget(event.payload);
     res.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (r) => emit(
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Budget r) => emit(
         state.copyWith(
           loading: false,
-          items: state.items.map((b) => b.id == r.id ? r : b).toList(),
+          items: state.items.map((Budget b) => b.id == r.id ? r : b).toList(),
         ),
       ),
     );
   }
 
   Future<void> _onDelete(BudgetDelete event, Emitter<BudgetsState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.deleteBudget(event.id);
+    emit(state.copyWith(loading: true));
+    final Either<Failure, void> res = await _repo.deleteBudget(event.id);
     res.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
       (_) => emit(
         state.copyWith(
           loading: false,
-          items: state.items.where((b) => b.id != event.id).toList(),
+          items: state.items.where((Budget b) => b.id != event.id).toList(),
         ),
       ),
     );

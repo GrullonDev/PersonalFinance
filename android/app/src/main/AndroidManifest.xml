@@ -1,11 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.grullondev.personal_finance">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ notifications permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- android/app/src/main/AndroidManifest.xml -->
     <application
         android:name=".MyApplication"
         android:label="Finanzas Maestras"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/logo"
         android:enableOnBackInvokedCallback="true">
 
         <!-- Indica que usas el Android embedding v2 -->

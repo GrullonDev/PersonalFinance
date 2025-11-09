@@ -45,6 +45,12 @@ import 'package:personal_finance/features/transactions/data/repositories/transac
     as backend_tx_repo_impl;
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
     as backend_tx_repo;
+import 'package:personal_finance/features/notifications/data/datasources/notification_remote_data_source.dart'
+    as notif_ds;
+import 'package:personal_finance/features/notifications/data/repositories/notification_repository_impl.dart'
+    as notif_repo_impl;
+import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
+    as notif_repo;
 
 final GetIt getIt = GetIt.instance;
 
@@ -210,6 +216,22 @@ Future<void> initDependencies() async {
     getIt.registerLazySingleton<backend_tx_repo.TransactionBackendRepository>(
       () => backend_tx_repo_impl.TransactionBackendRepositoryImpl(
         getIt<backend_tx_ds.TransactionBackendRemoteDataSource>(),
+      ),
+    );
+  }
+
+  // Notifications Remote Data Source
+  if (!getIt.isRegistered<notif_ds.NotificationRemoteDataSource>()) {
+    getIt.registerLazySingleton<notif_ds.NotificationRemoteDataSource>(
+      () => notif_ds.NotificationRemoteDataSourceImpl(getIt<ApiService>()),
+    );
+  }
+
+  // Notifications Repository
+  if (!getIt.isRegistered<notif_repo.NotificationRepository>()) {
+    getIt.registerLazySingleton<notif_repo.NotificationRepository>(
+      () => notif_repo_impl.NotificationRepositoryImpl(
+        getIt<notif_ds.NotificationRemoteDataSource>(),
       ),
     );
   }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+
+import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,28 +17,35 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkFirstTime();
+    _bootstrap();
   }
 
-  Future<void> _checkFirstTime() async {
-    await Future<void>.delayed(const Duration(seconds: 2));
-
+  Future<void> _bootstrap() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final bool onboardingComplete =
         prefs.getBool('onboarding_complete') ?? false;
 
     if (mounted) {
       if (onboardingComplete) {
-        Navigator.of(context).pushReplacementNamed('/login');
+        // Intentar restaurar sesión mediante refresh si es posible
+        final AuthProvider auth = context.read<AuthProvider>();
+        await auth.onAppResumed();
+        if (auth.isAuthenticated) {
+          if (!mounted) return;
+          Navigator.of(context).pushReplacementNamed(RoutePath.dashboard);
+        } else {
+          if (!mounted) return;
+          Navigator.of(context).pushReplacementNamed(RoutePath.login);
+        }
       } else {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        Navigator.of(context).pushReplacementNamed(RoutePath.onboarding);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.blue,
+    backgroundColor: Theme.of(context).colorScheme.primary,
     body: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -45,25 +56,32 @@ class _SplashScreenState extends State<SplashScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
             ),
-            child: const Icon(
-              Icons.account_balance_wallet,
-              size: 64,
-              color: Colors.blue,
+            child: Image.asset(
+              'assets/logo.png',
+              width: 72,
+              height: 72,
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Personal Finance',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Tu compañero financiero',
-            style: TextStyle(fontSize: 16, color: Colors.white70),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: Colors.white70),
+          ),
+          const SizedBox(height: 32),
+          const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         ],
       ),

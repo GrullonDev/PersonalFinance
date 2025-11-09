@@ -18,18 +18,37 @@ class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
 
   final ApiService _apiService;
 
+  List<Map<String, dynamic>> _extractList(dynamic decoded) {
+    if (decoded is List) {
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    }
+    if (decoded is Map<String, dynamic>) {
+      final dynamic inner =
+          decoded['data'] ?? decoded['results'] ?? decoded['items'];
+      if (inner is List) {
+        return inner.whereType<Map<String, dynamic>>().toList();
+      }
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  Map<String, dynamic> _extractMap(dynamic decoded) {
+    if (decoded is Map<String, dynamic>) {
+      final dynamic inner = decoded['data'];
+      if (inner is Map<String, dynamic>) return inner;
+      return decoded;
+    }
+    return <String, dynamic>{};
+  }
+
   @override
   Future<List<CategoryModel>> getCategories() async {
     final Response response = await _apiService.get('/api/v1/categories');
-    if (response.statusCode == 200) {
-      final List<dynamic> decoded =
-          response.body.isEmpty
-              ? <dynamic>[]
-              : jsonDecode(response.body) as List<dynamic>;
-      return decoded
-          .whereType<Map<String, dynamic>>()
-          .map(CategoryModel.fromJson)
-          .toList();
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final dynamic decoded =
+          response.body.isEmpty ? <dynamic>[] : jsonDecode(response.body);
+      final List<Map<String, dynamic>> list = _extractList(decoded);
+      return list.map(CategoryModel.fromJson).toList();
     }
     throw ApiException(
       message: 'Error al cargar categorías',
@@ -46,10 +65,13 @@ class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
             ..remove('id')
             ..remove('profile_id'),
     );
-    if (response.statusCode == 201) {
-      return CategoryModel.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final dynamic decoded =
+          response.body.isEmpty
+              ? <String, dynamic>{}
+              : jsonDecode(response.body);
+      final Map<String, dynamic> map = _extractMap(decoded);
+      return CategoryModel.fromJson(map);
     }
     throw ApiException(
       message: _extractDetailMessage(response.body),
@@ -67,9 +89,12 @@ class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
       body: <String, dynamic>{'nombre': category.nombre, 'tipo': category.tipo},
     );
     if (response.statusCode == 200) {
-      return CategoryModel.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
+      final dynamic decoded =
+          response.body.isEmpty
+              ? <String, dynamic>{}
+              : jsonDecode(response.body);
+      final Map<String, dynamic> map = _extractMap(decoded);
+      return CategoryModel.fromJson(map);
     }
     throw ApiException(
       message: _extractDetailMessage(response.body),
@@ -82,7 +107,7 @@ class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
     final Response response = await _apiService.delete(
       '/api/v1/categories/$categoryId',
     );
-    if (response.statusCode == 204) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
     throw ApiException(

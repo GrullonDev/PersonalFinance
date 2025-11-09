@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:personal_finance/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -37,8 +38,10 @@ Future<void> main() async {
   }
   await OfflineSyncService().init();
 
-  // Inicializa Firebase
-  await Firebase.initializeApp();
+  // Inicializa Firebase con las opciones generadas por FlutterFire
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Configura dependencias
   await initDependencies();

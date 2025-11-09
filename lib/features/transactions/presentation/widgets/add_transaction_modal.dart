@@ -4,7 +4,6 @@ import 'package:personal_finance/features/categories/domain/entities/category.da
 import 'package:provider/provider.dart';
 import 'package:personal_finance/features/categories/presentation/providers/categories_provider.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 
 class AddTransactionModal extends StatefulWidget {
@@ -118,31 +117,29 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
             Consumer<CategoriesProvider>(
               builder:
                   (BuildContext context, CategoriesProvider cats, _) =>
-                      InputDecorator(
+                      DropdownButtonFormField<int>(
+                        initialValue: _categoriaId,
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Categoría',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<int>(
-                            value: _categoriaId,
-                            isExpanded: true,
-                            hint: const Text('Selecciona una categoría'),
-                            items:
-                                cats.categories
-                                    .map(
-                                      (Category c) => DropdownMenuItem<int>(
-                                        value: c.id,
-                                        child: Text(c.nombre),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged:
-                                (int? v) => setState(() => _categoriaId = v),
-                          ),
-                        ),
+                        hint: const Text('Selecciona una categoría'),
+                        items:
+                            cats.categories
+                                .map(
+                                  (Category c) => DropdownMenuItem<int>(
+                                    value: c.id,
+                                    child: Text(c.nombre),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (int? v) => setState(() => _categoriaId = v),
+                        validator:
+                            (int? v) =>
+                                v == null ? 'Selecciona una categoría' : null,
                       ),
             ),
             const SizedBox(height: 16),

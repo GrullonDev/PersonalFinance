@@ -17,18 +17,37 @@ class GoalRemoteDataSourceImpl implements GoalRemoteDataSource {
   GoalRemoteDataSourceImpl(this._api);
   final ApiService _api;
 
+  List<Map<String, dynamic>> _extractList(dynamic decoded) {
+    if (decoded is List) {
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    }
+    if (decoded is Map<String, dynamic>) {
+      final dynamic inner =
+          decoded['data'] ?? decoded['results'] ?? decoded['items'];
+      if (inner is List) {
+        return inner.whereType<Map<String, dynamic>>().toList();
+      }
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  Map<String, dynamic> _extractMap(dynamic decoded) {
+    if (decoded is Map<String, dynamic>) {
+      final dynamic inner = decoded['data'];
+      if (inner is Map<String, dynamic>) return inner;
+      return decoded;
+    }
+    return <String, dynamic>{};
+  }
+
   @override
   Future<List<GoalModel>> getGoals() async {
     final Response res = await _api.get('/api/v1/goals');
-    if (res.statusCode == 200) {
-      final List<dynamic> list =
-          res.body.isEmpty
-              ? <dynamic>[]
-              : jsonDecode(res.body) as List<dynamic>;
-      return list
-          .whereType<Map<String, dynamic>>()
-          .map(GoalModel.fromJson)
-          .toList();
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final dynamic decoded =
+          res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
+      final List<Map<String, dynamic>> list = _extractList(decoded);
+      return list.map(GoalModel.fromJson).toList();
     }
     throw ApiException(
       message: 'Error al obtener metas',
@@ -39,8 +58,11 @@ class GoalRemoteDataSourceImpl implements GoalRemoteDataSource {
   @override
   Future<GoalModel> createGoal(GoalModel goal) async {
     final Response res = await _api.post('/api/v1/goals', body: goal.toJson());
-    if (res.statusCode == 201) {
-      return GoalModel.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      final dynamic decoded =
+          res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
+      final Map<String, dynamic> map = _extractMap(decoded);
+      return GoalModel.fromJson(map);
     }
     throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
   }
@@ -52,7 +74,10 @@ class GoalRemoteDataSourceImpl implements GoalRemoteDataSource {
       body: goal.toJson(),
     );
     if (res.statusCode == 200) {
-      return GoalModel.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+      final dynamic decoded =
+          res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
+      final Map<String, dynamic> map = _extractMap(decoded);
+      return GoalModel.fromJson(map);
     }
     throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
   }
@@ -60,7 +85,7 @@ class GoalRemoteDataSourceImpl implements GoalRemoteDataSource {
   @override
   Future<void> deleteGoal(int id) async {
     final Response res = await _api.delete('/api/v1/goals/$id');
-    if (res.statusCode == 204) return;
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
     throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
   }
 

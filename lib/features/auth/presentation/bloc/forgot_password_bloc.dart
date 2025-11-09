@@ -16,12 +16,17 @@ class ForgotSubmitted extends ForgotPasswordEvent {
 }
 
 class ForgotPasswordState extends Equatable {
-  const ForgotPasswordState({this.loading = false, this.error, this.success = false});
+  const ForgotPasswordState({
+    this.loading = false,
+    this.error,
+    this.success = false,
+  });
   final bool loading;
   final String? error;
   final bool success;
 
-  ForgotPasswordState copyWith({bool? loading, String? error, bool? success}) => ForgotPasswordState(
+  ForgotPasswordState copyWith({bool? loading, String? error, bool? success}) =>
+      ForgotPasswordState(
         loading: loading ?? this.loading,
         error: error,
         success: success ?? this.success,
@@ -31,20 +36,25 @@ class ForgotPasswordState extends Equatable {
   List<Object?> get props => <Object?>[loading, error, success];
 }
 
-class ForgotPasswordBloc extends Bloc<ForgotPasswordEvent, ForgotPasswordState> {
+class ForgotPasswordBloc
+    extends Bloc<ForgotPasswordEvent, ForgotPasswordState> {
   ForgotPasswordBloc(this._repo) : super(const ForgotPasswordState()) {
     on<ForgotSubmitted>(_onSubmit);
   }
 
   final AuthRepository _repo;
 
-  Future<void> _onSubmit(ForgotSubmitted e, Emitter<ForgotPasswordState> emit) async {
-    emit(state.copyWith(loading: true, error: null, success: false));
+  Future<void> _onSubmit(
+    ForgotSubmitted e,
+    Emitter<ForgotPasswordState> emit,
+  ) async {
+    emit(state.copyWith(loading: true, success: false));
     final Either<AuthFailure, Unit> r = await _repo.recoverPassword(e.email);
     r.fold(
-      (AuthFailure l) => emit(state.copyWith(loading: false, error: l.message, success: false)),
-      (_) => emit(state.copyWith(loading: false, error: null, success: true)),
+      (AuthFailure l) => emit(
+        state.copyWith(loading: false, error: l.message, success: false),
+      ),
+      (_) => emit(state.copyWith(loading: false, success: true)),
     );
   }
 }
-

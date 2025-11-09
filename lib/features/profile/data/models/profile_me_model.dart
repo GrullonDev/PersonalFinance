@@ -6,17 +6,14 @@ class ProfileMeModel {
 
   factory ProfileMeModel.fromJson(Map<String, dynamic> json) {
     final Map<String, dynamic> map = Map<String, dynamic>.from(json);
-    final String? name = (map['full_name'] ?? map['nombre_completo'])?.toString();
+    final String? name =
+        (map['full_name'] ?? map['nombre_completo'])?.toString();
     final String? mail = (map['email'])?.toString();
-    return ProfileMeModel(
-      fullName: name ?? '',
-      email: mail ?? '',
-    );
+    return ProfileMeModel(fullName: name ?? '', email: mail ?? '');
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'full_name': fullName,
-        'email': email,
-      };
+    'full_name': fullName,
+    'email': email,
+  };
 }
-

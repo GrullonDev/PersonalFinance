@@ -7,6 +7,7 @@ import 'package:personal_finance/features/categories/presentation/bloc/categorie
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
@@ -25,6 +26,17 @@ class CategoriesPage extends StatelessWidget {
           }
           if (state.error != null && state.items.isEmpty) {
             return Center(child: ew.AppErrorWidget(message: state.error!));
+          }
+          if (state.items.isEmpty) {
+            return EmptyState(
+              title: 'Sin categorías',
+              message: 'Crea tus categorías para organizar mejor tus finanzas.',
+              action: FilledButton.icon(
+                onPressed: () => _openCategoryDialog(context),
+                icon: const Icon(Icons.add),
+                label: const Text('Nueva categoría'),
+              ),
+            );
           }
           return RefreshIndicator(
             onRefresh:
@@ -148,7 +160,7 @@ class CategoriesPage extends StatelessWidget {
                 onPressed: () async {
                   if (!formKey.currentState!.validate()) return;
                   final CategoriesBloc bloc = context.read<CategoriesBloc>();
-                  bool ok = true;
+                  const bool ok = true;
                   if (category == null) {
                     bloc.add(CategoryCreate(nameCtrl.text.trim(), tipo));
                   } else {

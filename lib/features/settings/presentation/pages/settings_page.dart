@@ -5,6 +5,10 @@ import 'package:personal_finance/features/settings/presentation/pages/notificati
 import 'package:personal_finance/features/settings/presentation/pages/profile_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
 import 'package:provider/provider.dart';
+import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
+    as notif_repo;
+import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -65,7 +69,14 @@ class SettingsPage extends StatelessWidget {
               context,
               MaterialPageRoute<void>(
                 builder:
-                    (BuildContext context) => const NotificationsDetailPage(),
+                    (BuildContext context) =>
+                        ChangeNotifierProvider<NotificationPrefsProvider>(
+                          create:
+                              (_) => NotificationPrefsProvider(
+                                getIt<notif_repo.NotificationRepository>(),
+                              )..load(),
+                          child: const NotificationsDetailPage(),
+                        ),
               ),
             );
           },

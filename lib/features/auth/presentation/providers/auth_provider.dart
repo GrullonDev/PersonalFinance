@@ -25,9 +25,18 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     await _loadAuthData();
+    // Al iniciar la app, si hay sesión válida, refrescar si está por expirar.
     if (isAuthenticated) {
       await _refreshTokenIfNeeded();
       await loadCurrentUser();
+      return;
+    }
+    // Si el token ya expiró pero tenemos refresh_token, intenta renovar sesión.
+    if (_refreshToken != null && _refreshToken!.isNotEmpty) {
+      final bool refreshed = await _tryRefreshSession();
+      if (refreshed) {
+        await loadCurrentUser();
+      }
     }
   }
 
@@ -111,41 +120,61 @@ class AuthProvider extends ChangeNotifier {
 
     // Refresh token if it's about to expire (within 5 minutes)
     if (_tokenExpiration!.difference(DateTime.now()).inMinutes < 5) {
-      try {
-        _isLoading = true;
-        notifyListeners();
-
-        final Either<AuthFailure, RefreshTokenResponse> result =
-            await authRepository.refreshToken(_refreshToken!);
-
-        return result.fold(
-          (AuthFailure failure) {
-            // If refresh fails, clear auth data
-            _clearAuthData();
-            _errorMessage = failure.message;
-            return false;
-          },
-          (RefreshTokenResponse response) {
-            _accessToken = response.accessToken;
-            _refreshToken = response.refreshToken;
-            if (_accessToken != null) {
-              _updateTokenExpiration(_accessToken!);
-              _saveAuthData();
-              return true;
-            }
-            return false;
-          },
-        );
-      } catch (e) {
-        _errorMessage = 'Failed to refresh session. Please log in again.';
-        await _clearAuthData();
-        return false;
-      } finally {
-        _isLoading = false;
-        notifyListeners();
-      }
+      return _tryRefreshSession();
     }
     return true;
+  }
+
+  Future<bool> _tryRefreshSession() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final Either<AuthFailure, RefreshTokenResponse> result =
+          await authRepository.refreshToken(_refreshToken!);
+
+      return await result.fold(
+        (AuthFailure failure) async {
+          // Si falla el refresh, limpiar datos de sesión
+          await _clearAuthData();
+          _errorMessage = failure.message;
+          return false;
+        },
+        (RefreshTokenResponse response) async {
+          _accessToken = response.accessToken;
+          _refreshToken = response.refreshToken;
+          if (_accessToken != null) {
+            await _updateTokenExpiration(_accessToken!);
+            await _saveAuthData();
+            return true;
+          }
+          return false;
+        },
+      );
+    } catch (e) {
+      _errorMessage = 'Failed to refresh session. Please log in again.';
+      await _clearAuthData();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Expone un manejador para eventos de reanudación de la app (foreground)
+  Future<void> onAppResumed() async {
+    // Intentar refrescar si está por expirar
+    final bool ok = await _refreshTokenIfNeeded();
+    if (!ok && (_refreshToken != null && _refreshToken!.isNotEmpty)) {
+      // Si ya expiró, intenta renovarla igualmente
+      final bool refreshed = await _tryRefreshSession();
+      if (refreshed) {
+        await loadCurrentUser();
+      }
+    } else if (isAuthenticated) {
+      // Sesión válida: actualizar datos del usuario para mantener UI al día
+      await loadCurrentUser();
+    }
   }
 
   Future<void> _updateTokenExpiration(String token) async {
@@ -444,6 +473,10 @@ class AuthProvider extends ChangeNotifier {
         (LoginUserResponse response) async {
           _setError(null);
           _accessToken = response.accessToken;
+          if (response.refreshToken != null &&
+              response.refreshToken!.isNotEmpty) {
+            _refreshToken = response.refreshToken;
+          }
 
           await _updateTokenExpiration(response.accessToken);
           await _saveAuthData();

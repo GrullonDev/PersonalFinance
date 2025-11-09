@@ -6,4 +6,3 @@ import 'package:personal_finance/features/profile/domain/entities/profile_info.d
 abstract class ProfileBackendRepository {
   Future<Either<Failure, ProfileInfo>> getMe();
 }
-

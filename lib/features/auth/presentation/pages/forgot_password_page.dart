@@ -10,9 +10,9 @@ class ForgotPasswordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider<ForgotPasswordBloc>(
-        create: (_) => ForgotPasswordBloc(getIt<AuthRepository>()),
-        child: const _ForgotPasswordView(),
-      );
+    create: (_) => ForgotPasswordBloc(getIt<AuthRepository>()),
+    child: const _ForgotPasswordView(),
+  );
 }
 
 class _ForgotPasswordView extends StatelessWidget {
@@ -29,66 +29,78 @@ class _ForgotPasswordView extends StatelessWidget {
         child: BlocConsumer<ForgotPasswordBloc, ForgotPasswordState>(
           listener: (BuildContext context, ForgotPasswordState state) {
             if (state.error != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.error!)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.error!)));
             }
             if (state.success) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Se ha enviado un correo para restablecer tu contraseña'),
+                  content: Text(
+                    'Se ha enviado un correo para restablecer tu contraseña',
+                  ),
                   backgroundColor: Colors.green,
                 ),
               );
               Navigator.of(context).pop();
             }
           },
-          builder: (BuildContext context, ForgotPasswordState state) => Form(
-            key: formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                const Text(
-                  'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.',
-                  style: TextStyle(fontSize: 16),
+          builder:
+              (BuildContext context, ForgotPasswordState state) => Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    const Text(
+                      'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 24),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Correo Electrónico',
+                        prefixIcon: Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      onSaved: (String? v) => email = (v ?? '').trim(),
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor ingresa tu correo electrónico';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Por favor ingresa un correo electrónico válido';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed:
+                          state.loading
+                              ? null
+                              : () {
+                                if (!formKey.currentState!.validate()) return;
+                                formKey.currentState!.save();
+                                context.read<ForgotPasswordBloc>().add(
+                                  ForgotSubmitted(email),
+                                );
+                              },
+                      child:
+                          state.loading
+                              ? const CircularProgressIndicator()
+                              : const Text('Enviar Enlace'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Volver al Inicio de Sesión'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Correo Electrónico',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  onSaved: (String? v) => email = (v ?? '').trim(),
-                  validator: (String? value) {
-                    if (value == null || value.isEmpty) return 'Por favor ingresa tu correo electrónico';
-                    if (!value.contains('@')) return 'Por favor ingresa un correo electrónico válido';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: state.loading
-                      ? null
-                      : () {
-                          if (!formKey.currentState!.validate()) return;
-                          formKey.currentState!.save();
-                          context.read<ForgotPasswordBloc>().add(ForgotSubmitted(email));
-                        },
-                  child: state.loading ? const CircularProgressIndicator() : const Text('Enviar Enlace'),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Volver al Inicio de Sesión'),
-                ),
-              ],
-            ),
-          ),
+              ),
         ),
       ),
     );
   }
 }
-

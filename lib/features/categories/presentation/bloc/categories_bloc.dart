@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/core/error/failures.dart';
 
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
 import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
@@ -70,11 +72,11 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     CategoriesLoad event,
     Emitter<CategoriesState> emit,
   ) async {
-    emit(state.copyWith(loading: true, error: null));
-    final result = await _repo.getCategories();
+    emit(state.copyWith(loading: true));
+    final Either<Failure, List<Category>> result = await _repo.getCategories();
     result.fold(
-      (l) => emit(state.copyWith(loading: false, error: l.message)),
-      (r) => emit(state.copyWith(loading: false, items: r, error: null)),
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (List<Category> r) => emit(state.copyWith(loading: false, items: r)),
     );
   }
 
@@ -82,48 +84,53 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     CategoryCreate event,
     Emitter<CategoriesState> emit,
   ) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.createCategory(
+    emit(state.copyWith(loading: true));
+    final Either<Failure, Category> res = await _repo.createCategory(
       Category(nombre: event.nombre, tipo: event.tipo),
     );
-    res.fold((l) => emit(state.copyWith(loading: false, error: l.message)), (
-      created,
-    ) {
-      final List<Category> items = List<Category>.from(state.items)
-        ..add(created);
-      emit(state.copyWith(loading: false, items: items));
-    });
+    res.fold(
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Category created) {
+        final List<Category> items = List<Category>.from(state.items)
+          ..add(created);
+        emit(state.copyWith(loading: false, items: items));
+      },
+    );
   }
 
   Future<void> _onUpdate(
     CategoryUpdate event,
     Emitter<CategoriesState> emit,
   ) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.updateCategory(
+    emit(state.copyWith(loading: true));
+    final Either<Failure, Category> res = await _repo.updateCategory(
       Category(id: event.id, nombre: event.nombre, tipo: event.tipo),
     );
-    res.fold((l) => emit(state.copyWith(loading: false, error: l.message)), (
-      updated,
-    ) {
-      final List<Category> items =
-          state.items.map((c) => c.id == updated.id ? updated : c).toList();
-      emit(state.copyWith(loading: false, items: items));
-    });
+    res.fold(
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (Category updated) {
+        final List<Category> items =
+            state.items
+                .map((Category c) => c.id == updated.id ? updated : c)
+                .toList();
+        emit(state.copyWith(loading: false, items: items));
+      },
+    );
   }
 
   Future<void> _onDelete(
     CategoryDelete event,
     Emitter<CategoriesState> emit,
   ) async {
-    emit(state.copyWith(loading: true, error: null));
-    final res = await _repo.deleteCategory(event.id);
-    res.fold((l) => emit(state.copyWith(loading: false, error: l.message)), (
-      _,
-    ) {
-      final List<Category> items =
-          state.items.where((c) => c.id != event.id).toList();
-      emit(state.copyWith(loading: false, items: items));
-    });
+    emit(state.copyWith(loading: true));
+    final Either<Failure, void> res = await _repo.deleteCategory(event.id);
+    res.fold(
+      (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
+      (_) {
+        final List<Category> items =
+            state.items.where((Category c) => c.id != event.id).toList();
+        emit(state.copyWith(loading: false, items: items));
+      },
+    );
   }
 }

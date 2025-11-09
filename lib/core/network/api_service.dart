@@ -15,15 +15,23 @@ class ApiService {
   final SharedPreferences? _prefs;
 
   String get _baseUrl {
-    final String? url = dotenv.env['API_BASE_URL'];
+    final String? url = dotenv.env['API_BASE_URL']?.trim();
     if (url == null || url.isEmpty) {
       throw StateError(
         'API_BASE_URL no está configurado. '
         'Asegúrate de cargar el archivo .env antes de usar ApiService.',
       );
     }
-    return url;
+    // Validar esquema
+    final Uri? parsed = Uri.tryParse(url);
+    if (parsed == null || (parsed.scheme != 'http' && parsed.scheme != 'https')) {
+      throw StateError('API_BASE_URL inválido: use http(s)://');
+    }
+    // Normaliza evitando barra final para prevenir // al construir URIs
+    return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
+
+  bool get _isNgrok => _baseUrl.contains('ngrok');
 
   Uri _buildUri(String path, [Map<String, dynamic>? queryParameters]) {
     final String normalizedPath = path.startsWith('/') ? path : '/$path';
@@ -104,6 +112,8 @@ class ApiService {
   Map<String, String> _withJsonHeaders(Map<String, String>? headers) =>
       <String, String>{
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        if (_isNgrok) 'ngrok-skip-browser-warning': 'true',
         if (_prefs?.getString('access_token') != null)
           'Authorization': 'Bearer ${_prefs!.getString('access_token')}',
         if (headers != null) ...headers,
@@ -112,6 +122,7 @@ class ApiService {
   Map<String, String> _withAuthHeaders(Map<String, String>? headers) =>
       <String, String>{
         'Accept': 'application/json',
+        if (_isNgrok) 'ngrok-skip-browser-warning': 'true',
         if (_prefs?.getString('access_token') != null)
           'Authorization': 'Bearer ${_prefs!.getString('access_token')}',
         if (headers != null) ...headers,
@@ -131,9 +142,10 @@ class ApiService {
       final Map<String, String> safeHeaders = Map<String, String>.from(headers);
       if (safeHeaders.containsKey('Authorization')) {
         final String auth = safeHeaders['Authorization']!;
-        final String masked = auth.length > 16
-            ? auth.substring(0, 16) + '...' // avoid logging full token
-            : auth;
+        final String masked =
+            auth.length > 16
+                ? '${auth.substring(0, 16)}...' // avoid logging full token
+                : auth;
         safeHeaders['Authorization'] = masked;
       }
       debugPrint('Headers: ${safeHeaders.toString()}');

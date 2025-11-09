@@ -59,6 +59,7 @@ class LoginUserResponse {
     required this.accessToken,
     required this.tokenType,
     required this.user,
+    this.refreshToken,
   });
 
   @JsonKey(name: 'access_token')
@@ -69,6 +70,9 @@ class LoginUserResponse {
 
   @JsonKey(name: 'user')
   final User user;
+
+  @JsonKey(name: 'refresh_token')
+  final String? refreshToken;
 
   factory LoginUserResponse.fromJson(Map<String, dynamic> json) =>
       _$LoginUserResponseFromJson(json);

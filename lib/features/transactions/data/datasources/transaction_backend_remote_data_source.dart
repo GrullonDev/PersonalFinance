@@ -45,8 +45,11 @@ class TransactionBackendRemoteDataSourceImpl
     if (res.statusCode == 200) {
       final dynamic decoded =
           res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
-      final List<dynamic> list =
-          decoded is List ? decoded : (decoded['data'] as List? ?? <dynamic>[]);
+      final List<dynamic> list = decoded is List
+          ? decoded
+          : (decoded is Map<String, dynamic> && decoded['data'] is List
+              ? decoded['data'] as List<dynamic>
+              : <dynamic>[]);
       return list
           .whereType<Map<String, dynamic>>()
           .map(TransactionBackendModel.fromJson)

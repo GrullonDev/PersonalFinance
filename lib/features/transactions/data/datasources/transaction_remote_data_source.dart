@@ -19,15 +19,43 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
 
   final ApiService _apiService;
 
-  Map<String, dynamic> _handleResponse(http.Response response) {
+  dynamic _handleResponse(http.Response response) {
+    // Acepta 2xx como éxito; DELETE puede devolver 204 sin cuerpo
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    } else {
-      throw ApiException(
-        message: 'Request failed with status: ${response.statusCode}',
-        statusCode: response.statusCode,
-      );
+      if (response.body.isEmpty) return null;
+      try {
+        return jsonDecode(response.body);
+      } catch (_) {
+        return null;
+      }
     }
+    throw ApiException(
+      message: 'Request failed with status: ${response.statusCode}',
+      statusCode: response.statusCode,
+    );
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic decoded) {
+    if (decoded is List) {
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    }
+    if (decoded is Map<String, dynamic>) {
+      final dynamic inner =
+          decoded['data'] ?? decoded['results'] ?? decoded['items'];
+      if (inner is List) {
+        return inner.whereType<Map<String, dynamic>>().toList();
+      }
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  Map<String, dynamic> _extractMap(dynamic decoded) {
+    if (decoded is Map<String, dynamic>) {
+      final dynamic inner = decoded['data'];
+      if (inner is Map<String, dynamic>) return inner;
+      return decoded;
+    }
+    return <String, dynamic>{};
   }
 
   @override
@@ -36,12 +64,9 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       final http.Response response = await _apiService.get(
         '/api/v1/transactions',
       );
-      final Map<String, dynamic> data = _handleResponse(response);
-      return (data['data'] as List)
-          .map(
-            (item) => TransactionModel.fromJson(item as Map<String, dynamic>),
-          )
-          .toList();
+      final dynamic decoded = _handleResponse(response);
+      final List<Map<String, dynamic>> list = _extractList(decoded);
+      return list.map(TransactionModel.fromJson).toList();
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -58,8 +83,9 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       final http.Response response = await _apiService.get(
         '/api/v1/transactions/$id',
       );
-      final Map<String, dynamic> data = _handleResponse(response);
-      return TransactionModel.fromJson(data['data'] as Map<String, dynamic>);
+      final dynamic decoded = _handleResponse(response);
+      final Map<String, dynamic> map = _extractMap(decoded);
+      return TransactionModel.fromJson(map);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -79,8 +105,9 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
         '/api/v1/transactions',
         body: transaction.toJson(),
       );
-      final Map<String, dynamic> data = _handleResponse(response);
-      return TransactionModel.fromJson(data['data'] as Map<String, dynamic>);
+      final dynamic decoded = _handleResponse(response);
+      final Map<String, dynamic> map = _extractMap(decoded);
+      return TransactionModel.fromJson(map);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -100,8 +127,9 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
         '/api/v1/transactions/${transaction.id}',
         body: transaction.toJson(),
       );
-      final Map<String, dynamic> data = _handleResponse(response);
-      return TransactionModel.fromJson(data['data'] as Map<String, dynamic>);
+      final dynamic decoded = _handleResponse(response);
+      final Map<String, dynamic> map = _extractMap(decoded);
+      return TransactionModel.fromJson(map);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -118,7 +146,7 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       final http.Response response = await _apiService.delete(
         '/api/v1/transactions/$id',
       );
-      _handleResponse(response);
+      _handleResponse(response); // valida status; ignora cuerpo
     } on ApiException {
       rethrow;
     } catch (e) {

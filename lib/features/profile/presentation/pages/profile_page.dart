@@ -13,15 +13,15 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider<ProfileBloc>(
-        create: (_) {
-          final ProfileBackendRepository repo =
-              getIt.isRegistered<ProfileBackendRepository>()
-                  ? getIt<ProfileBackendRepository>()
-                  : ProfileBackendRepositoryImpl(
-                      ProfileRemoteDataSourceImpl(getIt<ApiService>()),
-                    );
-          return ProfileBloc(repo)..add(ProfileLoadMe());
-        },
-        child: const ProfileView(),
-      );
+    create: (_) {
+      final ProfileBackendRepository repo =
+          getIt.isRegistered<ProfileBackendRepository>()
+              ? getIt<ProfileBackendRepository>()
+              : ProfileBackendRepositoryImpl(
+                ProfileRemoteDataSourceImpl(getIt<ApiService>()),
+              );
+      return ProfileBloc(repo)..add(ProfileLoadMe());
+    },
+    child: const ProfileView(),
+  );
 }

@@ -29,8 +29,16 @@ class AuthBackendDataSource {
     final dynamic decodedBody =
         httpResponse.body.isNotEmpty ? jsonDecode(httpResponse.body) : null;
 
-    if (httpResponse.statusCode == 201 && decodedBody is Map<String, dynamic>) {
-      return RegisterUserResponse.fromJson(decodedBody);
+    if (httpResponse.statusCode == 201 || httpResponse.statusCode == 200) {
+      final Map<String, dynamic> map =
+          decodedBody is Map<String, dynamic>
+              ? (decodedBody['data'] is Map<String, dynamic>
+                  ? decodedBody['data'] as Map<String, dynamic>
+                  : decodedBody)
+              : <String, dynamic>{};
+      if (map.isNotEmpty) {
+        return RegisterUserResponse.fromJson(map);
+      }
     }
 
     // FastAPI uses "detail" in error responses: can be string or list.
@@ -51,8 +59,16 @@ class AuthBackendDataSource {
     final dynamic decodedBody =
         httpResponse.body.isNotEmpty ? jsonDecode(httpResponse.body) : null;
 
-    if (httpResponse.statusCode == 200 && decodedBody is Map<String, dynamic>) {
-      return LoginUserResponse.fromJson(decodedBody);
+    if (httpResponse.statusCode == 200) {
+      final Map<String, dynamic> map =
+          decodedBody is Map<String, dynamic>
+              ? (decodedBody['data'] is Map<String, dynamic>
+                  ? decodedBody['data'] as Map<String, dynamic>
+                  : decodedBody)
+              : <String, dynamic>{};
+      if (map.isNotEmpty) {
+        return LoginUserResponse.fromJson(map);
+      }
     }
 
     // FastAPI uses "detail" in error responses: can be string or list.
@@ -73,7 +89,7 @@ class AuthBackendDataSource {
     final dynamic decodedBody =
         httpResponse.body.isNotEmpty ? jsonDecode(httpResponse.body) : null;
 
-    if (httpResponse.statusCode == 200) {
+    if (httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
       return;
     }
 
@@ -95,7 +111,7 @@ class AuthBackendDataSource {
     final dynamic decodedBody =
         httpResponse.body.isNotEmpty ? jsonDecode(httpResponse.body) : null;
 
-    if (httpResponse.statusCode == 200) {
+    if (httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
       return;
     }
 
@@ -117,8 +133,16 @@ class AuthBackendDataSource {
     final dynamic decodedBody =
         httpResponse.body.isNotEmpty ? jsonDecode(httpResponse.body) : null;
 
-    if (httpResponse.statusCode == 200 && decodedBody is Map<String, dynamic>) {
-      return RefreshTokenResponse.fromJson(decodedBody);
+    if (httpResponse.statusCode == 200) {
+      final Map<String, dynamic> map =
+          decodedBody is Map<String, dynamic>
+              ? (decodedBody['data'] is Map<String, dynamic>
+                  ? decodedBody['data'] as Map<String, dynamic>
+                  : decodedBody)
+              : <String, dynamic>{};
+      if (map.isNotEmpty) {
+        return RefreshTokenResponse.fromJson(map);
+      }
     }
 
     final String detailMessage = _extractDetailMessage(decodedBody);
@@ -136,9 +160,24 @@ class AuthBackendDataSource {
     final dynamic decodedBody =
         httpResponse.body.isNotEmpty ? jsonDecode(httpResponse.body) : null;
 
-    if (httpResponse.statusCode == 200 && decodedBody is Map<String, dynamic>) {
-      // Normalize potential Spanish keys to expected snake_case keys
-      final Map<String, dynamic> map = Map<String, dynamic>.from(decodedBody);
+    if (httpResponse.statusCode == 200) {
+      // Unwrap { data: {...} } if present
+      final Map<String, dynamic> map =
+          decodedBody is Map<String, dynamic>
+              ? (decodedBody['data'] is Map<String, dynamic>
+                  ? Map<String, dynamic>.from(
+                    decodedBody['data'] as Map<String, dynamic>,
+                  )
+                  : Map<String, dynamic>.from(decodedBody))
+              : <String, dynamic>{};
+
+      if (map.isEmpty) {
+        throw ApiException(
+          message: 'Respuesta vacía del perfil',
+          statusCode: httpResponse.statusCode,
+          data: decodedBody,
+        );
+      }
 
       // Map nombre_completo -> full_name
       if (!map.containsKey('full_name') && map.containsKey('nombre_completo')) {
@@ -148,7 +187,8 @@ class AuthBackendDataSource {
       if (!map.containsKey('created_at') && map.containsKey('fecha_creacion')) {
         map['created_at'] = map['fecha_creacion'];
       }
-      if (!map.containsKey('updated_at') && map.containsKey('fecha_actualizacion')) {
+      if (!map.containsKey('updated_at') &&
+          map.containsKey('fecha_actualizacion')) {
         map['updated_at'] = map['fecha_actualizacion'];
       }
       // Defaults if backend omits some fields
