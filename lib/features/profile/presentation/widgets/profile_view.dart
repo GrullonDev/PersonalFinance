@@ -202,7 +202,10 @@ class _PrivacySecurityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Privacidad y seguridad')),
+    appBar: AppBar(
+      title: const Text('Privacidad y seguridad'),
+      backgroundColor: Colors.greenAccent,
+    ),
     body: FutureBuilder<String>(
       future: _loadPolicy(context),
       builder: (BuildContext context, AsyncSnapshot<String> snap) {
@@ -241,7 +244,10 @@ class _HelpCenterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Centro de ayuda')),
+    appBar: AppBar(
+      title: const Text('Centro de ayuda'),
+      backgroundColor: Colors.greenAccent,
+    ),
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: <Widget>[
@@ -292,7 +298,10 @@ class _AboutPageState extends State<_AboutPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Acerca de')),
+    appBar: AppBar(
+      title: const Text('Acerca de'),
+      backgroundColor: Colors.greenAccent,
+    ),
     body: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(

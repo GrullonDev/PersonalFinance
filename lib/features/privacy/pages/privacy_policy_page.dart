@@ -45,9 +45,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Política de Privacidad'),
-        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.primary,
-        foregroundColor:
-            isDarkMode ? colorScheme.onSurface : colorScheme.onPrimary,
+        backgroundColor: Colors.greenAccent,
         elevation: 0,
         actions: <Widget>[
           IconButton(

@@ -43,7 +43,7 @@ class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
 
   @override
   Future<List<BudgetModel>> getBudgets() async {
-    final Response res = await _api.get('/api/v1/budgets');
+    final Response res = await _api.get('/api/v1/budgets/');
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final dynamic decoded =
           res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
@@ -59,7 +59,7 @@ class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
   @override
   Future<BudgetModel> createBudget(BudgetModel budget) async {
     final Response res = await _api.post(
-      '/api/v1/budgets',
+      '/api/v1/budgets/',
       body: budget.toJson(),
     );
     if (res.statusCode == 201 || res.statusCode == 200) {

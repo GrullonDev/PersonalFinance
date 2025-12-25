@@ -163,5 +163,11 @@ class ApiService {
       '[ApiService][Response] '
       'Status: ${response.statusCode} Body: ${response.body}',
     );
+    if (response.statusCode >= 300 && response.statusCode < 400) {
+      final String? loc = response.headers['location'];
+      if (loc != null && loc.isNotEmpty) {
+        debugPrint('[ApiService][Redirect] -> $loc');
+      }
+    }
   }
 }

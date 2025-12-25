@@ -6,7 +6,7 @@
     <!-- android/app/src/main/AndroidManifest.xml -->
     <application
         android:name=".MyApplication"
-        android:label="Finanzas Maestras"
+        android:label="@string/app_name"
         android:icon="@mipmap/logo"
         android:enableOnBackInvokedCallback="true">
 

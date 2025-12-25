@@ -1,32 +1,264 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
-import 'package:personal_finance/utils/widgets/empty_state.dart';
+
+Future<bool> _confirmDelete(BuildContext context) async {
+  final bool? confirm = await showDialog<bool>(
+    context: context,
+    builder:
+        (BuildContext context) => AlertDialog(
+          title: const Text('Eliminar meta'),
+          content: const Text('¿Deseas eliminar esta meta?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.tonal(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        ),
+  );
+  return confirm ?? false;
+}
+
+String _fmt(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+// Helpers for icon picking/rendering
+IconData _iconFromName(String name) {
+  const Map<String, IconData> map = <String, IconData>{
+    'flag': Icons.flag,
+    'star': Icons.star,
+    'savings': Icons.savings,
+    'home': Icons.home,
+    'car': Icons.directions_car,
+    'school': Icons.school,
+    'favorite': Icons.favorite,
+    'flight': Icons.flight_takeoff,
+    'shopping': Icons.shopping_cart,
+    'health': Icons.health_and_safety,
+    'fitness': Icons.fitness_center,
+    'restaurant': Icons.restaurant,
+    'trophy': Icons.emoji_events,
+    'gift': Icons.card_giftcard,
+    'beach': Icons.beach_access,
+  };
+  return map[name.trim().toLowerCase()] ?? Icons.flag;
+}
+
+Future<String?> _pickIcon(BuildContext context, String current) async {
+  final List<MapEntry<String, IconData>> options = <MapEntry<String, IconData>>[
+    const MapEntry<String, IconData>('flag', Icons.flag),
+    const MapEntry<String, IconData>('star', Icons.star),
+    const MapEntry<String, IconData>('savings', Icons.savings),
+    const MapEntry<String, IconData>('home', Icons.home),
+    const MapEntry<String, IconData>('car', Icons.directions_car),
+    const MapEntry<String, IconData>('school', Icons.school),
+    const MapEntry<String, IconData>('favorite', Icons.favorite),
+    const MapEntry<String, IconData>('flight', Icons.flight_takeoff),
+    const MapEntry<String, IconData>('shopping', Icons.shopping_cart),
+    const MapEntry<String, IconData>('health', Icons.health_and_safety),
+    const MapEntry<String, IconData>('fitness', Icons.fitness_center),
+    const MapEntry<String, IconData>('restaurant', Icons.restaurant),
+    const MapEntry<String, IconData>('trophy', Icons.emoji_events),
+    const MapEntry<String, IconData>('gift', Icons.card_giftcard),
+    const MapEntry<String, IconData>('beach', Icons.beach_access),
+  ];
+
+  return showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder:
+        (BuildContext ctx) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'Elige un icono',
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        ),
+                    itemCount: options.length,
+                    itemBuilder: (BuildContext _, int i) {
+                      final String key = options[i].key;
+                      final IconData icon = options[i].value;
+                      final bool selected = key == current;
+                      return InkWell(
+                        onTap: () => Navigator.pop<String>(ctx, key),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color:
+                                selected
+                                    ? Theme.of(
+                                      ctx,
+                                    ).colorScheme.primary.withValues(alpha: 0.1)
+                                    : Theme.of(ctx).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  selected
+                                      ? Theme.of(ctx).colorScheme.primary
+                                      : Theme.of(ctx).dividerColor,
+                            ),
+                          ),
+                          child: Icon(
+                            icon,
+                            color: Theme.of(ctx).colorScheme.primary,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+  );
+}
 
 class GoalsCrudPage extends StatelessWidget {
-  const GoalsCrudPage({super.key});
+  final bool showAppBar;
+
+  const GoalsCrudPage({super.key, this.showAppBar = true});
 
   @override
   Widget build(BuildContext context) => BlocProvider<GoalsBloc>(
     create: (_) => GoalsBloc(getIt<GoalRepository>())..add(GoalsLoad()),
-    child: const _GoalsView(),
+    child: _GoalsView(showAppBar: showAppBar),
+  );
+}
+
+class _DateTile extends StatelessWidget {
+  final String label;
+  final DateTime value;
+  final ValueChanged<DateTime> onPick;
+  const _DateTile({
+    required this.label,
+    required this.value,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      Text(label, style: Theme.of(context).textTheme.bodySmall),
+      const SizedBox(height: 4),
+      InkWell(
+        onTap: () async {
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: value,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+          );
+          if (picked != null) onPick(picked);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.date_range, size: 18),
+              const SizedBox(width: 8),
+              Text(_fmt(value)),
+            ],
+          ),
+        ),
+      ),
+    ],
   );
 }
 
 class _GoalsView extends StatelessWidget {
-  const _GoalsView();
+  final bool showAppBar;
+
+  const _GoalsView({required this.showAppBar});
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      title: const Text('Metas'),
+    appBar: PreferredSize(
+      preferredSize: const Size.fromHeight(120),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.flag_rounded, color: Colors.white, size: 28),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Metas',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Alcanza tus objetivos',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     ),
     body: BlocBuilder<GoalsBloc, GoalsState>(
       builder: (BuildContext context, GoalsState state) {
@@ -67,46 +299,86 @@ class _GoalsView extends StatelessWidget {
                 onDismissed:
                     (_) => context.read<GoalsBloc>().add(GoalDelete(g.id!)),
                 child: Card(
+                  clipBehavior: Clip.antiAlias,
                   color:
                       g.actualAsDouble >= g.objetivoAsDouble
                           ? Colors.green.shade50
                           : null,
-                  child: ListTile(
-                    leading: Icon(_iconFromName(g.icono ?? 'flag')),
-                    title: Text(
-                      g.nombre,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          '\$${g.actualAsDouble.toStringAsFixed(0)} / \$${g.objetivoAsDouble.toStringAsFixed(0)}',
-                        ),
-                        const SizedBox(height: 6),
-                        TweenAnimationBuilder<double>(
-                          duration: const Duration(milliseconds: 400),
-                          curve: Curves.easeOutCubic,
-                          tween: Tween<double>(begin: 0, end: progress),
-                          builder:
-                              (BuildContext _, double v, Widget? __) =>
-                                  LinearProgressIndicator(
-                                    value: v,
-                                    minHeight: 6,
-                                  ),
-                        ),
-                      ],
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        Text(_fmt(g.fechaLimite)),
-                        if (g.actualAsDouble >= g.objetivoAsDouble)
-                          const Icon(Icons.check_circle, color: Colors.green),
-                      ],
-                    ),
+                  child: InkWell(
                     onTap: () => _openDialog(context, goal: g),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Icon(
+                                _iconFromName(g.icono ?? 'flag'),
+                                size: 28,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      g.nombre,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Meta: ${_fmt(g.fechaLimite)}',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (g.actualAsDouble >= g.objetivoAsDouble)
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Text(
+                                '\$${g.actualAsDouble.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '\$${g.objetivoAsDouble.toStringAsFixed(0)}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeOutCubic,
+                            tween: Tween<double>(begin: 0, end: progress),
+                            builder:
+                                (BuildContext _, double v, Widget? __) =>
+                                    LinearProgressIndicator(
+                                      value: v,
+                                      minHeight: 8,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -269,178 +541,4 @@ class _GoalsView extends StatelessWidget {
       );
     }
   }
-}
-
-Future<bool> _confirmDelete(BuildContext context) async {
-  final bool? confirm = await showDialog<bool>(
-    context: context,
-    builder:
-        (BuildContext context) => AlertDialog(
-          title: const Text('Eliminar meta'),
-          content: const Text('¿Deseas eliminar esta meta?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton.tonal(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Eliminar'),
-            ),
-          ],
-        ),
-  );
-  return confirm ?? false;
-}
-
-String _fmt(DateTime d) =>
-    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
-class _DateTile extends StatelessWidget {
-  const _DateTile({
-    required this.label,
-    required this.value,
-    required this.onPick,
-  });
-  final String label;
-  final DateTime value;
-  final ValueChanged<DateTime> onPick;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      Text(label, style: Theme.of(context).textTheme.bodySmall),
-      const SizedBox(height: 4),
-      InkWell(
-        onTap: () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: value,
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
-          );
-          if (picked != null) onPick(picked);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.date_range, size: 18),
-              const SizedBox(width: 8),
-              Text(_fmt(value)),
-            ],
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-// Helpers for icon picking/rendering
-IconData _iconFromName(String name) {
-  const Map<String, IconData> map = <String, IconData>{
-    'flag': Icons.flag,
-    'star': Icons.star,
-    'savings': Icons.savings,
-    'home': Icons.home,
-    'car': Icons.directions_car,
-    'school': Icons.school,
-    'favorite': Icons.favorite,
-    'flight': Icons.flight_takeoff,
-    'shopping': Icons.shopping_cart,
-    'health': Icons.health_and_safety,
-    'fitness': Icons.fitness_center,
-    'restaurant': Icons.restaurant,
-    'trophy': Icons.emoji_events,
-    'gift': Icons.card_giftcard,
-    'beach': Icons.beach_access,
-  };
-  return map[name.trim().toLowerCase()] ?? Icons.flag;
-}
-
-Future<String?> _pickIcon(BuildContext context, String current) async {
-  final List<MapEntry<String, IconData>> options = <MapEntry<String, IconData>>[
-    const MapEntry<String, IconData>('flag', Icons.flag),
-    const MapEntry<String, IconData>('star', Icons.star),
-    const MapEntry<String, IconData>('savings', Icons.savings),
-    const MapEntry<String, IconData>('home', Icons.home),
-    const MapEntry<String, IconData>('car', Icons.directions_car),
-    const MapEntry<String, IconData>('school', Icons.school),
-    const MapEntry<String, IconData>('favorite', Icons.favorite),
-    const MapEntry<String, IconData>('flight', Icons.flight_takeoff),
-    const MapEntry<String, IconData>('shopping', Icons.shopping_cart),
-    const MapEntry<String, IconData>('health', Icons.health_and_safety),
-    const MapEntry<String, IconData>('fitness', Icons.fitness_center),
-    const MapEntry<String, IconData>('restaurant', Icons.restaurant),
-    const MapEntry<String, IconData>('trophy', Icons.emoji_events),
-    const MapEntry<String, IconData>('gift', Icons.card_giftcard),
-    const MapEntry<String, IconData>('beach', Icons.beach_access),
-  ];
-
-  return showModalBottomSheet<String>(
-    context: context,
-    showDragHandle: true,
-    builder:
-        (BuildContext ctx) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'Elige un icono',
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                        ),
-                    itemCount: options.length,
-                    itemBuilder: (BuildContext _, int i) {
-                      final String key = options[i].key;
-                      final IconData icon = options[i].value;
-                      final bool selected = key == current;
-                      return InkWell(
-                        onTap: () => Navigator.pop<String>(ctx, key),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color:
-                                selected
-                                    ? Theme.of(
-                                      ctx,
-                                  ).colorScheme.primary.withValues(alpha: 0.1)
-                                    : Theme.of(ctx).colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color:
-                                  selected
-                                      ? Theme.of(ctx).colorScheme.primary
-                                      : Theme.of(ctx).dividerColor,
-                            ),
-                          ),
-                          child: Icon(
-                            icon,
-                            color: Theme.of(ctx).colorScheme.primary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-  );
 }

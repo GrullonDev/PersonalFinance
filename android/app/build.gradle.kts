@@ -40,6 +40,24 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // Flavors para development y production
+    flavorDimensions += listOf("env")
+
+    productFlavors {
+        create("development") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            // Nombre de la app en este flavor
+            resValue("string", "app_name", "Finanzas Maestras Dev")
+        }
+        create("production") {
+            dimension = "env"
+            // Nombre de la app en producción
+            resValue("string", "app_name", "Finanzas Maestras")
+        }
+    }
 }
 
 flutter {

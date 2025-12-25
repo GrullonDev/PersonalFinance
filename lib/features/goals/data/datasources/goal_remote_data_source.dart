@@ -42,7 +42,7 @@ class GoalRemoteDataSourceImpl implements GoalRemoteDataSource {
 
   @override
   Future<List<GoalModel>> getGoals() async {
-    final Response res = await _api.get('/api/v1/goals');
+    final Response res = await _api.get('/api/v1/goals/');
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final dynamic decoded =
           res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
@@ -57,7 +57,7 @@ class GoalRemoteDataSourceImpl implements GoalRemoteDataSource {
 
   @override
   Future<GoalModel> createGoal(GoalModel goal) async {
-    final Response res = await _api.post('/api/v1/goals', body: goal.toJson());
+    final Response res = await _api.post('/api/v1/goals/', body: goal.toJson());
     if (res.statusCode == 201 || res.statusCode == 200) {
       final dynamic decoded =
           res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);

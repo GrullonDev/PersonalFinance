@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
-
 import 'package:dartz/dartz.dart' as dartz;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:personal_finance/core/error/failures.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
@@ -20,15 +18,76 @@ import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
 
 class BudgetsCrudPage extends StatelessWidget {
-  const BudgetsCrudPage({super.key});
+  final bool showAppBar;
+
+  const BudgetsCrudPage({super.key, this.showAppBar = true});
 
   @override
   Widget build(BuildContext context) => BlocProvider<BudgetsBloc>(
     create: (_) => BudgetsBloc(getIt<BudgetRepository>())..add(BudgetsLoad()),
     child: Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Presupuestos'),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(120),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primary.withOpacity(0.8),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Presupuestos',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Planifica tus gastos',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.9),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
       body: BlocBuilder<BudgetsBloc, BudgetsState>(
         builder: (BuildContext context, BudgetsState state) {
@@ -90,6 +149,28 @@ class BudgetsCrudPage extends StatelessWidget {
       ),
     ),
   );
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: const Text('Eliminar presupuesto'),
+            content: const Text('¿Deseas eliminar este presupuesto?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton.tonal(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
+          ),
+    );
+    return confirm ?? false;
+  }
 
   Future<void> _openDialog(BuildContext context, {Budget? budget}) async {
     // Captura el bloc con el contexto padre antes de abrir el diálogo
@@ -206,33 +287,11 @@ class BudgetsCrudPage extends StatelessWidget {
       );
     }
   }
-
-  Future<bool> _confirmDelete(BuildContext context) async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (BuildContext context) => AlertDialog(
-            title: const Text('Eliminar presupuesto'),
-            content: const Text('¿Deseas eliminar este presupuesto?'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton.tonal(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
-    );
-    return confirm ?? false;
-  }
 }
 
 class _BudgetCard extends StatefulWidget {
-  const _BudgetCard({required this.budget});
   final Budget budget;
+  const _BudgetCard({required this.budget});
 
   @override
   State<_BudgetCard> createState() => _BudgetCardState();
@@ -240,19 +299,6 @@ class _BudgetCard extends StatefulWidget {
 
 class _BudgetCardState extends State<_BudgetCard> {
   List<int> _categoryIds = <int>[];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCategories();
-  }
-
-  Future<void> _loadCategories() async {
-    if (widget.budget.id != null) {
-      final List<int> ids = await BudgetCategoryPrefs.load(widget.budget.id!);
-      if (mounted) setState(() => _categoryIds = ids);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -271,104 +317,231 @@ class _BudgetCardState extends State<_BudgetCard> {
         final bool over = spent > total && total > 0;
 
         final CategoriesProvider cats = context.watch<CategoriesProvider>();
+
         return Card(
-          child: ListTile(
-            leading: const Icon(Icons.pie_chart),
-            title: Text(
-              widget.budget.nombre,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(range),
-                const SizedBox(height: 6),
-                LinearProgressIndicator(
-                  value: progress.isNaN ? 0.0 : progress,
-                  minHeight: 6,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
-                  color:
-                      over ? Colors.red : Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Gastado: \\${spent.toStringAsFixed(2)} · Presupuesto: \\${total.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                if (_categoryIds.isNotEmpty) ...<Widget>[
-                  Text(
-                    'Categorías asignadas',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children:
-                        _categoryIds.map((int id) {
-                          final String name =
-                              cats.categories
-                                  .firstWhere(
-                                    (cat_entity.Category c) => c.id == id,
-                                    orElse:
-                                        () => cat_entity.Category(
-                                          id: id,
-                                          nombre: 'Cat #$id',
-                                          tipo: 'gasto',
-                                        ),
-                                  )
-                                  .nombre;
-                          return InputChip(
-                            label: Text(name),
-                            onDeleted: () async {
-                              final List<int> list = List<int>.from(
-                                _categoryIds,
-                              )..remove(id);
-                              if (widget.budget.id != null) {
-                                await BudgetCategoryPrefs.save(
-                                  widget.budget.id!,
-                                  list,
-                                );
-                              }
-                              if (mounted) setState(() => _categoryIds = list);
-                            },
-                          );
-                        }).toList(),
-                  ),
-                ],
-              ],
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: over
-                        ? Colors.red
-                        : Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                IconButton(
-                  tooltip: 'Asignar categorías',
-                  icon: const Icon(Icons.tune),
-                  onPressed: _assignCategories,
-                  iconSize: 20,
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                ),
-              ],
-            ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
             onTap: () => _openBudgetDialog(context),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // Header: Icon + Name + Percentage + Edit Button
+                  Row(
+                    children: <Widget>[
+                      const Icon(Icons.pie_chart, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          widget.budget.nombre,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              over
+                                  ? Colors.red
+                                  : Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        tooltip: 'Asignar categorías',
+                        icon: const Icon(Icons.tune),
+                        onPressed: _assignCategories,
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Date Range
+                  Text(range, style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(height: 12),
+
+                  // Progress Bar
+                  LinearProgressIndicator(
+                    value: progress.isNaN ? 0.0 : progress,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color:
+                        over
+                            ? Colors.red
+                            : Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Amounts
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(
+                        'Gastado: \\${spent.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        'Total: \\${total.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Categories
+                  if (_categoryIds.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Categorías asignadas:',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          _categoryIds.map((int id) {
+                            final String name =
+                                cats.categories
+                                    .firstWhere(
+                                      (cat_entity.Category c) => c.id == id,
+                                      orElse:
+                                          () => cat_entity.Category(
+                                            id: id,
+                                            nombre: 'Cat #$id',
+                                            tipo: 'gasto',
+                                          ),
+                                    )
+                                    .nombre;
+                            return InputChip(
+                              label: Text(name),
+                              visualDensity: VisualDensity.compact,
+                              onDeleted: () async {
+                                final List<int> list = List<int>.from(
+                                  _categoryIds,
+                                )..remove(id);
+                                if (widget.budget.id != null) {
+                                  await BudgetCategoryPrefs.save(
+                                    widget.budget.id!,
+                                    list,
+                                  );
+                                }
+                                if (mounted) {
+                                  setState(() => _categoryIds = list);
+                                }
+                              },
+                            );
+                          }).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         );
       },
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _assignCategories() async {
+    if (widget.budget.id == null) return;
+    final CategoriesProvider cats = context.read<CategoriesProvider>();
+    final Set<int> selected = _categoryIds.toSet();
+    final bool? saved = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder:
+          (BuildContext ctx) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Asignar categorías',
+                    style: Theme.of(ctx).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView(
+                      children:
+                          cats.categories
+                              .map(
+                                (cat_entity.Category c) => CheckboxListTile(
+                                  value: selected.contains(c.id),
+                                  title: Text(c.nombre),
+                                  secondary: Icon(
+                                    c.tipo.toLowerCase() == 'ingreso'
+                                        ? Icons.trending_up
+                                        : Icons.trending_down,
+                                    color:
+                                        c.tipo.toLowerCase() == 'ingreso'
+                                            ? Colors.green
+                                            : Colors.red,
+                                  ),
+                                  onChanged: (bool? v) {
+                                    if (v == true) {
+                                      selected.add(c.id!);
+                                    } else {
+                                      selected.remove(c.id);
+                                    }
+                                    (ctx as Element).markNeedsBuild();
+                                  },
+                                ),
+                              )
+                              .toList(),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Guardar'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+    if (saved == true) {
+      final List<int> list = selected.toList();
+      await BudgetCategoryPrefs.save(widget.budget.id!, list);
+      if (mounted) setState(() => _categoryIds = list);
+    }
+  }
+
+  String _fmt2(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  Future<void> _loadCategories() async {
+    if (widget.budget.id != null) {
+      final List<int> ids = await BudgetCategoryPrefs.load(widget.budget.id!);
+      if (mounted) setState(() => _categoryIds = ids);
+    }
   }
 
   Future<void> _openBudgetDialog(BuildContext context) async {
@@ -475,73 +648,8 @@ class _BudgetCardState extends State<_BudgetCard> {
     }
   }
 
-  Future<void> _assignCategories() async {
-    if (widget.budget.id == null) return;
-    final CategoriesProvider cats = context.read<CategoriesProvider>();
-    final Set<int> selected = _categoryIds.toSet();
-    final bool? saved = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      builder:
-          (BuildContext ctx) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Asignar categorías',
-                    style: Theme.of(ctx).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView(
-                      children:
-                          cats.categories
-                              .map(
-                                (cat_entity.Category c) => CheckboxListTile(
-                                  value: selected.contains(c.id),
-                                  title: Text(c.nombre),
-                                  secondary: Icon(
-                                    c.tipo.toLowerCase() == 'ingreso'
-                                        ? Icons.trending_up
-                                        : Icons.trending_down,
-                                    color:
-                                        c.tipo.toLowerCase() == 'ingreso'
-                                            ? Colors.green
-                                            : Colors.red,
-                                  ),
-                                  onChanged: (bool? v) {
-                                    if (v == true) {
-                                      selected.add(c.id!);
-                                    } else {
-                                      selected.remove(c.id);
-                                    }
-                                    (ctx as Element).markNeedsBuild();
-                                  },
-                                ),
-                              )
-                              .toList(),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Guardar'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
-    if (saved == true) {
-      final List<int> list = selected.toList();
-      await BudgetCategoryPrefs.save(widget.budget.id!, list);
-      if (mounted) setState(() => _categoryIds = list);
-    }
-  }
+  Future<double> _spent(tx_backend.TransactionBackendRepository repo) async =>
+      _sumGastos(repo, widget.budget.fechaInicio, widget.budget.fechaFin);
 
   Future<double> _sumGastos(
     tx_backend.TransactionBackendRepository repo,
@@ -569,23 +677,17 @@ class _BudgetCardState extends State<_BudgetCard> {
       );
     });
   }
-
-  Future<double> _spent(tx_backend.TransactionBackendRepository repo) async =>
-      _sumGastos(repo, widget.budget.fechaInicio, widget.budget.fechaFin);
-
-  String _fmt2(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }
 
 class _DateTile extends StatelessWidget {
+  final String label;
+  final DateTime value;
+  final ValueChanged<DateTime> onPick;
   const _DateTile({
     required this.label,
     required this.value,
     required this.onPick,
   });
-  final String label;
-  final DateTime value;
-  final ValueChanged<DateTime> onPick;
 
   @override
   Widget build(BuildContext context) => Column(

@@ -18,11 +18,11 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
     as tx_backend;
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/utils/app_localization.dart';
-import 'package:personal_finance/utils/widgets/app_lifecycle_listener.dart';
 import 'package:personal_finance/utils/injection_container.dart';
-import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
+import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/widgets/app_lifecycle_listener.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -74,9 +74,9 @@ class MyApp extends StatelessWidget {
               // Global builder to clamp text scale (prevents layout overflow)
               builder: (BuildContext context, Widget? child) {
                 final MediaQueryData mq = MediaQuery.of(context);
-                final double clamped = mq.textScaleFactor.clamp(0.9, 1.2);
+                final double clamped = mq.textScaler.scale(1).clamp(0.9, 1.2);
                 return MediaQuery(
-                  data: mq.copyWith(textScaleFactor: clamped),
+                  data: mq.copyWith(textScaler: TextScaler.linear(clamped)),
                   child: child ?? const SizedBox.shrink(),
                 );
               },

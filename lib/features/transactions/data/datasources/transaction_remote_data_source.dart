@@ -62,7 +62,7 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
   Future<List<TransactionModel>> getTransactions() async {
     try {
       final http.Response response = await _apiService.get(
-        '/api/v1/transactions',
+        '/api/v1/transactions/',
       );
       final dynamic decoded = _handleResponse(response);
       final List<Map<String, dynamic>> list = _extractList(decoded);
@@ -102,7 +102,7 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
   ) async {
     try {
       final http.Response response = await _apiService.post(
-        '/api/v1/transactions',
+        '/api/v1/transactions/',
         body: transaction.toJson(),
       );
       final dynamic decoded = _handleResponse(response);

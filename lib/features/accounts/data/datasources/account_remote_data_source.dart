@@ -62,7 +62,7 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
 
   @override
   Future<List<AccountModel>> getAccounts() async {
-    final Response response = await _apiService.get('/api/v1/accounts');
+    final Response response = await _apiService.get('/api/v1/accounts/');
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final dynamic decoded =
           response.body.isEmpty ? <dynamic>[] : jsonDecode(response.body);
@@ -95,7 +95,7 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
   @override
   Future<AccountModel> createAccount(AccountModel account) async {
     final Response response = await _apiService.post(
-      '/api/v1/accounts',
+      '/api/v1/accounts/',
       body: account.toJson(),
     );
     if (response.statusCode == 201 || response.statusCode == 200) {

@@ -59,7 +59,7 @@ class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
   @override
   Future<CategoryModel> createCategory(CategoryModel category) async {
     final Response response = await _apiService.post(
-      '/api/v1/categories',
+      '/api/v1/categories/',
       body:
           category.toJson()
             ..remove('id')

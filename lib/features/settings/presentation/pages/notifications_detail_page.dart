@@ -10,6 +10,7 @@ class NotificationsDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
+      backgroundColor: Colors.greenAccent,
       title: const Text('Notificaciones'),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),

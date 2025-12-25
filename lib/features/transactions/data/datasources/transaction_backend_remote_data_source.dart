@@ -39,7 +39,7 @@ class TransactionBackendRemoteDataSourceImpl
       if (tipo != null && tipo.isNotEmpty) 'tipo': tipo,
     };
     final Response res = await _api.get(
-      '/api/v1/transactions',
+      '/api/v1/transactions/',
       queryParameters: query,
     );
     if (res.statusCode == 200) {
@@ -83,7 +83,7 @@ class TransactionBackendRemoteDataSourceImpl
   @override
   Future<TransactionBackendModel> create(TransactionBackendModel tx) async {
     final Response res = await _api.post(
-      '/api/v1/transactions',
+      '/api/v1/transactions/',
       body: tx.toJson(),
     );
     if (res.statusCode == 201 || res.statusCode == 200) {
