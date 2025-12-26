@@ -53,18 +53,18 @@ class CustomBottomNavBar extends StatelessWidget {
             ),
             _buildNavItem(
               context,
-              icon: Icons.pie_chart_outline,
-              activeIcon: Icons.pie_chart,
-              label: 'Presupuestos',
+              icon: Icons.bolt_outlined,
+              activeIcon: Icons.bolt,
+              label: 'Servicios',
               index: 1,
               scheme: scheme,
             ),
             const SizedBox(width: 56),
             _buildNavItem(
               context,
-              icon: Icons.track_changes_outlined,
-              activeIcon: Icons.track_changes,
-              label: 'Metas',
+              icon: Icons.pie_chart_outline,
+              activeIcon: Icons.pie_chart,
+              label: 'Presupuestos',
               index: 2,
               scheme: scheme,
             ),
@@ -105,15 +105,20 @@ class CustomBottomNavBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
           decoration: BoxDecoration(
-            color: isSelected
-                ? (scheme.primaryContainer.withOpacity(0.6))
-                : Colors.transparent,
+            color:
+                isSelected
+                    ? (scheme.primaryContainer.withOpacity(0.6))
+                    : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(isSelected ? activeIcon : icon, color: color, size: iconSize),
+              Icon(
+                isSelected ? activeIcon : icon,
+                color: color,
+                size: iconSize,
+              ),
               SizedBox(height: spacing),
               Text(
                 label,

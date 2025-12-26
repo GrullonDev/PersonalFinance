@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
+import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
@@ -20,8 +22,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
   ];
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
+  Widget build(BuildContext context) => PremiumBackground(
+    child: SafeArea(
       child: Column(
         children: <Widget>[
           Expanded(
@@ -33,40 +35,78 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 final _OnboardStep step = _steps[i];
                 return Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(
-                        Icons.savings,
-                        size: 80,
-                        color: Theme.of(context).colorScheme.primary,
+                  child: Center(
+                    child: GlassContainer(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 48,
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        AppLocalizations.of(context)!.translate(step.titleKey),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(
+                            Icons.savings,
+                            size: 100,
+                            color: Colors.blue.shade300,
+                          ),
+                          const SizedBox(height: 32),
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.translate(step.titleKey),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.translate(step.descriptionKey),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.8),
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.translate(step.descriptionKey),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                    ),
                   ),
                 );
               },
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: Row(
               children: <Widget>[
+                // Indicators
+                Row(
+                  children: List.generate(
+                    _steps.length,
+                    (index) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(right: 8),
+                      height: 8,
+                      width: _index == index ? 24 : 8,
+                      decoration: BoxDecoration(
+                        color:
+                            _index == index
+                                ? Colors.blue.shade300
+                                : Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
                 if (_index > 0)
                   TextButton(
                     onPressed: () {
@@ -75,9 +115,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         curve: Curves.easeInOut,
                       );
                     },
-                    child: Text(AppLocalizations.of(context)!.back),
+                    child: Text(
+                      AppLocalizations.of(context)!.back,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                   ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () {
                     if (_index == _steps.length - 1) {
@@ -89,6 +132,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       );
                     }
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: Text(
                     _index == _steps.length - 1
                         ? AppLocalizations.of(context)!.getStarted

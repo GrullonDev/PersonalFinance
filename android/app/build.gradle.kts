@@ -47,7 +47,7 @@ android {
     productFlavors {
         create("development") {
             dimension = "env"
-            applicationIdSuffix = ".dev"
+            // applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             // Nombre de la app en este flavor
             resValue("string", "app_name", "Finanzas Maestras Dev")

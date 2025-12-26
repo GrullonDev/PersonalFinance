@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance/core/presentation/widgets/custom_text_field.dart';
+import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
+import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/auth/presentation/providers/register_provider.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +22,19 @@ class RegisterLayout extends StatelessWidget {
         initialDate: initialDate,
         firstDate: DateTime(1900),
         lastDate: DateTime.now(),
+        builder:
+            (BuildContext context, Widget? child) => Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.dark(
+                  primary: Colors.blue.shade400,
+                  onPrimary: Colors.white,
+                  surface: const Color(0xFF1E293B),
+                  onSurface: Colors.white,
+                ),
+                dialogBackgroundColor: const Color(0xFF0F172A),
+              ),
+              child: child!,
+            ),
       );
       if (pickedDate != null) {
         registerProvider.setBirthDate(pickedDate);
@@ -43,22 +59,16 @@ class RegisterLayout extends StatelessWidget {
       }
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: const AssetImage('assets/logo.png'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.white.withValues(alpha: 0.1),
-            BlendMode.dstATop,
-          ),
-        ),
-      ),
+    return PremiumBackground(
       child: Scaffold(
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Sign Up'),
+          title: const Text(
+            'Crear Cuenta',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () {
               Navigator.pop(context);
             },
@@ -69,148 +79,112 @@ class RegisterLayout extends StatelessWidget {
         body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              children: <Widget>[
-                const Text(
-                  'Your information is safe with us',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.firstNameController,
-                  decoration: InputDecoration(
-                    labelText: 'First Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+            child: GlassContainer(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: <Widget>[
+                  const Text(
+                    'Tu información está segura con nosotros',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white70,
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.lastNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Last Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 24),
+                  CustomTextField(
+                    controller: registerProvider.firstNameController,
+                    label: 'Nombre',
+                    prefixIcon: Icons.person_outline,
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.birthDateController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: 'Date of Birth',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.lastNameController,
+                    label: 'Apellido',
+                    prefixIcon: Icons.person_outline,
                   ),
-                  onTap: handleSelectBirthDate,
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.usernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.birthDateController,
+                    label: 'Fecha de Nacimiento',
+                    readOnly: true,
+                    prefixIcon: Icons.calendar_today_outlined,
+                    onTap: handleSelectBirthDate,
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.usernameController,
+                    label: 'Nombre de Usuario',
+                    prefixIcon: Icons.alternate_email,
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.confirmEmailController,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.emailController,
+                    label: 'Correo Electrónico',
+                    prefixIcon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.confirmEmailController,
+                    label: 'Confirmar Correo',
+                    prefixIcon: Icons.mark_email_read_outlined,
+                    keyboardType: TextInputType.emailAddress,
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: registerProvider.confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.passwordController,
+                    label: 'Contraseña',
+                    obscureText: true,
+                    prefixIcon: Icons.lock_outline,
                   ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : handleSubmit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.confirmPasswordController,
+                    label: 'Confirmar Contraseña',
+                    obscureText: true,
+                    prefixIcon: Icons.lock_outline,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : handleSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 0,
+                        shadowColor: Colors.blue.withOpacity(0.5),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child:
-                        isLoading
-                            ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                      child:
+                          isLoading
+                              ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                              : const Text(
+                                'Registrarse',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
-                            )
-                            : const Text(
-                              'Sign Up',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

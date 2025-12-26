@@ -1,17 +1,174 @@
 import 'package:flutter/material.dart';
 
+class AppTheme {
+  // Premium/Neon Palette
+  static const Color _seedColor = Color(0xFF6C63FF); // Electric Violet
+  static const Color _primaryLight = Color(0xFF6C63FF);
+  static const Color _primaryDark = Color(0xFF8B80F9);
+
+  static const Color _bgLight = Color(0xFFF0F2F5);
+  static const Color _bgDark = Color(0xFF0F111A); // Deep Midnight Blue
+
+  static const Color _surfaceLight = Colors.white;
+  static const Color _surfaceDark = Color(0xFF1E2130);
+
+  static const Color _success = Color(0xFF00E676); // Neon Green
+  static const Color _error = Color(0xFFFF2D55); // Neon Red
+
+  static ThemeData dark() {
+    final ColorScheme base = ColorScheme.fromSeed(
+      seedColor: _seedColor,
+      brightness: Brightness.dark,
+    );
+    final ColorScheme scheme = base.copyWith(
+      primary: _primaryDark,
+      secondary: const Color(0xFF03DAC6),
+      surface: _surfaceDark,
+      error: _error,
+      // background: _bgDark,
+    );
+    return _buildTheme(scheme, _bgDark);
+  }
+
+  static ThemeData light() {
+    final ColorScheme base = ColorScheme.fromSeed(seedColor: _seedColor);
+    final ColorScheme scheme = base.copyWith(
+      primary: _primaryLight,
+      secondary: const Color(0xFF03DAC6),
+      surface: _surfaceLight,
+      error: _error,
+      // background: _bgLight,
+    );
+    return _buildTheme(scheme, _bgLight);
+  }
+
+  static ThemeData _buildTheme(ColorScheme scheme, Color scaffoldBg) {
+    final bool isDark = scheme.brightness == Brightness.dark;
+
+    return ThemeData(
+      useMaterial3: true,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: scaffoldBg,
+      fontFamily: 'Roboto', // Or 'Inter' if added to pubspec
+
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: scheme.onSurface,
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: scheme.onSurface,
+          letterSpacing: 0.5,
+        ),
+      ),
+
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: Colors.white,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+
+      textTheme: Typography.material2021(platform: TargetPlatform.iOS)
+          .englishLike
+          .apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
+
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: scheme.outline.withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: isDark ? const Color(0xFF2C2F40) : Colors.grey.shade100,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+        labelStyle: TextStyle(color: scheme.onSurface.withOpacity(0.6)),
+      ),
+
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: scheme.primary,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shadowColor: scheme.primary.withOpacity(0.4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+
+      cardTheme: CardThemeData(
+        elevation: 0, // We will use custom shadows or glass effects
+        color: scheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        selectedItemColor: scheme.primary,
+        unselectedItemColor: scheme.onSurface.withOpacity(0.4),
+        backgroundColor: isDark ? const Color(0xFF1E2130) : Colors.white,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+        showUnselectedLabels: true,
+      ),
+
+      dividerTheme: DividerThemeData(
+        color: scheme.outline.withOpacity(0.1),
+        thickness: 1,
+      ),
+
+      extensions: <ThemeExtension<dynamic>>[
+        FinanceColors(
+          income: _success,
+          expense: _error,
+          savings: isDark ? const Color(0xFF1B2A1F) : const Color(0xFFE8F5E9),
+          info: const Color(0xFF2196F3),
+          glassBackground:
+              isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.white.withOpacity(0.7),
+          glassBorder:
+              isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.white.withOpacity(0.2),
+        ),
+      ],
+    );
+  }
+}
+
 class FinanceColors extends ThemeExtension<FinanceColors> {
+  final Color income; // positive amounts
+
+  final Color expense; // negative amounts
+  final Color savings; // cards/backgrounds
+  final Color info; // accents
+  final Color glassBackground;
+  final Color glassBorder;
   const FinanceColors({
     required this.income,
     required this.expense,
     required this.savings,
     required this.info,
+    required this.glassBackground, // New for glassmorphism
+    required this.glassBorder, // New for glassmorphism
   });
-
-  final Color income; // positive amounts
-  final Color expense; // negative amounts
-  final Color savings; // cards/backgrounds
-  final Color info; // accents
 
   @override
   FinanceColors copyWith({
@@ -19,12 +176,16 @@ class FinanceColors extends ThemeExtension<FinanceColors> {
     Color? expense,
     Color? savings,
     Color? info,
+    Color? glassBackground,
+    Color? glassBorder,
   }) => FinanceColors(
-        income: income ?? this.income,
-        expense: expense ?? this.expense,
-        savings: savings ?? this.savings,
-        info: info ?? this.info,
-      );
+    income: income ?? this.income,
+    expense: expense ?? this.expense,
+    savings: savings ?? this.savings,
+    info: info ?? this.info,
+    glassBackground: glassBackground ?? this.glassBackground,
+    glassBorder: glassBorder ?? this.glassBorder,
+  );
 
   @override
   ThemeExtension<FinanceColors> lerp(
@@ -37,166 +198,8 @@ class FinanceColors extends ThemeExtension<FinanceColors> {
       expense: Color.lerp(expense, other.expense, t)!,
       savings: Color.lerp(savings, other.savings, t)!,
       info: Color.lerp(info, other.info, t)!,
-    );
-  }
-}
-
-class AppTheme {
-  static ThemeData light() {
-    // Finance‑oriented palette: green primary with blue accents
-    final ColorScheme base = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF0E8F5B), // emerald/finance green
-      brightness: Brightness.light,
-    );
-    final ColorScheme scheme = base.copyWith(
-      secondary: const Color(0xFF1565C0), // blue accent
-      tertiary: const Color(0xFF2E7D32), // strong green
-      error: const Color(0xFFD32F2F),
-    );
-    return ThemeData(
-      useMaterial3: true,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: const Color(0xFFF7F7FA),
-      appBarTheme: AppBarTheme(
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: scheme.onSurface,
-        titleTextStyle: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: scheme.primary,
-        foregroundColor: Colors.white,
-      ),
-      textTheme: Typography.blackCupertino.apply(
-        bodyColor: const Color(0xFF1B1B1F),
-        displayColor: const Color(0xFF1B1B1F),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.primary, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        ),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      dividerTheme: DividerThemeData(color: scheme.outlineVariant),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        selectedItemColor: scheme.primary,
-        unselectedItemColor: scheme.onSurfaceVariant,
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        },
-      ),
-      extensions: <ThemeExtension<dynamic>>[
-        const FinanceColors(
-          income: Color(0xFF1E8E3E),
-          expense: Color(0xFFD32F2F),
-          savings: Color(0xFFE8F5E9),
-          info: Color(0xFF1565C0),
-        ),
-      ],
-    );
-  }
-
-  static ThemeData dark() {
-    final ColorScheme base = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF0E8F5B),
-      brightness: Brightness.dark,
-    );
-    final ColorScheme scheme = base.copyWith(
-      secondary: const Color(0xFF90CAF9),
-      tertiary: const Color(0xFF81C784),
-      error: const Color(0xFFEF5350),
-    );
-    return ThemeData(
-      useMaterial3: true,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-      colorScheme: scheme,
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: scheme.primary,
-        foregroundColor: Colors.white,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: scheme.surfaceContainerHighest,
-      ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: scheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        },
-      ),
-      extensions: const <ThemeExtension<dynamic>>[
-        FinanceColors(
-          income: Color(0xFF81C784),
-          expense: Color(0xFFEF9A9A),
-          savings: Color(0xFF1B2A1F),
-          info: Color(0xFF90CAF9),
-        ),
-      ],
+      glassBackground: Color.lerp(glassBackground, other.glassBackground, t)!,
+      glassBorder: Color.lerp(glassBorder, other.glassBorder, t)!,
     );
   }
 }

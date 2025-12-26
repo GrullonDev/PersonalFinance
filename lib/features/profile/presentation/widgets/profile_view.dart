@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
@@ -10,6 +12,7 @@ import 'package:personal_finance/features/notifications/domain/repositories/noti
     as notif_repo;
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/settings/presentation/pages/notifications_detail_page.dart';
+import 'package:personal_finance/utils/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -18,157 +21,357 @@ class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<ProfileBloc, ProfileState>(
-    builder: (BuildContext context, ProfileState state) {
-      final Widget child;
-      if (state.loading) {
-        child = const Center(child: CircularProgressIndicator());
-      } else if (state.error != null) {
-        child = Center(child: Text(state.error!));
-      } else {
-        final String fullName = state.info?.fullName ?? '';
-        final String email = state.info?.email ?? '';
-        child = CustomScrollView(
-          slivers: <Widget>[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: <Widget>[
-                    // Profile Header
-                    Row(
-                      children: <Widget>[
-                        CircleAvatar(
-                          radius: 30,
-                          child: Text(
-                            (fullName.isNotEmpty ? fullName[0] : '?')
-                                .toUpperCase(),
-                            style: const TextStyle(fontSize: 24),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                fullName,
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                email,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+  Widget build(BuildContext context) {
+    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
 
-                    // Quick Actions
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: <Widget>[
-                        _QuickActionButton(
-                          icon: Icons.dashboard,
-                          label: 'Dashboard',
-                          onTap: () {
-                            // TODO: Implementar navegación al dashboard
-                          },
-                        ),
-                        _QuickActionButton(
-                          icon: Icons.library_books,
-                          label: 'Presupuestos',
-                          onTap: () {
-                            // TODO: Implementar navegación a presupuestos
-                          },
-                        ),
-                        _QuickActionButton(
-                          icon: Icons.flag,
-                          label: 'Metas',
-                          onTap: () {
-                            // TODO: Implementar navegación a metas
-                          },
-                        ),
-                        _QuickActionButton(
-                          icon: Icons.person,
-                          label: 'Cuenta',
-                          onTap: () {
-                            // TODO: Implementar navegación a cuenta
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (BuildContext context, ProfileState state) {
+        final Widget child;
+        if (state.loading) {
+          child = const Center(child: CircularProgressIndicator());
+        } else if (state.error != null) {
+          child = Center(child: Text(state.error!));
+        } else {
+          final String fullName = state.info?.fullName ?? '';
+          final String email = state.info?.email ?? '';
 
-                    // Menu Items
-                    ProfileMenuItem(
-                      icon: Icons.notifications_none,
-                      title: 'Notificaciones',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (BuildContext _) => const _NotificationsEntry(),
-                          ),
-                        );
-                      },
+          child = Stack(
+            children: [
+              // Ambient Lights (optional, could be inherited from scaffold if moved to global)
+              // Including here for emphasis on profile page
+              Positioned(
+                top: -80,
+                right: -50,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.15),
+                      shape: BoxShape.circle,
                     ),
-                    ProfileMenuItem(
-                      icon: Icons.lock_outline,
-                      title: 'Privacidad y seguridad',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (BuildContext _) =>
-                                    const _PrivacySecurityPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.help_outline,
-                      title: 'Centro de ayuda',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (BuildContext _) => const _HelpCenterPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.info_outline,
-                      title: 'Acerca de',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (BuildContext _) => const _AboutPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    // Add logout or other actions via AuthProvider/BLoC if needed
-                  ],
+                  ),
                 ),
               ),
-            ),
-            // Quick add category section
-            const SliverToBoxAdapter(child: QuickAddCategory()),
-            // Recent activity section can be wired later when backend supports it
-          ],
+
+              CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: <Widget>[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 40,
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          // Profile Header with Glass Effect
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: colors.glassBackground,
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(color: colors.glassBorder),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: <Widget>[
+                                Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary.withOpacity(0.3),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 35,
+                                    backgroundColor:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
+                                    child: Text(
+                                      (fullName.isNotEmpty ? fullName[0] : '?')
+                                          .toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text(
+                                        fullName,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        email,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.color
+                                              ?.withOpacity(0.7),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.primaryContainer,
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Pro Member',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color:
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimaryContainer,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+
+                          // Quick Actions
+                          // Row(
+                          //   mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          //   children: <Widget>[
+                          //     _QuickActionButton(
+                          //       icon: Icons.dashboard_rounded,
+                          //       label: 'Dashboard',
+                          //       onTap: () {},
+                          //     ),
+                          //     _QuickActionButton(
+                          //       icon: Icons.account_balance_wallet_rounded,
+                          //       label: 'Presupuestos',
+                          //       onTap: () {},
+                          //     ),
+                          //     _QuickActionButton(
+                          //       icon: Icons.flag_rounded,
+                          //       label: 'Metas',
+                          //       onTap: () {},
+                          //     ),
+                          //      _QuickActionButton(
+                          //       icon: Icons.credit_card_rounded,
+                          //       label: 'Tarjetas',
+                          //       onTap: () {},
+                          //     ),
+                          //   ],
+                          // ),
+                          // const SizedBox(height: 30),
+
+                          // Menu Items Group
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colors.glassBackground,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: colors.glassBorder),
+                            ),
+                            child: Column(
+                              children: [
+                                _ProfileGlassTile(
+                                  icon: Icons.notifications_outlined,
+                                  title: 'Notificaciones',
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder:
+                                            (BuildContext _) =>
+                                                const _NotificationsEntry(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: Divider(
+                                    height: 1,
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withOpacity(0.1),
+                                  ),
+                                ),
+                                _ProfileGlassTile(
+                                  icon: Icons.lock_outline_rounded,
+                                  title: 'Privacidad y seguridad',
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder:
+                                            (BuildContext _) =>
+                                                const _PrivacySecurityPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: Divider(
+                                    height: 1,
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withOpacity(0.1),
+                                  ),
+                                ),
+                                _ProfileGlassTile(
+                                  icon: Icons.help_outline_rounded,
+                                  title: 'Centro de ayuda',
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder:
+                                            (BuildContext _) =>
+                                                const _HelpCenterPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: Divider(
+                                    height: 1,
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withOpacity(0.1),
+                                  ),
+                                ),
+                                _ProfileGlassTile(
+                                  icon: Icons.info_outline_rounded,
+                                  title: 'Acerca de',
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder:
+                                            (BuildContext _) =>
+                                                const _AboutPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Add logout or other actions via AuthProvider/BLoC if needed
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Quick add category section
+                  const SliverToBoxAdapter(child: QuickAddCategory()),
+                  // Recent activity section can be wired later when backend supports it
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+                ],
+              ),
+            ],
+          );
+        }
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: child,
         );
-      }
-      return AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        child: child,
-      );
-    },
-  );
+      },
+    );
+  }
+}
+
+class _ProfileGlassTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _ProfileGlassTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: Theme.of(context).colorScheme.primary,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+        size: 20,
+      ),
+    );
+  }
 }
 
 // Entry para notificaciones con provider inyectado desde Profile
@@ -202,10 +405,7 @@ class _PrivacySecurityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Privacidad y seguridad'),
-      backgroundColor: Colors.greenAccent,
-    ),
+    appBar: AppBar(title: const Text('Privacidad y seguridad')),
     body: FutureBuilder<String>(
       future: _loadPolicy(context),
       builder: (BuildContext context, AsyncSnapshot<String> snap) {
@@ -244,10 +444,7 @@ class _HelpCenterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Centro de ayuda'),
-      backgroundColor: Colors.greenAccent,
-    ),
+    appBar: AppBar(title: const Text('Centro de ayuda')),
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: <Widget>[
@@ -298,10 +495,7 @@ class _AboutPageState extends State<_AboutPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Acerca de'),
-      backgroundColor: Colors.greenAccent,
-    ),
+    appBar: AppBar(title: const Text('Acerca de')),
     body: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -336,26 +530,40 @@ class _QuickActionButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: Padding(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+  Widget build(BuildContext context) {
+    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colors.glassBackground, // Glassy button
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: colors.glassBorder),
+              ),
+              child: Icon(
+                icon,
+                color: Theme.of(context).colorScheme.primary,
+                size: 26,
+              ),
             ),
-            child: Icon(icon, color: Theme.of(context).primaryColor),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

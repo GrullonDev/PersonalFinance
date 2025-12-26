@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/budgets/presentation/pages/budgets_crud_page.dart';
 import 'package:personal_finance/features/dashboard/presentation/pages/dashboard_page.dart';
-import 'package:personal_finance/features/goals/presentation/pages/goals_crud_page.dart';
 import 'package:personal_finance/features/home/widgets/custom_bottom_nav_bar.dart';
 import 'package:personal_finance/features/profile/presentation/pages/profile_page.dart';
+import 'package:personal_finance/features/services/presentation/pages/service_consultation_page.dart';
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
     as tx_backend;
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
@@ -22,15 +22,15 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = <Widget>[
     const DashboardPage(),
+    const ServiceConsultationPage(),
     const BudgetsCrudPage(),
-    const GoalsCrudPage(),
     const ProfilePage(),
   ];
 
   final List<String> _titles = <String>[
     'Finanzas',
+    'Servicios',
     'Presupuestos',
-    'Metas',
     'Perfil',
   ];
 
@@ -44,34 +44,21 @@ class _HomePageState extends State<HomePage> {
           ctx.read<tx_backend.TransactionBackendRepository>(),
         )..add(TransactionsLoad()),
     child: Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.grey[50], // Theme handles this now
       appBar:
           _showAppBar[_currentIndex]
               ? PreferredSize(
-                preferredSize: const Size.fromHeight(120),
+                preferredSize: const Size.fromHeight(
+                  100,
+                ), // Reduced height for cleaner look
                 child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
+                  // Clean App Bar without heavy gradient, using Theme instead
+                  color: Colors.transparent,
                   child: SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 16,
+                        vertical: 10,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,29 +68,36 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               Icon(
                                 _getIconForIndex(_currentIndex),
-                                color: Colors.white,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.primary, // Use theme color
                                 size: 28,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   _titles[_currentIndex],
-                                  style: const TextStyle(
-                                    fontSize: 28,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
                                     letterSpacing: -0.5,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Text(
                             _getSubtitleForIndex(_currentIndex),
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.6),
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -124,7 +118,6 @@ class _HomePageState extends State<HomePage> {
         builder:
             (BuildContext innerCtx) => FloatingActionButton(
               onPressed: () => _onAddPressed(innerCtx),
-              backgroundColor: Colors.blue,
               elevation: 4,
               child: const Icon(Icons.add, size: 32, color: Colors.white),
             ),
@@ -138,9 +131,9 @@ class _HomePageState extends State<HomePage> {
       case 0:
         return Icons.dashboard_rounded;
       case 1:
-        return Icons.account_balance_wallet_rounded;
+        return Icons.bolt_rounded;
       case 2:
-        return Icons.flag_rounded;
+        return Icons.pie_chart_rounded;
       case 3:
         return Icons.person_rounded;
       default:
@@ -153,9 +146,9 @@ class _HomePageState extends State<HomePage> {
       case 0:
         return 'Resumen de tus finanzas';
       case 1:
-        return 'Planifica tus gastos';
+        return 'Gestiona tus servicios';
       case 2:
-        return 'Alcanza tus objetivos';
+        return 'Planifica tus gastos';
       case 3:
         return 'Configuración y preferencias';
       default:
