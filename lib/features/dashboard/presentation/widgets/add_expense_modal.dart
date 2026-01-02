@@ -161,10 +161,10 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     if (_formKey.currentState!.validate()) {
                       // Agregar el gasto
                       await dashboardLogic.addExpense(
-                        _titleController.text,
-                        _amountController.text,
-                        _selectedDate,
-                        _selectedCategory,
+                        title: _titleController.text,
+                        amount: _amountController.text,
+                        date: _selectedDate,
+                        category: _selectedCategory,
                       );
 
                       // Limpiar campos después de agregar

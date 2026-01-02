@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:personal_finance/core/network/api_service.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:personal_finance/features/categories/data/datasources/category_remote_data_source.dart';
@@ -15,16 +15,18 @@ import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
 import 'package:personal_finance/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
-import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic_v2.dart';
+import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:personal_finance/features/data/repositories/transaction_repository_impl.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
 import 'package:personal_finance/features/domain/usecases/get_dashboard_data_usecase.dart';
+import 'package:personal_finance/features/goals/domain/usecases/get_active_goals_usecase.dart';
 import 'package:personal_finance/features/budgets/data/datasources/budget_remote_data_source.dart';
 import 'package:personal_finance/features/budgets/data/repositories/budget_repository_impl.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
+import 'package:personal_finance/features/budgets/domain/usecases/get_active_budgets_usecase.dart';
 import 'package:personal_finance/features/goals/data/datasources/goal_remote_data_source.dart';
 import 'package:personal_finance/features/goals/data/repositories/goal_repository_impl.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
@@ -34,11 +36,7 @@ import 'package:personal_finance/features/profile/data/repositories/profile_back
 import 'package:personal_finance/features/profile/domain/profile_datasource.dart';
 import 'package:personal_finance/features/profile/domain/profile_repository.dart';
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
-import 'package:personal_finance/features/transactions/data/datasources/transaction_remote_data_source.dart';
-import 'package:personal_finance/features/transactions/data/repositories/transaction_repository_impl.dart'
-    as new_transactions;
-import 'package:personal_finance/features/transactions/domain/repositories/transaction_repository.dart'
-    as new_transactions_repo;
+
 import 'package:personal_finance/features/transactions/data/datasources/transaction_backend_remote_data_source.dart'
     as backend_tx_ds;
 import 'package:personal_finance/features/transactions/data/repositories/transaction_backend_repository_impl.dart'
@@ -59,11 +57,6 @@ Future<void> initDependencies() async {
   if (!getIt.isRegistered<SharedPreferences>()) {
     final SharedPreferences sharedPrefs = await SharedPreferences.getInstance();
     getIt.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
-  }
-
-  // ApiService (MOCK)
-  if (!getIt.isRegistered<ApiService>()) {
-    getIt.registerLazySingleton<ApiService>(() => ApiService());
   }
 
   // AuthDataSource
@@ -95,7 +88,7 @@ Future<void> initDependencies() async {
   // Profile Backend Remote Data Source (FastAPI profiles/me)
   if (!getIt.isRegistered<ProfileRemoteDataSource>()) {
     getIt.registerLazySingleton<ProfileRemoteDataSource>(
-      () => ProfileRemoteDataSourceImpl(getIt<ApiService>()),
+      () => ProfileRemoteDataSourceImpl(),
     );
   }
 
@@ -127,13 +120,6 @@ Future<void> initDependencies() async {
   if (!getIt.isRegistered<Box<AlertItem>>()) {
     getIt.registerLazySingleton<Box<AlertItem>>(
       () => Hive.box<AlertItem>('alerts'),
-    );
-  }
-
-  // New Transaction Data Source
-  if (!getIt.isRegistered<TransactionRemoteDataSource>()) {
-    getIt.registerLazySingleton<TransactionRemoteDataSource>(
-      () => TransactionRemoteDataSourceImpl(getIt<ApiService>()),
     );
   }
 
@@ -179,15 +165,6 @@ Future<void> initDependencies() async {
     );
   }
 
-  // New Transaction Repository
-  if (!getIt.isRegistered<new_transactions_repo.TransactionRepository>()) {
-    getIt.registerLazySingleton<new_transactions_repo.TransactionRepository>(
-      () => new_transactions.TransactionRepositoryImpl(
-        getIt<TransactionRemoteDataSource>(),
-      ),
-    );
-  }
-
   // Backend Transactions Data Source (FastAPI endpoints)
   if (!getIt.isRegistered<backend_tx_ds.TransactionBackendRemoteDataSource>()) {
     getIt.registerLazySingleton<
@@ -207,7 +184,7 @@ Future<void> initDependencies() async {
   // Notifications Remote Data Source
   if (!getIt.isRegistered<notif_ds.NotificationRemoteDataSource>()) {
     getIt.registerLazySingleton<notif_ds.NotificationRemoteDataSource>(
-      () => notif_ds.NotificationRemoteDataSourceImpl(getIt<ApiService>()),
+      () => notif_ds.NotificationRemoteDataSourceImpl(),
     );
   }
 
@@ -234,12 +211,11 @@ Future<void> initDependencies() async {
     );
   }
 
-  // Old Transaction Repository (to be deprecated)
+  // Transaction Repository (Firestore)
   if (!getIt.isRegistered<TransactionRepository>()) {
     getIt.registerLazySingleton<TransactionRepository>(
       () => TransactionRepositoryImpl(
-        getIt<Box<Expense>>(),
-        getIt<Box<Income>>(),
+        getIt<backend_tx_ds.TransactionBackendRemoteDataSource>(),
       ),
     );
   }
@@ -257,12 +233,27 @@ Future<void> initDependencies() async {
     );
   }
 
-  // Dashboard Logic V2
-  if (!getIt.isRegistered<DashboardLogicV2>()) {
-    getIt.registerLazySingleton<DashboardLogicV2>(
-      () => DashboardLogicV2(
+  // Dashboard Use Cases - Goals & Budgets
+  if (!getIt.isRegistered<GetActiveGoalsUseCase>()) {
+    getIt.registerLazySingleton<GetActiveGoalsUseCase>(
+      () => GetActiveGoalsUseCase(getIt<GoalRepository>()),
+    );
+  }
+
+  if (!getIt.isRegistered<GetActiveBudgetsUseCase>()) {
+    getIt.registerLazySingleton<GetActiveBudgetsUseCase>(
+      () => GetActiveBudgetsUseCase(getIt<BudgetRepository>()),
+    );
+  }
+
+  // Dashboard Logic
+  if (!getIt.isRegistered<DashboardLogic>()) {
+    getIt.registerFactory<DashboardLogic>(
+      () => DashboardLogic(
         getDashboardDataUseCase: getIt<GetDashboardDataUseCase>(),
         addTransactionUseCase: getIt<AddTransactionUseCase>(),
+        getActiveGoalsUseCase: getIt<GetActiveGoalsUseCase>(),
+        getActiveBudgetsUseCase: getIt<GetActiveBudgetsUseCase>(),
       ),
     );
   }

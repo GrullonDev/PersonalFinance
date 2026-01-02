@@ -40,7 +40,9 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider<AuthProvider>(
         create: (_) => AuthProvider(authRepository: getIt<AuthRepository>()),
       ),
-      ChangeNotifierProvider<DashboardLogic>(create: (_) => DashboardLogic()),
+      ChangeNotifierProvider<DashboardLogic>(
+        create: (_) => getIt<DashboardLogic>(),
+      ),
       ChangeNotifierProvider<TipProvider>(create: (_) => TipProvider()),
       ChangeNotifierProvider<AlertsProvider>(create: (_) => AlertsProvider()),
       // Global providers still used across screens

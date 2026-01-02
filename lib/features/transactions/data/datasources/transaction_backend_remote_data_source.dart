@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:personal_finance/core/error/exceptions.dart';
@@ -49,29 +50,48 @@ class TransactionBackendRemoteDataSourceImpl
     try {
       Query<Map<String, dynamic>> query = _transactionsCollection;
 
-      if (fechaDesde != null) {
-        query = query.where('fecha', isGreaterThanOrEqualTo: _fmt(fechaDesde));
-      }
-      if (fechaHasta != null) {
-        query = query.where('fecha', isLessThanOrEqualTo: _fmt(fechaHasta));
-      }
-      if (categoriaId != null && categoriaId != '0' && categoriaId.isNotEmpty) {
-        query = query.where('categoria_id', isEqualTo: categoriaId);
-      }
+      // Filter by type only in Firestore to avoid composite index issues
       if (tipo != null && tipo.isNotEmpty) {
         query = query.where('tipo', isEqualTo: tipo);
       }
 
-      // Order by date desc
-      query = query.orderBy('fecha', descending: true);
+      // Removed server-side date filtering and sorting to prevent FAILED_PRECONDITION
+      // until composite indexes are fully deployed.
 
       final QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
-      return snapshot.docs
-          .map(
-            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
-                TransactionBackendModel.fromJson({...doc.data(), 'id': doc.id}),
-          )
-          .toList();
+
+      List<TransactionBackendModel> results =
+          snapshot.docs
+              .map(
+                (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                    TransactionBackendModel.fromJson({
+                      ...doc.data(),
+                      'id': doc.id,
+                    }),
+              )
+              .toList();
+
+      // Client-side filtering
+      if (fechaDesde != null) {
+        final DateTime start = DateUtils.dateOnly(fechaDesde);
+        results = results.where((tx) => !tx.fecha.isBefore(start)).toList();
+      }
+
+      if (fechaHasta != null) {
+        final DateTime end = DateUtils.dateOnly(fechaHasta)
+            .add(const Duration(days: 1))
+            .subtract(const Duration(milliseconds: 1));
+        results = results.where((tx) => !tx.fecha.isAfter(end)).toList();
+      }
+
+      if (categoriaId != null && categoriaId != '0' && categoriaId.isNotEmpty) {
+        results = results.where((tx) => tx.categoriaId == categoriaId).toList();
+      }
+
+      // Client-side sorting
+      results.sort((a, b) => b.fecha.compareTo(a.fecha));
+
+      return results;
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }

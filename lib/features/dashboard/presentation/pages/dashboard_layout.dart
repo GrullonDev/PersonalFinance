@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/dashboard/presentation/widgets/balance_card.dart';
 import 'package:personal_finance/features/dashboard/presentation/widgets/periodic_selector.dart';
-import 'package:personal_finance/features/data/model/expense.dart';
-import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -14,129 +12,100 @@ class DashboardLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Consumer<DashboardLogic>(
-    builder:
-        (
-          BuildContext context,
-          DashboardLogic logic,
-          _,
-        ) => ValueListenableBuilder<Box<Expense>>(
-          valueListenable: Hive.box<Expense>('expenses').listenable(),
-          builder:
-              (
-                BuildContext context,
-                Box<Expense> expenseBox,
-                _,
-              ) => ValueListenableBuilder<Box<Income>>(
-                valueListenable: Hive.box<Income>('incomes').listenable(),
-                builder: (BuildContext context, Box<Income> incomeBox, _) {
-                  if (!logic.hasData) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Icon(
-                            Icons.account_balance_wallet_outlined,
-                            size: 80,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No hay transacciones registradas',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Agrega tu primer gasto o ingreso\ntocando el botón +',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: <Color>[
-                          Colors.grey.shade50,
-                          Colors.grey.shade100,
-                        ],
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: SafeArea(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 8,
-                                  bottom: 16,
-                                  top: 8,
-                                ),
-                                child: Text(
-                                  'Finanzas',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                ),
-                              ),
-                              BalanceCard(balance: logic.balance),
-                              const SizedBox(height: 24),
-                              PeriodSelector(
-                                selected: logic.selectedPeriod.name,
-                                onSelect: (String value) {
-                                  final PeriodFilter period = PeriodFilter
-                                      .values
-                                      .firstWhere(
-                                        (PeriodFilter e) => e.name == value,
-                                      );
-                                  logic.changePeriod(period);
-                                },
-                              ),
-                              const SizedBox(height: 24),
-                              _buildSummaryCards(logic),
-                              const SizedBox(height: 24),
-                              _buildSavingGoals(),
-                              const SizedBox(height: 24),
-                              if (logic.shouldShowExpensesChart) ...<Widget>[
-                                _buildExpensesChart(logic),
-                                const SizedBox(height: 24),
-                                _buildExpensesList(logic),
-                                const SizedBox(height: 24),
-                              ],
-                              if (logic.shouldShowIncomesList) ...<Widget>[
-                                _buildIncomeList(logic),
-                                const SizedBox(height: 24),
-                              ],
-                              if (logic.shouldShowTransactions) ...<Widget>[
-                                _buildTransactionsList(logic),
-                                const SizedBox(height: 24),
-                              ],
-                              _buildPersonalizedRecommendations(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+    builder: (BuildContext context, DashboardLogic logic, _) {
+      if (!logic.hasData) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 80,
+                color: Colors.grey[400],
               ),
+              const SizedBox(height: 16),
+              Text(
+                'No hay transacciones registradas',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Agrega tu primer gasto o ingreso\ntocando el botón +',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[Colors.grey.shade50, Colors.grey.shade100],
+          ),
         ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8, bottom: 16, top: 8),
+                    child: Text(
+                      'Finanzas',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                  BalanceCard(balance: logic.balance),
+                  const SizedBox(height: 24),
+                  PeriodSelector(
+                    selected: logic.selectedPeriod.name,
+                    onSelect: (String value) {
+                      final PeriodFilter period = PeriodFilter.values
+                          .firstWhere((PeriodFilter e) => e.name == value);
+                      logic.changePeriod(period);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSummaryCards(logic),
+                  const SizedBox(height: 24),
+                  _buildSavingGoals(),
+                  const SizedBox(height: 24),
+                  if (logic.shouldShowExpensesChart) ...<Widget>[
+                    _buildExpensesChart(logic),
+                    const SizedBox(height: 24),
+                    _buildExpensesList(logic),
+                    const SizedBox(height: 24),
+                  ],
+                  if (logic.shouldShowIncomesList) ...<Widget>[
+                    _buildIncomeList(logic),
+                    const SizedBox(height: 24),
+                  ],
+                  if (logic.shouldShowTransactions) ...<Widget>[
+                    _buildTransactionsList(logic),
+                    const SizedBox(height: 24),
+                  ],
+                  _buildPersonalizedRecommendations(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    },
   );
 
   Widget _buildSummaryCards(DashboardLogic logic) => Row(
@@ -447,7 +416,7 @@ class DashboardLayout extends StatelessWidget {
   }
 
   Widget _buildIncomeList(DashboardLogic logic) {
-    final List<Income> incomes = logic.filteredIncomes;
+    final List<IncomeEntity> incomes = logic.filteredIncomes;
     final double total = logic.totalIncomes;
 
     if (incomes.isEmpty) {
@@ -491,7 +460,7 @@ class DashboardLayout extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ...incomes.map(
-              (Income income) => Container(
+              (IncomeEntity income) => Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(

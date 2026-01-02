@@ -1,0 +1,6 @@
+Analyzing dashboard_page.dart...                                
+
+   info - Unnecessary use of a block function body - lib\features\dashboard\presentation\pages\dashboard_page.dart:18:38 - prefer_expression_function_bodies
+   info - The value of the argument is redundant because it matches the default value - lib\features\dashboard\presentation\pages\dashboard_page.dart:608:30 - avoid_redundant_argument_values
+
+2 issues found. (ran in 1.8s)
