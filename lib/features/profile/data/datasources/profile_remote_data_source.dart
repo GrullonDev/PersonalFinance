@@ -5,6 +5,7 @@ import 'package:personal_finance/features/profile/data/models/profile_me_model.d
 
 abstract class ProfileRemoteDataSource {
   Future<ProfileMeModel> getMe();
+  Future<void> updateMe(ProfileMeModel profile);
 }
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
@@ -37,6 +38,23 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
           email: user.email ?? '',
         );
       }
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
+    }
+  }
+
+  @override
+  Future<void> updateMe(ProfileMeModel profile) async {
+    final User? user = _auth.currentUser;
+    if (user == null) {
+      throw ApiException(message: 'User not authenticated', statusCode: 401);
+    }
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .update(profile.toJson());
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }
