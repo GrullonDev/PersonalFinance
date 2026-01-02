@@ -43,6 +43,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
           id: category.id,
           nombre: category.nombre,
           tipo: category.tipo,
+          profileId: category.profileId,
         ),
       );
       return Right(
@@ -69,6 +70,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
           id: category.id,
           nombre: category.nombre,
           tipo: category.tipo,
+          profileId: category.profileId,
         ),
       );
       return Right(
@@ -87,7 +89,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @override
-  Future<Either<Failure, void>> deleteCategory(int categoryId) async {
+  Future<Either<Failure, void>> deleteCategory(String categoryId) async {
     try {
       await _remote.deleteCategory(categoryId);
       return const Right(null);

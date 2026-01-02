@@ -49,7 +49,7 @@ class CategoriesPage extends StatelessWidget {
               itemBuilder: (BuildContext context, int index) {
                 final Category category = state.items[index];
                 return Dismissible(
-                  key: ValueKey<int?>(category.id),
+                  key: ValueKey<String?>(category.id),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     alignment: Alignment.centerRight,

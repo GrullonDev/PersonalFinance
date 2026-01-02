@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Category extends Equatable {
-  final int? id;
+  final String? id;
   final String nombre;
   final String tipo; // 'ingreso' | 'egreso'
   final int? profileId;
@@ -13,13 +13,17 @@ class Category extends Equatable {
     this.profileId,
   });
 
-  Category copyWith({int? id, String? nombre, String? tipo, int? profileId}) =>
-      Category(
-        id: id ?? this.id,
-        nombre: nombre ?? this.nombre,
-        tipo: tipo ?? this.tipo,
-        profileId: profileId ?? this.profileId,
-      );
+  Category copyWith({
+    String? id,
+    String? nombre,
+    String? tipo,
+    int? profileId,
+  }) => Category(
+    id: id ?? this.id,
+    nombre: nombre ?? this.nombre,
+    tipo: tipo ?? this.tipo,
+    profileId: profileId ?? this.profileId,
+  );
 
   @override
   List<Object?> get props => <Object?>[id, nombre, tipo, profileId];

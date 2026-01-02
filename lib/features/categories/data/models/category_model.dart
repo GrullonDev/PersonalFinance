@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class CategoryModel extends Equatable {
-  final int? id;
+  final String? id;
   final String nombre;
   final String tipo; // 'ingreso' | 'egreso'
   final int? profileId;
@@ -14,10 +14,7 @@ class CategoryModel extends Equatable {
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) => CategoryModel(
-    id:
-        json['id'] is int
-            ? json['id'] as int
-            : int.tryParse(json['id']?.toString() ?? ''),
+    id: json['id']?.toString(), // Ensure ID is string
     nombre: json['nombre']?.toString() ?? '',
     tipo: json['tipo']?.toString() ?? '',
     profileId:

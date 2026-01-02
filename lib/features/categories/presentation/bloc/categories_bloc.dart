@@ -22,14 +22,14 @@ class CategoryCreate extends CategoriesEvent {
 
 class CategoryUpdate extends CategoriesEvent {
   CategoryUpdate(this.id, this.nombre, this.tipo);
-  final int id;
+  final String id;
   final String nombre;
   final String tipo;
 }
 
 class CategoryDelete extends CategoriesEvent {
   CategoryDelete(this.id);
-  final int id;
+  final String id;
 }
 
 // State
