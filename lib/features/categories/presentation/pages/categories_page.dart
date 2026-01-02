@@ -113,10 +113,13 @@ class CategoriesPage extends StatelessWidget {
       tipo = 'egreso';
     }
 
+    // Capturar el bloc ANTES de abrir el diálogo para evitar problemas de contexto
+    final CategoriesBloc bloc = context.read<CategoriesBloc>();
+
     final bool? saved = await showDialog<bool>(
       context: context,
       builder:
-          (BuildContext context) => StatefulBuilder(
+          (BuildContext dialogContext) => StatefulBuilder(
             builder:
                 (BuildContext context, StateSetter setState) => AlertDialog(
                   title: Text(
@@ -142,7 +145,7 @@ class CategoriesPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: tipo,
+                            initialValue: tipo,
                             decoration: const InputDecoration(
                               labelText: 'Tipo',
                             ),
@@ -172,11 +175,8 @@ class CategoriesPage extends StatelessWidget {
                       child: const Text('Cancelar'),
                     ),
                     FilledButton(
-                      onPressed: () async {
+                      onPressed: () {
                         if (!formKey.currentState!.validate()) return;
-                        final CategoriesBloc bloc =
-                            context.read<CategoriesBloc>();
-                        const bool ok = true;
                         if (category == null) {
                           bloc.add(CategoryCreate(nameCtrl.text.trim(), tipo));
                         } else {
@@ -188,7 +188,7 @@ class CategoriesPage extends StatelessWidget {
                             ),
                           );
                         }
-                        if (context.mounted) Navigator.pop(context, ok);
+                        Navigator.pop(context, true);
                       },
                       child: const Text('Guardar'),
                     ),
