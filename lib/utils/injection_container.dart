@@ -1,8 +1,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:personal_finance/core/network/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:personal_finance/core/network/api_service.dart';
 import 'package:personal_finance/features/categories/data/datasources/category_remote_data_source.dart';
 import 'package:personal_finance/features/categories/data/repositories/category_repository_impl.dart';
 import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
@@ -10,7 +10,7 @@ import 'package:personal_finance/features/accounts/data/datasources/account_remo
 import 'package:personal_finance/features/accounts/data/repositories/account_repository_impl.dart';
 import 'package:personal_finance/features/accounts/domain/repositories/account_repository.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
-import 'package:personal_finance/features/auth/data/datasources/auth_backend_datasource.dart';
+
 import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
 import 'package:personal_finance/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
@@ -61,11 +61,9 @@ Future<void> initDependencies() async {
     getIt.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
   }
 
-  // ApiService
+  // ApiService (MOCK)
   if (!getIt.isRegistered<ApiService>()) {
-    getIt.registerLazySingleton<ApiService>(
-      () => ApiService(prefs: getIt<SharedPreferences>()),
-    );
+    getIt.registerLazySingleton<ApiService>(() => ApiService());
   }
 
   // AuthDataSource
@@ -73,20 +71,10 @@ Future<void> initDependencies() async {
     getIt.registerLazySingleton<AuthDataSource>(() => FirebaseAuthService());
   }
 
-  // Auth Backend DataSource
-  if (!getIt.isRegistered<AuthBackendDataSource>()) {
-    getIt.registerLazySingleton<AuthBackendDataSource>(
-      () => AuthBackendDataSource(getIt<ApiService>()),
-    );
-  }
-
   // AuthRepository
   if (!getIt.isRegistered<AuthRepository>()) {
     getIt.registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(
-        getIt<AuthDataSource>(),
-        getIt<AuthBackendDataSource>(),
-      ),
+      () => AuthRepositoryImpl(getIt<AuthDataSource>()),
     );
   }
 
@@ -152,7 +140,7 @@ Future<void> initDependencies() async {
   // Categories Data Source
   if (!getIt.isRegistered<CategoryRemoteDataSource>()) {
     getIt.registerLazySingleton<CategoryRemoteDataSource>(
-      () => CategoryRemoteDataSourceImpl(getIt<ApiService>()),
+      () => CategoryRemoteDataSourceImpl(),
     );
   }
 
@@ -166,7 +154,7 @@ Future<void> initDependencies() async {
   // Budgets Data Source
   if (!getIt.isRegistered<BudgetRemoteDataSource>()) {
     getIt.registerLazySingleton<BudgetRemoteDataSource>(
-      () => BudgetRemoteDataSourceImpl(getIt<ApiService>()),
+      () => BudgetRemoteDataSourceImpl(),
     );
   }
 
@@ -180,7 +168,7 @@ Future<void> initDependencies() async {
   // Goals Data Source
   if (!getIt.isRegistered<GoalRemoteDataSource>()) {
     getIt.registerLazySingleton<GoalRemoteDataSource>(
-      () => GoalRemoteDataSourceImpl(getIt<ApiService>()),
+      () => GoalRemoteDataSourceImpl(),
     );
   }
 
@@ -204,11 +192,7 @@ Future<void> initDependencies() async {
   if (!getIt.isRegistered<backend_tx_ds.TransactionBackendRemoteDataSource>()) {
     getIt.registerLazySingleton<
       backend_tx_ds.TransactionBackendRemoteDataSource
-    >(
-      () => backend_tx_ds.TransactionBackendRemoteDataSourceImpl(
-        getIt<ApiService>(),
-      ),
-    );
+    >(() => backend_tx_ds.TransactionBackendRemoteDataSourceImpl());
   }
 
   // Backend Transactions Repository
@@ -239,7 +223,7 @@ Future<void> initDependencies() async {
   // Account Data Source
   if (!getIt.isRegistered<AccountRemoteDataSource>()) {
     getIt.registerLazySingleton<AccountRemoteDataSource>(
-      () => AccountRemoteDataSourceImpl(getIt<ApiService>()),
+      () => AccountRemoteDataSourceImpl(),
     );
   }
 

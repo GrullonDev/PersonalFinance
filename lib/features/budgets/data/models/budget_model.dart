@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
 class BudgetModel extends Equatable {
-  final int? id;
+  final String? id;
   final String nombre;
   final String montoTotal; // keep as string to avoid precision issues
   final DateTime fechaInicio;
   final DateTime fechaFin;
-  final int? profileId;
+  final String? profileId;
 
   const BudgetModel({
     required this.nombre,
@@ -18,10 +18,7 @@ class BudgetModel extends Equatable {
   });
 
   factory BudgetModel.fromJson(Map<String, dynamic> json) => BudgetModel(
-    id:
-        json['id'] is int
-            ? json['id'] as int
-            : int.tryParse(json['id']?.toString() ?? ''),
+    id: json['id']?.toString(),
     nombre: json['nombre']?.toString() ?? '',
     montoTotal: json['monto_total']?.toString() ?? '0',
     fechaInicio:
@@ -30,10 +27,7 @@ class BudgetModel extends Equatable {
     fechaFin:
         DateTime.tryParse(json['fecha_fin']?.toString() ?? '') ??
         DateTime.now(),
-    profileId:
-        json['profile_id'] is int
-            ? json['profile_id'] as int
-            : int.tryParse(json['profile_id']?.toString() ?? ''),
+    profileId: json['profile_id']?.toString(),
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{

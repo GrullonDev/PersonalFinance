@@ -119,7 +119,7 @@ class BudgetsCrudPage extends StatelessWidget {
               itemBuilder: (BuildContext context, int i) {
                 final Budget b = state.items[i];
                 return Dismissible(
-                  key: ValueKey<int?>(b.id),
+                  key: ValueKey<String?>(b.id),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     alignment: Alignment.centerRight,
@@ -298,7 +298,7 @@ class _BudgetCard extends StatefulWidget {
 }
 
 class _BudgetCardState extends State<_BudgetCard> {
-  List<int> _categoryIds = <int>[];
+  List<String> _categoryIds = <String>[];
 
   @override
   Widget build(BuildContext context) {
@@ -417,7 +417,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                       spacing: 8,
                       runSpacing: 8,
                       children:
-                          _categoryIds.map((int id) {
+                          _categoryIds.map((String id) {
                             final String name =
                                 cats.categories
                                     .firstWhere(
@@ -434,7 +434,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                               label: Text(name),
                               visualDensity: VisualDensity.compact,
                               onDeleted: () async {
-                                final List<int> list = List<int>.from(
+                                final List<String> list = List<String>.from(
                                   _categoryIds,
                                 )..remove(id);
                                 if (widget.budget.id != null) {
@@ -469,7 +469,7 @@ class _BudgetCardState extends State<_BudgetCard> {
   Future<void> _assignCategories() async {
     if (widget.budget.id == null) return;
     final CategoriesProvider cats = context.read<CategoriesProvider>();
-    final Set<int> selected = _categoryIds.toSet();
+    final Set<String> selected = _categoryIds.toSet();
     final bool? saved = await showModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
@@ -528,7 +528,7 @@ class _BudgetCardState extends State<_BudgetCard> {
           ),
     );
     if (saved == true) {
-      final List<int> list = selected.toList();
+      final List<String> list = selected.toList();
       await BudgetCategoryPrefs.save(widget.budget.id!, list);
       if (mounted) setState(() => _categoryIds = list);
     }
@@ -539,7 +539,9 @@ class _BudgetCardState extends State<_BudgetCard> {
 
   Future<void> _loadCategories() async {
     if (widget.budget.id != null) {
-      final List<int> ids = await BudgetCategoryPrefs.load(widget.budget.id!);
+      final List<String> ids = await BudgetCategoryPrefs.load(
+        widget.budget.id!,
+      );
       if (mounted) setState(() => _categoryIds = ids);
     }
   }

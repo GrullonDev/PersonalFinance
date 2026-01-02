@@ -96,7 +96,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
   }
 
   @override
-  Future<Either<Failure, void>> deleteBudget(int id) async {
+  Future<Either<Failure, void>> deleteBudget(String id) async {
     try {
       await _remote.deleteBudget(id);
       return const Right(null);

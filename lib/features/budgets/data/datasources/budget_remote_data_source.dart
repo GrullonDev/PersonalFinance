@@ -1,113 +1,81 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' show Response;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:personal_finance/core/error/exceptions.dart';
-import 'package:personal_finance/core/network/api_service.dart';
 import 'package:personal_finance/features/budgets/data/models/budget_model.dart';
 
 abstract class BudgetRemoteDataSource {
   Future<List<BudgetModel>> getBudgets();
   Future<BudgetModel> createBudget(BudgetModel budget);
-  Future<BudgetModel> updateBudget(int id, BudgetModel budget);
-  Future<void> deleteBudget(int id);
+  Future<BudgetModel> updateBudget(String id, BudgetModel budget);
+  Future<void> deleteBudget(String id);
 }
 
 class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
-  BudgetRemoteDataSourceImpl(this._api);
+  BudgetRemoteDataSourceImpl({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
-  final ApiService _api;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  List<Map<String, dynamic>> _extractList(dynamic decoded) {
-    if (decoded is List) {
-      return decoded.whereType<Map<String, dynamic>>().toList();
+  String get _uid {
+    final User? user = _auth.currentUser;
+    if (user == null) {
+      throw ApiException(message: 'User not authenticated', statusCode: 401);
     }
-    if (decoded is Map<String, dynamic>) {
-      final dynamic inner =
-          decoded['data'] ?? decoded['results'] ?? decoded['items'];
-      if (inner is List) {
-        return inner.whereType<Map<String, dynamic>>().toList();
-      }
-    }
-    return <Map<String, dynamic>>[];
+    return user.uid;
   }
 
-  Map<String, dynamic> _extractMap(dynamic decoded) {
-    if (decoded is Map<String, dynamic>) {
-      final dynamic inner = decoded['data'];
-      if (inner is Map<String, dynamic>) return inner;
-      return decoded;
-    }
-    return <String, dynamic>{};
-  }
+  CollectionReference<Map<String, dynamic>> get _budgetsCollection =>
+      _firestore.collection('users').doc(_uid).collection('budgets');
 
   @override
   Future<List<BudgetModel>> getBudgets() async {
-    final Response res = await _api.get('/api/v1/budgets/');
-    if (res.statusCode >= 200 && res.statusCode < 300) {
-      final dynamic decoded =
-          res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
-      final List<Map<String, dynamic>> list = _extractList(decoded);
-      return list.map(BudgetModel.fromJson).toList();
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snapshot =
+          await _budgetsCollection.orderBy('fecha_inicio').get();
+      return snapshot.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                BudgetModel.fromJson({...doc.data(), 'id': doc.id}),
+          )
+          .toList();
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
     }
-    throw ApiException(
-      message: 'Error al obtener presupuestos',
-      statusCode: res.statusCode,
-    );
   }
 
   @override
   Future<BudgetModel> createBudget(BudgetModel budget) async {
-    final Response res = await _api.post(
-      '/api/v1/budgets/',
-      body: budget.toJson(),
-    );
-    if (res.statusCode == 201 || res.statusCode == 200) {
-      final dynamic decoded =
-          res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
-      final Map<String, dynamic> map = _extractMap(decoded);
-      return BudgetModel.fromJson(map);
-    }
-    throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
-  }
-
-  @override
-  Future<BudgetModel> updateBudget(int id, BudgetModel budget) async {
-    final Response res = await _api.put(
-      '/api/v1/budgets/$id',
-      body: budget.toJson(),
-    );
-    if (res.statusCode == 200) {
-      final dynamic decoded =
-          res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
-      final Map<String, dynamic> map = _extractMap(decoded);
-      return BudgetModel.fromJson(map);
-    }
-    throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
-  }
-
-  @override
-  Future<void> deleteBudget(int id) async {
-    final Response res = await _api.delete('/api/v1/budgets/$id');
-    if (res.statusCode >= 200 && res.statusCode < 300) return;
-    throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
-  }
-
-  String _detail(String body) {
     try {
-      final dynamic decoded = body.isEmpty ? null : jsonDecode(body);
-      if (decoded is Map<String, dynamic>) {
-        final dynamic d = decoded['detail'];
-        if (d is String) return d;
-        if (d is List) {
-          return d
-              .whereType<Map<String, dynamic>>()
-              .map((Map<String, dynamic> e) => e['msg']?.toString() ?? '')
-              .where((String e) => e.isNotEmpty)
-              .join('\n');
-        }
-      }
-    } catch (_) {}
-    return 'Error desconocido';
+      final DocumentReference<Map<String, dynamic>> docRef =
+          _budgetsCollection.doc();
+      final Map<String, dynamic> data = budget.toJson()..remove('id');
+      await docRef.set(data);
+      return BudgetModel.fromJson({...data, 'id': docRef.id});
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
+    }
+  }
+
+  @override
+  Future<BudgetModel> updateBudget(String id, BudgetModel budget) async {
+    try {
+      final Map<String, dynamic> data = budget.toJson()..remove('id');
+      await _budgetsCollection.doc(id).update(data);
+      return BudgetModel.fromJson({...data, 'id': id});
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
+    }
+  }
+
+  @override
+  Future<void> deleteBudget(String id) async {
+    try {
+      await _budgetsCollection.doc(id).delete();
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
+    }
   }
 }
