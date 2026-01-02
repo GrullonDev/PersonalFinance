@@ -30,7 +30,7 @@ class SettingsPage extends StatelessWidget {
         _buildSettingItem(
           context,
           icon: Icons.person,
-          iconColor: Colors.blue,
+          iconColor: Theme.of(context).colorScheme.primary,
           title: 'Perfil',
           subtitle: 'Administra tu información personal',
           onTap: () {
@@ -128,10 +128,15 @@ class SettingsPage extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.dark_mode, color: Colors.blue),
+                        child: Icon(
+                          Icons.dark_mode,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -160,7 +165,7 @@ class SettingsPage extends StatelessWidget {
                         onChanged: (_) async {
                           await settings.toggleDarkMode();
                         },
-                        activeThumbColor: Colors.blue,
+                        activeColor: Theme.of(context).colorScheme.primary,
                       ),
                     ],
                   ),

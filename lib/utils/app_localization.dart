@@ -100,6 +100,12 @@ class AppLocalizations {
 
   String formatDate(DateTime date) =>
       DateFormat.yMd(locale.toLanguageTag()).format(date);
+
+  /// Obtiene el símbolo de moneda según el locale
+  String get currencySymbol => currencyFormatter.currencySymbol;
+
+  /// Formatea un monto como moneda según el locale del dispositivo
+  String formatCurrency(double amount) => currencyFormatter.format(amount);
 }
 
 class _AppLocalizationsDelegate

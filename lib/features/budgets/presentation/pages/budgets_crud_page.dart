@@ -189,91 +189,100 @@ class BudgetsCrudPage extends StatelessWidget {
     final bool? saved = await showDialog<bool>(
       context: context,
       builder:
-          (BuildContext context) => AlertDialog(
-            title: Text(
-              budget == null ? 'Crear presupuesto' : 'Editar presupuesto',
-            ),
-            content: Form(
-              key: key,
-              child: SizedBox(
-                width: 360,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    TextFormField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Nombre'),
-                      validator:
-                          (String? v) =>
-                              v == null || v.trim().isEmpty
-                                  ? 'Ingresa un nombre'
-                                  : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: amountCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Monto total',
-                      ),
-                      validator:
-                          (String? v) =>
-                              (double.tryParse(v ?? '') ?? -1) <= 0
-                                  ? 'Ingresa un monto válido'
-                                  : null,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: _DateTile(
-                            label: 'Inicio',
-                            value: start,
-                            onPick: (DateTime d) => start = d,
+          (BuildContext context) => StatefulBuilder(
+            builder:
+                (BuildContext context, StateSetter setState) => AlertDialog(
+                  title: Text(
+                    budget == null ? 'Crear presupuesto' : 'Editar presupuesto',
+                  ),
+                  content: Form(
+                    key: key,
+                    child: SizedBox(
+                      width: 360,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          TextFormField(
+                            controller: nameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Nombre',
+                            ),
+                            validator:
+                                (String? v) =>
+                                    v == null || v.trim().isEmpty
+                                        ? 'Ingresa un nombre'
+                                        : null,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _DateTile(
-                            label: 'Fin',
-                            value: end,
-                            onPick: (DateTime d) => end = d,
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: amountCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Monto total',
+                            ),
+                            validator:
+                                (String? v) =>
+                                    (double.tryParse(v ?? '') ?? -1) <= 0
+                                        ? 'Ingresa un monto válido'
+                                        : null,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: _DateTile(
+                                  label: 'Inicio',
+                                  value: start,
+                                  onPick: (DateTime d) {
+                                    setState(() => start = d);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _DateTile(
+                                  label: 'Fin',
+                                  value: end,
+                                  onPick: (DateTime d) {
+                                    setState(() => end = d);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed: () async {
+                        if (!key.currentState!.validate()) return;
+                        final Budget payload = Budget(
+                          id: budget?.id,
+                          nombre: nameCtrl.text.trim(),
+                          montoTotal:
+                              (double.parse(amountCtrl.text.trim())).toString(),
+                          fechaInicio: start,
+                          fechaFin: end,
+                        );
+                        if (budget == null) {
+                          parentBloc.add(BudgetCreate(payload));
+                        } else {
+                          parentBloc.add(BudgetUpdate(payload));
+                        }
+                        if (context.mounted) Navigator.pop(context, true);
+                      },
+                      child: const Text('Guardar'),
                     ),
                   ],
                 ),
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  if (!key.currentState!.validate()) return;
-                  final Budget payload = Budget(
-                    id: budget?.id,
-                    nombre: nameCtrl.text.trim(),
-                    montoTotal:
-                        (double.parse(amountCtrl.text.trim())).toString(),
-                    fechaInicio: start,
-                    fechaFin: end,
-                  );
-                  if (budget == null) {
-                    parentBloc.add(BudgetCreate(payload));
-                  } else {
-                    parentBloc.add(BudgetUpdate(payload));
-                  }
-                  if (context.mounted) Navigator.pop(context, true);
-                },
-                child: const Text('Guardar'),
-              ),
-            ],
           ),
     );
 
@@ -561,85 +570,94 @@ class _BudgetCardState extends State<_BudgetCard> {
     final bool? saved = await showDialog<bool>(
       context: context,
       builder:
-          (BuildContext context) => AlertDialog(
-            title: const Text('Editar presupuesto'),
-            content: Form(
-              key: key,
-              child: SizedBox(
-                width: 360,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    TextFormField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Nombre'),
-                      validator:
-                          (String? v) =>
-                              v == null || v.trim().isEmpty
-                                  ? 'Ingresa un nombre'
-                                  : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: amountCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Monto total',
-                      ),
-                      validator:
-                          (String? v) =>
-                              (double.tryParse(v ?? '') ?? -1) <= 0
-                                  ? 'Ingresa un monto válido'
-                                  : null,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: _DateTile(
-                            label: 'Inicio',
-                            value: start,
-                            onPick: (DateTime d) => start = d,
+          (BuildContext context) => StatefulBuilder(
+            builder:
+                (BuildContext context, StateSetter setState) => AlertDialog(
+                  title: const Text('Editar presupuesto'),
+                  content: Form(
+                    key: key,
+                    child: SizedBox(
+                      width: 360,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          TextFormField(
+                            controller: nameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Nombre',
+                            ),
+                            validator:
+                                (String? v) =>
+                                    v == null || v.trim().isEmpty
+                                        ? 'Ingresa un nombre'
+                                        : null,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _DateTile(
-                            label: 'Fin',
-                            value: end,
-                            onPick: (DateTime d) => end = d,
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: amountCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Monto total',
+                            ),
+                            validator:
+                                (String? v) =>
+                                    (double.tryParse(v ?? '') ?? -1) <= 0
+                                        ? 'Ingresa un monto válido'
+                                        : null,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: _DateTile(
+                                  label: 'Inicio',
+                                  value: start,
+                                  onPick: (DateTime d) {
+                                    setState(() => start = d);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _DateTile(
+                                  label: 'Fin',
+                                  value: end,
+                                  onPick: (DateTime d) {
+                                    setState(() => end = d);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed: () async {
+                        if (!key.currentState!.validate()) return;
+                        final Budget payload = Budget(
+                          id: widget.budget.id,
+                          nombre: nameCtrl.text.trim(),
+                          montoTotal:
+                              (double.parse(amountCtrl.text.trim())).toString(),
+                          fechaInicio: start,
+                          fechaFin: end,
+                        );
+                        parentBloc.add(BudgetUpdate(payload));
+                        if (context.mounted) Navigator.pop(context, true);
+                      },
+                      child: const Text('Guardar'),
                     ),
                   ],
                 ),
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  if (!key.currentState!.validate()) return;
-                  final Budget payload = Budget(
-                    id: widget.budget.id,
-                    nombre: nameCtrl.text.trim(),
-                    montoTotal:
-                        (double.parse(amountCtrl.text.trim())).toString(),
-                    fechaInicio: start,
-                    fechaFin: end,
-                  );
-                  parentBloc.add(BudgetUpdate(payload));
-                  if (context.mounted) Navigator.pop(context, true);
-                },
-                child: const Text('Guardar'),
-              ),
-            ],
           ),
     );
 

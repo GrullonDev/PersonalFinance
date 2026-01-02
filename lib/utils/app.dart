@@ -91,9 +91,20 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: const <Locale>[
-                Locale('es', 'GT'),
-                Locale('es', 'MX'),
-                Locale('en', 'US'),
+                Locale('es', 'GT'), // Guatemala - Quetzal (GTQ)
+                Locale('es', 'MX'), // México - Peso (MXN)
+                Locale('es', 'HN'), // Honduras - Lempira (HNL)
+                Locale('es', 'DO'), // República Dominicana - Peso (DOP)
+                Locale('es', 'CR'), // Costa Rica - Colón (CRC)
+                Locale('es', 'PA'), // Panamá - Dólar (USD)
+                Locale('es', 'SV'), // El Salvador - Dólar (USD)
+                Locale('es', 'NI'), // Nicaragua - Córdoba (NIO)
+                Locale('es', 'CO'), // Colombia - Peso (COP)
+                Locale('es', 'AR'), // Argentina - Peso (ARS)
+                Locale('es', 'CL'), // Chile - Peso (CLP)
+                Locale('es', 'PE'), // Perú - Sol (PEN)
+                Locale('es', 'ES'), // España - Euro (EUR)
+                Locale('en', 'US'), // Estados Unidos - Dólar (USD)
               ],
               locale: WidgetsBinding.instance.platformDispatcher.locale,
             ),
