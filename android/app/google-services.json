@@ -1,87 +1,26 @@
 {
   "project_info": {
-    "project_number": "297362519599",
-    "project_id": "personal-finance-7fff1",
-    "storage_bucket": "personal-finance-7fff1.firebasestorage.app"
+    "project_number": "116411792004",
+    "project_id": "personalfinancedev-e972f",
+    "storage_bucket": "personalfinancedev-e972f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:297362519599:android:f4653eeb7846c22e2ef8da",
+        "mobilesdk_app_id": "1:116411792004:android:a713a79228fc59a773e0d1",
         "android_client_info": {
           "package_name": "com.grullondev.personal_finance"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "297362519599-12h40vv566s2rfv1v69q56sjl228na4p.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBb1Fjjs-5yN4AlnjqULokC73zLMZw5tYU"
+          "current_key": "AIzaSyBIreL8PjQKV7fPEW301M5LIfxtZeMXFUM"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "297362519599-12h40vv566s2rfv1v69q56sjl228na4p.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "297362519599-4kboksjb1rs02vq3gakm6gqcqlhmqmql.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.grullondev.personal_finance"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:297362519599:android:31669aefa82ef8b42ef8da",
-        "android_client_info": {
-          "package_name": "com.grullondev.personal_finance"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "297362519599-1r9o4kakqn1gardi50cv12nsk6ac2dl0.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.grullondev.personal_finance",
-            "certificate_hash": "a69b2a404f4db0121a64cefcdb81e4fcac0d4e69"
-          }
-        },
-        {
-          "client_id": "297362519599-12h40vv566s2rfv1v69q56sjl228na4p.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBb1Fjjs-5yN4AlnjqULokC73zLMZw5tYU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "297362519599-12h40vv566s2rfv1v69q56sjl228na4p.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "297362519599-4kboksjb1rs02vq3gakm6gqcqlhmqmql.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.grullondev.personal_finance"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
