@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
@@ -381,7 +383,13 @@ class DashboardLogic extends ChangeNotifier {
   }
 
   // Métodos de utilidad
-  String formatCurrency(double amount) => '\$${amount.toStringAsFixed(2)}';
+  String formatCurrency(double amount) {
+    // Usa el locale del dispositivo para formatear la moneda correctamente
+    final formatter = NumberFormat.simpleCurrency(
+      locale: Intl.getCurrentLocale(),
+    );
+    return formatter.format(amount);
+  }
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';

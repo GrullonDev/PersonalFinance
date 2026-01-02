@@ -106,73 +106,94 @@ class CategoriesPage extends StatelessWidget {
     final TextEditingController nameCtrl = TextEditingController(
       text: category?.nombre ?? '',
     );
+
+    // Normalizar el tipo: convertir 'gasto' a 'egreso' para compatibilidad
     String tipo = category?.tipo ?? 'ingreso';
+    if (tipo.toLowerCase() == 'gasto') {
+      tipo = 'egreso';
+    }
 
     final bool? saved = await showDialog<bool>(
       context: context,
       builder:
-          (BuildContext context) => AlertDialog(
-            title: Text(
-              category == null ? 'Crear categoría' : 'Editar categoría',
-            ),
-            content: Form(
-              key: formKey,
-              child: SizedBox(
-                width: 340,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    TextFormField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Nombre'),
-                      validator:
-                          (String? v) =>
-                              v == null || v.trim().isEmpty
-                                  ? 'Ingrese un nombre'
-                                  : null,
+          (BuildContext context) => StatefulBuilder(
+            builder:
+                (BuildContext context, StateSetter setState) => AlertDialog(
+                  title: Text(
+                    category == null ? 'Crear categoría' : 'Editar categoría',
+                  ),
+                  content: Form(
+                    key: formKey,
+                    child: SizedBox(
+                      width: 340,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          TextFormField(
+                            controller: nameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Nombre',
+                            ),
+                            validator:
+                                (String? v) =>
+                                    v == null || v.trim().isEmpty
+                                        ? 'Ingrese un nombre'
+                                        : null,
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: tipo,
+                            decoration: const InputDecoration(
+                              labelText: 'Tipo',
+                            ),
+                            items: const <DropdownMenuItem<String>>[
+                              DropdownMenuItem<String>(
+                                value: 'ingreso',
+                                child: Text('Ingreso'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'egreso',
+                                child: Text('Egreso'),
+                              ),
+                            ],
+                            onChanged: (String? v) {
+                              setState(() {
+                                tipo = v ?? 'ingreso';
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: tipo,
-                      decoration: const InputDecoration(labelText: 'Tipo'),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem<String>(
-                          value: 'ingreso',
-                          child: Text('Ingreso'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'egreso',
-                          child: Text('Egreso'),
-                        ),
-                      ],
-                      onChanged: (String? v) => tipo = v ?? 'ingreso',
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed: () async {
+                        if (!formKey.currentState!.validate()) return;
+                        final CategoriesBloc bloc =
+                            context.read<CategoriesBloc>();
+                        const bool ok = true;
+                        if (category == null) {
+                          bloc.add(CategoryCreate(nameCtrl.text.trim(), tipo));
+                        } else {
+                          bloc.add(
+                            CategoryUpdate(
+                              category.id!,
+                              nameCtrl.text.trim(),
+                              tipo,
+                            ),
+                          );
+                        }
+                        if (context.mounted) Navigator.pop(context, ok);
+                      },
+                      child: const Text('Guardar'),
                     ),
                   ],
                 ),
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  if (!formKey.currentState!.validate()) return;
-                  final CategoriesBloc bloc = context.read<CategoriesBloc>();
-                  const bool ok = true;
-                  if (category == null) {
-                    bloc.add(CategoryCreate(nameCtrl.text.trim(), tipo));
-                  } else {
-                    bloc.add(
-                      CategoryUpdate(category.id!, nameCtrl.text.trim(), tipo),
-                    );
-                  }
-                  if (context.mounted) Navigator.pop(context, ok);
-                },
-                child: const Text('Guardar'),
-              ),
-            ],
           ),
     );
 

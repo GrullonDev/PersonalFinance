@@ -204,92 +204,98 @@ class _DashboardContent extends StatelessWidget {
         ),
       );
 
-  Widget _buildHeader(BuildContext context, DashboardLogic logic) => Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: <Color>[Colors.blue.shade700, Colors.blue.shade500],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+  Widget _buildHeader(BuildContext context, DashboardLogic logic) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    // Crear variantes del color primario verde para el gradiente
+    final lightGreen = Color.lerp(primaryColor, Colors.white, 0.2)!;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: <Color>[primaryColor, lightGreen],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-    ),
-    child: SafeArea(
-      bottom: false,
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 1000),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  // Period Selector
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(50),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<PeriodFilter>(
-                        value: logic.selectedPeriod,
-                        dropdownColor: Colors.blue.shade800,
-                        icon: const Icon(
-                          Icons.arrow_drop_down,
-                          color: Colors.white,
+      child: SafeArea(
+        bottom: false,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1000),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    // Period Selector
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(50),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<PeriodFilter>(
+                          value: logic.selectedPeriod,
+                          dropdownColor: primaryColor.withOpacity(0.95),
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.white,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          onChanged: (PeriodFilter? newValue) {
+                            if (newValue != null) {
+                              logic.changePeriod(newValue);
+                            }
+                          },
+                          items:
+                              PeriodFilter.values
+                                  .map<DropdownMenuItem<PeriodFilter>>((
+                                    PeriodFilter value,
+                                  ) {
+                                    return DropdownMenuItem<PeriodFilter>(
+                                      value: value,
+                                      child: Text(value.label),
+                                    );
+                                  })
+                                  .toList(),
                         ),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        onChanged: (PeriodFilter? newValue) {
-                          if (newValue != null) {
-                            logic.changePeriod(newValue);
-                          }
-                        },
-                        items:
-                            PeriodFilter.values
-                                .map<DropdownMenuItem<PeriodFilter>>((
-                                  PeriodFilter value,
-                                ) {
-                                  return DropdownMenuItem<PeriodFilter>(
-                                    value: value,
-                                    child: Text(value.label),
-                                  );
-                                })
-                                .toList(),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white,
+                    IconButton(
+                      icon: const Icon(
+                        Icons.settings_outlined,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/settings');
+                      },
                     ),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/settings');
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // Balance total
-              _buildBalanceHeader(logic),
-              const SizedBox(
-                height: 30,
-              ), // Extra padding for the overlay effect
-              // Summary Cards (Income/Expense) - Overlaying nicely
-              _buildSummaryCards(logic),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Balance total
+                _buildBalanceHeader(logic),
+                const SizedBox(
+                  height: 30,
+                ), // Extra padding for the overlay effect
+                // Summary Cards (Income/Expense) - Overlaying nicely
+                _buildSummaryCards(logic),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _buildSummaryCards(DashboardLogic logic) => Row(
     children: <Widget>[
@@ -480,6 +486,7 @@ class _DashboardContent extends StatelessWidget {
                 targetAmount: goal.objetivoAsDouble,
                 currentAmount: goal.actualAsDouble,
                 emoji: goal.icono ?? '🎯',
+                deadline: goal.fechaLimite,
               );
             },
           ),

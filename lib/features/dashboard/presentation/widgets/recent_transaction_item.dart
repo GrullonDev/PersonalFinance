@@ -80,7 +80,7 @@ class RecentTransactionItem extends StatelessWidget {
             Row(
               children: <Widget>[
                 Text(
-                  '${isExpense ? '-' : '+'}\$${amount.toStringAsFixed(2)}',
+                  '${isExpense ? '-' : '+'}${amount.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

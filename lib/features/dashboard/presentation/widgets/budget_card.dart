@@ -31,7 +31,7 @@ class BudgetCard extends StatelessWidget {
         gradient: LinearGradient(
           colors: <Color>[
             Colors.white,
-            isOverBudget ? Colors.red.shade50 : Colors.blue.shade50,
+            isOverBudget ? Colors.red.shade50 : Colors.green.shade50,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -61,7 +61,7 @@ class BudgetCard extends StatelessWidget {
                   color:
                       isOverBudget
                           ? Colors.red.withAlpha(40)
-                          : Colors.blue.withAlpha(40),
+                          : Colors.green.withAlpha(40),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -69,7 +69,7 @@ class BudgetCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isOverBudget ? Colors.red : Colors.blue,
+                    color: isOverBudget ? Colors.red : Colors.green,
                   ),
                 ),
               ),
@@ -81,7 +81,7 @@ class BudgetCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
               Text(
-                '\$${spent.toStringAsFixed(0)}',
+                '${spent.toStringAsFixed(0)}',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -89,7 +89,7 @@ class BudgetCard extends StatelessWidget {
                 ),
               ),
               Text(
-                ' de \$${amount.toStringAsFixed(0)}',
+                ' de ${amount.toStringAsFixed(0)}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -106,7 +106,7 @@ class BudgetCard extends StatelessWidget {
               minHeight: 10,
               backgroundColor: Colors.grey[200],
               valueColor: AlwaysStoppedAnimation<Color>(
-                isOverBudget ? Colors.red : Colors.blue,
+                isOverBudget ? Colors.red : Colors.green,
               ),
             ),
           ),
