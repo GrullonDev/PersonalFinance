@@ -1,13 +1,13 @@
 import 'package:equatable/equatable.dart';
 
 class GoalModel extends Equatable {
-  final int? id;
+  final String? id;
   final String nombre;
   final String montoObjetivo; // keep strings for precision
   final String montoActual;
   final DateTime fechaLimite;
   final String? icono;
-  final int? profileId;
+  final String? profileId;
 
   const GoalModel({
     required this.nombre,
@@ -20,10 +20,7 @@ class GoalModel extends Equatable {
   });
 
   factory GoalModel.fromJson(Map<String, dynamic> json) => GoalModel(
-    id:
-        json['id'] is int
-            ? json['id'] as int
-            : int.tryParse(json['id']?.toString() ?? ''),
+    id: json['id']?.toString(),
     nombre: json['nombre']?.toString() ?? '',
     montoObjetivo: json['monto_objetivo']?.toString() ?? '0',
     montoActual: json['monto_actual']?.toString() ?? '0',
@@ -31,10 +28,7 @@ class GoalModel extends Equatable {
         DateTime.tryParse(json['fecha_limite']?.toString() ?? '') ??
         DateTime.now(),
     icono: json['icono']?.toString(),
-    profileId:
-        json['profile_id'] is int
-            ? json['profile_id'] as int
-            : int.tryParse(json['profile_id']?.toString() ?? ''),
+    profileId: json['profile_id']?.toString(),
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{

@@ -101,7 +101,7 @@ class GoalRepositoryImpl implements GoalRepository {
   }
 
   @override
-  Future<Either<Failure, void>> deleteGoal(int id) async {
+  Future<Either<Failure, void>> deleteGoal(String id) async {
     try {
       await _remote.deleteGoal(id);
       return const Right(null);

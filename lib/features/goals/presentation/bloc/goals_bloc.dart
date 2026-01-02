@@ -25,7 +25,7 @@ class GoalUpdate extends GoalsEvent {
 
 class GoalDelete extends GoalsEvent {
   GoalDelete(this.id);
-  final int id;
+  final String id;
 }
 
 class GoalsState extends Equatable {

@@ -287,7 +287,7 @@ class _GoalsView extends StatelessWidget {
                       ? 0
                       : g.actualAsDouble / g.objetivoAsDouble;
               return Dismissible(
-                key: ValueKey<int?>(g.id),
+                key: ValueKey<String?>(g.id),
                 direction: DismissDirection.endToStart,
                 background: Container(
                   alignment: Alignment.centerRight,
