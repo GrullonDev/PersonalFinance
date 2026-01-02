@@ -1,151 +1,133 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' show Response;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:personal_finance/core/error/exceptions.dart';
-import 'package:personal_finance/core/network/api_service.dart';
 import 'package:personal_finance/features/transactions/data/models/transaction_backend_model.dart';
 
 abstract class TransactionBackendRemoteDataSource {
   Future<List<TransactionBackendModel>> list({
     DateTime? fechaDesde,
     DateTime? fechaHasta,
-    int? categoriaId,
+    String? categoriaId,
     String? tipo,
   });
-  Future<TransactionBackendModel> getById(int id);
+  Future<TransactionBackendModel> getById(String id);
   Future<TransactionBackendModel> create(TransactionBackendModel tx);
-  Future<TransactionBackendModel> update(int id, TransactionBackendModel tx);
-  Future<void> delete(int id);
+  Future<TransactionBackendModel> update(String id, TransactionBackendModel tx);
+  Future<void> delete(String id);
 }
 
 class TransactionBackendRemoteDataSourceImpl
     implements TransactionBackendRemoteDataSource {
-  TransactionBackendRemoteDataSourceImpl(this._api);
+  TransactionBackendRemoteDataSourceImpl({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _auth = auth ?? FirebaseAuth.instance;
 
-  final ApiService _api;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+
+  String get _uid {
+    final User? user = _auth.currentUser;
+    if (user == null) {
+      throw ApiException(message: 'User not authenticated', statusCode: 401);
+    }
+    return user.uid;
+  }
+
+  CollectionReference<Map<String, dynamic>> get _transactionsCollection =>
+      _firestore.collection('users').doc(_uid).collection('transactions');
 
   @override
   Future<List<TransactionBackendModel>> list({
     DateTime? fechaDesde,
     DateTime? fechaHasta,
-    int? categoriaId,
+    String? categoriaId,
     String? tipo,
   }) async {
-    final Map<String, dynamic> query = <String, dynamic>{
-      if (fechaDesde != null) 'fecha_desde': _fmt(fechaDesde),
-      if (fechaHasta != null) 'fecha_hasta': _fmt(fechaHasta),
-      if (categoriaId != null) 'categoria_id': categoriaId,
-      if (tipo != null && tipo.isNotEmpty) 'tipo': tipo,
-    };
-    final Response res = await _api.get(
-      '/api/v1/transactions/',
-      queryParameters: query,
-    );
-    if (res.statusCode == 200) {
-      final dynamic decoded =
-          res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
-      final List<dynamic> list = decoded is List
-          ? decoded
-          : (decoded is Map<String, dynamic> && decoded['data'] is List
-              ? decoded['data'] as List<dynamic>
-              : <dynamic>[]);
-      return list
-          .whereType<Map<String, dynamic>>()
-          .map(TransactionBackendModel.fromJson)
+    try {
+      Query<Map<String, dynamic>> query = _transactionsCollection;
+
+      if (fechaDesde != null) {
+        query = query.where('fecha', isGreaterThanOrEqualTo: _fmt(fechaDesde));
+      }
+      if (fechaHasta != null) {
+        query = query.where('fecha', isLessThanOrEqualTo: _fmt(fechaHasta));
+      }
+      if (categoriaId != null && categoriaId != '0' && categoriaId.isNotEmpty) {
+        query = query.where('categoria_id', isEqualTo: categoriaId);
+      }
+      if (tipo != null && tipo.isNotEmpty) {
+        query = query.where('tipo', isEqualTo: tipo);
+      }
+
+      // Order by date desc
+      query = query.orderBy('fecha', descending: true);
+
+      final QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
+      return snapshot.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                TransactionBackendModel.fromJson({...doc.data(), 'id': doc.id}),
+          )
           .toList();
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
     }
-    throw ApiException(
-      message: 'Error al obtener transacciones',
-      statusCode: res.statusCode,
-    );
   }
 
   @override
-  Future<TransactionBackendModel> getById(int id) async {
-    final Response res = await _api.get('/api/v1/transactions/$id');
-    if (res.statusCode == 200) {
-      final dynamic decoded = jsonDecode(res.body);
-      final Map<String, dynamic> map =
-          decoded is Map<String, dynamic>
-              ? (decoded['data'] is Map<String, dynamic>
-                  ? decoded['data'] as Map<String, dynamic>
-                  : decoded)
-              : <String, dynamic>{};
-      return TransactionBackendModel.fromJson(map);
+  Future<TransactionBackendModel> getById(String id) async {
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> doc =
+          await _transactionsCollection.doc(id).get();
+      if (!doc.exists) {
+        throw ApiException(message: 'Transaction not found', statusCode: 404);
+      }
+      return TransactionBackendModel.fromJson({...doc.data()!, 'id': doc.id});
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(message: e.toString(), statusCode: 500);
     }
-    throw ApiException(
-      message: 'No se pudo obtener la transacción',
-      statusCode: res.statusCode,
-    );
   }
 
   @override
   Future<TransactionBackendModel> create(TransactionBackendModel tx) async {
-    final Response res = await _api.post(
-      '/api/v1/transactions/',
-      body: tx.toJson(),
-    );
-    if (res.statusCode == 201 || res.statusCode == 200) {
-      final dynamic decoded = jsonDecode(res.body);
-      final Map<String, dynamic> map =
-          decoded is Map<String, dynamic>
-              ? (decoded['data'] is Map<String, dynamic>
-                  ? decoded['data'] as Map<String, dynamic>
-                  : decoded)
-              : <String, dynamic>{};
-      return TransactionBackendModel.fromJson(map);
+    try {
+      final DocumentReference<Map<String, dynamic>> docRef =
+          _transactionsCollection.doc();
+      final Map<String, dynamic> data = tx.toJson()..remove('id');
+      await docRef.set(data);
+      return TransactionBackendModel.fromJson({...data, 'id': docRef.id});
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
     }
-    throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
   }
 
   @override
   Future<TransactionBackendModel> update(
-    int id,
+    String id,
     TransactionBackendModel tx,
   ) async {
-    final Response res = await _api.put(
-      '/api/v1/transactions/$id',
-      body: tx.toJson(),
-    );
-    if (res.statusCode == 200) {
-      final dynamic decoded = jsonDecode(res.body);
-      final Map<String, dynamic> map =
-          decoded is Map<String, dynamic>
-              ? (decoded['data'] is Map<String, dynamic>
-                  ? decoded['data'] as Map<String, dynamic>
-                  : decoded)
-              : <String, dynamic>{};
-      return TransactionBackendModel.fromJson(map);
+    try {
+      final Map<String, dynamic> data = tx.toJson()..remove('id');
+      await _transactionsCollection.doc(id).update(data);
+      return TransactionBackendModel.fromJson({...data, 'id': id});
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
     }
-    throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
   }
 
   @override
-  Future<void> delete(int id) async {
-    final Response res = await _api.delete('/api/v1/transactions/$id');
-    if (res.statusCode == 204) return;
-    throw ApiException(message: _detail(res.body), statusCode: res.statusCode);
+  Future<void> delete(String id) async {
+    try {
+      await _transactionsCollection.doc(id).delete();
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 500);
+    }
   }
 
   String _fmt(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
-  String _detail(String body) {
-    try {
-      final dynamic decoded = body.isEmpty ? null : jsonDecode(body);
-      if (decoded is Map<String, dynamic>) {
-        final dynamic d = decoded['detail'];
-        if (d is String) return d;
-        if (d is List) {
-          return d
-              .whereType<Map<String, dynamic>>()
-              .map((Map<String, dynamic> e) => e['msg']?.toString() ?? '')
-              .where((String e) => e.isNotEmpty)
-              .join('\n');
-        }
-      }
-    } catch (_) {}
-    return 'Error desconocido';
-  }
 }

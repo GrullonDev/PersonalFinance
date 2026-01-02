@@ -16,7 +16,7 @@ class TransactionBackendRepositoryImpl implements TransactionBackendRepository {
   Future<Either<Failure, List<TransactionBackend>>> list({
     DateTime? fechaDesde,
     DateTime? fechaHasta,
-    int? categoriaId,
+    String? categoriaId,
     String? tipo,
   }) async {
     try {
@@ -120,7 +120,7 @@ class TransactionBackendRepositoryImpl implements TransactionBackendRepository {
   }
 
   @override
-  Future<Either<Failure, void>> delete(int id) async {
+  Future<Either<Failure, void>> delete(String id) async {
     try {
       await _remote.delete(id);
       return const Right(null);

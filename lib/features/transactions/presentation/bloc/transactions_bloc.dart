@@ -15,7 +15,7 @@ class TransactionsLoad extends TransactionsEvent {
   TransactionsLoad({this.desde, this.hasta, this.categoriaId, this.tipo});
   final DateTime? desde;
   final DateTime? hasta;
-  final int? categoriaId;
+  final String? categoriaId;
   final String? tipo;
 }
 
@@ -31,7 +31,7 @@ class TransactionUpdate extends TransactionsEvent {
 
 class TransactionDelete extends TransactionsEvent {
   TransactionDelete(this.id);
-  final int id;
+  final String id;
 }
 
 class TransactionsState extends Equatable {
@@ -49,7 +49,7 @@ class TransactionsState extends Equatable {
   final List<TransactionBackend> items;
   final DateTime? desde;
   final DateTime? hasta;
-  final int? categoriaId;
+  final String? categoriaId;
   final String? tipo;
 
   TransactionsState copyWith({
@@ -58,7 +58,7 @@ class TransactionsState extends Equatable {
     List<TransactionBackend>? items,
     DateTime? desde,
     DateTime? hasta,
-    int? categoriaId,
+    String? categoriaId,
     String? tipo,
   }) => TransactionsState(
     loading: loading ?? this.loading,

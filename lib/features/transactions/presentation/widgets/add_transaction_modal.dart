@@ -18,7 +18,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
   final TextEditingController _descriptionController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String _tipo = 'gasto';
-  int? _categoriaId;
+  String? _categoriaId;
   DateTime _fecha = DateTime.now();
   bool _recurrente = false;
 
@@ -117,7 +117,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
             Consumer<CategoriesProvider>(
               builder:
                   (BuildContext context, CategoriesProvider cats, _) =>
-                      DropdownButtonFormField<int>(
+                      DropdownButtonFormField<String>(
                         initialValue: _categoriaId,
                         isExpanded: true,
                         decoration: InputDecoration(
@@ -130,15 +130,16 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                         items:
                             cats.categories
                                 .map(
-                                  (Category c) => DropdownMenuItem<int>(
+                                  (Category c) => DropdownMenuItem<String>(
                                     value: c.id,
                                     child: Text(c.nombre),
                                   ),
                                 )
                                 .toList(),
-                        onChanged: (int? v) => setState(() => _categoriaId = v),
+                        onChanged:
+                            (String? v) => setState(() => _categoriaId = v),
                         validator:
-                            (int? v) =>
+                            (String? v) =>
                                 v == null ? 'Selecciona una categoría' : null,
                       ),
             ),
@@ -182,7 +183,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                       (double.parse(_amountController.text.trim())).toString(),
                   descripcion: _descriptionController.text.trim(),
                   fecha: _fecha,
-                  categoriaId: _categoriaId ?? 0,
+                  categoriaId: _categoriaId ?? '',
                   esRecurrente: _recurrente,
                 );
                 bloc.add(TransactionCreate(payload));

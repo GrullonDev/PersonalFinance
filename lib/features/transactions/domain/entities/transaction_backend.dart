@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
 class TransactionBackend extends Equatable {
-  final int? id;
+  final String? id;
   final String tipo; // ingreso | gasto
   final String monto; // string
   final String descripcion;
   final DateTime fecha;
-  final int categoriaId;
+  final String categoriaId;
   final bool esRecurrente;
   final int? profileId;
 
@@ -22,12 +22,12 @@ class TransactionBackend extends Equatable {
   });
 
   TransactionBackend copyWith({
-    int? id,
+    String? id,
     String? tipo,
     String? monto,
     String? descripcion,
     DateTime? fecha,
-    int? categoriaId,
+    String? categoriaId,
     bool? esRecurrente,
     int? profileId,
   }) => TransactionBackend(
