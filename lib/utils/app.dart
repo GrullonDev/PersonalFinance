@@ -67,50 +67,50 @@ class MyApp extends StatelessWidget {
             AuthProvider authProvider,
             SettingsProvider settingsProvider,
             _,
-          ) => AppLifecycleWrapper(
-            child: MaterialApp(
-              themeMode: settingsProvider.themeMode,
-              theme: AppTheme.light(),
-              darkTheme: AppTheme.dark(),
-              onGenerateTitle:
-                  (BuildContext context) =>
-                      AppLocalizations.of(context)!.appTitle,
-              debugShowCheckedModeBanner: false,
-              // Global builder to clamp text scale (prevents layout overflow)
-              builder: (BuildContext context, Widget? child) {
-                final MediaQueryData mq = MediaQuery.of(context);
-                final double clamped = mq.textScaler.scale(1).clamp(0.9, 1.2);
-                return MediaQuery(
-                  data: mq.copyWith(textScaler: TextScaler.linear(clamped)),
+          ) => MaterialApp(
+            themeMode: settingsProvider.themeMode,
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            onGenerateTitle:
+                (BuildContext context) =>
+                    AppLocalizations.of(context)!.appTitle,
+            debugShowCheckedModeBanner: false,
+            // Global builder to clamp text scale and handle App Locking
+            builder: (BuildContext context, Widget? child) {
+              final MediaQueryData mq = MediaQuery.of(context);
+              final double clamped = mq.textScaler.scale(1).clamp(0.9, 1.2);
+              return MediaQuery(
+                data: mq.copyWith(textScaler: TextScaler.linear(clamped)),
+                child: AppLifecycleWrapper(
                   child: child ?? const SizedBox.shrink(),
-                );
-              },
-              initialRoute: RoutePath.splash,
-              onGenerateRoute: RouteSwitch.generateRoute,
-              localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: const <Locale>[
-                Locale('es', 'GT'), // Guatemala - Quetzal (GTQ)
-                Locale('es', 'MX'), // México - Peso (MXN)
-                Locale('es', 'HN'), // Honduras - Lempira (HNL)
-                Locale('es', 'DO'), // República Dominicana - Peso (DOP)
-                Locale('es', 'CR'), // Costa Rica - Colón (CRC)
-                Locale('es', 'PA'), // Panamá - Dólar (USD)
-                Locale('es', 'SV'), // El Salvador - Dólar (USD)
-                Locale('es', 'NI'), // Nicaragua - Córdoba (NIO)
-                Locale('es', 'CO'), // Colombia - Peso (COP)
-                Locale('es', 'AR'), // Argentina - Peso (ARS)
-                Locale('es', 'CL'), // Chile - Peso (CLP)
-                Locale('es', 'PE'), // Perú - Sol (PEN)
-                Locale('es', 'ES'), // España - Euro (EUR)
-                Locale('en', 'US'), // Estados Unidos - Dólar (USD)
-              ],
-              locale: WidgetsBinding.instance.platformDispatcher.locale,
-            ),
+                ),
+              );
+            },
+            initialRoute: RoutePath.splash,
+            onGenerateRoute: RouteSwitch.generateRoute,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const <Locale>[
+              Locale('es', 'GT'), // Guatemala - Quetzal (GTQ)
+              Locale('es', 'MX'), // México - Peso (MXN)
+              Locale('es', 'HN'), // Honduras - Lempira (HNL)
+              Locale('es', 'DO'), // República Dominicana - Peso (DOP)
+              Locale('es', 'CR'), // Costa Rica - Colón (CRC)
+              Locale('es', 'PA'), // Panamá - Dólar (USD)
+              Locale('es', 'SV'), // El Salvador - Dólar (USD)
+              Locale('es', 'NI'), // Nicaragua - Córdoba (NIO)
+              Locale('es', 'CO'), // Colombia - Peso (COP)
+              Locale('es', 'AR'), // Argentina - Peso (ARS)
+              Locale('es', 'CL'), // Chile - Peso (CLP)
+              Locale('es', 'PE'), // Perú - Sol (PEN)
+              Locale('es', 'ES'), // España - Euro (EUR)
+              Locale('en', 'US'), // Estados Unidos - Dólar (USD)
+            ],
+            locale: WidgetsBinding.instance.platformDispatcher.locale,
           ),
     ),
   );

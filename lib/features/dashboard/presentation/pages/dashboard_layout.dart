@@ -1,11 +1,11 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/dashboard/presentation/widgets/balance_card.dart';
 import 'package:personal_finance/features/dashboard/presentation/widgets/periodic_selector.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
+import 'package:personal_finance/utils/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -82,14 +82,15 @@ class DashboardLayout extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 24),
-                  _buildSummaryCards(logic),
                   const SizedBox(height: 24),
-                  _buildSavingGoals(),
+                  _buildSummaryCards(context, logic),
+                  const SizedBox(height: 24),
+                  _buildSavingGoals(context),
                   const SizedBox(height: 24),
                   if (logic.shouldShowExpensesChart) ...<Widget>[
-                    _buildExpensesChart(logic),
+                    _buildExpensesChart(context, logic),
                     const SizedBox(height: 24),
-                    _buildExpensesList(logic),
+                    _buildExpensesList(context, logic),
                     const SizedBox(height: 24),
                   ],
                   if (logic.shouldShowIncomesList) ...<Widget>[
@@ -97,10 +98,10 @@ class DashboardLayout extends StatelessWidget {
                     const SizedBox(height: 24),
                   ],
                   if (logic.shouldShowTransactions) ...<Widget>[
-                    _buildTransactionsList(logic),
+                    _buildTransactionsList(context, logic),
                     const SizedBox(height: 24),
                   ],
-                  _buildPersonalizedRecommendations(),
+                  _buildPersonalizedRecommendations(context),
                 ],
               ),
             ),
@@ -108,116 +109,6 @@ class DashboardLayout extends StatelessWidget {
         ),
       );
     },
-  );
-
-  Widget _buildSummaryCards(DashboardLogic logic) => Row(
-    children: <Widget>[
-      Expanded(
-        child: _buildSummaryCard(
-          title: 'INGRESOS',
-          amount: logic.totalIncomes,
-          icon: Icons.arrow_upward,
-          gradient: const LinearGradient(
-            colors: <Color>[Colors.green, Color(0xFF4CAF50)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: _buildSummaryCard(
-          title: 'GASTOS',
-          amount: logic.totalExpenses,
-          icon: Icons.arrow_downward,
-          gradient: const LinearGradient(
-            colors: <Color>[Colors.red, Color(0xFFF44336)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildSummaryCard({
-    required String title,
-    required double amount,
-    required IconData icon,
-    required LinearGradient gradient,
-  }) => Card(
-    elevation: 8,
-    shadowColor: Colors.black38,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-    child: Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: gradient,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withAlpha(30),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(50),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: Colors.black.withAlpha(15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: Colors.white, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            '${title == 'INGRESOS' ? '+' : '-'}\$${amount.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Total ${title.toLowerCase()}',
-            style: TextStyle(
-              color: Colors.white.withAlpha(180),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    ),
   );
 
   Widget _buildExpensesChart(BuildContext context, DashboardLogic logic) {
@@ -398,17 +289,19 @@ class DashboardLayout extends StatelessWidget {
       icon: Icons.list_alt_rounded,
       color: Colors.blueAccent,
       children:
-          recentTransactions.map((t) {
-            return _buildListItem(
-              context,
-              title: t.title,
-              subtitle: logic.formatDate(t.date),
-              amount:
-                  '${t.isIncome ? '+' : '-'}${logic.formatCurrency(t.amount)}',
-              color: t.isIncome ? Colors.green : Colors.red,
-              isNegative: !t.isIncome,
-            );
-          }).toList(),
+          recentTransactions
+              .map(
+                (t) => _buildListItem(
+                  context,
+                  title: t.title,
+                  subtitle: logic.formatDate(t.date),
+                  amount:
+                      '${t.isIncome ? '+' : '-'}${logic.formatCurrency(t.amount)}',
+                  color: t.isIncome ? Colors.green : Colors.red,
+                  isNegative: !t.isIncome,
+                ),
+              )
+              .toList(),
     );
   }
 
@@ -551,76 +444,6 @@ class DashboardLayout extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildSavingGoals() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            const Text(
-              'Metas de Ahorro',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                letterSpacing: 0.5,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Ver todas',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.5),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Text(
-          amount,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-            color:
-                isNegative ? const Color(0xFFFF2D55) : const Color(0xFF00E676),
-          ),
-        ),
-      ],
-    ),
-  );
 
   Widget _buildPersonalizedRecommendations(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -768,5 +591,139 @@ class DashboardLayout extends StatelessWidget {
         ),
       ),
     ],
+  );
+
+  Widget _buildGlassSummaryCard(
+    BuildContext context, {
+    required String title,
+    required double amount,
+    required IconData icon,
+    required Color color,
+  }) => GlassContainer(
+    padding: const EdgeInsets.all(20),
+    borderRadius: 24,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          '\$${amount.toStringAsFixed(2)}',
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildGlassListGroup(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Widget> children,
+  }) => Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+      GlassContainer(
+        borderRadius: 24,
+        padding: const EdgeInsets.all(16),
+        child: Column(children: children),
+      ),
+    ],
+  );
+
+  Widget _buildListItem(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String amount,
+    required Color color,
+    required bool isNegative,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isNegative ? Icons.remove : Icons.add,
+            color: color,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.5),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          amount,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color:
+                isNegative ? const Color(0xFFFF2D55) : const Color(0xFF00E676),
+          ),
+        ),
+      ],
+    ),
   );
 }

@@ -56,64 +56,58 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
             'Acceso Protegido: Confirma tu identidad para continuar',
       );
 
-      if (!authenticated) {
-        // Si no se autentica, podemos re-intentar o salir
-        // Por ahora, solo evitamos quitar el estado de bloqueo
-        // En una app real podrías mostrar un botón de "Reintentar"
-        _checkLock();
-      } else {
+      if (authenticated) {
         setState(() => _isLocking = false);
       }
+      // Removed recursive _checkLock() call to prevent infinite loops.
+      // The user can retry using the button in the UI.
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLocking) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          body: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                ],
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.lock_outline, size: 80, color: Colors.white),
-                const SizedBox(height: 24),
-                const Text(
-                  'Aplicación Bloqueada',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: _checkLock,
-                  icon: const Icon(Icons.fingerprint),
-                  label: const Text('Desbloquear ahora'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
+      return Scaffold(
+        body: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primary.withOpacity(0.8),
               ],
             ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.lock_outline, size: 80, color: Colors.white),
+              const SizedBox(height: 24),
+              const Text(
+                'Aplicación Bloqueada',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: _checkLock,
+                icon: const Icon(Icons.fingerprint),
+                label: const Text('Desbloquear ahora'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
