@@ -1,11 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.grullondev.personal_finance">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ notifications permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <!-- android/app/src/main/AndroidManifest.xml -->
     <application
         android:name=".MyApplication"
-        android:label="Finanzas Inteligentes"
-        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:icon="@mipmap/logo"
         android:enableOnBackInvokedCallback="true">
 
         <!-- Indica que usas el Android embedding v2 -->
@@ -32,11 +35,19 @@
         </activity>
     </application>
 
-    <!-- Para queries de PROCESS_TEXT -->
+    <!-- Para queries de PROCESS_TEXT y URL Launcher -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
         </intent>
     </queries>
 </manifest>

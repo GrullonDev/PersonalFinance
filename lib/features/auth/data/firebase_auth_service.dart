@@ -25,7 +25,11 @@ class FirebaseAuthService implements AuthDataSource {
     await _auth.signOut();
   }
 
-  Future<void> registerUser(String email, String password) async {
+  @override
+  Future<String> registerWithEmail({
+    required String email,
+    required String password,
+  }) async {
     final UserCredential userCredential = await _auth
         .createUserWithEmailAndPassword(email: email, password: password);
 
@@ -33,64 +37,31 @@ class FirebaseAuthService implements AuthDataSource {
     if (userCredential.user != null && !userCredential.user!.emailVerified) {
       await userCredential.user!.sendEmailVerification();
     }
+    if (userCredential.user?.uid == null) {
+      throw FirebaseAuthException(
+        code: 'unknown-error',
+        message: 'No se pudo obtener el uid del usuario de Firebase.',
+      );
+    }
+    return userCredential.user!.uid;
   }
 
-  /// Inicia sesión con email o nombre de usuario
-  Future<User?> loginUser(String emailOrUsername, String password) async {
-    try {
-      String email = emailOrUsername;
-      
-      // Si no contiene @, es un username, buscar el email correspondiente
-      if (!emailOrUsername.contains('@')) {
-        email = await _getEmailFromUsername(emailOrUsername);
-      }
+  @override
+  Future<String> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    final UserCredential userCredential = await _auth
+        .signInWithEmailAndPassword(email: email, password: password);
 
-      final UserCredential userCredential = await _auth
-          .signInWithEmailAndPassword(email: email, password: password);
-      return userCredential.user;
-    } catch (e) {
-      // Si falla, intentar como email directo en caso de error en la búsqueda
-      if (!emailOrUsername.contains('@')) {
-        throw Exception('Usuario no encontrado');
-      }
-      rethrow;
+    if (userCredential.user?.uid == null) {
+      throw FirebaseAuthException(
+        code: 'unknown-error',
+        message:
+            'No se pudo obtener el UID del usuario de Firebase después del inicio de sesión.',
+      );
     }
-  }
 
-  /// Busca el email asociado a un nombre de usuario
-  Future<String> _getEmailFromUsername(String username) async {
-    try {
-      final QuerySnapshot querySnapshot = await _firestore
-          .collection('userProfiles')
-          .where('username', isEqualTo: username)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        throw Exception('Usuario no encontrado');
-      }
-
-      final Map<String, dynamic> userData = 
-          querySnapshot.docs.first.data() as Map<String, dynamic>;
-      
-      return userData['email'] as String;
-    } catch (e) {
-      throw Exception('Error al buscar usuario: ${e.toString()}');
-    }
-  }
-
-  /// Verifica si un nombre de usuario ya existe
-  Future<bool> isUsernameExists(String username) async {
-    try {
-      final QuerySnapshot querySnapshot = await _firestore
-          .collection('userProfiles')
-          .where('username', isEqualTo: username)
-          .limit(1)
-          .get();
-
-      return querySnapshot.docs.isNotEmpty;
-    } catch (e) {
-      return false;
-    }
+    return userCredential.user!.uid;
   }
 }

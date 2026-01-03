@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance/features/tips/tip_provider.dart';
 import 'package:provider/provider.dart';
-
-import 'tip_provider.dart';
 
 class TipCard extends StatelessWidget {
   const TipCard({super.key});

@@ -50,19 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBb1Fjjs-5yN4AlnjqULokC73zLMZw5tYU',
-    appId: '1:297362519599:android:31669aefa82ef8b42ef8da',
-    messagingSenderId: '297362519599',
-    projectId: 'personal-finance-7fff1',
-    storageBucket: 'personal-finance-7fff1.firebasestorage.app',
+    apiKey: 'AIzaSyBIreL8PjQKV7fPEW301M5LIfxtZeMXFUM',
+    appId: '1:116411792004:android:a713a79228fc59a773e0d1',
+    messagingSenderId: '116411792004',
+    projectId: 'personalfinancedev-e972f',
+    storageBucket: 'personalfinancedev-e972f.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCdWsCq5DTaXToWL5QoZEwozHvteviP6X4',
-    appId: '1:297362519599:ios:4b250660e26e5cdb2ef8da',
-    messagingSenderId: '297362519599',
-    projectId: 'personal-finance-7fff1',
-    storageBucket: 'personal-finance-7fff1.firebasestorage.app',
-    iosBundleId: 'com.jorgegrullon.personalFinance',
+    apiKey: 'AIzaSyAdcEMx70SIl5uYIvmOzBRyRADrXjVc8VI',
+    appId: '1:116411792004:ios:3fec80f6377d2f9173e0d1',
+    messagingSenderId: '116411792004',
+    projectId: 'personalfinancedev-e972f',
+    storageBucket: 'personalfinancedev-e972f.firebasestorage.app',
+    iosBundleId: 'com.grullondev.personalFinance',
   );
+
 }

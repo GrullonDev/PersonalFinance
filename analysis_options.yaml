@@ -1,17 +1,10 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
 
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
   errors:
     use_build_context_synchronously: ignore
+    directives_ordering: ignore
   strong-mode:
     implicit-casts: false
     implicit-dynamic: false
@@ -25,16 +18,7 @@ analyzer:
     - "**/generated_plugin_registrant.dart"
 
 linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
+
   rules:
     # ===== REGLAS DE ESTILO Y FORMATO =====
     prefer_single_quotes: true  # Usar comillas simples
@@ -54,13 +38,20 @@ linter:
     prefer_adjacent_string_concatenation: true  # Concatenación de strings adyacentes
     prefer_interpolation_to_compose_strings: true  # Interpolación en lugar de concatenación
     
+    # ===== REGLAS DE IMPORTACIÓN =====
+    always_use_package_imports: true  # Forzar importaciones con rutas completas (package:)
+    avoid_relative_lib_imports: true  # Evitar importaciones relativas dentro de lib
+    
     # ===== REGLAS DE TIPADO =====
-    always_specify_types: true  # Especificar tipos explícitamente
+    # Afinamos algunas reglas para reducir ruido de warnings informativos
+    # Especificar tipos explícitamente en todo el proyecto genera mucho ruido; lo limitamos a donde aporta valor
+    # Puedes reactivarla luego si lo deseas para módulos críticos.
+    # always_specify_types: true
+    unnecessary_underscores: false
     prefer_typing_uninitialized_variables: true  # Tipado para variables no inicializadas
     avoid_dynamic_calls: true  # Evitar llamadas dinámicas
     avoid_web_libraries_in_flutter: true  # Evitar librerías web en Flutter
     avoid_empty_else: true  # Evitar else vacíos
-    avoid_relative_lib_imports: true  # Evitar imports relativos de lib
     avoid_returning_null_for_future: true  # Evitar retornar null para Future
     avoid_returning_null_for_void: true  # Evitar retornar null para void
     avoid_returning_this: true  # Evitar retornar this

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Política de Privacidad de Personal Finance App - Gestión segura de finanzas personales">
+    <meta name="keywords" content="política privacidad, finanzas personales, seguridad datos, GDPR">
+    <meta name="author" content="GrullonDev">
+    <title>Política de Privacidad - Personal Finance</title>
+    
+    <!-- Open Graph para redes sociales -->
+    <meta property="og:title" content="Política de Privacidad - Personal Finance">
+    <meta property="og:description" content="Conoce cómo protegemos tu información en Personal Finance App">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourwebsite.com/privacy-policy">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .last-updated {
+            background: #e8f4fd;
+            border-left: 4px solid #3498db;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .important-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .security-highlight {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        h4 {
+            color: #7f8c8d;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        ul {
+            margin-bottom: 20px;
+            padding-left: 25px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .contact-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid #e9ecef;
+        }
+        
+        .contact-section h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .contact-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .contact-card h4 {
+            margin-top: 0;
+            color: #3498db;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .footer-links {
+            margin-bottom: 20px;
+        }
+        
+        .footer-links a {
+            color: #3498db;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        .table-of-contents {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .table-of-contents h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .table-of-contents ul {
+            margin-bottom: 0;
+        }
+        
+        .table-of-contents a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .table-of-contents a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .contact-info {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: none;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        .scroll-to-top:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Política de Privacidad</h1>
+            <div class="subtitle">Personal Finance - Tu privacidad es nuestra prioridad</div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="last-updated">
+                <strong>📅 Última actualización:</strong> 28 de julio de 2025<br>
+                <strong>📱 Versión de la app:</strong> 1.0.0+2<br>
+                <strong>🏢 Desarrollador:</strong> GrullonDev
+            </div>
+            
+            <!-- Tabla de contenidos -->
+            <div class="table-of-contents">
+                <h3>📋 Índice</h3>
+                <ul>
+                    <li><a href="#informacion-general">1. Información General</a></li>
+                    <li><a href="#informacion-recopilamos">2. Información que Recopilamos</a></li>
+                    <li><a href="#como-usamos">3. Cómo Utilizamos tu Información</a></li>
+                    <li><a href="#compartir-informacion">4. Compartir Información</a></li>
+                    <li><a href="#servicios-terceros">5. Servicios de Terceros</a></li>
+                    <li><a href="#seguridad">6. Seguridad de los Datos</a></li>
+                    <li><a href="#tus-derechos">7. Tus Derechos</a></li>
+                    <li><a href="#retencion-datos">8. Retención de Datos</a></li>
+                    <li><a href="#menores">9. Menores de Edad</a></li>
+                    <li><a href="#transferencias">10. Transferencias Internacionales</a></li>
+                    <li><a href="#cambios">11. Cambios en esta Política</a></li>
+                    <li><a href="#cumplimiento">12. Cumplimiento Legal</a></li>
+                    <li><a href="#contacto">13. Contacto</a></li>
+                </ul>
+            </div>
+            
+            <div class="important-notice">
+                <strong>🔒 Compromiso de Privacidad:</strong> Personal Finance está diseñada para ayudarte a gestionar tus finanzas personales de manera segura y privada. Tu privacidad es nuestra máxima prioridad y nunca vendemos ni compartimos tus datos financieros personales con terceros para fines comerciales.
+            </div>
+
+            <h2 id="informacion-general">1. Información General</h2>
+            <p>Esta Política de Privacidad describe cómo Personal Finance ("nosotros", "nuestra aplicación", "la app") desarrollada por GrullonDev, recopila, utiliza, procesa y protege tu información personal cuando utilizas nuestra aplicación móvil de gestión de finanzas personales.</p>
+            
+            <p>Al utilizar Personal Finance, aceptas las prácticas descritas en esta política. Si no estás de acuerdo con alguna parte de esta política, te recomendamos que no utilices la aplicación.</p>
+
+            <h2 id="informacion-recopilamos">2. Información que Recopilamos</h2>
+            
+            <h3>2.1 Información de Cuenta y Perfil</h3>
+            <ul>
+                <li><strong>Datos de registro:</strong> Dirección de email, nombre de usuario único, contraseña (almacenada de forma encriptada)</li>
+                <li><strong>Información de perfil:</strong> Nombre completo o apodo, foto de perfil (completamente opcional)</li>
+                <li><strong>Datos de autenticación:</strong> Tokens de sesión seguros, información de dispositivos autorizados</li>
+                <li><strong>Preferencias de usuario:</strong> Configuraciones de la aplicación, preferencias de notificaciones</li>
+            </ul>
+
+            <h3>2.2 Datos Financieros Personales</h3>
+            <ul>
+                <li><strong>Transacciones financieras:</strong> Registros de ingresos y gastos, montos, fechas, descripciones y categorías</li>
+                <li><strong>Presupuestos:</strong> Límites de gastos establecidos por categoría, metas de ahorro</li>
+                <li><strong>Cuentas financieras:</strong> Nombres y saldos de cuentas (sin información bancaria sensible)</li>
+                <li><strong>Análisis financieros:</strong> Patrones de gasto generados por la aplicación</li>
+            </ul>
+
+            <h3>2.3 Información Técnica y de Uso</h3>
+            <ul>
+                <li><strong>Información del dispositivo:</strong> Tipo de dispositivo, sistema operativo, versión de la app</li>
+                <li><strong>Datos de uso:</strong> Funciones utilizadas, tiempo de uso, patrones de navegación</li>
+                <li><strong>Información de red:</strong> Dirección IP (para seguridad y prevención de fraude)</li>
+                <li><strong>Datos de rendimiento:</strong> Informes de crashes y errores (anónimos)</li>
+            </ul>
+
+            <h2 id="como-usamos">3. Cómo Utilizamos tu Información</h2>
+            
+            <h3>3.1 Funcionalidad Principal de la Aplicación</h3>
+            <ul>
+                <li>Proporcionar servicios de gestión y análisis financiero personal</li>
+                <li>Sincronizar datos de forma segura entre tus dispositivos</li>
+                <li>Generar reportes, gráficos y análisis financieros personalizados</li>
+                <li>Enviar notificaciones relevantes sobre tu actividad financiera (solo si las activas)</li>
+                <li>Recordatorios de presupuestos y metas financieras</li>
+            </ul>
+
+            <h3>3.2 Seguridad y Mejora del Servicio</h3>
+            <ul>
+                <li>Proteger tu cuenta contra accesos no autorizados y actividades fraudulentas</li>
+                <li>Mejorar la funcionalidad, rendimiento y experiencia de usuario</li>
+                <li>Resolver problemas técnicos y proporcionar soporte al cliente</li>
+                <li>Cumplir con nuestras obligaciones legales y regulatorias</li>
+            </ul>
+
+            <div class="security-highlight">
+                <strong>🛡️ Garantía de Seguridad:</strong> Todos tus datos financieros se procesan y almacenan utilizando encriptación de grado militar (AES-256). Nunca almacenamos información bancaria sensible como números de cuenta completos o códigos de seguridad.
+            </div>
+
+            <h2 id="compartir-informacion">4. Compartir Información</h2>
+            
+            <div class="important-notice">
+                <strong>🚫 Compromiso Absoluto:</strong> NO vendemos, alquilamos, comercializamos ni compartimos tu información personal o financiera con terceros para fines comerciales, publicitarios o de marketing. Punto.
+            </div>
+
+            <h3>4.1 Casos Limitados de Compartir Información</h3>
+            <ul>
+                <li><strong>Proveedores de servicios esenciales:</strong> Firebase (Google) para infraestructura segura de autenticación y almacenamiento</li>
+                <li><strong>Cumplimiento legal obligatorio:</strong> Solo cuando sea estrictamente requerido por ley o orden judicial válida</li>
+                <li><strong>Protección de seguridad:</strong> Para prevenir fraude, actividades ilegales o proteger la seguridad de usuarios</li>
+                <li><strong>Con tu consentimiento explícito:</strong> Cualquier otro caso requiere tu autorización clara y específica</li>
+            </ul>
+
+            <h2 id="servicios-terceros">5. Servicios de Terceros</h2>
+            
+            <h3>5.1 Firebase (Google Cloud Platform)</h3>
+            <ul>
+                <li><strong>Propósito:</strong> Autenticación de usuarios, base de datos segura y almacenamiento en la nube</li>
+                <li><strong>Seguridad:</strong> Todos los datos se almacenan encriptados y protegidos por las medidas de seguridad de Google</li>
+                <li><strong>Ubicación:</strong> Servidores seguros en centros de datos certificados</li>
+                <li><strong>Política de Google:</strong> <a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a></li>
+            </ul>
+
+            <h3>5.2 Servicios de Autenticación Social (Opcionales)</h3>
+            <ul>
+                <li><strong>Google Sign-In:</strong> Solo información básica de perfil (nombre, email, foto)</li>
+                <li><strong>Apple Sign-In:</strong> Información mínima necesaria, con opción de email privado</li>
+                <li><strong>Control total:</strong> Puedes revocar el acceso en cualquier momento desde las configuraciones de tu cuenta</li>
+            </ul>
+
+            <h2 id="seguridad">6. Seguridad de los Datos</h2>
+            
+            <h3>6.1 Medidas de Protección Técnicas</h3>
+            <ul>
+                <li><strong>Encriptación avanzada:</strong> AES-256 para datos en reposo, TLS 1.3 para datos en tránsito</li>
+                <li><strong>Autenticación robusta:</strong> Contraseñas hasheadas con salt, soporte para autenticación de dos factores</li>
+                <li><strong>Controles de acceso:</strong> Solo personal autorizado y auditado puede acceder a sistemas críticos</li>
+                <li><strong>Monitoreo continuo:</strong> Supervisión 24/7 de actividades sospechosas y intentos de intrusión</li>
+                <li><strong>Auditorías regulares:</strong> Evaluaciones de seguridad periódicas por expertos externos</li>
+            </ul>
+
+            <h3>6.2 Almacenamiento Híbrido Seguro</h3>
+            <ul>
+                <li><strong>Local:</strong> Algunos datos se almacenan localmente en tu dispositivo para funcionalidad offline</li>
+                <li><strong>Encriptación local:</strong> Utiliza el almacenamiento seguro nativo del dispositivo (Keychain en iOS, Keystore en Android)</li>
+                <li><strong>Sincronización segura:</strong> Datos sincronizados automáticamente con la nube usando protocolos seguros</li>
+                <li><strong>Respaldo automático:</strong> Copias de seguridad encriptadas para prevenir pérdida de datos</li>
+            </ul>
+
+            <h2 id="tus-derechos">7. Tus Derechos de Privacidad</h2>
+            
+            <h3>7.1 Control Completo de tu Información</h3>
+            <ul>
+                <li><strong>Derecho de acceso:</strong> Ver toda la información que tenemos sobre ti en formato legible</li>
+                <li><strong>Derecho de rectificación:</strong> Corregir cualquier información personal inexacta o incompleta</li>
+                <li><strong>Derecho de eliminación:</strong> Solicitar la eliminación completa de tu cuenta y todos los datos asociados</li>
+                <li><strong>Derecho de portabilidad:</strong> Exportar todos tus datos financieros en formato estructurado</li>
+                <li><strong>Derecho de restricción:</strong> Limitar el procesamiento de tus datos personales</li>
+                <li><strong>Derecho de oposición:</strong> Oponerte al procesamiento de tus datos para fines específicos</li>
+            </ul>
+
+            <h3>7.2 Configuraciones Granulares de Privacidad</h3>
+            <ul>
+                <li>Control detallado sobre qué notificaciones recibir</li>
+                <li>Gestión de la sincronización automática de datos</li>
+                <li>Configuración de opciones de seguridad adicionales</li>
+                <li>Gestión de dispositivos autorizados para acceder a tu cuenta</li>
+            </ul>
+
+            <h2 id="retencion-datos">8. Retención y Eliminación de Datos</h2>
+            
+            <h3>8.1 Períodos de Retención</h3>
+            <ul>
+                <li><strong>Datos de cuenta activa:</strong> Mientras mantengas tu cuenta activa y uses la aplicación</li>
+                <li><strong>Datos financieros:</strong> Se conservan para proporcionar el servicio y generar análisis históricos</li>
+                <li><strong>Datos de uso y técnicos:</strong> Máximo 24 meses para mejoras del servicio</li>
+                <li><strong>Logs de seguridad:</strong> Máximo 12 meses para investigaciones de seguridad</li>
+            </ul>
+
+            <h3>8.2 Proceso de Eliminación</h3>
+            <ul>
+                <li><strong>Eliminación inmediata:</strong> Datos locales eliminados al desinstalar la app</li>
+                <li><strong>Eliminación programada:</strong> 30 días después de solicitar eliminación de cuenta</li>
+                <li><strong>Eliminación completa:</strong> Todos los datos eliminados permanentemente de nuestros sistemas</li>
+                <li><strong>Verificación:</strong> Confirmación por email una vez completado el proceso</li>
+            </ul>
+
+            <h2 id="menores">9. Protección de Menores de Edad</h2>
+            
+            <div class="important-notice">
+                <strong>👶 Política Estricta:</strong> Esta aplicación NO está dirigida a menores de 13 años. No recopilamos intencionalmente información personal de niños menores de 13 años. Si descubrimos que hemos recopilado información de un menor de 13 años, la eliminaremos inmediatamente y sin aviso previo.
+            </div>
+            
+            <p>Si eres padre/madre/tutor y crees que tu hijo menor de 13 años nos ha proporcionado información personal, contáctanos inmediatamente para que podamos eliminar dicha información.</p>
+
+            <h2 id="transferencias">10. Transferencias Internacionales de Datos</h2>
+            <p>Tus datos pueden ser procesados y almacenados en servidores ubicados en diferentes países. Nos aseguramos de que cualquier transferencia internacional de datos cumpla estrictamente con:</p>
+            <ul>
+                <li>Regulaciones del GDPR para transferencias fuera de la UE</li>
+                <li>Cláusulas contractuales estándar aprobadas por la Comisión Europea</li>
+                <li>Medidas de seguridad técnicas y organizativas adecuadas</li>
+                <li>Evaluaciones de adecuación del país de destino</li>
+            </ul>
+
+            <h2 id="cambios">11. Cambios en esta Política de Privacidad</h2>
+            <ul>
+                <li><strong>Notificación previa:</strong> Te notificaremos sobre cambios importantes con al menos 30 días de antelación</li>
+                <li><strong>Versiones anteriores:</strong> Mantenemos un historial de versiones anteriores disponible bajo solicitud</li>
+                <li><strong>Fecha de actualización:</strong> Siempre visible en la parte superior de esta política</li>
+                <li><strong>Aceptación:</strong> El uso continuado después de los cambios implica aceptación de la nueva política</li>
+                <li><strong>Derecho de retirada:</strong> Puedes eliminar tu cuenta si no estás de acuerdo con los cambios</li>
+            </ul>
+
+            <h2 id="cumplimiento">12. Cumplimiento Legal y Regulatorio</h2>
+            <p>Esta política de privacidad ha sido diseñada para cumplir con las siguientes regulaciones:</p>
+            <ul>
+                <li><strong>GDPR:</strong> Reglamento General de Protección de Datos de la Unión Europea</li>
+                <li><strong>CCPA:</strong> Ley de Privacidad del Consumidor de California</li>
+                <li><strong>LGPD:</strong> Lei Geral de Proteção de Dados del Brasil</li>
+                <li><strong>PIPEDA:</strong> Ley de Protección de Información Personal de Canadá</li>
+                <li><strong>Políticas de Google Play:</strong> Requisitos de privacidad para aplicaciones móviles</li>
+                <li><strong>Políticas de Apple App Store:</strong> Estándares de privacidad de iOS</li>
+            </ul>
+        </div>
+        
+        <!-- Contact Section -->
+        <div class="contact-section">
+            <h2 id="contacto">13. Contacto y Soporte</h2>
+            <p>Para cualquier consulta, solicitud o inquietud relacionada con tu privacidad y el manejo de tus datos personales, puedes contactarnos a través de los siguientes medios:</p>
+            
+            <div class="contact-info">
+                <div class="contact-card">
+                    <h4>📧 Consultas de Privacidad</h4>
+                    <p><strong>Email:</strong> privacy@grullondev.com</p>
+                    <p><strong>Asunto sugerido:</strong> [Consulta Privacidad] - Tu consulta</p>
+                    <p><strong>Tiempo de respuesta:</strong> Máximo 72 horas</p>
+                </div>
+                
+                <div class="contact-card">
+                    <h4>🗑️ Eliminación de Datos</h4>
+                    <p><strong>Email:</strong> privacy@grullondev.com</p>
+                    <p><strong>Asunto requerido:</strong> Solicitud de eliminación de datos</p>
+                    <p><strong>Procesamiento:</strong> Dentro de 30 días calendario</p>
+                </div>
+                
+                <div class="contact-card">
+                    <h4>👨‍💻 Desarrollador</h4>
+                    <p><strong>Empresa:</strong> GrullonDev</p>
+                    <p><strong>Ubicación:</strong> Disponible bajo solicitud</p>
+                    <p><strong>Registro:</strong> Información legal disponible</p>
+                </div>
+                
+                <div class="contact-card">
+                    <h4>📋 Ejercicio de Derechos</h4>
+                    <p>Para ejercer cualquiera de tus derechos (acceso, rectificación, eliminación, portabilidad), envía tu solicitud desde el email registrado en tu cuenta con identificación válida.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-links">
+                <a href="#informacion-general">Información General</a>
+                <a href="#seguridad">Seguridad</a>
+                <a href="#tus-derechos">Tus Derechos</a>
+                <a href="#contacto">Contacto</a>
+            </div>
+            
+            <p><strong>Personal Finance App</strong></p>
+            <p>Desarrollado con ❤️ por GrullonDev</p>
+            <p>Versión de la Política: 1.0 | Última actualización: 28 de julio de 2025</p>
+            <p>© 2025 GrullonDev. Todos los derechos reservados.</p>
+        </div>
+    </div>
+    
+    <!-- Scroll to top button -->
+    <button class="scroll-to-top" onclick="scrollToTop()" title="Volver arriba">↑</button>
+    
+    <script>
+        // Mostrar/ocultar botón de scroll to top
+        window.onscroll = function() {
+            const scrollButton = document.querySelector('.scroll-to-top');
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                scrollButton.style.display = 'block';
+            } else {
+                scrollButton.style.display = 'none';
+            }
+        };
+        
+        // Función para scroll suave hacia arriba
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Smooth scrolling para enlaces internos
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

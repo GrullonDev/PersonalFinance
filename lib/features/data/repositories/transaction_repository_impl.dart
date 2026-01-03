@@ -1,22 +1,23 @@
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:personal_finance/features/data/model/expense.dart';
-import 'package:personal_finance/features/data/model/income.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
+import 'package:personal_finance/features/transactions/data/datasources/transaction_backend_remote_data_source.dart';
+import 'package:personal_finance/features/transactions/data/models/transaction_backend_model.dart';
 
-/// Implementación concreta del repositorio de transacciones usando Hive
+/// Implementación del repositorio de transacciones usando Firestore
+/// Reemplaza la implementación anterior con Hive
 class TransactionRepositoryImpl implements TransactionRepository {
-  final Box<Expense> _expenseBox;
-  final Box<Income> _incomeBox;
+  final TransactionBackendRemoteDataSource _remoteDataSource;
 
-  TransactionRepositoryImpl(this._expenseBox, this._incomeBox);
+  TransactionRepositoryImpl(this._remoteDataSource);
 
   @override
   Future<List<ExpenseEntity>> getExpenses() async {
     try {
-      return _expenseBox.values
-          .map((Expense expense) => _mapExpenseToEntity(expense))
+      final List<TransactionBackendModel> transactions = await _remoteDataSource
+          .list(tipo: 'gasto');
+      return transactions
+          .map((TransactionBackendModel tx) => _mapModelToExpense(tx))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener gastos: $e');
@@ -26,8 +27,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<List<IncomeEntity>> getIncomes() async {
     try {
-      return _incomeBox.values
-          .map((Income income) => _mapIncomeToEntity(income))
+      final List<TransactionBackendModel> transactions = await _remoteDataSource
+          .list(tipo: 'ingreso');
+      return transactions
+          .map((TransactionBackendModel tx) => _mapModelToIncome(tx))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener ingresos: $e');
@@ -37,8 +40,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> addExpense(ExpenseEntity expense) async {
     try {
-      final Expense expenseModel = _mapEntityToExpense(expense);
-      await _expenseBox.add(expenseModel);
+      await _remoteDataSource.create(
+        TransactionBackendModel(
+          tipo: 'gasto',
+          monto: expense.amount.toString(),
+          descripcion: expense.title,
+          fecha: expense.date,
+          categoriaId: expense.category,
+          esRecurrente: false, // Default value as Entity doesn't have it
+        ),
+      );
     } catch (e) {
       throw Exception('Error al agregar gasto: $e');
     }
@@ -47,8 +58,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> addIncome(IncomeEntity income) async {
     try {
-      final Income incomeModel = _mapEntityToIncome(income);
-      await _incomeBox.add(incomeModel);
+      await _remoteDataSource.create(
+        TransactionBackendModel(
+          tipo: 'ingreso',
+          monto: income.amount.toString(),
+          descripcion: income.title,
+          fecha: income.date,
+          categoriaId: '0', // Default category for income if not present
+          esRecurrente: false,
+        ),
+      );
     } catch (e) {
       throw Exception('Error al agregar ingreso: $e');
     }
@@ -57,13 +76,18 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> updateExpense(ExpenseEntity expense) async {
     try {
-      final int index = _expenseBox.values.toList().indexWhere(
-        (Expense e) => e.title == expense.title,
+      await _remoteDataSource.update(
+        expense.id,
+        TransactionBackendModel(
+          id: expense.id,
+          tipo: 'gasto',
+          monto: expense.amount.toString(),
+          descripcion: expense.title,
+          fecha: expense.date,
+          categoriaId: expense.category,
+          esRecurrente: false,
+        ),
       );
-      if (index != -1) {
-        final Expense expenseModel = _mapEntityToExpense(expense);
-        await _expenseBox.putAt(index, expenseModel);
-      }
     } catch (e) {
       throw Exception('Error al actualizar gasto: $e');
     }
@@ -72,13 +96,18 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> updateIncome(IncomeEntity income) async {
     try {
-      final int index = _incomeBox.values.toList().indexWhere(
-        (Income i) => i.title == income.title,
+      await _remoteDataSource.update(
+        income.id,
+        TransactionBackendModel(
+          id: income.id,
+          tipo: 'ingreso',
+          monto: income.amount.toString(),
+          descripcion: income.title,
+          fecha: income.date,
+          categoriaId: '0',
+          esRecurrente: false,
+        ),
       );
-      if (index != -1) {
-        final Income incomeModel = _mapEntityToIncome(income);
-        await _incomeBox.putAt(index, incomeModel);
-      }
     } catch (e) {
       throw Exception('Error al actualizar ingreso: $e');
     }
@@ -87,12 +116,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> deleteExpense(String id) async {
     try {
-      final int index = _expenseBox.values.toList().indexWhere(
-        (Expense e) => e.title == id,
-      );
-      if (index != -1) {
-        await _expenseBox.deleteAt(index);
-      }
+      await _remoteDataSource.delete(id);
     } catch (e) {
       throw Exception('Error al eliminar gasto: $e');
     }
@@ -101,12 +125,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> deleteIncome(String id) async {
     try {
-      final int index = _incomeBox.values.toList().indexWhere(
-        (Income i) => i.title == id,
-      );
-      if (index != -1) {
-        await _incomeBox.deleteAt(index);
-      }
+      await _remoteDataSource.delete(id);
     } catch (e) {
       throw Exception('Error al eliminar ingreso: $e');
     }
@@ -118,13 +137,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
     DateTime end,
   ) async {
     try {
-      return _expenseBox.values
-          .where(
-            (Expense expense) =>
-                expense.date.isAfter(start.subtract(const Duration(days: 1))) &&
-                expense.date.isBefore(end.add(const Duration(days: 1))),
-          )
-          .map((Expense expense) => _mapExpenseToEntity(expense))
+      final List<TransactionBackendModel> transactions = await _remoteDataSource
+          .list(tipo: 'gasto', fechaDesde: start, fechaHasta: end);
+      return transactions
+          .map((TransactionBackendModel tx) => _mapModelToExpense(tx))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener gastos por período: $e');
@@ -137,13 +153,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
     DateTime end,
   ) async {
     try {
-      return _incomeBox.values
-          .where(
-            (Income income) =>
-                income.date.isAfter(start.subtract(const Duration(days: 1))) &&
-                income.date.isBefore(end.add(const Duration(days: 1))),
-          )
-          .map((Income income) => _mapIncomeToEntity(income))
+      final List<TransactionBackendModel> transactions = await _remoteDataSource
+          .list(tipo: 'ingreso', fechaDesde: start, fechaHasta: end);
+      return transactions
+          .map((TransactionBackendModel tx) => _mapModelToIncome(tx))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener ingresos por período: $e');
@@ -153,12 +166,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<List<ExpenseEntity>> getExpensesByCategory(String category) async {
     try {
-      return _expenseBox.values
-          .where(
-            (Expense expense) =>
-                expense.category.toLowerCase() == category.toLowerCase(),
-          )
-          .map((Expense expense) => _mapExpenseToEntity(expense))
+      final List<TransactionBackendModel> transactions = await _remoteDataSource
+          .list(tipo: 'gasto', categoriaId: category);
+      return transactions
+          .map((TransactionBackendModel tx) => _mapModelToExpense(tx))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener gastos por categoría: $e');
@@ -167,13 +178,18 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Future<List<IncomeEntity>> getIncomesBySource(String source) async {
+    // This is less efficient with current list implementation as usage of 'source'
+    // in TransactionBackendModel is ambiguous (likely mapped to description or not fully supported in filter)
+    // Assuming source is stored in description for now or doing client-side filtering
     try {
-      return _incomeBox.values
+      final List<TransactionBackendModel> transactions = await _remoteDataSource
+          .list(tipo: 'ingreso');
+      return transactions
           .where(
-            (Income income) =>
-                income.title.toLowerCase().contains(source.toLowerCase()),
+            (TransactionBackendModel tx) =>
+                tx.descripcion.toLowerCase().contains(source.toLowerCase()),
           )
-          .map((Income income) => _mapIncomeToEntity(income))
+          .map((TransactionBackendModel tx) => _mapModelToIncome(tx))
           .toList();
     } catch (e) {
       throw Exception('Error al obtener ingresos por fuente: $e');
@@ -220,30 +236,21 @@ class TransactionRepositoryImpl implements TransactionRepository {
     }
   }
 
-  // Métodos de mapeo entre entidades y modelos
-  ExpenseEntity _mapExpenseToEntity(Expense expense) => ExpenseEntity(
-    id: expense.title, // Usando title como ID temporal
-    title: expense.title,
-    amount: expense.amount,
-    date: expense.date,
-    category: expense.category,
-  );
+  // Métodos de mapeo
+  ExpenseEntity _mapModelToExpense(TransactionBackendModel model) =>
+      ExpenseEntity(
+        id: model.id ?? '',
+        title: model.descripcion,
+        amount: model.montoAsDouble,
+        date: model.fecha,
+        category: model.categoriaId,
+      );
 
-  IncomeEntity _mapIncomeToEntity(Income income) => IncomeEntity(
-    id: income.title, // Usando title como ID temporal
-    title: income.title,
-    amount: income.amount,
-    date: income.date,
-    source: income.title, // Usando title como source temporal
+  IncomeEntity _mapModelToIncome(TransactionBackendModel model) => IncomeEntity(
+    id: model.id ?? '',
+    title: model.descripcion,
+    amount: model.montoAsDouble,
+    date: model.fecha,
+    source: model.descripcion, // Using description as source
   );
-
-  Expense _mapEntityToExpense(ExpenseEntity entity) => Expense(
-    title: entity.title,
-    amount: entity.amount,
-    date: entity.date,
-    category: entity.category,
-  );
-
-  Income _mapEntityToIncome(IncomeEntity entity) =>
-      Income(title: entity.title, amount: entity.amount, date: entity.date);
 }

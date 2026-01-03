@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/alerts/pages/alerts_page.dart';
-import 'package:personal_finance/features/dashboard/page/dashboard_page.dart';
-import 'package:personal_finance/features/navigation/navigation_provider.dart';
-import 'package:personal_finance/features/profile/pages/profile_page.dart';
-import 'package:personal_finance/features/reports/pages/reports_page.dart';
-import 'package:personal_finance/features/transactions/pages/add_transaction_page.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/budgets/presentation/pages/budgets_crud_page.dart';
+import 'package:personal_finance/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:personal_finance/features/goals/presentation/pages/goals_crud_page.dart';
+import 'package:personal_finance/features/home/widgets/custom_bottom_nav_bar.dart';
+import 'package:personal_finance/features/profile/presentation/pages/profile_page.dart';
+import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
+    as tx_backend;
+import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
+import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,71 +18,173 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Widget> _pages = const <Widget>[
-    DashboardPage(),
-    ReportsPage(),
-    AddTransactionPage(),
-    AlertsPage(),
-    ProfilePage(),
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = <Widget>[
+    const DashboardPage(),
+    const BudgetsCrudPage(),
+    const GoalsCrudPage(),
+    const ProfilePage(),
   ];
 
-  Widget _getTitle(int index) {
+  final List<String> _titles = <String>[
+    'Finanzas',
+    'Presupuestos',
+    'Metas',
+    'Perfil',
+  ];
+
+  // Mostrar AppBar solo en las pantallas que lo requieren
+  final List<bool> _showAppBar = <bool>[true, false, false, true];
+
+  @override
+  Widget build(BuildContext context) => BlocProvider<TransactionsBloc>(
+    create:
+        (BuildContext ctx) => TransactionsBloc(
+          ctx.read<tx_backend.TransactionBackendRepository>(),
+        )..add(TransactionsLoad()),
+    child: Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar:
+          _showAppBar[_currentIndex]
+              ? PreferredSize(
+                preferredSize: const Size.fromHeight(120),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _getIconForIndex(_currentIndex),
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _titles[_currentIndex],
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _getSubtitleForIndex(_currentIndex),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              : null,
+      body: _pages[_currentIndex],
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _onNavTap,
+        onAddPressed: () => _onAddPressed(context),
+      ),
+      floatingActionButton: Builder(
+        builder:
+            (BuildContext innerCtx) => FloatingActionButton(
+              onPressed: () => _onAddPressed(innerCtx),
+              backgroundColor: Colors.blue,
+              elevation: 4,
+              child: const Icon(Icons.add, size: 32, color: Colors.white),
+            ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    ),
+  );
+
+  IconData _getIconForIndex(int index) {
     switch (index) {
       case 0:
-        return const Hero(tag: 'start-button', child: Text('Personal Finance'));
+        return Icons.dashboard_rounded;
       case 1:
-        return const Text('Reportes');
+        return Icons.account_balance_wallet_rounded;
       case 2:
-        return const Text('Agregar');
+        return Icons.flag_rounded;
       case 3:
-        return const Text('Alertas');
-      case 4:
-        return const Text('Perfil');
+        return Icons.person_rounded;
       default:
-        return const Text('Personal Finance');
+        return Icons.home;
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('HomePage initialized');
+  String _getSubtitleForIndex(int index) {
+    switch (index) {
+      case 0:
+        return 'Resumen de tus finanzas';
+      case 1:
+        return 'Planifica tus gastos';
+      case 2:
+        return 'Alcanza tus objetivos';
+      case 3:
+        return 'Configuración y preferencias';
+      default:
+        return '';
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Usar watch para reconstruir cuando cambie el estado
-    final NavigationProvider provider = context.watch<NavigationProvider>();
+  void _onAddPressed(BuildContext ctx) {
+    final TransactionsBloc bloc = ctx.read<TransactionsBloc>();
+    showModalBottomSheet<void>(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(ctx).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (BuildContext _) => BlocProvider.value(
+            value: bloc,
+            child: const AddTransactionModal(),
+          ),
+    ).then((_) {
+      setState(() {});
+    });
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _getTitle(provider.currentIndex),
-        centerTitle: true,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-      ),
-      body: _pages[provider.currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: provider.currentIndex,
-        onTap: provider.setIndex,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Reportes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'Agregar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Alertas',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-        ],
-      ),
-    );
+  void _onNavTap(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
   }
 }

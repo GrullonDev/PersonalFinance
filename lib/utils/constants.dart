@@ -57,37 +57,40 @@ class AppConstants {
   ];
 
   // ===== CONSTANTES DE COLORES =====
-  static const Color primaryColor = Colors.blue;
-  static const Color secondaryColor = Colors.green;
-  static const Color accentColor = Colors.orange;
-  static const Color errorColor = Colors.red;
-  static const Color warningColor = Colors.amber;
-  static const Color successColor = Colors.green;
-  static const Color infoColor = Colors.blue;
+  // Finance palette aligned with Theme (see AppTheme)
+  static const Color primaryColor = Color(0xFF0E8F5B); // Emerald
+  static const Color secondaryColor = Color(0xFF2E7D32); // Strong green
+  static const Color accentColor = Color(0xFF1565C0); // Blue accent
+  static const Color errorColor = Color(0xFFD32F2F);
+  static const Color warningColor = Color(0xFFFFB300);
+  static const Color successColor = Color(0xFF1E8E3E);
+  static const Color infoColor = Color(0xFF1565C0);
 
   // ===== MAPA DE COLORES POR CATEGORÍA =====
   static const Map<String, Color> categoryColors = <String, Color>{
-    'Alimentación': Colors.orange,
-    'Transporte': Colors.blue,
-    'Hogar': Colors.purple,
-    'Entretenimiento': Colors.pink,
-    'Compras': Colors.teal,
-    'Salud': Colors.red,
-    'Educación': Colors.indigo,
-    'Otros': Colors.grey,
+    'Alimentación': Color(0xFFFFA726),
+    'Transporte': Color(0xFF1565C0),
+    'Hogar': Color(0xFF7E57C2),
+    'Entretenimiento': Color(0xFFEC407A),
+    'Compras': Color(0xFF00897B),
+    'Salud': Color(0xFFD32F2F),
+    'Educación': Color(0xFF3949AB),
+    'Otros': Color(0xFF9E9E9E),
   };
 
   // ===== MAPA DE COLORES POR FUENTE DE INGRESO =====
   static const Map<String, Color> sourceColors = <String, Color>{
-    'Salario': Colors.green,
-    'Freelance': Colors.blue,
-    'Inversiones': Colors.orange,
-    'Negocio': Colors.purple,
-    'Regalo': Colors.pink,
-    'Otros': Colors.grey,
+    'Salario': Color(0xFF1E8E3E),
+    'Freelance': Color(0xFF1565C0),
+    'Inversiones': Color(0xFFFFA726),
+    'Negocio': Color(0xFF7E57C2),
+    'Regalo': Color(0xFFEC407A),
+    'Otros': Color(0xFF9E9E9E),
   };
 
   // ===== CONSTANTES DE FORMATO =====
+  /// @deprecated Use AppLocalizations.of(context).currencySymbol instead
+  /// Este símbolo es solo para compatibilidad. Usa el locale del dispositivo.
   static const String currencySymbol = '\$';
   static const String dateFormat = 'dd/MM/yyyy';
   static const String timeFormat = 'HH:mm';
@@ -134,6 +137,8 @@ class AppConstants {
       title.isNotEmpty && title.length <= maxTitleLength;
 
   /// Formatea un monto como moneda
+  /// @deprecated Use AppLocalizations.of(context).formatCurrency(amount) instead
+  /// Este método usa un símbolo hardcodeado. Prefiere usar el locale del dispositivo.
   static String formatCurrency(double amount) =>
       '$currencySymbol${amount.toStringAsFixed(2)}';
 
