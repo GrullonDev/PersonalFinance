@@ -11,7 +11,6 @@ import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
 import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
-import 'package:personal_finance/features/categories/presentation/providers/categories_provider.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
@@ -48,10 +47,6 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider<TipProvider>(create: (_) => TipProvider()),
       ChangeNotifierProvider<AlertsProvider>(create: (_) => AlertsProvider()),
       // Global providers still used across screens
-      ChangeNotifierProvider<CategoriesProvider>(
-        create:
-            (_) => CategoriesProvider(repository: getIt<CategoryRepository>()),
-      ),
       ChangeNotifierProvider<NavigationProvider>(
         create: (_) => NavigationProvider(),
       ),

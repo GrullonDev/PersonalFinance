@@ -7,7 +7,7 @@ import 'package:personal_finance/features/budgets/domain/repositories/budget_rep
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart'
     as cat_entity;
-import 'package:personal_finance/features/categories/presentation/providers/categories_provider.dart';
+import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
     as tx_backend;
@@ -325,7 +325,7 @@ class _BudgetCardState extends State<_BudgetCard> {
             '${_fmt2(widget.budget.fechaInicio)} → ${_fmt2(widget.budget.fechaFin)}';
         final bool over = spent > total && total > 0;
 
-        final CategoriesProvider cats = context.watch<CategoriesProvider>();
+        final CategoriesState catsState = context.watch<CategoriesBloc>().state;
 
         return Card(
           clipBehavior: Clip.antiAlias,
@@ -428,7 +428,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                       children:
                           _categoryIds.map((String id) {
                             final String name =
-                                cats.categories
+                                catsState.items
                                     .firstWhere(
                                       (cat_entity.Category c) => c.id == id,
                                       orElse:
@@ -477,7 +477,6 @@ class _BudgetCardState extends State<_BudgetCard> {
 
   Future<void> _assignCategories() async {
     if (widget.budget.id == null) return;
-    final CategoriesProvider cats = context.read<CategoriesProvider>();
     final Set<String> selected = _categoryIds.toSet();
     final bool? saved = await showModalBottomSheet<bool>(
       context: context,
@@ -497,7 +496,10 @@ class _BudgetCardState extends State<_BudgetCard> {
                   Expanded(
                     child: ListView(
                       children:
-                          cats.categories
+                          context
+                              .read<CategoriesBloc>()
+                              .state
+                              .items
                               .map(
                                 (cat_entity.Category c) => CheckboxListTile(
                                   value: selected.contains(c.id),

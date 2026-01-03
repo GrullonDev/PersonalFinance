@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
-import 'package:provider/provider.dart';
-import 'package:personal_finance/features/categories/presentation/providers/categories_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 
@@ -21,15 +21,6 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
   String? _categoriaId;
   DateTime _fecha = DateTime.now();
   bool _recurrente = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final CategoriesProvider cats = context.read<CategoriesProvider>();
-      if (cats.categories.isEmpty) cats.loadCategories();
-    });
-  }
 
   @override
   void dispose() {
@@ -114,9 +105,9 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
             ),
             const SizedBox(height: 16),
 
-            Consumer<CategoriesProvider>(
+            BlocBuilder<CategoriesBloc, CategoriesState>(
               builder:
-                  (BuildContext context, CategoriesProvider cats, _) =>
+                  (BuildContext context, CategoriesState cats) =>
                       DropdownButtonFormField<String>(
                         initialValue: _categoriaId,
                         isExpanded: true,
@@ -128,7 +119,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                         ),
                         hint: const Text('Selecciona una categoría'),
                         items:
-                            cats.categories
+                            cats.items
                                 .map(
                                   (Category c) => DropdownMenuItem<String>(
                                     value: c.id,
@@ -257,7 +248,7 @@ class _TransactionTypeButton extends StatelessWidget {
   );
 }
 
-// removed old local selector in favor of CategoriesProvider
+// Categories are managed by the global CategoriesBloc
 
 class _DatePickerField extends StatelessWidget {
   const _DatePickerField({

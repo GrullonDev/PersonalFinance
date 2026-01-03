@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
-
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
-import 'package:personal_finance/features/categories/presentation/providers/categories_provider.dart';
+import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
@@ -16,8 +13,6 @@ class TransactionsCrudPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CategoriesProvider cat = context.read<CategoriesProvider>();
-    if (cat.categories.isEmpty) cat.loadCategories();
     return BlocProvider<TransactionsBloc>(
       create:
           (BuildContext context) =>
@@ -82,29 +77,49 @@ class TransactionsCrudPage extends StatelessWidget {
                               (_) => context.read<TransactionsBloc>().add(
                                 TransactionDelete(t.id!),
                               ),
-                          child: ListTile(
-                            leading: Icon(
-                              isIngreso
-                                  ? Icons.trending_up
-                                  : Icons.trending_down,
-                              color: isIngreso ? Colors.green : Colors.red,
-                            ),
-                            title: Text(
-                              t.descripcion.isEmpty
-                                  ? '(sin descripción)'
-                                  : t.descripcion,
-                            ),
-                            subtitle: Text(
-                              '${_fmt(t.fecha)}  ·  Cat #${t.categoriaId}${t.esRecurrente ? '  ·  Recurrente' : ''}',
-                            ),
-                            trailing: Text(
-                              amount,
-                              style: TextStyle(
-                                color: isIngreso ? Colors.green : Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            onTap: () => _openDialog(context, tx: t),
+                          child: BlocBuilder<CategoriesBloc, CategoriesState>(
+                            builder: (
+                              BuildContext context,
+                              CategoriesState cats,
+                            ) {
+                              final String catName =
+                                  cats.items
+                                      .firstWhere(
+                                        (Category c) => c.id == t.categoriaId,
+                                        orElse:
+                                            () => Category(
+                                              id: t.categoriaId,
+                                              nombre: 'Cat #${t.categoriaId}',
+                                              tipo: 'gasto',
+                                            ),
+                                      )
+                                      .nombre;
+                              return ListTile(
+                                leading: Icon(
+                                  isIngreso
+                                      ? Icons.trending_up
+                                      : Icons.trending_down,
+                                  color: isIngreso ? Colors.green : Colors.red,
+                                ),
+                                title: Text(
+                                  t.descripcion.isEmpty
+                                      ? '(sin descripción)'
+                                      : t.descripcion,
+                                ),
+                                subtitle: Text(
+                                  '${_fmt(t.fecha)}  ·  $catName${t.esRecurrente ? '  ·  Recurrente' : ''}',
+                                ),
+                                trailing: Text(
+                                  amount,
+                                  style: TextStyle(
+                                    color:
+                                        isIngreso ? Colors.green : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                onTap: () => _openDialog(context, tx: t),
+                              );
+                            },
                           ),
                         );
                       },
@@ -189,14 +204,10 @@ class TransactionsCrudPage extends StatelessWidget {
                                     : null,
                       ),
                       const SizedBox(height: 12),
-                      Consumer<CategoriesProvider>(
-                        builder: (
-                          BuildContext context,
-                          CategoriesProvider cats,
-                          _,
-                        ) {
+                      BlocBuilder<CategoriesBloc, CategoriesState>(
+                        builder: (BuildContext context, CategoriesState cats) {
                           final List<DropdownMenuItem<String>> items =
-                              cats.categories
+                              cats.items
                                   .map(
                                     (Category c) => DropdownMenuItem<String>(
                                       value: c.id,
@@ -297,120 +308,126 @@ class _FiltersBarState extends State<_FiltersBar> {
 
   @override
   Widget build(BuildContext context) {
-    final CategoriesProvider cats = context.watch<CategoriesProvider>();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: <Widget>[
-          // ... (Date filters remain same)
-          FilterChip(
-            label: Text(desde == null ? 'Desde' : _fmt(desde!)),
-            onSelected: (_) async {
-              final DateTime? d = await showDatePicker(
-                context: context,
-                initialDate: desde ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              setState(() => desde = d);
-              context.read<TransactionsBloc>().add(
-                TransactionsLoad(
-                  desde: desde,
-                  hasta: hasta,
-                  categoriaId: categoriaId,
-                  tipo: tipo,
-                ),
-              );
-            },
-          ),
-          FilterChip(
-            label: Text(hasta == null ? 'Hasta' : _fmt(hasta!)),
-            onSelected: (_) async {
-              final DateTime? d = await showDatePicker(
-                context: context,
-                initialDate: hasta ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              setState(() => hasta = d);
-              context.read<TransactionsBloc>().add(
-                TransactionsLoad(
-                  desde: desde,
-                  hasta: hasta,
-                  categoriaId: categoriaId,
-                  tipo: tipo,
-                ),
-              );
-            },
-          ),
-          DropdownButton<String>(
-            value: tipo,
-            hint: const Text('Tipo'),
-            items: const <DropdownMenuItem<String>>[
-              DropdownMenuItem<String>(
-                value: 'ingreso',
-                child: Text('Ingreso'),
+    return BlocBuilder<CategoriesBloc, CategoriesState>(
+      builder: (BuildContext context, CategoriesState cats) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              // ... (Date filters remain same)
+              FilterChip(
+                label: Text(desde == null ? 'Desde' : _fmt(desde!)),
+                onSelected: (_) async {
+                  final DateTime? d = await showDatePicker(
+                    context: context,
+                    initialDate: desde ?? DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  setState(() => desde = d);
+                  context.read<TransactionsBloc>().add(
+                    TransactionsLoad(
+                      desde: desde,
+                      hasta: hasta,
+                      categoriaId: categoriaId,
+                      tipo: tipo,
+                    ),
+                  );
+                },
               ),
-              DropdownMenuItem<String>(value: 'gasto', child: Text('Gasto')),
+              FilterChip(
+                label: Text(hasta == null ? 'Hasta' : _fmt(hasta!)),
+                onSelected: (_) async {
+                  final DateTime? d = await showDatePicker(
+                    context: context,
+                    initialDate: hasta ?? DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  setState(() => hasta = d);
+                  context.read<TransactionsBloc>().add(
+                    TransactionsLoad(
+                      desde: desde,
+                      hasta: hasta,
+                      categoriaId: categoriaId,
+                      tipo: tipo,
+                    ),
+                  );
+                },
+              ),
+              DropdownButton<String>(
+                value: tipo,
+                hint: const Text('Tipo'),
+                items: const <DropdownMenuItem<String>>[
+                  DropdownMenuItem<String>(
+                    value: 'ingreso',
+                    child: Text('Ingreso'),
+                  ),
+                  DropdownMenuItem<String>(
+                    value: 'gasto',
+                    child: Text('Gasto'),
+                  ),
+                ],
+                onChanged: (String? v) {
+                  setState(() => tipo = v);
+                  context.read<TransactionsBloc>().add(
+                    TransactionsLoad(
+                      desde: desde,
+                      hasta: hasta,
+                      categoriaId: categoriaId,
+                      tipo: tipo,
+                    ),
+                  );
+                },
+              ),
+              DropdownButton<String>(
+                value: categoriaId,
+                hint: const Text('Categoría'),
+                items:
+                    cats.items
+                        .map(
+                          (Category c) => DropdownMenuItem<String>(
+                            value: c.id,
+                            child: Text(c.nombre),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (String? v) {
+                  setState(() => categoriaId = v);
+                  context.read<TransactionsBloc>().add(
+                    TransactionsLoad(
+                      desde: desde,
+                      hasta: hasta,
+                      categoriaId: categoriaId,
+                      tipo: tipo,
+                    ),
+                  );
+                },
+              ),
+              if (desde != null ||
+                  hasta != null ||
+                  tipo != null ||
+                  categoriaId != null)
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      desde = null;
+                      hasta = null;
+                      tipo = null;
+                      categoriaId = null;
+                    });
+                    context.read<TransactionsBloc>().add(TransactionsLoad());
+                  },
+                  icon: const Icon(Icons.clear),
+                  label: const Text('Limpiar'),
+                ),
             ],
-            onChanged: (String? v) {
-              setState(() => tipo = v);
-              context.read<TransactionsBloc>().add(
-                TransactionsLoad(
-                  desde: desde,
-                  hasta: hasta,
-                  categoriaId: categoriaId,
-                  tipo: tipo,
-                ),
-              );
-            },
           ),
-          DropdownButton<String>(
-            value: categoriaId,
-            hint: const Text('Categoría'),
-            items:
-                cats.categories
-                    .map(
-                      (Category c) => DropdownMenuItem<String>(
-                        value: c.id,
-                        child: Text(c.nombre),
-                      ),
-                    )
-                    .toList(),
-            onChanged: (String? v) {
-              setState(() => categoriaId = v);
-              context.read<TransactionsBloc>().add(
-                TransactionsLoad(
-                  desde: desde,
-                  hasta: hasta,
-                  categoriaId: categoriaId,
-                  tipo: tipo,
-                ),
-              );
-            },
-          ),
-          if (desde != null ||
-              hasta != null ||
-              tipo != null ||
-              categoriaId != null)
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  desde = null;
-                  hasta = null;
-                  tipo = null;
-                  categoriaId = null;
-                });
-                context.read<TransactionsBloc>().add(TransactionsLoad());
-              },
-              icon: const Icon(Icons.clear),
-              label: const Text('Limpiar'),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
