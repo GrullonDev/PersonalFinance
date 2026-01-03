@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:personal_finance/features/onboarding/presentation/providers/onboarding_logic.dart';
 import 'package:personal_finance/features/onboarding/domain/entities/onboarding_model.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:provider/provider.dart';
 
 class OnboardingView extends StatefulWidget {
@@ -72,7 +73,11 @@ class _OnboardingViewState extends State<OnboardingView> {
                     onPressed: () {
                       if (logic.isLastPage) {
                         logic.completeOnboarding().then((_) {
-                          // TODO: Navegar a la siguiente pantalla
+                          if (mounted) {
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed(RoutePath.login);
+                          }
                         });
                       } else {
                         logic.nextPage(_pageController);

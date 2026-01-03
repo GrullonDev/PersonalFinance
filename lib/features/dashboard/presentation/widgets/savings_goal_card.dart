@@ -75,18 +75,28 @@ class SavingsGoalCard extends StatelessWidget {
           gradient: LinearGradient(
             colors: <Color>[
               isCompleted
-                  ? Colors.green.shade100
-                  : Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                  ? Theme.of(
+                    context,
+                  ).colorScheme.secondary.withValues(alpha: 0.2)
+                  : Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.15),
               isCompleted
-                  ? Colors.green.shade50
-                  : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                  ? Theme.of(
+                    context,
+                  ).colorScheme.secondary.withValues(alpha: 0.1)
+                  : Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -105,11 +115,15 @@ class SavingsGoalCard extends StatelessWidget {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surface.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: <BoxShadow>[
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Theme.of(
+                            context,
+                          ).shadowColor.withValues(alpha: 0.05),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -142,8 +156,8 @@ class SavingsGoalCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color:
                               isCompleted
-                                  ? Colors.green.withOpacity(0.2)
-                                  : Colors.white.withOpacity(0.9),
+                                  ? Colors.green.withValues(alpha: 0.2)
+                                  : Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -227,25 +241,21 @@ class SavingsGoalCard extends StatelessWidget {
                     duration: const Duration(milliseconds: 800),
                     curve: Curves.easeOutCubic,
                     tween: Tween<double>(begin: 0, end: percentage / 100),
-                    builder: (
-                      BuildContext context,
-                      double value,
-                      Widget? child,
-                    ) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: value,
-                          minHeight: 6,
-                          backgroundColor: Colors.grey.shade200,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            isCompleted
-                                ? Colors.green
-                                : Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      );
-                    },
+                    builder:
+                        (BuildContext context, double value, Widget? child) =>
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: value,
+                                minHeight: 6,
+                                backgroundColor: Colors.grey.shade200,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  isCompleted
+                                      ? Colors.green
+                                      : Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
                   ),
                 ],
               ),

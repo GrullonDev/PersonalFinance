@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -55,6 +57,12 @@ class MyApp extends StatelessWidget {
       ),
       ChangeNotifierProvider<SettingsProvider>(
         create: (_) => SettingsProvider(),
+      ),
+      BlocProvider<CategoriesBloc>(
+        create:
+            (_) =>
+                CategoriesBloc(getIt<CategoryRepository>())
+                  ..add(CategoriesLoad()),
       ),
     ],
     child: Consumer2<AuthProvider, SettingsProvider>(

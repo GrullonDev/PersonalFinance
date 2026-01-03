@@ -15,19 +15,14 @@ class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // We create the provider here. Note: We need to register DashboardLogic in DI or create it manually.
-    // For now assuming we update DI to provide DashboardLogic instead of DashboardLogicV2.
-    // Or we create it using the use cases directly if obtainable.
-    return ChangeNotifierProvider<DashboardLogic>(
-      create: (_) {
-        final logic = getIt<DashboardLogic>();
-        logic.loadDashboardData();
-        return logic;
-      },
-      child: const _DashboardContent(),
-    );
-  }
+  Widget build(BuildContext context) => ChangeNotifierProvider<DashboardLogic>(
+    create: (_) {
+      final logic = getIt<DashboardLogic>();
+      logic.loadDashboardData();
+      return logic;
+    },
+    child: const _DashboardContent(),
+  );
 }
 
 class _DashboardContent extends StatelessWidget {
@@ -226,60 +221,45 @@ class _DashboardContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    // Period Selector
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(50),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<PeriodFilter>(
-                          value: logic.selectedPeriod,
-                          dropdownColor: primaryColor.withOpacity(0.95),
-                          icon: const Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.white,
-                          ),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          onChanged: (PeriodFilter? newValue) {
-                            if (newValue != null) {
-                              logic.changePeriod(newValue);
-                            }
-                          },
-                          items:
-                              PeriodFilter.values
-                                  .map<DropdownMenuItem<PeriodFilter>>((
-                                    PeriodFilter value,
-                                  ) {
-                                    return DropdownMenuItem<PeriodFilter>(
-                                      value: value,
-                                      child: Text(value.label),
-                                    );
-                                  })
-                                  .toList(),
-                        ),
-                      ),
-                    ),
-                    IconButton(
+                // Period Selector
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(50),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<PeriodFilter>(
+                      value: logic.selectedPeriod,
+                      dropdownColor: primaryColor.withOpacity(0.95),
                       icon: const Icon(
-                        Icons.settings_outlined,
+                        Icons.arrow_drop_down,
                         color: Colors.white,
                       ),
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/settings');
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      onChanged: (PeriodFilter? newValue) {
+                        if (newValue != null) {
+                          logic.changePeriod(newValue);
+                        }
                       },
+                      items:
+                          PeriodFilter.values
+                              .map<DropdownMenuItem<PeriodFilter>>(
+                                (PeriodFilter value) =>
+                                    DropdownMenuItem<PeriodFilter>(
+                                      value: value,
+                                      child: Text(value.label),
+                                    ),
+                              )
+                              .toList(),
                     ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 10),
                 // Balance total
@@ -460,9 +440,9 @@ class _DashboardContent extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.grey[300]!),
           ),
-          child: Column(
+          child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               Icon(Icons.savings_outlined, size: 40, color: Colors.grey),
               SizedBox(height: 8),
               Text(
@@ -676,7 +656,6 @@ class _DashboardContent extends StatelessWidget {
               yValueMapper: (ChartData data, _) => data.amount,
               pointColorMapper: (ChartData data, _) => data.color,
               dataLabelSettings: const DataLabelSettings(isVisible: true),
-              enableTooltip: true,
             ),
           ],
         ),
