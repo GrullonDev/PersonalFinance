@@ -1,151 +1,107 @@
-# Personal Finance
+# 💰 Personal Finance - Tu Gestor Inteligente
 
-Personal Finance es una aplicación móvil desarrollada en Flutter que te ayuda a gestionar tus finanzas personales de manera sencilla y eficiente. Con esta app podrás registrar tus ingresos y gastos, visualizar reportes y tomar mejores decisiones financieras.
+[![Flutter Version](https://img.shields.io/badge/Flutter-3.27.4-blue.svg?logo=flutter)](https://flutter.dev)
+[![Dart Version](https://img.shields.io/badge/Dart-3.7.0-blue.svg?logo=dart)](https://dart.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![FVM](https://img.shields.io/badge/FVM-Enabled-green.svg)](https://fvm.app)
 
----
-
-## 👤 Autor
-
-Proyecto creado y mantenido por **[Jorge Marroquín](https://github.com/GrullonDev)**.  
-¿Tienes sugerencias, dudas o deseas colaborar? ¡Contáctame a través de mi perfil de GitHub!
+**Personal Finance** es una solución móvil premium diseñada para transformar la manera en que gestionas tu dinero. Construida con tecnologías de vanguardia y una arquitectura robusta, ofrece una experiencia fluida, segura y profesional para alcanzar la libertad financiera.
 
 ---
 
-## 🚀 Características principales
+## ✨ Características Premium
 
-- Registro rápido de ingresos y gastos
-- Visualización de reportes y gráficos interactivos
-- Categorías personalizables para tus transacciones
-- Consejos financieros diarios integrados
-- Onboarding educativo para nuevos usuarios
-- Interfaz intuitiva, profesional y responsiva
-- Soporte multiplataforma: **Android** e **iOS**
-- Persistencia local con Hive
-- Arquitectura limpia y escalable (Clean Architecture, SOLID)
-- Actualización instantánea de la información
+- **Gestión Inteligente**: Registro instantáneo de ingresos y gastos con categorización avanzada.
+- **Visualización Pro**: Reportes dinámicos y gráficos interactivos de alta calidad.
+- **Personalización**: Sistema de avatares con iconos/emojis para una experiencia única.
+- **Educación Financiera**: Consejos diarios integrados para mejorar tus hábitos financieros.
+- **Seguridad Moderna**: Preparada para biometría y protección de datos avanzada.
+- **Multiplataforma**: Experiencia nativa optimizada para **Android** e **iOS**.
 
 ---
 
-## 🛠️ Tecnologías utilizadas
+## 🏗️ Arquitectura y Calidad de Código
 
-- **Flutter**: 3.32.4
-- **Dart**: >=3.0.0
-- **FVM** (Flutter Version Management) para gestionar versiones de Flutter
-- **Hive** para almacenamiento local
-- **Provider** para gestión de estado
-- **Firebase** (opcional, para autenticación)
-- **Syncfusion Flutter Charts** para gráficos
+El proyecto sigue los más altos estándares de desarrollo en la industria:
+
+- **Clean Architecture**: Separación clara de responsabilidades (Data, Domain, Presentation).
+- **SOLID Principles**: Código escalable, mantenible y testeable.
+- **BLoC Pattern**: Gestión de estado predecible y robusta.
+- **Dependency Injection**: Uso de `GetIt` para un código desacoplado.
+- **Offline First**: Persistencia ultra rápida usando `Hive`.
 
 ---
 
-## ⚙️ Configuración del proyecto
+## 🚀 Guía de Configuración Pro (FVM)
 
-### 1. Clona el repositorio
+Este proyecto utiliza [FVM](https://fvm.app/) (Flutter Version Management) para garantizar la consistencia entre desarrolladores.
 
+### 1. Instalación de FVM
+Si aún no tienes FVM:
+```bash
+dart pub global activate fvm
+```
+
+### 2. Configurar el Proyecto
+Clona e inicializa con la versión específica de Flutter (`3.27.4`):
 ```bash
 git clone https://github.com/GrullonDev/personal_finance.git
 cd personal_finance
+fvm install 3.27.4
+fvm use 3.27.4
 ```
 
-### 2. Instala FVM y configura la versión de Flutter
-
-Se recomienda usar [FVM](https://fvm.app/) para garantizar la versión correcta de Flutter:
-
-```bash
-dart pub global activate fvm
-fvm install 3.32.4
-fvm use 3.32.4
-```
-
-> **Nota:** Si no tienes FVM, puedes instalarlo siguiendo la [guía oficial](https://fvm.app/docs/getting_started/installation/).
-
-### 3. Instala las dependencias
-
+### 3. Obtener Dependencias
 ```bash
 fvm flutter pub get
 ```
 
-### 4. Ejecuta la aplicación
-
+### 4. Lanzamiento
+Ejecuta el entorno de desarrollo:
 ```bash
 fvm flutter run
 ```
 
 ---
 
-## 📦 Cómo generar APK (Android) y IPA (iOS)
+## 📦 Generación de Entregables
 
-### Generar APK para Android
-
+### Android (APK & Bundles)
 ```bash
 fvm flutter build apk --release
+fvm flutter build appbundle --release
 ```
-El archivo APK se generará en `build/app/outputs/flutter-apk/app-release.apk`.
 
-### Generar IPA para iOS
-
-1. Abre el proyecto en Xcode:
-   ```bash
-   open ios/Runner.xcworkspace
-   ```
-2. Selecciona tu equipo de desarrollo y dispositivo.
-3. Ejecuta:
-   ```bash
-   fvm flutter build ipa --release
-   ```
-4. Sigue el flujo de Xcode para firmar y exportar el IPA.
-
-> **Nota:** Para compilar en iOS necesitas una Mac y una cuenta de desarrollador de Apple.
+### iOS (IPA)
+```bash
+fvm flutter build ipa --release
+```
 
 ---
 
-## 📝 Reglas para contribuir
+## 🤝 Contribución Experta
 
-1. **Usa FVM y la versión especificada de Flutter.**
-2. Crea una rama para tu feature o corrección:
+1. **Estandar de Versión**: Siempre utiliza `fvm flutter` en lugar de `flutter`.
+2. **Feature Branching**: 
    ```bash
-   git checkout -b nombre-de-tu-rama
+   git checkout -b feature/nombre-mejora
    ```
-3. Realiza tus cambios y asegúrate de que todo funcione correctamente.
-4. Haz commit y push de tus cambios:
+3. **Calidad de Código**: Asegúrate de pasar el análisis antes de enviar:
    ```bash
-   git add .
-   git commit -m "Descripción clara de los cambios"
-   git push origin nombre-de-tu-rama
+   fvm flutter analyze
    ```
-5. Abre un **Pull Request** describiendo detalladamente tus aportes.
-6. Espera la revisión y feedback antes de fusionar.
 
 ---
 
-## 📬 Envío de cambios
+## 👤 Autor & Lead Developer
 
-- Todos los cambios deben pasar por revisión antes de ser fusionados.
-- Mantén una comunicación clara y proporciona contexto sobre tus aportes.
-- Si tienes dudas, abre un issue o contacta directamente.
+**Jorge Marroquín** - [GitHub @GrullonDev](https://github.com/GrullonDev)
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+Este software se distribuye bajo la **Licencia MIT**. Siéntete libre de usarlo, aprender de él y mejorarlo.
 
 ---
-
-## 📚 Recursos útiles
-
-- [Documentación oficial de Flutter](https://docs.flutter.dev/)
-- [FVM - Flutter Version Management](https://fvm.app/)
-- [Hive - Documentación](https://docs.hivedb.dev/)
-- [Syncfusion Flutter Charts](https://pub.dev/packages/syncfusion_flutter_charts)
-
----
-
-## 🌟 ¡Ayúdanos a crecer!
-
-Si te gusta este proyecto, dale ⭐️ al repositorio y compártelo con tus amigos y colegas.  
-Tu apoyo nos ayuda a llegar a más personas y hacer que esta aplicación sea la más profesional y gratuita para todos.
-
----
-
-¡Gracias por tu interés y por ayudar a crecer este proyecto!
+¡Si este proyecto te ha servido, no olvides darle una ⭐️ en GitHub para apoyarnos!
