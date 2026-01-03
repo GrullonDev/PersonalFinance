@@ -4,6 +4,8 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
+import 'package:personal_finance/core/presentation/widgets/custom_text_field.dart';
+import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
 import 'package:personal_finance/features/auth/domain/auth_failure.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
@@ -16,11 +18,13 @@ class AuthLayout extends StatelessWidget {
   Widget build(BuildContext context) => Consumer<AuthProvider>(
     builder:
         (BuildContext context, AuthProvider authProvider, Widget? child) =>
-            SingleChildScrollView(
+            GlassContainer(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const SizedBox(height: 55),
+                  const SizedBox(height: 16),
                   _buildLogoAndWelcome(context),
                   _buildEmailAndPasswordFields(context, authProvider),
                   const SizedBox(height: 24),
@@ -28,6 +32,7 @@ class AuthLayout extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildSocialLoginOptions(context, authProvider),
                   _buildSignUpLink(context),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -36,29 +41,43 @@ class AuthLayout extends StatelessWidget {
   Widget _buildLogoAndWelcome(BuildContext context) => Column(
     children: <Widget>[
       Container(
-        width: 120,
-        height: 120,
-        decoration: const BoxDecoration(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.blue,
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade400, Colors.blue.shade900],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: const Icon(
           Icons.account_balance_wallet,
-          size: 60,
+          size: 50,
           color: Colors.white,
         ),
       ),
       const SizedBox(height: 24),
       Text(
         'Bienvenido de nuevo',
-        style: Theme.of(context).textTheme.headlineMedium,
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       const SizedBox(height: 8),
       Text(
         'Inicia sesión para continuar',
         style: Theme.of(
           context,
-        ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+        ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
       ),
       const SizedBox(height: 32),
     ],
@@ -71,13 +90,10 @@ class AuthLayout extends StatelessWidget {
     key: authProvider.formKey,
     child: Column(
       children: <Widget>[
-        TextFormField(
+        CustomTextField(
           controller: authProvider.emailController,
-          decoration: const InputDecoration(
-            labelText: 'Correo electrónico',
-            prefixIcon: Icon(Icons.email),
-            border: OutlineInputBorder(),
-          ),
+          label: 'Correo electrónico',
+          prefixIcon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
           validator: (String? value) {
             if (value == null || value.isEmpty) {
@@ -90,21 +106,19 @@ class AuthLayout extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-        TextFormField(
+        CustomTextField(
           controller: authProvider.passwordController,
           obscureText: authProvider.obscurePassword,
-          decoration: InputDecoration(
-            labelText: 'Contraseña',
-            prefixIcon: const Icon(Icons.lock),
-            suffixIcon: IconButton(
-              icon: Icon(
-                authProvider.obscurePassword
-                    ? Icons.visibility
-                    : Icons.visibility_off,
-              ),
-              onPressed: authProvider.togglePasswordVisibility,
+          label: 'Contraseña',
+          prefixIcon: Icons.lock_outline,
+          suffixIcon: IconButton(
+            icon: Icon(
+              authProvider.obscurePassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              color: Colors.white70,
             ),
-            border: const OutlineInputBorder(),
+            onPressed: authProvider.togglePasswordVisibility,
           ),
           validator: (String? value) {
             if (value == null || value.isEmpty) {
@@ -128,75 +142,85 @@ class AuthLayout extends StatelessWidget {
                 ),
               );
             },
-            child: const Text('¿Olvidaste tu contraseña?'),
+            child: const Text(
+              '¿Olvidaste tu contraseña?',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
         ),
       ],
     ),
   );
 
-  Widget _buildLoginButton(
-    BuildContext context,
-    AuthProvider authProvider,
-  ) => SizedBox(
-    width: double.infinity,
-    height: 50,
-    child: ElevatedButton(
-      onPressed:
-          authProvider.isLoading
-              ? null
-              : () async {
-                final Either<AuthFailure, void> result =
-                    await authProvider.login();
-                result.fold(
-                  (AuthFailure failure) {
-                    if (failure.shouldNavigateToRegister) {
-                      // Show a snackbar with an action to navigate to register
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(failure.message),
-                          action: SnackBarAction(
-                            label: 'Crear cuenta',
-                            textColor: Colors.blue,
-                            onPressed: () {
-                              // Navigate to the registration screen
-                              // Replace with your actual registration route
-                              Navigator.pushReplacementNamed(
-                                context,
-                                RoutePath
-                                    .register, // Make sure this route is defined in your RoutePath
-                              );
-                            },
-                          ),
-                          duration: const Duration(seconds: 5),
-                        ),
-                      );
-                    } else {
-                      // Show regular error message
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(failure.message)));
-                    }
-                  },
-                  (_) {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      RoutePath.dashboard,
+  Widget _buildLoginButton(BuildContext context, AuthProvider authProvider) =>
+      SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed:
+              authProvider.isLoading
+                  ? null
+                  : () async {
+                    final Either<AuthFailure, void> result =
+                        await authProvider.login();
+                    result.fold(
+                      (AuthFailure failure) {
+                        if (failure.shouldNavigateToRegister) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(failure.message),
+                              action: SnackBarAction(
+                                label: 'Crear cuenta',
+                                textColor: Colors.blue,
+                                onPressed: () {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    RoutePath.register,
+                                  );
+                                },
+                              ),
+                              duration: const Duration(seconds: 5),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(failure.message)),
+                          );
+                        }
+                      },
+                      (_) {
+                        Navigator.pushReplacementNamed(
+                          context,
+                          RoutePath.dashboard,
+                        );
+                      },
                     );
                   },
-                );
-              },
-      style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child:
-          authProvider.isLoading
-              ? const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              )
-              : const Text('Iniciar sesión', style: TextStyle(fontSize: 16)),
-    ),
-  );
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            backgroundColor: Colors.blue.shade600,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shadowColor: Colors.blue.withOpacity(0.5),
+          ),
+          child:
+              authProvider.isLoading
+                  ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2,
+                    ),
+                  )
+                  : const Text(
+                    'Iniciar sesión',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+        ),
+      );
 
   Widget _buildSocialLoginOptions(
     BuildContext context,
@@ -207,7 +231,7 @@ class AuthLayout extends StatelessWidget {
         'O inicia sesión con',
         style: Theme.of(
           context,
-        ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+        ).textTheme.bodyMedium?.copyWith(color: Colors.white60),
       ),
       const SizedBox(height: 16),
       Row(
@@ -249,12 +273,21 @@ class AuthLayout extends StatelessWidget {
   Widget _buildSignUpLink(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.center,
     children: <Widget>[
-      const Text('¿No tienes una cuenta? '),
+      const Text(
+        '¿No tienes una cuenta? ',
+        style: TextStyle(color: Colors.white70),
+      ),
       TextButton(
         onPressed: () {
           Navigator.pushNamed(context, RoutePath.register);
         },
-        child: const Text('Regístrate'),
+        child: const Text(
+          'Regístrate',
+          style: TextStyle(
+            color: Colors.blueAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     ],
   );
@@ -262,8 +295,19 @@ class AuthLayout extends StatelessWidget {
   Widget _buildSocialButton({
     required VoidCallback onPressed,
     required String icon,
-  }) => IconButton(
-    onPressed: onPressed,
-    icon: SvgPicture.asset(icon, height: 24),
+  }) => Container(
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.1),
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white.withOpacity(0.2)),
+    ),
+    child: IconButton(
+      onPressed: onPressed,
+      icon: SvgPicture.asset(
+        icon,
+        height: 24,
+        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+      ),
+    ),
   );
 }

@@ -13,6 +13,7 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
     as tx_backend;
 import 'package:personal_finance/utils/budget_category_prefs.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
@@ -155,6 +156,9 @@ class BudgetsCrudPage extends StatelessWidget {
       context: context,
       builder:
           (BuildContext context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             title: const Text('Eliminar presupuesto'),
             content: const Text('¿Deseas eliminar este presupuesto?'),
             actions: <Widget>[
@@ -164,6 +168,10 @@ class BudgetsCrudPage extends StatelessWidget {
               ),
               FilledButton.tonal(
                 onPressed: () => Navigator.pop(context, true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF2D55).withOpacity(0.1),
+                  foregroundColor: const Color(0xFFFF2D55),
+                ),
                 child: const Text('Eliminar'),
               ),
             ],
@@ -173,7 +181,6 @@ class BudgetsCrudPage extends StatelessWidget {
   }
 
   Future<void> _openDialog(BuildContext context, {Budget? budget}) async {
-    // Captura el bloc con el contexto padre antes de abrir el diálogo
     final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final TextEditingController nameCtrl = TextEditingController(
@@ -287,13 +294,16 @@ class BudgetsCrudPage extends StatelessWidget {
     );
 
     if (saved == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            budget == null ? 'Presupuesto creado' : 'Presupuesto actualizado',
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              budget == null ? 'Presupuesto creado' : 'Presupuesto actualizado',
+            ),
+            behavior: SnackBarBehavior.floating,
           ),
-        ),
-      );
+        );
+      }
     }
   }
 }
@@ -313,6 +323,7 @@ class _BudgetCardState extends State<_BudgetCard> {
   Widget build(BuildContext context) {
     final tx_backend.TransactionBackendRepository repo =
         context.read<tx_backend.TransactionBackendRepository>();
+    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
 
     return FutureBuilder<double>(
       future: _spent(repo),
@@ -327,99 +338,155 @@ class _BudgetCardState extends State<_BudgetCard> {
 
         final CategoriesState catsState = context.watch<CategoriesBloc>().state;
 
-        return Card(
+        return Container(
+          decoration: BoxDecoration(
+            color: colors.glassBackground, // Glassmorphism background
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colors.glassBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => _openBudgetDialog(context),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   // Header: Icon + Name + Percentage + Edit Button
                   Row(
                     children: <Widget>[
-                      const Icon(Icons.pie_chart, size: 24),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          widget.budget.nombre,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}%',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
                           color:
-                              over
-                                  ? Colors.red
-                                  : Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.tertiaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.pie_chart_outline_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.tertiary,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        tooltip: 'Asignar categorías',
-                        icon: const Icon(Icons.tune),
-                        onPressed: _assignCategories,
-                        iconSize: 20,
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.budget.nombre,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              range,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color?.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color:
+                                  over
+                                      ? const Color(0xFFFF2D55)
+                                      : Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: _assignCategories,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Icon(
+                                Icons.tune_rounded,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-
-                  // Date Range
-                  Text(range, style: Theme.of(context).textTheme.bodyMedium),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
 
                   // Progress Bar
-                  LinearProgressIndicator(
-                    value: progress.isNaN ? 0.0 : progress,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
-                    backgroundColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    color:
-                        over
-                            ? Colors.red
-                            : Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Amounts
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text(
-                        'Gastado: \\${spent.toStringAsFixed(2)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      Text(
-                        'Total: \\${total.toStringAsFixed(2)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                  Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progress.isNaN ? 0.0 : progress,
+                          minHeight: 10,
+                          backgroundColor:
+                              Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                          color:
+                              over
+                                  ? const Color(0xFFFF2D55)
+                                  : Theme.of(context).colorScheme.primary,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                            'Gastado: \$${spent.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            'Total: \$${total.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
 
                   // Categories
                   if (_categoryIds.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    const Divider(),
                     const SizedBox(height: 12),
                     Text(
-                      'Categorías asignadas:',
-                      style: Theme.of(context).textTheme.labelSmall,
+                      'Categorías monitoreadas:',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -439,9 +506,22 @@ class _BudgetCardState extends State<_BudgetCard> {
                                           ),
                                     )
                                     .nombre;
-                            return InputChip(
-                              label: Text(name),
+                            return Chip(
+                              label: Text(
+                                name,
+                                style: const TextStyle(fontSize: 11),
+                              ),
                               visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              labelPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withOpacity(0.5),
+                              side: BorderSide.none,
+                              deleteIcon: const Icon(Icons.close, size: 14),
                               onDeleted: () async {
                                 final List<String> list = List<String>.from(
                                   _categoryIds,
@@ -481,6 +561,10 @@ class _BudgetCardState extends State<_BudgetCard> {
     final bool? saved = await showModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).canvasColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder:
           (BuildContext ctx) => SafeArea(
             child: Padding(
@@ -490,9 +574,11 @@ class _BudgetCardState extends State<_BudgetCard> {
                 children: <Widget>[
                   Text(
                     'Asignar categorías',
-                    style: Theme.of(ctx).textTheme.titleMedium,
+                    style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Expanded(
                     child: ListView(
                       children:
@@ -504,14 +590,25 @@ class _BudgetCardState extends State<_BudgetCard> {
                                 (cat_entity.Category c) => CheckboxListTile(
                                   value: selected.contains(c.id),
                                   title: Text(c.nombre),
-                                  secondary: Icon(
-                                    c.tipo.toLowerCase() == 'ingreso'
-                                        ? Icons.trending_up
-                                        : Icons.trending_down,
-                                    color:
-                                        c.tipo.toLowerCase() == 'ingreso'
-                                            ? Colors.green
-                                            : Colors.red,
+                                  secondary: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: (c.tipo.toLowerCase() == 'ingreso'
+                                              ? Colors.green
+                                              : Colors.red)
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      c.tipo.toLowerCase() == 'ingreso'
+                                          ? Icons.trending_up
+                                          : Icons.trending_down,
+                                      color:
+                                          c.tipo.toLowerCase() == 'ingreso'
+                                              ? Colors.green
+                                              : Colors.red,
+                                      size: 18,
+                                    ),
                                   ),
                                   onChanged: (bool? v) {
                                     if (v == true) {
@@ -526,11 +623,18 @@ class _BudgetCardState extends State<_BudgetCard> {
                               .toList(),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
                     child: FilledButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Guardar'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('Guardar Cambios'),
                     ),
                   ),
                 ],
@@ -545,8 +649,7 @@ class _BudgetCardState extends State<_BudgetCard> {
     }
   }
 
-  String _fmt2(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  String _fmt2(DateTime d) => '${d.day}/${d.month}';
 
   Future<void> _loadCategories() async {
     if (widget.budget.id != null) {
@@ -715,8 +818,13 @@ class _DateTile extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
-      Text(label, style: Theme.of(context).textTheme.bodySmall),
-      const SizedBox(height: 4),
+      Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
       InkWell(
         onTap: () async {
           final DateTime? picked = await showDatePicker(
@@ -724,21 +832,40 @@ class _DateTile extends StatelessWidget {
             initialDate: value,
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),
+            builder: (BuildContext context, Widget? child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: Theme.of(context).colorScheme.copyWith(
+                    primary: Theme.of(context).primaryColor,
+                  ),
+                ),
+                child: child!,
+              );
+            },
           );
           if (picked != null) onPick(picked);
         },
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.2),
+            ),
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).colorScheme.surface,
           ),
           child: Row(
             children: <Widget>[
-              const Icon(Icons.date_range, size: 18),
+              Icon(
+                Icons.calendar_today_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Text(
-                '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}',
+                '${value.day}/${value.month}/${value.year}',
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
             ],
           ),
