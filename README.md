@@ -43,12 +43,12 @@ dart pub global activate fvm
 ```
 
 ### 2. Configurar el Proyecto
-Clona e inicializa con la versión específica de Flutter (`3.27.4`):
+Clona e inicializa con la versión específica de Flutter (`3.38.0`):
 ```bash
 git clone https://github.com/GrullonDev/personal_finance.git
 cd personal_finance
-fvm install 3.27.4
-fvm use 3.27.4
+fvm install 3.38.0
+fvm use 3.38.0
 ```
 
 ### 3. Obtener Dependencias
