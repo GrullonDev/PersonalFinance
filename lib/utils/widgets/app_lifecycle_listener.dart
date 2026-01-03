@@ -17,13 +17,14 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
     with WidgetsBindingObserver {
   final _biometricService = BiometricService();
   bool _isLocking = false;
+  bool _isAuthenticating = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Verificar bloqueo al inicio
-    _checkLock();
+    // Verificar bloqueo al inicio con un pequeño delay para asegurar que el AuthProvider esté listo
+    Future.delayed(const Duration(milliseconds: 500), _checkLock);
   }
 
   @override
@@ -35,6 +36,10 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    // Si estamos en medio de una autenticación biométrica, ignoramos el ciclo de vida
+    // ya que el diálogo nativo causa transiciones de pausa/resumen.
+    if (_isAuthenticating) return;
+
     if (state == AppLifecycleState.resumed) {
       // Al volver a primer plano
       final AuthProvider auth = context.read<AuthProvider>();
@@ -44,23 +49,40 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
   }
 
   Future<void> _checkLock() async {
-    if (_isLocking) return;
+    if (_isLocking || _isAuthenticating) return;
 
     final prefs = await SharedPreferences.getInstance();
+
+    // Solo bloqueamos si el onboarding está completo
+    final bool onboardingComplete =
+        prefs.getBool('onboarding_complete') ?? false;
+    if (!onboardingComplete) return;
+
+    // Solo bloqueamos si el usuario está autenticado
+    final AuthProvider auth = context.read<AuthProvider>();
+    if (!auth.isAuthenticated) return;
+
     final bool appLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
 
     if (appLockEnabled) {
-      setState(() => _isLocking = true);
-      final bool authenticated = await _biometricService.authenticate(
-        localizedReason:
-            'Acceso Protegido: Confirma tu identidad para continuar',
-      );
+      setState(() {
+        _isLocking = true;
+        _isAuthenticating = true;
+      });
 
-      if (authenticated) {
-        setState(() => _isLocking = false);
+      try {
+        final bool authenticated = await _biometricService.authenticate(
+          localizedReason:
+              'Acceso Protegido: Confirma tu identidad para continuar',
+        );
+
+        if (authenticated) {
+          setState(() => _isLocking = false);
+        }
+      } finally {
+        // Siempre quitar el flag de autenticación después de la llamada nativa
+        setState(() => _isAuthenticating = false);
       }
-      // Removed recursive _checkLock() call to prevent infinite loops.
-      // The user can retry using the button in the UI.
     }
   }
 

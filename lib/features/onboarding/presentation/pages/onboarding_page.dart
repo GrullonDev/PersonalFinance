@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
 import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
 import 'package:personal_finance/utils/app_localization.dart';
@@ -122,9 +123,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_index == _steps.length - 1) {
-                      Navigator.pushReplacementNamed(context, RoutePath.login);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('onboarding_complete', true);
+                      if (mounted) {
+                        Navigator.pushReplacementNamed(
+                          context,
+                          RoutePath.login,
+                        );
+                      }
                     } else {
                       _controller.nextPage(
                         duration: const Duration(milliseconds: 300),

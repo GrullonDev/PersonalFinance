@@ -114,14 +114,21 @@ class _HomePageState extends State<HomePage> {
         onTap: _onNavTap,
         onAddPressed: () => _onAddPressed(context),
       ),
-      floatingActionButton: Builder(
-        builder:
-            (BuildContext innerCtx) => FloatingActionButton(
-              onPressed: () => _onAddPressed(innerCtx),
-              elevation: 4,
-              child: const Icon(Icons.add, size: 32, color: Colors.white),
-            ),
-      ),
+      floatingActionButton:
+          (_currentIndex == 1 || _currentIndex == 2)
+              ? null
+              : Builder(
+                builder:
+                    (BuildContext innerCtx) => FloatingActionButton(
+                      onPressed: () => _onAddPressed(innerCtx),
+                      elevation: 4,
+                      child: const Icon(
+                        Icons.add,
+                        size: 32,
+                        color: Colors.white,
+                      ),
+                    ),
+              ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     ),
   );
