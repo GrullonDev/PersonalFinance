@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
     as notif_repo;
+import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
+import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -30,7 +32,7 @@ class SettingsPage extends StatelessWidget {
         _buildSettingItem(
           context,
           icon: Icons.person,
-          iconColor: Colors.blue,
+          iconColor: Theme.of(context).colorScheme.primary,
           title: 'Perfil',
           subtitle: 'Administra tu información personal',
           onTap: () {
@@ -81,18 +83,48 @@ class SettingsPage extends StatelessWidget {
             );
           },
         ),
-        _buildSectionTitle(context, 'AYUDA'),
+        _buildSectionTitle(context, 'AYUDA Y LEGAL'),
         _buildSettingItem(
           context,
-          icon: Icons.help,
+          icon: Icons.help_outline,
           iconColor: Colors.purple,
-          title: 'Ayuda/Soporte',
-          subtitle: 'Obtén respuestas a tus preguntas',
+          title: 'Centro de Ayuda',
+          subtitle: 'Preguntas frecuentes y soporte',
           onTap: () {
             Navigator.push<void>(
               context,
               MaterialPageRoute<void>(
                 builder: (BuildContext context) => const HelpDetailPage(),
+              ),
+            );
+          },
+        ),
+        _buildSettingItem(
+          context,
+          icon: Icons.privacy_tip_outlined,
+          iconColor: Colors.blueGrey,
+          title: 'Privacidad',
+          subtitle: 'Tu protección es nuestra prioridad',
+          onTap: () {
+            Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const PrivacyPolicyPage(),
+              ),
+            );
+          },
+        ),
+        _buildSettingItem(
+          context,
+          icon: Icons.info_outline,
+          iconColor: Colors.teal,
+          title: 'Acerca de',
+          subtitle: 'Versión e información legal',
+          onTap: () {
+            Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const AboutPage(),
               ),
             );
           },
@@ -128,10 +160,15 @@ class SettingsPage extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.dark_mode, color: Colors.blue),
+                        child: Icon(
+                          Icons.dark_mode,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -160,7 +197,7 @@ class SettingsPage extends StatelessWidget {
                         onChanged: (_) async {
                           await settings.toggleDarkMode();
                         },
-                        activeThumbColor: Colors.blue,
+                        activeColor: Theme.of(context).colorScheme.primary,
                       ),
                     ],
                   ),

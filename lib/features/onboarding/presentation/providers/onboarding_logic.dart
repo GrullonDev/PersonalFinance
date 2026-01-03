@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:personal_finance/features/onboarding/domain/entities/onboarding_model.dart';
 
@@ -34,7 +35,7 @@ class OnboardingLogic extends ChangeNotifier {
   }
 
   Future<void> completeOnboarding() async {
-    // TODO: Implementar la lógica para marcar el onboarding como completado
-    // Esto podría incluir guardar un valor en SharedPreferences
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete', true);
   }
 }

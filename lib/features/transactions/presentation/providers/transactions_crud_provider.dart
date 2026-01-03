@@ -17,7 +17,7 @@ class TransactionsCrudProvider extends ChangeNotifier {
   // Filtros
   DateTime? _desde;
   DateTime? _hasta;
-  int? _categoriaId;
+  String? _categoriaId;
   String? _tipo; // 'ingreso' | 'gasto'
 
   List<TransactionBackend> get items =>
@@ -27,13 +27,13 @@ class TransactionsCrudProvider extends ChangeNotifier {
 
   DateTime? get fechaDesde => _desde;
   DateTime? get fechaHasta => _hasta;
-  int? get categoriaId => _categoriaId;
+  String? get categoriaId => _categoriaId;
   String? get tipo => _tipo;
 
   void setFilters({
     DateTime? desde,
     DateTime? hasta,
-    int? categoriaId,
+    String? categoriaId,
     String? tipo,
   }) {
     _desde = desde;

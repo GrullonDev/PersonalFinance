@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
 class Budget extends Equatable {
-  final int? id;
+  final String? id;
   final String nombre;
   final String montoTotal; // keep as string
   final DateTime fechaInicio;
   final DateTime fechaFin;
-  final int? profileId;
+  final String? profileId;
 
   const Budget({
     required this.nombre,
@@ -18,12 +18,12 @@ class Budget extends Equatable {
   });
 
   Budget copyWith({
-    int? id,
+    String? id,
     String? nombre,
     String? montoTotal,
     DateTime? fechaInicio,
     DateTime? fechaFin,
-    int? profileId,
+    String? profileId,
   }) => Budget(
     id: id ?? this.id,
     nombre: nombre ?? this.nombre,

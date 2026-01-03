@@ -3,374 +3,429 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:personal_finance/features/profile/domain/entities/profile_info.dart';
 import 'package:personal_finance/features/profile/presentation/widgets/profile_menu_item.dart';
-// import 'package:personal_finance/features/profile/presentation/widgets/recent_activity_list.dart';
-import 'package:personal_finance/features/profile/presentation/widgets/quick_add_category.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:provider/provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
 import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
     as notif_repo;
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/settings/presentation/pages/notifications_detail_page.dart';
-import 'package:personal_finance/utils/theme.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:personal_finance/features/categories/presentation/pages/categories_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
+import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
+  Widget build(BuildContext context) => BlocBuilder<ProfileBloc, ProfileState>(
+    builder: (BuildContext context, ProfileState state) {
+      if (state.loading) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-    return BlocBuilder<ProfileBloc, ProfileState>(
-      builder: (BuildContext context, ProfileState state) {
-        final Widget child;
-        if (state.loading) {
-          child = const Center(child: CircularProgressIndicator());
-        } else if (state.error != null) {
-          child = Center(child: Text(state.error!));
-        } else {
-          final String fullName = state.info?.fullName ?? '';
-          final String email = state.info?.email ?? '';
+      if (state.error != null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(state.error!, style: TextStyle(color: Colors.grey[600])),
+            ],
+          ),
+        );
+      }
 
-          child = Stack(
-            children: [
-              // Ambient Lights (optional, could be inherited from scaffold if moved to global)
-              // Including here for emphasis on profile page
-              Positioned(
-                top: -80,
-                right: -50,
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.15),
-                      shape: BoxShape.circle,
+      final String fullName = state.info?.fullName ?? 'Usuario';
+      final String email = state.info?.email ?? '';
+      final String? photoUrl = state.info?.photoUrl;
+      final String initials = _getInitials(fullName);
+
+      return CustomScrollView(
+        slivers: <Widget>[
+          // Header con gradiente verde
+          _buildHeader(context, fullName, email, initials, photoUrl),
+
+          // Contenido
+          SliverToBoxAdapter(
+            child: Column(
+              children: <Widget>[
+                const SizedBox(height: 20),
+
+                // Secciones de menú
+                _buildMenuSection(
+                  context,
+                  title: 'CUENTA',
+                  items: <Widget>[
+                    ProfileMenuItem(
+                      icon: Icons.person_outline,
+                      title: 'Editar perfil',
+                      // subtitle: 'Actualiza tu información personal',
+                      onTap: () {
+                        final bloc = context.read<ProfileBloc>();
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder:
+                                (_) => BlocProvider<ProfileBloc>.value(
+                                  value: bloc,
+                                  child: const EditProfilePage(),
+                                ),
+                          ),
+                        );
+                      },
+                    ),
+                    ProfileMenuItem(
+                      icon: Icons.security,
+                      title: 'Seguridad',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const SecurityDetailPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildMenuSection(
+                  context,
+                  title: 'PREFERENCIAS',
+                  items: <Widget>[
+                    ProfileMenuItem(
+                      icon: Icons.notifications_none,
+                      title: 'Notificaciones',
+                      // subtitle: 'Gestiona tus alertas',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const _NotificationsEntry(),
+                          ),
+                        );
+                      },
+                    ),
+                    ProfileMenuItem(
+                      icon: Icons.category_outlined,
+                      title: 'Gestionar Categorías',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const CategoriesPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    ProfileMenuItem(
+                      icon: Icons.palette_outlined,
+                      title: 'Apariencia',
+                      // subtitle: 'Tema y personalización',
+                      onTap: () {
+                        Navigator.pushNamed(context, '/settings');
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildMenuSection(
+                  context,
+                  title: 'AYUDA Y SOPORTE',
+                  items: <Widget>[
+                    ProfileMenuItem(
+                      icon: Icons.help_outline,
+                      title: 'Centro de ayuda',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const HelpDetailPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    ProfileMenuItem(
+                      icon: Icons.info_outline,
+                      title: 'Acerca de',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AboutPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    ProfileMenuItem(
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Política de privacidad',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const PrivacyPolicyPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 32),
+
+                // Botón de cerrar sesión
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _handleLogout(context),
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Cerrar sesión'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: <Widget>[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 40,
-                      ),
-                      child: Column(
-                        children: <Widget>[
-                          // Profile Header with Glass Effect
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: colors.glassBackground,
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(color: colors.glassBorder),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: <Widget>[
-                                Container(
-                                  padding: const EdgeInsets.all(3),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                      width: 2,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.3),
-                                        blurRadius: 10,
-                                      ),
-                                    ],
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 35,
-                                    backgroundColor:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.surfaceContainerHighest,
-                                    child: Text(
-                                      (fullName.isNotEmpty ? fullName[0] : '?')
-                                          .toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      Text(
-                                        fullName,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        email,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.copyWith(
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.color
-                                              ?.withOpacity(0.7),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.primaryContainer,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Pro Member',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimaryContainer,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 30),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
+  );
 
-                          // Quick Actions
-                          // Row(
-                          //   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          //   children: <Widget>[
-                          //     _QuickActionButton(
-                          //       icon: Icons.dashboard_rounded,
-                          //       label: 'Dashboard',
-                          //       onTap: () {},
-                          //     ),
-                          //     _QuickActionButton(
-                          //       icon: Icons.account_balance_wallet_rounded,
-                          //       label: 'Presupuestos',
-                          //       onTap: () {},
-                          //     ),
-                          //     _QuickActionButton(
-                          //       icon: Icons.flag_rounded,
-                          //       label: 'Metas',
-                          //       onTap: () {},
-                          //     ),
-                          //      _QuickActionButton(
-                          //       icon: Icons.credit_card_rounded,
-                          //       label: 'Tarjetas',
-                          //       onTap: () {},
-                          //     ),
-                          //   ],
-                          // ),
-                          // const SizedBox(height: 30),
+  String _getInitials(String name) {
+    if (name.isEmpty) return '?';
+    final List<String> parts = name.trim().split(' ');
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
+  }
 
-                          // Menu Items Group
-                          Container(
-                            decoration: BoxDecoration(
-                              color: colors.glassBackground,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: colors.glassBorder),
-                            ),
-                            child: Column(
-                              children: [
-                                _ProfileGlassTile(
-                                  icon: Icons.notifications_outlined,
-                                  title: 'Notificaciones',
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder:
-                                            (BuildContext _) =>
-                                                const _NotificationsEntry(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  child: Divider(
-                                    height: 1,
-                                    color: Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.1),
-                                  ),
-                                ),
-                                _ProfileGlassTile(
-                                  icon: Icons.lock_outline_rounded,
-                                  title: 'Privacidad y seguridad',
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder:
-                                            (BuildContext _) =>
-                                                const _PrivacySecurityPage(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  child: Divider(
-                                    height: 1,
-                                    color: Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.1),
-                                  ),
-                                ),
-                                _ProfileGlassTile(
-                                  icon: Icons.help_outline_rounded,
-                                  title: 'Centro de ayuda',
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder:
-                                            (BuildContext _) =>
-                                                const _HelpCenterPage(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  child: Divider(
-                                    height: 1,
-                                    color: Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.1),
-                                  ),
-                                ),
-                                _ProfileGlassTile(
-                                  icon: Icons.info_outline_rounded,
-                                  title: 'Acerca de',
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder:
-                                            (BuildContext _) =>
-                                                const _AboutPage(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Add logout or other actions via AuthProvider/BLoC if needed
-                        ],
-                      ),
+  Widget _buildHeader(
+    BuildContext context,
+    String fullName,
+    String email,
+    String initials,
+    String? photoUrl,
+  ) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final ProfileInfo? info = context.read<ProfileBloc>().state.info;
+
+    // Usar firstName y lastName si están disponibles, sino usar fullName
+    final String displayName =
+        (info?.firstName != null && info?.lastName != null)
+            ? '${info!.firstName} ${info.lastName}'
+            : fullName;
+
+    return SliverAppBar(
+      expandedHeight: 200,
+      pinned: true,
+      backgroundColor: primaryColor,
+      automaticallyImplyLeading: false, // Quita la flecha de retroceso
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[
+                primaryColor,
+                primaryColor.withValues(alpha: 0.8),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  // Avatar grande con foto o iniciales
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
+                    child:
+                        photoUrl != null && photoUrl.isNotEmpty
+                            ? (photoUrl.contains('://')
+                                ? ClipOval(
+                                  child: Image.network(
+                                    photoUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (_, __, ___) => _buildInitialsAvatar(
+                                          context,
+                                          info?.firstName,
+                                          info?.lastName,
+                                          primaryColor,
+                                        ),
+                                  ),
+                                )
+                                : Center(
+                                  child: Text(
+                                    photoUrl,
+                                    style: const TextStyle(fontSize: 40),
+                                  ),
+                                ))
+                            : _buildInitialsAvatar(
+                              context,
+                              info?.firstName,
+                              info?.lastName,
+                              primaryColor,
+                            ),
                   ),
-                  // Quick add category section
-                  const SliverToBoxAdapter(child: QuickAddCategory()),
-                  // Recent activity section can be wired later when backend supports it
-                  const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+                  const SizedBox(height: 12),
+
+                  // Nombre (firstName + lastName)
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Email
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
-            ],
-          );
-        }
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child: child,
-        );
-      },
+            ),
+          ),
+        ),
+      ),
     );
   }
-}
 
-class _ProfileGlassTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
+  Widget _buildInitialsAvatar(
+    BuildContext context,
+    String? firstName,
+    String? lastName,
+    Color primaryColor,
+  ) {
+    String initials = '?';
 
-  const _ProfileGlassTile({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
+    if (firstName != null && firstName.isNotEmpty) {
+      initials = firstName[0].toUpperCase();
+      if (lastName != null && lastName.isNotEmpty) {
+        initials += lastName[0].toUpperCase();
+      }
+    } else if (lastName != null && lastName.isNotEmpty) {
+      initials = lastName[0].toUpperCase();
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          color: primaryColor,
         ),
-        child: Icon(
-          icon,
-          color: Theme.of(context).colorScheme.primary,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-      ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-        size: 20,
       ),
     );
+  }
+
+  Widget _buildMenuSection(
+    BuildContext context, {
+    required String title,
+    required List<Widget> items,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(children: items),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (BuildContext ctx) => AlertDialog(
+            title: const Text('Cerrar sesión'),
+            content: const Text('¿Estás seguro de que deseas cerrar sesión?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Cerrar sesión'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm == true && context.mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.logout();
+      if (context.mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(RoutePath.login, (_) => false);
+      }
+    }
   }
 }
 
@@ -387,183 +442,4 @@ class _NotificationsEntry extends StatelessWidget {
             )..load(),
         child: const NotificationsDetailPage(),
       );
-}
-
-class _PrivacySecurityPage extends StatelessWidget {
-  const _PrivacySecurityPage();
-
-  Future<String> _loadPolicy(BuildContext context) async {
-    try {
-      final String data = await DefaultAssetBundle.of(
-        context,
-      ).loadString('assets/privacy_policy.md');
-      return data;
-    } catch (_) {
-      return 'Política de privacidad no disponible.';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Privacidad y seguridad')),
-    body: FutureBuilder<String>(
-      future: _loadPolicy(context),
-      builder: (BuildContext context, AsyncSnapshot<String> snap) {
-        final String text = snap.data ?? 'Cargando...';
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: SelectableText(text),
-        );
-      },
-    ),
-  );
-}
-
-class _HelpCenterPage extends StatelessWidget {
-  const _HelpCenterPage();
-
-  static const String supportEmail = 'support@personalfinance.app';
-
-  Future<void> _contact(BuildContext context) async {
-    final Uri uri = Uri(
-      scheme: 'mailto',
-      path: supportEmail,
-      query: 'subject=Ayuda Personal Finance',
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      await Clipboard.setData(const ClipboardData(text: supportEmail));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Correo copiado al portapapeles')),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Centro de ayuda')),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
-      children: <Widget>[
-        const Text(
-          'Preguntas frecuentes',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        const Text('• ¿Cómo agrego una transacción? Usa el botón + en Inicio.'),
-        const Text(
-          '• ¿Cómo gestiono categorías? Ve a Perfil > Agregar categoría rápida.',
-        ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: () => _contact(context),
-          icon: const Icon(Icons.email),
-          label: const Text('Escríbenos'),
-        ),
-      ],
-    ),
-  );
-}
-
-class _AboutPage extends StatefulWidget {
-  const _AboutPage();
-
-  @override
-  State<_AboutPage> createState() => _AboutPageState();
-}
-
-class _AboutPageState extends State<_AboutPage> {
-  String? _version;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final PackageInfo info = await PackageInfo.fromPlatform();
-      if (mounted) setState(() => _version = info.version);
-    } catch (_) {
-      if (mounted) setState(() => _version = '1.0.1');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Acerca de')),
-    body: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            'Personal Finance',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text('Versión: ${_version ?? '...'}'),
-          const SizedBox(height: 16),
-          const Text(
-            'App para registrar ingresos y gastos, gestionar categorías, '
-            'presupuestos y metas, con sincronización a un backend y notificaciones.',
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _QuickActionButton extends StatelessWidget {
-  const _QuickActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colors.glassBackground, // Glassy button
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.glassBorder),
-              ),
-              child: Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-                size: 26,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

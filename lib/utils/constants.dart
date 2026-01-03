@@ -89,6 +89,8 @@ class AppConstants {
   };
 
   // ===== CONSTANTES DE FORMATO =====
+  /// @deprecated Use AppLocalizations.of(context).currencySymbol instead
+  /// Este símbolo es solo para compatibilidad. Usa el locale del dispositivo.
   static const String currencySymbol = '\$';
   static const String dateFormat = 'dd/MM/yyyy';
   static const String timeFormat = 'HH:mm';
@@ -135,6 +137,8 @@ class AppConstants {
       title.isNotEmpty && title.length <= maxTitleLength;
 
   /// Formatea un monto como moneda
+  /// @deprecated Use AppLocalizations.of(context).formatCurrency(amount) instead
+  /// Este método usa un símbolo hardcodeado. Prefiere usar el locale del dispositivo.
   static String formatCurrency(double amount) =>
       '$currencySymbol${amount.toStringAsFixed(2)}';
 

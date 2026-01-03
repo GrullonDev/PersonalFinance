@@ -7,5 +7,5 @@ abstract class BudgetRepository {
   Future<Either<Failure, List<Budget>>> getBudgets();
   Future<Either<Failure, Budget>> createBudget(Budget budget);
   Future<Either<Failure, Budget>> updateBudget(Budget budget);
-  Future<Either<Failure, void>> deleteBudget(int id);
+  Future<Either<Failure, void>> deleteBudget(String id);
 }

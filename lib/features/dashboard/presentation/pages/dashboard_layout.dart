@@ -1,14 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/dashboard/presentation/widgets/balance_card.dart';
 import 'package:personal_finance/features/dashboard/presentation/widgets/periodic_selector.dart';
-import 'package:personal_finance/features/data/model/expense.dart';
-import 'package:personal_finance/features/data/model/income.dart';
-import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -16,209 +13,210 @@ class DashboardLayout extends StatelessWidget {
   const DashboardLayout({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Consumer<DashboardLogic>(
-      builder:
-          (
-            BuildContext context,
-            DashboardLogic logic,
-            _,
-          ) => ValueListenableBuilder<Box<Expense>>(
-            valueListenable: Hive.box<Expense>('expenses').listenable(),
-            builder:
-                (
-                  BuildContext context,
-                  Box<Expense> expenseBox,
-                  _,
-                ) => ValueListenableBuilder<Box<Income>>(
-                  valueListenable: Hive.box<Income>('incomes').listenable(),
-                  builder: (BuildContext context, Box<Income> incomeBox, _) {
-                    if (!logic.hasData) {
-                      return _buildEmptyState(context);
-                    }
-
-                    return Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors:
-                              isDark
-                                  ? [
-                                    const Color(0xFF0F111A),
-                                    const Color(0xFF1E2130),
-                                  ]
-                                  : [
-                                    const Color(0xFFF3F4F6),
-                                    const Color(0xFFE5E7EB),
-                                  ],
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          // Ambient glows - Corrected with ImageFiltered
-                          Positioned(
-                            top: -100,
-                            right: -100,
-                            child: ImageFiltered(
-                              imageFilter: ImageFilter.blur(
-                                sigmaX: 80,
-                                sigmaY: 80,
-                              ),
-                              child: Container(
-                                width: 300,
-                                height: 300,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withOpacity(0.2),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: -50,
-                            left: -50,
-                            child: ImageFiltered(
-                              imageFilter: ImageFilter.blur(
-                                sigmaX: 60,
-                                sigmaY: 60,
-                              ),
-                              child: Container(
-                                width: 250,
-                                height: 250,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.secondary.withOpacity(0.15),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SafeArea(
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Finanzas',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.headlineMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: -0.5,
-                                        ),
-                                      ),
-                                      CircleAvatar(
-                                        radius: 20,
-                                        backgroundColor: colors.glassBorder,
-                                        child: Icon(
-                                          Icons.notifications_outlined,
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  BalanceCard(balance: logic.balance),
-                                  const SizedBox(height: 24),
-                                  Center(
-                                    child: PeriodSelector(
-                                      selected: logic.selectedPeriod.name,
-                                      onSelect: (String value) {
-                                        final PeriodFilter period = PeriodFilter
-                                            .values
-                                            .firstWhere(
-                                              (PeriodFilter e) =>
-                                                  e.name == value,
-                                            );
-                                        logic.changePeriod(period);
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _buildSummaryCards(context, logic),
-                                  const SizedBox(height: 30),
-                                  _buildSavingGoals(context),
-                                  const SizedBox(height: 30),
-                                  if (logic
-                                      .shouldShowExpensesChart) ...<Widget>[
-                                    _buildExpensesChart(context, logic),
-                                    const SizedBox(height: 30),
-                                    _buildExpensesList(context, logic),
-                                    const SizedBox(height: 30),
-                                  ],
-                                  if (logic.shouldShowIncomesList) ...<Widget>[
-                                    _buildIncomeList(context, logic),
-                                    const SizedBox(height: 30),
-                                  ],
-                                  if (logic.shouldShowTransactions) ...<Widget>[
-                                    _buildTransactionsList(context, logic),
-                                    const SizedBox(height: 30),
-                                  ],
-                                  _buildPersonalizedRecommendations(context),
-                                  const SizedBox(
-                                    height: 80,
-                                  ), // Bottom padding for nav bar
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+  Widget build(BuildContext context) => Consumer<DashboardLogic>(
+    builder: (BuildContext context, DashboardLogic logic, _) {
+      if (!logic.hasData) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 80,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No hay transacciones registradas',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[600],
                 ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Agrega tu primer gasto o ingreso\ntocando el botón +',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+            ],
           ),
-    );
-  }
+        );
+      }
 
-  Widget _buildEmptyState(BuildContext context) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(
-          Icons.account_balance_wallet_outlined,
-          size: 80,
-          color: Theme.of(context).colorScheme.outline,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'No hay transacciones registradas',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[Colors.grey.shade50, Colors.grey.shade100],
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Agrega tu primer gasto o ingreso\ntocando el botón +',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant.withOpacity(0.7),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8, bottom: 16, top: 8),
+                    child: Text(
+                      'Finanzas',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                  BalanceCard(balance: logic.balance),
+                  const SizedBox(height: 24),
+                  PeriodSelector(
+                    selected: logic.selectedPeriod.name,
+                    onSelect: (String value) {
+                      final PeriodFilter period = PeriodFilter.values
+                          .firstWhere((PeriodFilter e) => e.name == value);
+                      logic.changePeriod(period);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSummaryCards(logic),
+                  const SizedBox(height: 24),
+                  _buildSavingGoals(),
+                  const SizedBox(height: 24),
+                  if (logic.shouldShowExpensesChart) ...<Widget>[
+                    _buildExpensesChart(logic),
+                    const SizedBox(height: 24),
+                    _buildExpensesList(logic),
+                    const SizedBox(height: 24),
+                  ],
+                  if (logic.shouldShowIncomesList) ...<Widget>[
+                    _buildIncomeList(logic),
+                    const SizedBox(height: 24),
+                  ],
+                  if (logic.shouldShowTransactions) ...<Widget>[
+                    _buildTransactionsList(logic),
+                    const SizedBox(height: 24),
+                  ],
+                  _buildPersonalizedRecommendations(),
+                ],
+              ),
+            ),
           ),
         ),
-      ],
+      );
+    },
+  );
+
+  Widget _buildSummaryCards(DashboardLogic logic) => Row(
+    children: <Widget>[
+      Expanded(
+        child: _buildSummaryCard(
+          title: 'INGRESOS',
+          amount: logic.totalIncomes,
+          icon: Icons.arrow_upward,
+          gradient: const LinearGradient(
+            colors: <Color>[Colors.green, Color(0xFF4CAF50)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: _buildSummaryCard(
+          title: 'GASTOS',
+          amount: logic.totalExpenses,
+          icon: Icons.arrow_downward,
+          gradient: const LinearGradient(
+            colors: <Color>[Colors.red, Color(0xFFF44336)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildSummaryCard({
+    required String title,
+    required double amount,
+    required IconData icon,
+    required LinearGradient gradient,
+  }) => Card(
+    elevation: 8,
+    shadowColor: Colors.black38,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    child: Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: gradient,
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withAlpha(30),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(50),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withAlpha(15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            '${title == 'INGRESOS' ? '+' : '-'}\$${amount.toStringAsFixed(2)}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Total ${title.toLowerCase()}',
+            style: TextStyle(
+              color: Colors.white.withAlpha(180),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     ),
   );
 
@@ -414,167 +412,178 @@ class DashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildGlassListGroup(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Color color,
-    required List<Widget> children,
-  }) {
-    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
+  Widget _buildIncomeList(DashboardLogic logic) {
+    final List<IncomeEntity> incomes = logic.filteredIncomes;
+    final double total = logic.totalIncomes;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      decoration: BoxDecoration(
-        color: colors.glassBackground,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: colors.glassBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
+    if (incomes.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.trending_up,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'INGRESOS',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.grey,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...incomes.map(
+              (IncomeEntity income) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: Colors.green,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            income.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            logic.formatDate(income.date),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      logic.formatCurrency(income.amount),
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            if (total > 0)
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withAlpha(50)),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    const Icon(
+                      Icons.account_balance_wallet,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Total ingresos: +${logic.formatCurrency(total)}',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...children,
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildGlassSummaryCard(
-    BuildContext context, {
-    required String title,
-    required double amount,
-    required IconData icon,
-    required Color color,
-  }) {
-    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.glassBackground,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.glassBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              '\$${amount.toStringAsFixed(0)}', // Simplified currency
+  Widget _buildSavingGoals() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            const Text(
+              'Metas de Ahorro',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                letterSpacing: 0.5,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIncomeList(BuildContext context, DashboardLogic logic) {
-    if (logic.filteredIncomes.isEmpty) return const SizedBox.shrink();
-
-    return _buildGlassListGroup(
-      context,
-      title: 'Últimos Ingresos',
-      icon: Icons.trending_up_rounded,
-      color: const Color(0xFF00E676),
-      children:
-          logic.filteredIncomes
-              .take(5)
-              .map(
-                (income) => _buildListItem(
-                  context,
-                  title: income.title,
-                  subtitle: logic.formatDate(income.date),
-                  amount: '+${logic.formatCurrency(income.amount)}',
-                  color: Colors.green,
-                  isNegative: false,
-                ),
-              )
-              .toList(),
-    );
-  }
-
-  Widget _buildListItem(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required String amount,
-    required Color color,
-    required bool isNegative,
-  }) => Container(
-    margin: const EdgeInsets.only(bottom: 16),
-    child: Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Container(
-              width: 12,
-              height: 12,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Ver todas',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
               ),
             ),
-          ),
+          ],
         ),
         const SizedBox(width: 16),
         Expanded(

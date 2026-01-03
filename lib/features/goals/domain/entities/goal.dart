@@ -1,13 +1,13 @@
 import 'package:equatable/equatable.dart';
 
 class Goal extends Equatable {
-  final int? id;
+  final String? id;
   final String nombre;
   final String montoObjetivo;
   final String montoActual;
   final DateTime fechaLimite;
   final String? icono;
-  final int? profileId;
+  final String? profileId;
 
   const Goal({
     required this.nombre,
@@ -20,13 +20,13 @@ class Goal extends Equatable {
   });
 
   Goal copyWith({
-    int? id,
+    String? id,
     String? nombre,
     String? montoObjetivo,
     String? montoActual,
     DateTime? fechaLimite,
     String? icono,
-    int? profileId,
+    String? profileId,
   }) => Goal(
     id: id ?? this.id,
     nombre: nombre ?? this.nombre,

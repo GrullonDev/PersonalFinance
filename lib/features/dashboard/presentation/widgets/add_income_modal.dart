@@ -159,9 +159,10 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       await logic.addIncome(
-                        _titleController.text,
-                        _amountController.text,
-                        _selectedDate,
+                        title: _titleController.text,
+                        amount: _amountController.text,
+                        date: _selectedDate,
+                        source: _selectedCategory,
                       );
                       // Limpiar campos después de agregar
                       _titleController.clear();

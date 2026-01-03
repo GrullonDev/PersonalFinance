@@ -3,36 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
 
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
-import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
-import 'package:personal_finance/utils/injection_container.dart';
 
-class QuickAddCategory extends StatefulWidget {
+class QuickAddCategory extends StatelessWidget {
   const QuickAddCategory({super.key});
 
   @override
-  State<QuickAddCategory> createState() => _QuickAddCategoryState();
-}
-
-class _QuickAddCategoryState extends State<QuickAddCategory> {
-  late final CategoriesBloc _bloc;
-
-  @override
-  void initState() {
-    super.initState();
-    _bloc = CategoriesBloc(getIt<CategoryRepository>())..add(CategoriesLoad());
-  }
-
-  @override
-  void dispose() {
-    _bloc.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => BlocProvider<CategoriesBloc>.value(
-    value: _bloc,
-    child: const _QuickAddCategoryContent(),
-  );
+  Widget build(BuildContext context) => const _QuickAddCategoryContent();
 }
 
 class _QuickAddCategoryContent extends StatefulWidget {

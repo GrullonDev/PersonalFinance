@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +11,6 @@ import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
 import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
-import 'package:personal_finance/features/categories/presentation/providers/categories_provider.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
@@ -40,19 +41,23 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider<AuthProvider>(
         create: (_) => AuthProvider(authRepository: getIt<AuthRepository>()),
       ),
-      ChangeNotifierProvider<DashboardLogic>(create: (_) => DashboardLogic()),
+      ChangeNotifierProvider<DashboardLogic>(
+        create: (_) => getIt<DashboardLogic>(),
+      ),
       ChangeNotifierProvider<TipProvider>(create: (_) => TipProvider()),
       ChangeNotifierProvider<AlertsProvider>(create: (_) => AlertsProvider()),
       // Global providers still used across screens
-      ChangeNotifierProvider<CategoriesProvider>(
-        create:
-            (_) => CategoriesProvider(repository: getIt<CategoryRepository>()),
-      ),
       ChangeNotifierProvider<NavigationProvider>(
         create: (_) => NavigationProvider(),
       ),
       ChangeNotifierProvider<SettingsProvider>(
         create: (_) => SettingsProvider(),
+      ),
+      BlocProvider<CategoriesBloc>(
+        create:
+            (_) =>
+                CategoriesBloc(getIt<CategoryRepository>())
+                  ..add(CategoriesLoad()),
       ),
     ],
     child: Consumer2<AuthProvider, SettingsProvider>(
@@ -89,9 +94,20 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: const <Locale>[
-                Locale('es', 'GT'),
-                Locale('es', 'MX'),
-                Locale('en', 'US'),
+                Locale('es', 'GT'), // Guatemala - Quetzal (GTQ)
+                Locale('es', 'MX'), // México - Peso (MXN)
+                Locale('es', 'HN'), // Honduras - Lempira (HNL)
+                Locale('es', 'DO'), // República Dominicana - Peso (DOP)
+                Locale('es', 'CR'), // Costa Rica - Colón (CRC)
+                Locale('es', 'PA'), // Panamá - Dólar (USD)
+                Locale('es', 'SV'), // El Salvador - Dólar (USD)
+                Locale('es', 'NI'), // Nicaragua - Córdoba (NIO)
+                Locale('es', 'CO'), // Colombia - Peso (COP)
+                Locale('es', 'AR'), // Argentina - Peso (ARS)
+                Locale('es', 'CL'), // Chile - Peso (CLP)
+                Locale('es', 'PE'), // Perú - Sol (PEN)
+                Locale('es', 'ES'), // España - Euro (EUR)
+                Locale('en', 'US'), // Estados Unidos - Dólar (USD)
               ],
               locale: WidgetsBinding.instance.platformDispatcher.locale,
             ),

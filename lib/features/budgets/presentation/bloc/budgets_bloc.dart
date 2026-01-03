@@ -25,7 +25,7 @@ class BudgetUpdate extends BudgetsEvent {
 
 class BudgetDelete extends BudgetsEvent {
   BudgetDelete(this.id);
-  final int id;
+  final String id;
 }
 
 class BudgetsState extends Equatable {

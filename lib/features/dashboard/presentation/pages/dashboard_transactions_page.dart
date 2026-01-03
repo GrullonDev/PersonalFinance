@@ -138,8 +138,11 @@ class _DashboardTransactionsPageState extends State<DashboardTransactionsPage> {
                       ),
                       subtitle: Row(
                         children: <Widget>[
-                          Text(
-                            '${t.fecha.day}/${t.fecha.month}/${t.fecha.year} · Cat #${t.categoriaId}',
+                          Flexible(
+                            child: Text(
+                              '${t.fecha.day}/${t.fecha.month}/${t.fecha.year} · Cat #${t.categoriaId}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           if (t.esRecurrente)
                             const Icon(

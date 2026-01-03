@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
 class TransactionBackendModel extends Equatable {
-  final int? id;
+  final String? id;
   final String tipo; // ingreso | gasto
   final String monto; // keep string to preserve precision
   final String descripcion;
   final DateTime fecha;
-  final int categoriaId;
+  final String categoriaId;
   final bool esRecurrente;
   final int? profileId;
 
@@ -24,18 +24,12 @@ class TransactionBackendModel extends Equatable {
   factory TransactionBackendModel.fromJson(
     Map<String, dynamic> json,
   ) => TransactionBackendModel(
-    id:
-        json['id'] is int
-            ? json['id'] as int
-            : int.tryParse(json['id']?.toString() ?? ''),
+    id: json['id']?.toString(),
     tipo: json['tipo']?.toString() ?? '',
     monto: json['monto']?.toString() ?? '0',
     descripcion: json['descripcion']?.toString() ?? '',
     fecha: DateTime.tryParse(json['fecha']?.toString() ?? '') ?? DateTime.now(),
-    categoriaId:
-        json['categoria_id'] is int
-            ? json['categoria_id'] as int
-            : int.tryParse(json['categoria_id']?.toString() ?? '') ?? 0,
+    categoriaId: json['categoria_id']?.toString() ?? '0',
     esRecurrente: json['es_recurrente'] == true || json['es_recurrente'] == 1,
     profileId:
         json['profile_id'] is int
