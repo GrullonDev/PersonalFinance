@@ -12,9 +12,11 @@ import 'package:personal_finance/features/settings/presentation/pages/notificati
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:personal_finance/features/categories/presentation/pages/categories_page.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
+import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -80,11 +82,10 @@ class ProfileView extends StatelessWidget {
                     ProfileMenuItem(
                       icon: Icons.security,
                       title: 'Seguridad',
-                      // subtitle: 'Contraseña y autenticación',
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const _PrivacySecurityPage(),
+                            builder: (_) => const SecurityDetailPage(),
                           ),
                         );
                       },
@@ -141,11 +142,10 @@ class ProfileView extends StatelessWidget {
                     ProfileMenuItem(
                       icon: Icons.help_outline,
                       title: 'Centro de ayuda',
-                      // subtitle: 'Preguntas frecuentes',
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const _HelpCenterPage(),
+                            builder: (_) => const HelpDetailPage(),
                           ),
                         );
                       },
@@ -153,11 +153,10 @@ class ProfileView extends StatelessWidget {
                     ProfileMenuItem(
                       icon: Icons.info_outline,
                       title: 'Acerca de',
-                      // subtitle: 'Versión e información',
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const _AboutPage(),
+                            builder: (_) => const AboutPage(),
                           ),
                         );
                       },
@@ -165,11 +164,10 @@ class ProfileView extends StatelessWidget {
                     ProfileMenuItem(
                       icon: Icons.privacy_tip_outlined,
                       title: 'Política de privacidad',
-                      // subtitle: 'Términos y condiciones',
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const _PrivacySecurityPage(),
+                            builder: (_) => const PrivacyPolicyPage(),
                           ),
                         );
                       },
@@ -672,218 +670,4 @@ class _NotificationsEntry extends StatelessWidget {
             )..load(),
         child: const NotificationsDetailPage(),
       );
-}
-
-class _PrivacySecurityPage extends StatelessWidget {
-  const _PrivacySecurityPage();
-
-  Future<String> _loadPolicy(BuildContext context) async {
-    try {
-      final String data = await DefaultAssetBundle.of(
-        context,
-      ).loadString('assets/privacy_policy.md');
-      return data;
-    } catch (_) {
-      return 'Política de privacidad no disponible.';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Privacidad y seguridad'),
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      foregroundColor: Colors.white,
-    ),
-    body: FutureBuilder<String>(
-      future: _loadPolicy(context),
-      builder: (BuildContext context, AsyncSnapshot<String> snap) {
-        final String text = snap.data ?? 'Cargando...';
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: SelectableText(text),
-        );
-      },
-    ),
-  );
-}
-
-class _HelpCenterPage extends StatelessWidget {
-  const _HelpCenterPage();
-
-  static const String supportEmail = 'support@personalfinance.app';
-
-  Future<void> _contact(BuildContext context) async {
-    final Uri uri = Uri(
-      scheme: 'mailto',
-      path: supportEmail,
-      query: 'subject=Ayuda Personal Finance',
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      await Clipboard.setData(const ClipboardData(text: supportEmail));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Correo copiado al portapapeles')),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Centro de ayuda'),
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      foregroundColor: Colors.white,
-    ),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
-      children: <Widget>[
-        const Text(
-          'Preguntas frecuentes',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        _buildFAQItem(
-          '¿Cómo agrego una transacción?',
-          'Usa el botón + en la pantalla principal para agregar ingresos o gastos.',
-        ),
-        _buildFAQItem(
-          '¿Cómo creo una meta de ahorro?',
-          'Ve a la sección de Metas y toca el botón "Nueva meta".',
-        ),
-        _buildFAQItem(
-          '¿Cómo gestiono categorías?',
-          'Puedes agregar categorías personalizadas desde el perfil.',
-        ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: () => _contact(context),
-          icon: const Icon(Icons.email),
-          label: const Text('Escríbenos'),
-        ),
-      ],
-    ),
-  );
-
-  Widget _buildFAQItem(String question, String answer) => Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          question,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(answer, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-      ],
-    ),
-  );
-}
-
-class _AboutPage extends StatefulWidget {
-  const _AboutPage();
-
-  @override
-  State<_AboutPage> createState() => _AboutPageState();
-}
-
-class _AboutPageState extends State<_AboutPage> {
-  String? _version;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final PackageInfo info = await PackageInfo.fromPlatform();
-      if (mounted) setState(() => _version = info.version);
-    } catch (_) {
-      if (mounted) setState(() => _version = '1.0.1');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Acerca de'),
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      foregroundColor: Colors.white,
-    ),
-    body: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Center(
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.account_balance_wallet,
-                size: 50,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          Center(
-            child: Text(
-              'Personal Finance',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          Center(
-            child: Text(
-              'Versión ${_version ?? '...'}',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          const Text(
-            'App para registrar ingresos y gastos, gestionar categorías, '
-            'presupuestos y metas, con sincronización a un backend y notificaciones.',
-            style: TextStyle(fontSize: 15),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-
-          const Divider(),
-
-          const SizedBox(height: 16),
-
-          _buildInfoRow(Icons.code, 'Desarrollado con Flutter'),
-          _buildInfoRow(Icons.security, 'Tus datos están seguros'),
-          _buildInfoRow(Icons.update, 'Actualizaciones regulares'),
-        ],
-      ),
-    ),
-  );
-
-  Widget _buildInfoRow(IconData icon, String text) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Row(
-      children: <Widget>[
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 12),
-        Text(text, style: const TextStyle(fontSize: 14)),
-      ],
-    ),
-  );
 }

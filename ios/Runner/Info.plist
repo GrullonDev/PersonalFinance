@@ -60,6 +60,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>¿Deseas usar FaceID para proteger el acceso a tus finanzas personalizadas?</string>
 	<key>google</key>
 	<string>689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com</string>
 </dict>
