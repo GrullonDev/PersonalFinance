@@ -266,19 +266,26 @@ class ProfileView extends StatelessWidget {
                     ),
                     child:
                         photoUrl != null && photoUrl.isNotEmpty
-                            ? ClipOval(
-                              child: Image.network(
-                                photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder:
-                                    (_, __, ___) => _buildInitialsAvatar(
-                                      context,
-                                      info?.firstName,
-                                      info?.lastName,
-                                      primaryColor,
-                                    ),
-                              ),
-                            )
+                            ? (photoUrl.contains('://')
+                                ? ClipOval(
+                                  child: Image.network(
+                                    photoUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (_, __, ___) => _buildInitialsAvatar(
+                                          context,
+                                          info?.firstName,
+                                          info?.lastName,
+                                          primaryColor,
+                                        ),
+                                  ),
+                                )
+                                : Center(
+                                  child: Text(
+                                    photoUrl,
+                                    style: const TextStyle(fontSize: 40),
+                                  ),
+                                ))
                             : _buildInitialsAvatar(
                               context,
                               info?.firstName,

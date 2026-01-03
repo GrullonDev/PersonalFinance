@@ -24,6 +24,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String? _photoUrl;
   bool _isLoading = false;
 
+  final List<String> _emojis = [
+    '📱',
+    '💰',
+    '🚀',
+    '⭐',
+    '🌈',
+    '🔥',
+    '💎',
+    '💡',
+    '💸',
+    '📈',
+    '🏠',
+    '🚗',
+    '🎮',
+    '🍕',
+    '☕',
+    '⚽',
+    '🎨',
+    '🎧',
+    '✈️',
+    '🏝️',
+    '🐶',
+    '🐱',
+    '🦊',
+    '🐼',
+    '🐯',
+    '🦁',
+    '🐨',
+    '🐸',
+    '🦄',
+    '🍎',
+    '🍓',
+    '🍩',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +102,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             children: <Widget>[
               // Avatar con opción de cambiar
               GestureDetector(
-                onTap: _showPhotoOptions,
+                onTap: _showEmojiPicker,
                 child: Stack(
                   children: <Widget>[
                     Container(
@@ -80,14 +115,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                       child:
                           _photoUrl != null && _photoUrl!.isNotEmpty
-                              ? ClipOval(
-                                child: Image.network(
-                                  _photoUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (_, __, ___) => _buildDefaultAvatar(),
-                                ),
-                              )
+                              ? (_photoUrl!.contains('://')
+                                  ? ClipOval(
+                                    child: Image.network(
+                                      _photoUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (_, __, ___) => _buildDefaultAvatar(),
+                                    ),
+                                  )
+                                  : Center(
+                                    child: Text(
+                                      _photoUrl!,
+                                      style: const TextStyle(fontSize: 60),
+                                    ),
+                                  ))
                               : _buildDefaultAvatar(),
                     ),
                     Positioned(
@@ -101,7 +143,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           border: Border.all(color: Colors.white, width: 2),
                         ),
                         child: const Icon(
-                          Icons.camera_alt,
+                          Icons.edit,
                           color: Colors.white,
                           size: 20,
                         ),
@@ -112,155 +154,162 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Toca para cambiar foto',
+                'Toca para cambiar avatar',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 32),
 
-              // Nombre
-              TextFormField(
-                controller: _firstNameController,
-                decoration: InputDecoration(
-                  labelText: 'Nombre',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Por favor ingresa tu nombre';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+              // Resto de los campos igual...
+              _buildFields(),
 
-              // Apellido
-              TextFormField(
-                controller: _lastNameController,
-                decoration: InputDecoration(
-                  labelText: 'Apellido',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Por favor ingresa tu apellido';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Usuario
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Usuario',
-                  prefixIcon: const Icon(Icons.alternate_email),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Email (solo lectura)
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Correo electrónico',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabled: false,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'El correo no se puede modificar',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Teléfono
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Teléfono',
-                  prefixIcon: const Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  hintText: '+504 0000-0000',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-
-              // Dirección
-              TextFormField(
-                controller: _addressController,
-                decoration: InputDecoration(
-                  labelText: 'Dirección',
-                  prefixIcon: const Icon(Icons.location_on_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  hintText: 'Calle, ciudad, país',
-                ),
-                maxLines: 2,
-              ),
               const SizedBox(height: 24),
 
-              // Botón de resetear contraseña
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: _resetPassword,
-                  icon: const Icon(Icons.lock_reset),
-                  label: const Text('Resetear Contraseña'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primaryColor,
-                    side: BorderSide(color: primaryColor),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Botón de guardar
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton.icon(
-                  onPressed: _isLoading ? null : _saveProfile,
-                  icon:
-                      _isLoading
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                          : const Icon(Icons.save),
-                  label: Text(_isLoading ? 'Guardando...' : 'Guardar Cambios'),
-                ),
-              ),
+              // Botones de acción
+              _buildActionButtons(primaryColor),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFields() {
+    return Column(
+      children: [
+        // Nombre
+        TextFormField(
+          controller: _firstNameController,
+          decoration: InputDecoration(
+            labelText: 'Nombre',
+            prefixIcon: const Icon(Icons.person_outline),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Por favor ingresa tu nombre';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // Apellido
+        TextFormField(
+          controller: _lastNameController,
+          decoration: InputDecoration(
+            labelText: 'Apellido',
+            prefixIcon: const Icon(Icons.person_outline),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Por favor ingresa tu apellido';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // Usuario
+        TextFormField(
+          controller: _usernameController,
+          decoration: InputDecoration(
+            labelText: 'Usuario',
+            prefixIcon: const Icon(Icons.alternate_email),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Email (solo lectura)
+        TextFormField(
+          controller: _emailController,
+          decoration: InputDecoration(
+            labelText: 'Correo electrónico',
+            prefixIcon: const Icon(Icons.email_outlined),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabled: false,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'El correo no se puede modificar',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Teléfono
+        TextFormField(
+          controller: _phoneController,
+          decoration: InputDecoration(
+            labelText: 'Teléfono',
+            prefixIcon: const Icon(Icons.phone_outlined),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            hintText: '+504 0000-0000',
+          ),
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 16),
+
+        // Dirección
+        TextFormField(
+          controller: _addressController,
+          decoration: InputDecoration(
+            labelText: 'Dirección',
+            prefixIcon: const Icon(Icons.location_on_outlined),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            hintText: 'Calle, ciudad, país',
+          ),
+          maxLines: 2,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(Color primaryColor) {
+    return Column(
+      children: [
+        // Botón de resetear contraseña
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: OutlinedButton.icon(
+            onPressed: _resetPassword,
+            icon: const Icon(Icons.lock_reset),
+            label: const Text('Resetear Contraseña'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: BorderSide(color: primaryColor),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Botón de guardar
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: FilledButton.icon(
+            onPressed: _isLoading ? null : _saveProfile,
+            icon:
+                _isLoading
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Icon(Icons.save),
+            label: Text(_isLoading ? 'Guardando...' : 'Guardar Cambios'),
+          ),
+        ),
+      ],
     );
   }
 
@@ -289,84 +338,86 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return '${firstName[0]}${lastName[0]}'.toUpperCase();
   }
 
-  Future<void> _showPhotoOptions() async {
-    await showModalBottomSheet<void>(
+  void _showEmojiPicker() {
+    showModalBottomSheet<void>(
       context: context,
-      builder:
-          (BuildContext context) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  ListTile(
-                    leading: const Icon(Icons.link),
-                    title: const Text('Ingresar URL de foto'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showUrlDialog();
-                    },
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Selecciona un Avatar',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Flexible(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 6,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
                   ),
-                  const ListTile(
-                    leading: Icon(Icons.photo_library),
-                    title: Text('Seleccionar de galería'),
-                    subtitle: Text('Próximamente'),
-                    enabled: false,
-                  ),
-                  const ListTile(
-                    leading: Icon(Icons.camera_alt),
-                    title: Text('Tomar foto'),
-                    subtitle: Text('Próximamente'),
-                    enabled: false,
-                  ),
-                  if (_photoUrl != null && _photoUrl!.isNotEmpty)
-                    ListTile(
-                      leading: const Icon(Icons.delete, color: Colors.red),
-                      title: const Text('Eliminar foto'),
+                  itemCount: _emojis.length,
+                  itemBuilder: (context, index) {
+                    final emoji = _emojis[index];
+                    return InkWell(
                       onTap: () {
+                        setState(() {
+                          _photoUrl = emoji;
+                        });
                         Navigator.pop(context);
-                        setState(() => _photoUrl = null);
                       },
-                    ),
-                ],
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color:
+                              _photoUrl == emoji
+                                  ? Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.1)
+                                  : null,
+                          borderRadius: BorderRadius.circular(10),
+                          border:
+                              _photoUrl == emoji
+                                  ? Border.all(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  )
+                                  : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          emoji,
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ),
-    );
-  }
-
-  Future<void> _showUrlDialog() async {
-    final TextEditingController urlController = TextEditingController(
-      text: _photoUrl,
-    );
-
-    await showDialog<void>(
-      context: context,
-      builder:
-          (BuildContext context) => AlertDialog(
-            title: const Text('URL de la foto'),
-            content: TextField(
-              controller: urlController,
-              decoration: const InputDecoration(
-                labelText: 'URL de la imagen',
-                hintText: 'https://ejemplo.com/foto.jpg',
-              ),
-              keyboardType: TextInputType.url,
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
+              const SizedBox(height: 20),
+              TextButton.icon(
                 onPressed: () {
-                  setState(() => _photoUrl = urlController.text.trim());
+                  setState(() {
+                    _photoUrl = null;
+                  });
                   Navigator.pop(context);
                 },
-                child: const Text('Guardar'),
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                label: const Text(
+                  'Quitar avatar',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),
+        );
+      },
     );
   }
 
@@ -394,7 +445,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
 
     if (confirm == true && mounted) {
-      // TODO: Implementar reset de contraseña con Firebase Auth
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -456,7 +506,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             );
 
-            // Recargar el perfil
             context.read<ProfileBloc>().add(ProfileLoadMe());
 
             Navigator.pop(context);
