@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:personal_finance/features/profile/domain/entities/profile_info.dart';
 import 'package:personal_finance/features/profile/presentation/widgets/profile_menu_item.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:provider/provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
 import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
@@ -12,7 +13,6 @@ import 'package:personal_finance/features/settings/presentation/pages/notificati
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:personal_finance/features/categories/presentation/pages/categories_page.dart';
-import 'package:flutter/services.dart';
 import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
@@ -238,7 +238,10 @@ class ProfileView extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: <Color>[primaryColor, primaryColor.withOpacity(0.8)],
+              colors: <Color>[
+                primaryColor,
+                primaryColor.withValues(alpha: 0.8),
+              ],
             ),
           ),
           child: SafeArea(
@@ -256,7 +259,7 @@ class ProfileView extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: <BoxShadow>[
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -310,7 +313,7 @@ class ProfileView extends StatelessWidget {
                     email,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -352,190 +355,6 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsCard(BuildContext context) =>
-  // TODO: Obtener datos reales del dashboard o provider
-  Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: <BoxShadow>[
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Icon(
-              Icons.analytics_outlined,
-              color: Theme.of(context).colorScheme.primary,
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Resumen Financiero',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _buildStatItem(
-                context,
-                icon: Icons.account_balance_wallet,
-                label: 'Balance',
-                value: '\$0.00',
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatItem(
-                context,
-                icon: Icons.trending_up,
-                label: 'Ingresos',
-                value: '\$0.00',
-                color: Colors.green,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _buildStatItem(
-                context,
-                icon: Icons.trending_down,
-                label: 'Gastos',
-                value: '\$0.00',
-                color: Colors.red,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatItem(
-                context,
-                icon: Icons.flag,
-                label: 'Metas',
-                value: '0',
-                color: Colors.orange,
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-
-  Widget _buildStatItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _buildQuickActions(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Text(
-          'Accesos Rápidos',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _QuickActionCard(
-                icon: Icons.dashboard,
-                label: 'Dashboard',
-                color: Colors.blue,
-                onTap: () => Navigator.pushNamed(context, '/'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _QuickActionCard(
-                icon: Icons.receipt_long,
-                label: 'Presupuestos',
-                color: Colors.purple,
-                onTap: () => Navigator.pushNamed(context, '/budgets'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _QuickActionCard(
-                icon: Icons.flag,
-                label: 'Metas',
-                color: Colors.orange,
-                onTap: () => Navigator.pushNamed(context, '/goals'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _QuickActionCard(
-                icon: Icons.swap_horiz,
-                label: 'Transacciones',
-                color: Colors.teal,
-                onTap: () => Navigator.pushNamed(context, '/transactions'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-
   Widget _buildMenuSection(
     BuildContext context, {
     required String title,
@@ -563,7 +382,7 @@ class ProfileView extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -600,61 +419,12 @@ class ProfileView extends StatelessWidget {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.logout();
       if (context.mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/auth', (_) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(RoutePath.login, (_) => false);
       }
     }
   }
-}
-
-// Quick Action Card Widget
-class _QuickActionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickActionCard({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(16),
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: <Widget>[
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 // Entry para notificaciones con provider inyectado desde Profile
