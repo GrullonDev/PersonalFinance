@@ -21,9 +21,9 @@ class CustomBottomNavBar extends StatelessWidget {
     final bool isSmall = width < 360;
     final bool isMedium = width >= 360 && width < 420;
     final double barHeight = isSmall ? 64 : (isMedium ? 68 : 72);
-    final double iconSize = isSmall ? 22 : (isMedium ? 24 : 26);
-    final double fontSize = isSmall ? 11 : (isMedium ? 12 : 13);
-    final double spacing = isSmall ? 3 : 4;
+    // final double iconSize = isSmall ? 22 : (isMedium ? 24 : 26);
+    // final double fontSize = isSmall ? 11 : (isMedium ? 12 : 13);
+    // final double spacing = isSmall ? 3 : 4;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -105,15 +105,20 @@ class CustomBottomNavBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
           decoration: BoxDecoration(
-            color: isSelected
-                ? (scheme.primaryContainer.withOpacity(0.6))
-                : Colors.transparent,
+            color:
+                isSelected
+                    ? (scheme.primaryContainer.withOpacity(0.6))
+                    : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(isSelected ? activeIcon : icon, color: color, size: iconSize),
+              Icon(
+                isSelected ? activeIcon : icon,
+                color: color,
+                size: iconSize,
+              ),
               SizedBox(height: spacing),
               Text(
                 label,

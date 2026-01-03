@@ -23,11 +23,8 @@ class UserProfile {
     this.address,
   });
 
-<<<<<<< HEAD:lib/features/profile/model/user_profile.dart
-=======
   String get name => '$firstName $lastName'.trim();
 
->>>>>>> develop:lib/features/profile/domain/entities/user_profile.dart
   factory UserProfile.fromMap(String id, Map<String, dynamic> map) =>
       UserProfile(
         id: id,
@@ -52,8 +49,7 @@ class UserProfile {
     'address': address,
   };
 
-<<<<<<< HEAD:lib/features/profile/model/user_profile.dart
-  UserProfile copyWith({String? photoUrl}) => UserProfile(
+  /* UserProfile copyWith({String? photoUrl}) => UserProfile(
     id: id,
     firstName: firstName,
     lastName: lastName,
@@ -61,7 +57,8 @@ class UserProfile {
     username: username,
     email: email,
     photoUrl: photoUrl ?? this.photoUrl,
-=======
+  ); */
+
   UserProfile copyWith({
     String? firstName,
     String? lastName,
@@ -81,6 +78,5 @@ class UserProfile {
     photoUrl: photoUrl ?? this.photoUrl,
     phoneNumber: phoneNumber ?? this.phoneNumber,
     address: address ?? this.address,
->>>>>>> develop:lib/features/profile/domain/entities/user_profile.dart
   );
 }

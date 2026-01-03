@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/dashboard/logic/dashboard_logic.dart';
+import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:provider/provider.dart';
 
 class CategorySelector extends StatelessWidget {

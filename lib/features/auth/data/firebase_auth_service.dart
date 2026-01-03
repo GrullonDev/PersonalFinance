@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 
 /// Implementación de AuthDataSource usando Firebase Authentication.
@@ -8,7 +8,7 @@ import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 /// utilizando Firebase Auth como backend de autenticación.
 class FirebaseAuthService implements AuthDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   Future<User?> signInWithGoogle() async {

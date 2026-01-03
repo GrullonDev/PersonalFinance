@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
@@ -297,7 +296,6 @@ class DashboardLogic extends ChangeNotifier {
         params,
       );
 
-<<<<<<< HEAD:lib/features/dashboard/logic/dashboard_logic_v2.dart
       _expenses =
           result.expenses
               .where(
@@ -305,7 +303,7 @@ class DashboardLogic extends ChangeNotifier {
                     _categoryFilter == null || e.category == _categoryFilter,
               )
               .toList();
-=======
+
       // Fetch goals and budgets in parallel could be better, but sequential for simplicity first
       // or better yet, move this to the use case if they were part of "Dashboard Data".
       // Since they are separate features, we fetch them here.
@@ -324,7 +322,6 @@ class DashboardLogic extends ChangeNotifier {
       });
 
       _expenses = result.expenses;
->>>>>>> develop:lib/features/dashboard/presentation/providers/dashboard_logic.dart
       _incomes = result.incomes;
 
       notifyListeners();
@@ -498,20 +495,18 @@ class DashboardLogic extends ChangeNotifier {
           start: startOfYear,
           end: endOfYear.add(const Duration(days: 1)),
         );
-<<<<<<< HEAD:lib/features/dashboard/logic/dashboard_logic_v2.dart
       case PeriodFilter.personalizado:
         return _customPeriod ??
             DateTimeRange(
               start: startOfDay,
               end: startOfDay.add(const Duration(days: 1)),
             );
-=======
+
       case PeriodFilter.historico:
         return DateTimeRange(
           start: DateTime(2000), // Fecha muy antigua
           end: DateTime(3000), // Fecha muy futura
         );
->>>>>>> develop:lib/features/dashboard/presentation/providers/dashboard_logic.dart
     }
   }
 

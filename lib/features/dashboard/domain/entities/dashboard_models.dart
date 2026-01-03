@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Enumeración para filtros de período
-enum PeriodFilter { dia, semana, mes, anio, historico }
+enum PeriodFilter { dia, semana, mes, anio, historico, personalizado }
 
 extension PeriodFilterExtension on PeriodFilter {
   String get label {
@@ -16,6 +16,8 @@ extension PeriodFilterExtension on PeriodFilter {
         return 'Año';
       case PeriodFilter.historico:
         return 'Todo';
+      case PeriodFilter.personalizado:
+        return 'Personalizado';
     }
   }
 }
