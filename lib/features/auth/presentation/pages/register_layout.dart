@@ -16,12 +16,20 @@ class RegisterLayout extends StatelessWidget {
 
     Future<void> handleSelectBirthDate() async {
       FocusScope.of(context).unfocus();
-      final DateTime initialDate = registerProvider.birthDate ?? DateTime.now();
+      final DateTime now = DateTime.now();
+      final DateTime maxDate = DateTime(now.year - 16, now.month, now.day);
+
+      // Si la fecha actual es menor a 16 años (o null), usar la fecha máxima permitida
+      DateTime initialDate = registerProvider.birthDate ?? maxDate;
+      if (initialDate.isAfter(maxDate)) {
+        initialDate = maxDate;
+      }
+
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: initialDate,
         firstDate: DateTime(1900),
-        lastDate: DateTime.now(),
+        lastDate: maxDate,
         builder:
             (BuildContext context, Widget? child) => Theme(
               data: Theme.of(context).copyWith(
@@ -29,9 +37,10 @@ class RegisterLayout extends StatelessWidget {
                   primary: Colors.blue.shade400,
                   onPrimary: Colors.white,
                   surface: const Color(0xFF1E293B),
-                  onSurface: Colors.white,
                 ),
-                dialogBackgroundColor: const Color(0xFF0F172A),
+                dialogTheme: const DialogThemeData(
+                  backgroundColor: Color(0xFF0F172A),
+                ),
               ),
               child: child!,
             ),

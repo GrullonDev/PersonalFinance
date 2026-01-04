@@ -158,15 +158,17 @@ class AppValidators {
       return '$fieldName es requerido';
     }
 
+    final DateTime now = DateTime.now();
     final DateTime minDate = DateTime(1900);
-    final DateTime maxDate = DateTime.now();
+    // El usuario debe tener al menos 16 años
+    final DateTime maxBirthDate = DateTime(now.year - 16, now.month, now.day);
 
     if (date.isBefore(minDate)) {
       return '$fieldName no puede ser anterior al año 1900';
     }
 
-    if (date.isAfter(maxDate)) {
-      return '$fieldName no puede ser posterior a hoy';
+    if (date.isAfter(maxBirthDate)) {
+      return 'Debes tener al menos 16 años para registrarte';
     }
 
     return null;
@@ -250,7 +252,10 @@ class AppValidators {
   }
 
   /// Valida que las contraseñas coincidan
-  static String? validatePasswordConfirmation(String? password, String? confirmPassword) {
+  static String? validatePasswordConfirmation(
+    String? password,
+    String? confirmPassword,
+  ) {
     if (confirmPassword == null || confirmPassword.trim().isEmpty) {
       return 'Confirmación de contraseña es requerida';
     }
