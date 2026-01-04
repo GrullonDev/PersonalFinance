@@ -1,7 +1,7 @@
 name: personal_finance
 description: "A project to manage personal finances with features like income and expense tracking, charts, and Firebase integration."
 
-version: 1.0.1
+version: 1.0.2+2
 
 environment:
   sdk: ">=3.7.0 <4.0.0"
