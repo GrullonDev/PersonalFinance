@@ -25,7 +25,11 @@ android {
         applicationId = "com.grullondev.personal_finance"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
-        versionCode = flutter.versionCode
+        
+        // Genera un versionCode incremental automáticamente basado en el tiempo (minutos)
+        // Esto evita errores de "versionCode ya utilizado" en Google Play Console.
+        val timestampVersionCode = (System.currentTimeMillis() / 60000).toInt() - 29000000
+        versionCode = timestampVersionCode
         versionName = flutter.versionName
     }
 
