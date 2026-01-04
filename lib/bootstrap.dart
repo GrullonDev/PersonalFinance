@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:personal_finance/firebase_options.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -27,38 +29,69 @@ Future<void> bootstrap({required String env}) async {
       debugPrint('Error setting locale: $e');
     }
 
-    // Inicializa Hive
+    // Inicializa Hive con timeout
     try {
-      await Hive.initFlutter();
+      await Hive.initFlutter().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {
+          debugPrint('Hive init timed out, proceeding anyway');
+          return;
+        },
+      );
+
       if (!Hive.isAdapterRegistered(ExpenseAdapter().typeId)) {
         Hive.registerAdapter(ExpenseAdapter());
       }
-      await Hive.openBox<Expense>('expenses');
+      await Hive.openBox<Expense>('expenses').timeout(
+        const Duration(seconds: 1),
+        onTimeout: () {
+          throw TimeoutException('Hive box open timeout');
+        },
+      );
 
       if (!Hive.isAdapterRegistered(IncomeAdapter().typeId)) {
         Hive.registerAdapter(IncomeAdapter());
       }
-      await Hive.openBox<Income>('incomes');
+      await Hive.openBox<Income>('incomes').timeout(const Duration(seconds: 1));
 
       if (!Hive.isAdapterRegistered(AlertItemAdapter().typeId)) {
         Hive.registerAdapter(AlertItemAdapter());
       }
-      await Hive.openBox<AlertItem>('alerts');
+      await Hive.openBox<AlertItem>(
+        'alerts',
+      ).timeout(const Duration(seconds: 1));
 
       if (!Hive.isAdapterRegistered(PendingActionAdapter().typeId)) {
         Hive.registerAdapter(PendingActionAdapter());
       }
 
-      await OfflineSyncService().init();
+      await OfflineSyncService().init().timeout(const Duration(seconds: 1));
     } catch (e) {
       debugPrint('Error initializing Hive: $e');
+      // No re-lanzamos para permitir que la app intente arrancar aunque sea sin caché
     }
 
-    // Inicializa Firebase con las opciones generadas por FlutterFire
+    // Inicializa Firebase con timeout
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('Firebase init timed out');
+          throw Exception('Firebase Init Timeout');
+        },
       );
+
+      // Pass all uncaught "fatal" errors from the framework to Crashlytics
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+      // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+      ui.PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
     } catch (e) {
       debugPrint('Error initializing Firebase: $e');
     }

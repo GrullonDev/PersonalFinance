@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
@@ -98,6 +99,9 @@ class MyApp extends StatelessWidget {
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
+            ],
+            navigatorObservers: <NavigatorObserver>[
+              FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
             ],
             supportedLocales: const <Locale>[
               Locale('es', 'GT'), // Guatemala - Quetzal (GTQ)
