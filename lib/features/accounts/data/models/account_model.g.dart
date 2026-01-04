@@ -7,13 +7,13 @@ part of 'account_model.dart';
 // **************************************************************************
 
 AccountModel _$AccountModelFromJson(Map<String, dynamic> json) => AccountModel(
-  id: json['id'] as String,
-  name: json['name'] as String,
-  balance: (json['balance'] as num).toDouble(),
-  type: json['type'] as String,
-  icon: json['icon'] as String?,
-  color: json['color'] as String?,
-);
+      id: json['id'] as String,
+      name: json['name'] as String,
+      balance: (json['balance'] as num).toDouble(),
+      type: json['type'] as String,
+      icon: json['icon'] as String?,
+      color: json['color'] as String?,
+    );
 
 Map<String, dynamic> _$AccountModelToJson(AccountModel instance) =>
     <String, dynamic>{

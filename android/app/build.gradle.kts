@@ -74,6 +74,7 @@ android {
 
 dependencies {
     implementation("com.facebook.android:facebook-android-sdk:18.0.3")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
 
 flutter {

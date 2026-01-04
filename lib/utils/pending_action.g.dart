@@ -8,7 +8,7 @@ part of 'pending_action.dart';
 
 class PendingActionAdapter extends TypeAdapter<PendingAction> {
   @override
-  final int typeId = 0;
+  final int typeId = 3;
 
   @override
   PendingAction read(BinaryReader reader) {

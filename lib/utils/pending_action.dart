@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'pending_action.g.dart';
 
-@HiveType(typeId: 0)
+@HiveType(typeId: 3)
 class PendingAction extends HiveObject {
   @HiveField(0)
   String type; // 'create', 'update', 'delete'
