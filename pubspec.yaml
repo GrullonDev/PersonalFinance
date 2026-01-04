@@ -64,6 +64,8 @@ flutter:
     - .env.development
     - assets/logo.png
     - assets/privacy_policy.md
+    - assets/icons/google.svg
+    - assets/icons/apple.svg
 
 # Launcher icons configuration
 flutter_launcher_icons:

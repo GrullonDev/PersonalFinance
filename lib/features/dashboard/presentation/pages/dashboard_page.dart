@@ -9,6 +9,7 @@ import 'package:personal_finance/features/dashboard/presentation/widgets/savings
 import 'package:personal_finance/features/transactions/domain/entities/transaction_detail.dart';
 import 'package:personal_finance/features/transactions/presentation/pages/transaction_detail_page.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/responsive.dart';
 import 'package:provider/provider.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -39,14 +40,10 @@ class _DashboardContent extends StatelessWidget {
         return _buildEmptyState();
       }
 
-      return LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          if (constraints.maxWidth > 700) {
-            return _buildWideLayout(context, logic);
-          }
-          return _buildMobileLayout(context, logic);
-        },
-      );
+      if (context.isMobile) {
+        return _buildMobileLayout(context, logic);
+      }
+      return _buildWideLayout(context, logic);
     },
   );
 

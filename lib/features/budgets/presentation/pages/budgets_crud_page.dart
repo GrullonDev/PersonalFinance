@@ -14,6 +14,7 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
 import 'package:personal_finance/utils/budget_category_prefs.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
@@ -28,128 +29,181 @@ class BudgetsCrudPage extends StatelessWidget {
     create: (_) => BudgetsBloc(getIt<BudgetRepository>())..add(BudgetsLoad()),
     child: Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(120),
+        preferredSize: Size.fromHeight(context.isMobile ? 120 : 100),
+        child: _buildAppBar(context),
+      ),
+      body: Center(
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+          constraints: BoxConstraints(
+            maxWidth: context.isMobile ? double.infinity : 1000,
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: Colors.white,
-                        size: 28,
+          child: BlocBuilder<BudgetsBloc, BudgetsState>(
+            builder: (BuildContext context, BudgetsState state) {
+              if (state.loading && state.items.isEmpty) {
+                return const Center(child: AppLoadingWidget());
+              }
+              if (state.error != null && state.items.isEmpty) {
+                return Center(child: ew.AppErrorWidget(message: state.error!));
+              }
+              if (state.items.isEmpty) {
+                return EmptyState(
+                  title: 'Sin presupuestos',
+                  message: 'Crea un presupuesto para planear tus gastos.',
+                  action: FilledButton.icon(
+                    onPressed: () => _openDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nuevo presupuesto'),
+                  ),
+                );
+              }
+
+              // Use GridView for larger screens, ListView for mobile
+              if (!context.isMobile) {
+                return RefreshIndicator(
+                  onRefresh:
+                      () async =>
+                          context.read<BudgetsBloc>().add(BudgetsLoad()),
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(20),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 500,
+                          mainAxisExtent: 220,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                        ),
+                    itemCount: state.items.length,
+                    itemBuilder: (context, i) {
+                      final b = state.items[i];
+                      return _BudgetCard(budget: b);
+                    },
+                  ),
+                );
+              }
+
+              return RefreshIndicator(
+                onRefresh:
+                    () async => context.read<BudgetsBloc>().add(BudgetsLoad()),
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: state.items.length,
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+                  itemBuilder: (BuildContext context, int i) {
+                    final Budget b = state.items[i];
+                    return Dismissible(
+                      key: ValueKey<String?>(b.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        color: Colors.red,
+                        child: const Icon(Icons.delete, color: Colors.white),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
+                      confirmDismiss: (_) => _confirmDelete(context),
+                      onDismissed:
+                          (_) => context.read<BudgetsBloc>().add(
+                            BudgetDelete(b.id!),
+                          ),
+                      child: _BudgetCard(budget: b),
+                    );
+                  },
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+      floatingActionButton:
+          context.isMobile
+              ? Builder(
+                builder:
+                    (BuildContext context) => FloatingActionButton.extended(
+                      onPressed: () => _openDialog(context),
+                      label: const Text('Nuevo presupuesto'),
+                      icon: const Icon(Icons.add),
+                    ),
+              )
+              : null,
+    ),
+  );
+
+  Widget _buildAppBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        SizedBox(width: 12),
+                        Text(
                           'Presupuestos',
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             letterSpacing: -0.5,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Planifica tus gastos',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                      fontWeight: FontWeight.w400,
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      'Planifica tus gastos',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              if (!context.isMobile)
+                FilledButton.icon(
+                  onPressed: () => _openDialog(context),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nuevo presupuesto'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+            ],
           ),
         ),
       ),
-      body: BlocBuilder<BudgetsBloc, BudgetsState>(
-        builder: (BuildContext context, BudgetsState state) {
-          if (state.loading && state.items.isEmpty) {
-            return const Center(child: AppLoadingWidget());
-          }
-          if (state.error != null && state.items.isEmpty) {
-            return Center(child: ew.AppErrorWidget(message: state.error!));
-          }
-          if (state.items.isEmpty) {
-            return EmptyState(
-              title: 'Sin presupuestos',
-              message: 'Crea un presupuesto para planear tus gastos.',
-              action: FilledButton.icon(
-                onPressed: () => _openDialog(context),
-                icon: const Icon(Icons.add),
-                label: const Text('Nuevo presupuesto'),
-              ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh:
-                () async => context.read<BudgetsBloc>().add(BudgetsLoad()),
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: state.items.length,
-              // Extra espacio inferior para que no colisione con el FAB.
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
-              itemBuilder: (BuildContext context, int i) {
-                final Budget b = state.items[i];
-                return Dismissible(
-                  key: ValueKey<String?>(b.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    color: Colors.red,
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  confirmDismiss: (_) => _confirmDelete(context),
-                  onDismissed:
-                      (_) =>
-                          context.read<BudgetsBloc>().add(BudgetDelete(b.id!)),
-                  child: _BudgetCard(budget: b),
-                );
-              },
-              separatorBuilder: (_, _) => const Divider(height: 1),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: Builder(
-        builder:
-            (BuildContext context) => FloatingActionButton.extended(
-              onPressed: () => _openDialog(context),
-              label: const Text('Nuevo presupuesto'),
-              icon: const Icon(Icons.add),
-            ),
-      ),
-    ),
-  );
+    );
+  }
 
   Future<bool> _confirmDelete(BuildContext context) async {
     final bool? confirm = await showDialog<bool>(

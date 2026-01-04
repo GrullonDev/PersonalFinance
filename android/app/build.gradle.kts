@@ -17,14 +17,6 @@ val keystoreProperties = Properties().apply {
     }
 }
 
-// 2) Carga tu key.properties
-val keystorePropertiesFile = rootProject.file("key.properties")
-val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.exists()) {
-        load(FileInputStream(keystorePropertiesFile))
-    }
-}
-
 android {
     namespace = "com.grullondev.personal_finance"
     compileSdk = 36
@@ -78,10 +70,6 @@ android {
         }
         // Nota: no toques el buildType debug si no quieres cambiarlo
     }
-}
-
-dependencies {
-    implementation("com.facebook.android:facebook-android-sdk:18.0.3")
 }
 
 dependencies {

@@ -11,19 +11,50 @@ extension ResponsiveContext on BuildContext {
   double get width => _screenSize.width;
   double get height => _screenSize.height;
 
-  bool get isSmall => width < 360;
-  bool get isMedium => width >= 360 && width < 420;
-  bool get isLarge => width >= 420;
+  Orientation get orientation => MediaQuery.orientationOf(this);
+  bool get isPortrait => orientation == Orientation.portrait;
+  bool get isLandscape => orientation == Orientation.landscape;
+
+  /// Breakpoints focused on Mobile and Tablet
+  /// Mobile: Portrait < 600 or Landscape with small width
+  bool get isMobile => width < 600;
+
+  /// Tablet: 600 <= width < 1200
+  bool get isTablet => width >= 600 && width < 1200;
+
+  /// Large Tablet / Landscape Tablet: width >= 1200
+  bool get isLargeTablet => width >= 1200;
+
+  // Compatibility aliases
+  bool get isSmall => isMobile;
+  bool get isMedium => isTablet;
+  bool get isLarge => isLargeTablet || isTablet;
 
   double wp(double percent) => width * percent;
   double hp(double percent) => height * percent;
 
-  /// Scales a base font size to the device width, clamped to avoid extremes.
+  /// Scales font size to fit different mobile and tablet screens
   double sp(double base) {
-    // 375 is a common design baseline (iPhone 11/12/13 non-pro width).
-    final double scale = (width / 375).clamp(0.90, 1.20);
-    final double factor = MediaQuery.of(this).textScaleFactor.clamp(0.9, 1.2);
+    double scale;
+    if (isMobile) {
+      // Base on 375px (iPhone standard)
+      // Allow it to shrink slightly for very small devices (320px)
+      // but not too much to maintain legibility.
+      scale = (width / 375).clamp(0.85, 1.15);
+    } else {
+      // Tablets use 768px (iPad standard) as baseline
+      scale = (width / 768).clamp(1.0, 1.4);
+    }
+
+    // Combine with system text scaling preference
+    final double factor = MediaQuery.textScaleFactorOf(this).clamp(0.9, 1.3);
     return base * scale * factor;
   }
-}
 
+  /// Helper to choose a value based on device size
+  T responsive<T>({required T mobile, T? tablet, T? largeTablet}) {
+    if (isLargeTablet && largeTablet != null) return largeTablet;
+    if (isTablet && tablet != null) return tablet;
+    return mobile;
+  }
+}

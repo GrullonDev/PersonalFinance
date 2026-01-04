@@ -5,6 +5,7 @@ import 'package:personal_finance/core/presentation/widgets/premium_background.da
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
 import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
 
@@ -79,33 +80,53 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mis Servicios',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
+              Center(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: context.isMobile ? double.infinity : 1000,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Mis Servicios',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Gestiona tus pagos recurrentes',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Gestiona tus pagos recurrentes desde Firebase',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
+                      if (!context.isMobile)
+                        FilledButton.icon(
+                          onPressed: () => _openAddServiceDialog(context),
+                          icon: const Icon(Icons.add_card_rounded),
+                          label: const Text('Agregar Servicio'),
+                        ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -141,51 +162,98 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                       onRefresh:
                           () async =>
                               context.read<BudgetsBloc>().add(BudgetsLoad()),
-                      child: CustomScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        slivers: [
-                          // Status Summary Header
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                              child: _buildStatusCard(context, totalAmount),
-                            ),
+                      child: Center(
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxWidth: context.isMobile ? double.infinity : 1000,
                           ),
-
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            sliver: SliverToBoxAdapter(
-                              child: Text(
-                                'Lista de Servicios',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                          child: CustomScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            slivers: [
+                              // Status Summary Header
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    8,
+                                    20,
+                                    24,
+                                  ),
+                                  child: _buildStatusCard(context, totalAmount),
+                                ),
                               ),
-                            ),
+
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverToBoxAdapter(
+                                  child: Text(
+                                    'Lista de Servicios',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 16),
+                              ),
+
+                              if (context.isMobile)
+                                SliverPadding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  sliver: SliverList(
+                                    delegate: SliverChildBuilderDelegate((
+                                      context,
+                                      index,
+                                    ) {
+                                      final budget = state.items[index];
+                                      return _buildServiceItem(
+                                        context,
+                                        budget,
+                                        colors,
+                                      );
+                                    }, childCount: state.items.length),
+                                  ),
+                                )
+                              else
+                                SliverPadding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  sliver: SliverGrid(
+                                    gridDelegate:
+                                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                                          maxCrossAxisExtent: 450,
+                                          mainAxisExtent: 100,
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 16,
+                                        ),
+                                    delegate: SliverChildBuilderDelegate((
+                                      context,
+                                      index,
+                                    ) {
+                                      final budget = state.items[index];
+                                      return _buildServiceItem(
+                                        context,
+                                        budget,
+                                        colors,
+                                      );
+                                    }, childCount: state.items.length),
+                                  ),
+                                ),
+
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 80),
+                              ), // Space for FAB
+                            ],
                           ),
-
-                          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate((
-                                context,
-                                index,
-                              ) {
-                                final budget = state.items[index];
-                                return _buildServiceItem(
-                                  context,
-                                  budget,
-                                  colors,
-                                );
-                              }, childCount: state.items.length),
-                            ),
-                          ),
-
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 80),
-                          ), // Space for FAB
-                        ],
+                        ),
                       ),
                     );
                   },
@@ -195,11 +263,14 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddServiceDialog(context),
-        icon: const Icon(Icons.add_card_rounded),
-        label: const Text('Agregar Servicio'),
-      ),
+      floatingActionButton:
+          context.isMobile
+              ? FloatingActionButton.extended(
+                onPressed: () => _openAddServiceDialog(context),
+                icon: const Icon(Icons.add_card_rounded),
+                label: const Text('Agregar Servicio'),
+              )
+              : null,
     );
   }
 

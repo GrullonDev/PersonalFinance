@@ -9,6 +9,7 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
     as tx_backend;
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
+import 'package:personal_finance/utils/responsive.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -44,80 +45,39 @@ class _HomePageState extends State<HomePage> {
           ctx.read<tx_backend.TransactionBackendRepository>(),
         )..add(TransactionsLoad()),
     child: Scaffold(
-      backgroundColor: Colors.grey[50], // Theme handles this now
+      backgroundColor: Colors.grey[50],
       appBar:
-          _showAppBar[_currentIndex]
+          context.isMobile && _showAppBar[_currentIndex]
               ? PreferredSize(
-                preferredSize: const Size.fromHeight(
-                  100,
-                ), // Reduced height for cleaner look
-                child: Container(
-                  // Clean App Bar without heavy gradient, using Theme instead
-                  color: Colors.transparent,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                _getIconForIndex(_currentIndex),
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.primary, // Use theme color
-                                size: 28,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _titles[_currentIndex],
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _getSubtitleForIndex(_currentIndex),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.6),
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                preferredSize: const Size.fromHeight(100),
+                child: _buildResponsiveAppBar(context),
               )
               : null,
-      body: _pages[_currentIndex],
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavTap,
-        onAddPressed: () => _onAddPressed(context),
+      body: Row(
+        children: [
+          if (!context.isMobile) _buildNavigationRail(context),
+          Expanded(
+            child: Column(
+              children: [
+                if (!context.isMobile && _showAppBar[_currentIndex])
+                  _buildResponsiveAppBar(context),
+                Expanded(child: _pages[_currentIndex]),
+              ],
+            ),
+          ),
+        ],
       ),
+      bottomNavigationBar:
+          context.isMobile
+              ? CustomBottomNavBar(
+                currentIndex: _currentIndex,
+                onTap: _onNavTap,
+                onAddPressed: () => _onAddPressed(context),
+              )
+              : null,
       floatingActionButton:
-          (_currentIndex == 1 || _currentIndex == 2)
-              ? null
-              : Builder(
+          context.isMobile && (_currentIndex != 1 && _currentIndex != 2)
+              ? Builder(
                 builder:
                     (BuildContext innerCtx) => FloatingActionButton(
                       onPressed: () => _onAddPressed(innerCtx),
@@ -128,10 +88,100 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white,
                       ),
                     ),
-              ),
+              )
+              : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     ),
   );
+
+  Widget _buildResponsiveAppBar(BuildContext context) {
+    return Container(
+      color: Colors.transparent,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    _getIconForIndex(_currentIndex),
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _titles[_currentIndex],
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _getSubtitleForIndex(_currentIndex),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavigationRail(BuildContext context) {
+    return NavigationRail(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: _onNavTap,
+      labelType: NavigationRailLabelType.all,
+      backgroundColor: Colors.white,
+      elevation: 5,
+      leading: Column(
+        children: [
+          const SizedBox(height: 20),
+          FloatingActionButton(
+            onPressed: () => _onAddPressed(context),
+            elevation: 2,
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+      destinations: [
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(0)),
+          label: Text(_titles[0]),
+        ),
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(1)),
+          label: Text(_titles[1]),
+        ),
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(2)),
+          label: Text(_titles[2]),
+        ),
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(3)),
+          label: Text(_titles[3]),
+        ),
+      ],
+    );
+  }
 
   IconData _getIconForIndex(int index) {
     switch (index) {

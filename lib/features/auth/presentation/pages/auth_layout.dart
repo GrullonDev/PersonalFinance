@@ -18,22 +18,26 @@ class AuthLayout extends StatelessWidget {
   Widget build(BuildContext context) => Consumer<AuthProvider>(
     builder:
         (BuildContext context, AuthProvider authProvider, Widget? child) =>
-            GlassContainer(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const SizedBox(height: 16),
-                  _buildLogoAndWelcome(context),
-                  _buildEmailAndPasswordFields(context, authProvider),
-                  const SizedBox(height: 24),
-                  _buildLoginButton(context, authProvider),
-                  const SizedBox(height: 24),
-                  _buildSocialLoginOptions(context, authProvider),
-                  _buildSignUpLink(context),
-                  const SizedBox(height: 16),
-                ],
+            Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const SizedBox(height: 16),
+                      _buildLogoAndWelcome(context),
+                      _buildEmailAndPasswordFields(context, authProvider),
+                      const SizedBox(height: 24),
+                      _buildLoginButton(context, authProvider),
+                      const SizedBox(height: 24),
+                      _buildSocialLoginOptions(context, authProvider),
+                      _buildSignUpLink(context),
+                    ],
+                  ),
+                ),
               ),
             ),
   );

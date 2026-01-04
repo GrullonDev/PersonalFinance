@@ -19,6 +19,7 @@ import 'package:personal_finance/features/settings/presentation/pages/security_d
 import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
+import 'package:personal_finance/utils/responsive.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -59,140 +60,151 @@ class ProfileView extends StatelessWidget {
               children: <Widget>[
                 const SizedBox(height: 20),
 
-                // Secciones de menú
-                _buildMenuSection(
-                  context,
-                  title: 'CUENTA',
-                  items: <Widget>[
-                    ProfileMenuItem(
-                      icon: Icons.person_outline,
-                      title: 'Editar perfil',
-                      // subtitle: 'Actualiza tu información personal',
-                      onTap: () {
-                        final bloc = context.read<ProfileBloc>();
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (_) => BlocProvider<ProfileBloc>.value(
-                                  value: bloc,
-                                  child: const EditProfilePage(),
+                // Wrap content in a constrained box for larger screens
+                Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: context.isMobile ? double.infinity : 700,
+                    ),
+                    child: Column(
+                      children: [
+                        // Secciones de menú
+                        _buildMenuSection(
+                          context,
+                          title: 'CUENTA',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.person_outline,
+                              title: 'Editar perfil',
+                              onTap: () {
+                                final bloc = context.read<ProfileBloc>();
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder:
+                                        (_) => BlocProvider<ProfileBloc>.value(
+                                          value: bloc,
+                                          child: const EditProfilePage(),
+                                        ),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.security,
+                              title: 'Seguridad',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const SecurityDetailPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        _buildMenuSection(
+                          context,
+                          title: 'PREFERENCIAS',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.notifications_none,
+                              title: 'Notificaciones',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const _NotificationsEntry(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.category_outlined,
+                              title: 'Gestionar Categorías',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const CategoriesPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.palette_outlined,
+                              title: 'Apariencia',
+                              onTap: () {
+                                Navigator.pushNamed(context, '/settings');
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        _buildMenuSection(
+                          context,
+                          title: 'AYUDA Y SOPORTE',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.help_outline,
+                              title: 'Centro de ayuda',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const HelpDetailPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.info_outline,
+                              title: 'Acerca de',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const AboutPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.privacy_tip_outlined,
+                              title: 'Política de privacidad',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const PrivacyPolicyPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Botón de cerrar sesión
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _handleLogout(context),
+                              icon: const Icon(Icons.logout),
+                              label: const Text('Cerrar sesión'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
                                 ),
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.security,
-                      title: 'Seguridad',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const SecurityDetailPage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildMenuSection(
-                  context,
-                  title: 'PREFERENCIAS',
-                  items: <Widget>[
-                    ProfileMenuItem(
-                      icon: Icons.notifications_none,
-                      title: 'Notificaciones',
-                      // subtitle: 'Gestiona tus alertas',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const _NotificationsEntry(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.category_outlined,
-                      title: 'Gestionar Categorías',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const CategoriesPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.palette_outlined,
-                      title: 'Apariencia',
-                      // subtitle: 'Tema y personalización',
-                      onTap: () {
-                        Navigator.pushNamed(context, '/settings');
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildMenuSection(
-                  context,
-                  title: 'AYUDA Y SOPORTE',
-                  items: <Widget>[
-                    ProfileMenuItem(
-                      icon: Icons.help_outline,
-                      title: 'Centro de ayuda',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const HelpDetailPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.info_outline,
-                      title: 'Acerca de',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const AboutPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.privacy_tip_outlined,
-                      title: 'Política de privacidad',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const PrivacyPolicyPage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // Botón de cerrar sesión
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _handleLogout(context),
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Cerrar sesión'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

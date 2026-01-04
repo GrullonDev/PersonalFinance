@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/utils/responsive.dart';
 
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
@@ -12,80 +13,108 @@ class CategoriesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Categorías')),
-    body: BlocBuilder<CategoriesBloc, CategoriesState>(
-      builder: (BuildContext context, CategoriesState state) {
-        if (state.loading && state.items.isEmpty) {
-          return const Center(child: AppLoadingWidget());
-        }
-        if (state.error != null && state.items.isEmpty) {
-          return Center(child: ew.AppErrorWidget(message: state.error!));
-        }
-        if (state.items.isEmpty) {
-          return EmptyState(
-            title: 'Sin categorías',
-            message: 'Crea tus categorías para organizar mejor tus finanzas.',
-            action: FilledButton.icon(
+    appBar: AppBar(
+      title: const Text('Categorías'),
+      actions: [
+        if (!context.isMobile)
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: FilledButton.icon(
               onPressed: () => _openCategoryDialog(context),
               icon: const Icon(Icons.add),
               label: const Text('Nueva categoría'),
             ),
-          );
-        }
-        return RefreshIndicator(
-          onRefresh:
-              () async => context.read<CategoriesBloc>().add(CategoriesLoad()),
-          child: ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(12),
-            itemCount: state.items.length,
-            itemBuilder: (BuildContext context, int index) {
-              final Category category = state.items[index];
-              return Dismissible(
-                key: ValueKey<String?>(category.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  color: Colors.red,
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                confirmDismiss:
-                    (DismissDirection d) async => await _confirmDelete(context),
-                onDismissed:
-                    (_) => context.read<CategoriesBloc>().add(
-                      CategoryDelete(category.id!),
-                    ),
-                child: ListTile(
-                  leading: Icon(
-                    category.tipo.toLowerCase() == 'ingreso'
-                        ? Icons.trending_up
-                        : Icons.trending_down,
-                    color:
-                        category.tipo.toLowerCase() == 'ingreso'
-                            ? Colors.green
-                            : Colors.red,
-                  ),
-                  title: Text(category.nombre),
-                  subtitle: Text('Tipo: ${category.tipo}'),
-                  onTap: () => _openCategoryDialog(context, category: category),
+          ),
+      ],
+    ),
+    body: Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: context.isMobile ? double.infinity : 700,
+        ),
+        child: BlocBuilder<CategoriesBloc, CategoriesState>(
+          builder: (BuildContext context, CategoriesState state) {
+            if (state.loading && state.items.isEmpty) {
+              return const Center(child: AppLoadingWidget());
+            }
+            if (state.error != null && state.items.isEmpty) {
+              return Center(child: ew.AppErrorWidget(message: state.error!));
+            }
+            if (state.items.isEmpty) {
+              return EmptyState(
+                title: 'Sin categorías',
+                message:
+                    'Crea tus categorías para organizar mejor tus finanzas.',
+                action: FilledButton.icon(
+                  onPressed: () => _openCategoryDialog(context),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nueva categoría'),
                 ),
               );
-            },
-            separatorBuilder:
-                (BuildContext context, int _) => const Divider(height: 1),
-          ),
-        );
-      },
+            }
+            return RefreshIndicator(
+              onRefresh:
+                  () async =>
+                      context.read<CategoriesBloc>().add(CategoriesLoad()),
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(12),
+                itemCount: state.items.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final Category category = state.items[index];
+                  return Dismissible(
+                    key: ValueKey<String?>(category.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      color: Colors.red,
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    confirmDismiss:
+                        (DismissDirection d) async =>
+                            await _confirmDelete(context),
+                    onDismissed:
+                        (_) => context.read<CategoriesBloc>().add(
+                          CategoryDelete(category.id!),
+                        ),
+                    child: ListTile(
+                      leading: Icon(
+                        category.tipo.toLowerCase() == 'ingreso'
+                            ? Icons.trending_up
+                            : Icons.trending_down,
+                        color:
+                            category.tipo.toLowerCase() == 'ingreso'
+                                ? Colors.green
+                                : Colors.red,
+                      ),
+                      title: Text(category.nombre),
+                      subtitle: Text('Tipo: ${category.tipo}'),
+                      onTap:
+                          () =>
+                              _openCategoryDialog(context, category: category),
+                    ),
+                  );
+                },
+                separatorBuilder:
+                    (BuildContext context, int _) => const Divider(height: 1),
+              ),
+            );
+          },
+        ),
+      ),
     ),
-    floatingActionButton: Builder(
-      builder:
-          (BuildContext context) => FloatingActionButton.extended(
-            onPressed: () => _openCategoryDialog(context),
-            label: const Text('Nueva categoría'),
-            icon: const Icon(Icons.add),
-          ),
-    ),
+    floatingActionButton:
+        context.isMobile
+            ? Builder(
+              builder:
+                  (BuildContext context) => FloatingActionButton.extended(
+                    onPressed: () => _openCategoryDialog(context),
+                    label: const Text('Nueva categoría'),
+                    icon: const Icon(Icons.add),
+                  ),
+            )
+            : null,
   );
 
   Future<void> _openCategoryDialog(
