@@ -10,6 +10,9 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
 import 'package:personal_finance/utils/responsive.dart';
+import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,6 +23,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUpdate();
+  }
+
+  Future<void> _checkUpdate() async {
+    final VersionService versionService = getIt<VersionService>();
+    final bool updateRequired = await versionService.isUpdateRequired();
+
+    if (updateRequired && mounted) {
+      Navigator.of(context).pushReplacementNamed(RoutePath.forceUpdate);
+    }
+  }
 
   final List<Widget> _pages = <Widget>[
     const DashboardPage(),

@@ -49,6 +49,7 @@ import 'package:personal_finance/features/notifications/data/repositories/notifi
     as notif_repo_impl;
 import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
     as notif_repo;
+import 'package:personal_finance/core/services/version_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -256,5 +257,8 @@ Future<void> initDependencies() async {
         getActiveBudgetsUseCase: getIt<GetActiveBudgetsUseCase>(),
       ),
     );
+  }
+  if (!getIt.isRegistered<VersionService>()) {
+    getIt.registerLazySingleton<VersionService>(() => VersionService());
   }
 }

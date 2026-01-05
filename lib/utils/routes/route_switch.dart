@@ -10,7 +10,10 @@ import 'package:personal_finance/features/onboarding/presentation/pages/onboardi
 import 'package:personal_finance/features/settings/presentation/pages/settings_page.dart';
 import 'package:personal_finance/features/splash/splash_screen.dart';
 import 'package:personal_finance/features/transactions/presentation/pages/transactions_crud_page.dart';
+import 'package:personal_finance/features/update/pages/force_update_page.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 
 class RouteSwitch {
   static Route<dynamic> generateRoute(final RouteSettings settings) {
@@ -58,6 +61,12 @@ class RouteSwitch {
       case RoutePath.transactionsCrud:
         return MaterialPageRoute<void>(
           builder: (BuildContext context) => const TransactionsCrudPage(),
+        );
+      case RoutePath.forceUpdate:
+        return MaterialPageRoute<void>(
+          builder:
+              (BuildContext context) =>
+                  ForceUpdatePage(storeUrl: getIt<VersionService>().storeUrl),
         );
       default:
         return MaterialPageRoute<void>(

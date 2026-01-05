@@ -13,6 +13,7 @@ import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
 import 'package:personal_finance/utils/app.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/version_service.dart';
 import 'package:personal_finance/utils/offline_sync_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
 
@@ -42,6 +43,9 @@ Future<void> main() async {
 
   // Configura dependencias
   await initDependencies();
+
+  // Inicializa Remote Config para actualizaciones forzosas
+  await getIt<VersionService>().init();
 
   runApp(const MyApp());
 }
