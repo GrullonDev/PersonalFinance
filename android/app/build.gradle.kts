@@ -31,17 +31,18 @@ android {
         val timestampVersionCode = (System.currentTimeMillis() / 60000).toInt() - 29000000
         versionCode = timestampVersionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = "17"
     }
 
-    // 3) Define el signingConfig de “release”
     signingConfigs {
         create("release") {
             val keyAliasProp = keystoreProperties["keyAlias"] as? String
@@ -60,25 +61,22 @@ android {
 
     buildTypes {
         getByName("release") {
-            // 4) Aplica tu signingConfig de “release”
             if (keystoreProperties["keyAlias"] != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
-
-            // Opcional: minify/proguard
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android.txt"),
                 "proguard-rules.pro"
             )
         }
-        // Nota: no toques el buildType debug si no quieres cambiarlo
     }
 }
 
 dependencies {
     implementation("com.facebook.android:facebook-android-sdk:18.0.3")
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("androidx.multidex:multidex:2.0.1")
 }
 
 flutter {

@@ -36,6 +36,7 @@ dependencies:
   image_picker: ^1.1.2
   flutter_svg: ^2.2.1
   http: ^1.2.2
+
   dartz: ^0.10.1
   json_annotation: ^4.9.0
   jwt_decoder: ^2.0.1

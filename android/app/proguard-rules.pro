@@ -1,0 +1,5 @@
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+-keepnames class com.google.android.gms.** { *; }
+-keep class com.google.android.gms.auth.api.identity.GetSignInIntentRequest { *; }
+-keepnames class com.google.android.gms.auth.api.identity.GetSignInIntentRequest { *; }

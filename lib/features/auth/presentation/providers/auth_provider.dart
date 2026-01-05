@@ -79,11 +79,21 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     try {
-      await authRepository.signInWithGoogle();
-      await LocalAuthService().login();
-      _setLoading(false);
-      _setError(null);
-      return true;
+      final result = await authRepository.signInWithGoogle();
+      return await result.fold(
+        (failure) {
+          _setLoading(false);
+          _setError(failure.message);
+          return false;
+        },
+        (response) async {
+          await _handleSuccessfulLogin(response);
+          await LocalAuthService().login();
+          _setLoading(false);
+          _setError(null);
+          return true;
+        },
+      );
     } catch (e) {
       _setLoading(false);
       _setError(e.toString());
@@ -94,16 +104,48 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithApple() async {
     _setLoading(true);
     try {
-      await authRepository.signInWithApple();
-      await LocalAuthService().login();
-      _setLoading(false);
-      _setError(null);
-      return true;
+      final result = await authRepository.signInWithApple();
+      return await result.fold(
+        (failure) {
+          _setLoading(false);
+          _setError(failure.message);
+          return false;
+        },
+        (response) async {
+          await _handleSuccessfulLogin(response);
+          await LocalAuthService().login();
+          _setLoading(false);
+          _setError(null);
+          return true;
+        },
+      );
     } catch (e) {
       _setLoading(false);
       _setError(e.toString());
       return false;
     }
+  }
+
+  Future<void> _handleSuccessfulLogin(LoginUserResponse response) async {
+    _accessToken = response.accessToken;
+    if (response.refreshToken != null && response.refreshToken!.isNotEmpty) {
+      _refreshToken = response.refreshToken;
+    }
+    _currentUser = CurrentUserResponse(
+      id: response.user.id,
+      email: response.user.email,
+      fullName: response.user.nombreCompleto,
+      isActive: true, // Default or from user model if added
+      isSuperuser: false,
+      createdAt: DateTime.parse(response.user.fechaCreacion),
+      updatedAt: DateTime.parse(response.user.fechaActualizacion),
+      photoUrl: response.user.photoUrl,
+    );
+
+    await _updateTokenExpiration(response.accessToken);
+    await _saveAuthData();
+    // We already have current user data, so notify
+    notifyListeners();
   }
 
   Future<void> logout() async {
