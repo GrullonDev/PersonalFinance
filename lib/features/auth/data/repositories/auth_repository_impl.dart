@@ -18,10 +18,139 @@ class AuthRepositoryImpl implements AuthRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
-  Future<void> signInWithGoogle() => _firebaseDataSource.signInWithGoogle();
+  Future<Either<AuthFailure, LoginUserResponse>> signInWithGoogle() async {
+    try {
+      await _firebaseDataSource.signInWithGoogle();
+      final firebase_auth.User? user =
+          firebase_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return Left(AuthFailure(message: 'Google Sign-In failed'));
+      }
+
+      await _ensureUserDocumentExists(user);
+
+      return _createLoginResponse(user);
+    } catch (e) {
+      return Left(AuthFailure(message: 'Error signing in with Google: $e'));
+    }
+  }
 
   @override
-  Future<void> signInWithApple() => _firebaseDataSource.signInWithApple();
+  Future<Either<AuthFailure, LoginUserResponse>> signInWithApple() async {
+    try {
+      await _firebaseDataSource.signInWithApple();
+      final firebase_auth.User? user =
+          firebase_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return Left(AuthFailure(message: 'Apple Sign-In failed'));
+      }
+
+      await _ensureUserDocumentExists(user);
+
+      return _createLoginResponse(user);
+    } catch (e) {
+      return Left(AuthFailure(message: 'Error signing in with Apple: $e'));
+    }
+  }
+
+  Future<Either<AuthFailure, LoginUserResponse>> _createLoginResponse(
+    firebase_auth.User user,
+  ) async {
+    final String? token = await user.getIdToken();
+    if (token == null) {
+      return Left(AuthFailure(message: 'Failed to retrieve auth token'));
+    }
+
+    final DocumentSnapshot doc =
+        await _firestore.collection('users').doc(user.uid).get();
+
+    final Map<String, dynamic> data =
+        doc.exists ? (doc.data() as Map<String, dynamic>) : {};
+
+    int safeId = 0;
+    if (doc.exists) {
+      final dynamic idRaw = data['id'];
+      if (idRaw is int) {
+        safeId = idRaw;
+      } else if (idRaw is String) {
+        safeId = int.tryParse(idRaw) ?? 0;
+      }
+    }
+
+    final userModel = User(
+      id: safeId,
+      firebaseUid: user.uid,
+      email: (data['email'] as String?) ?? user.email ?? '',
+      username: (data['username'] as String?) ?? '',
+      nombres: (data['nombres'] as String?) ?? '',
+      apellidos: (data['apellidos'] as String?) ?? '',
+      nombreCompleto:
+          (data['nombre_completo'] as String?) ?? user.displayName ?? '',
+      fechaNacimiento:
+          (data['fecha_nacimiento'] as String?) ??
+          DateTime.now().toIso8601String(),
+      fechaCreacion:
+          (data['fecha_creacion'] as String?) ??
+          DateTime.now().toIso8601String(),
+      fechaActualizacion:
+          (data['fecha_actualizacion'] as String?) ??
+          DateTime.now().toIso8601String(),
+      photoUrl: user.photoURL ?? (data['photo_url'] as String?),
+    );
+
+    return Right(
+      LoginUserResponse(
+        accessToken: token,
+        tokenType: 'bearer',
+        user: userModel,
+        refreshToken:
+            user.refreshToken ??
+            '', // Firebase handles refresh logic internally mostly
+      ),
+    );
+  }
+
+  Future<void> _ensureUserDocumentExists(firebase_auth.User user) async {
+    final DocumentSnapshot doc =
+        await _firestore.collection('users').doc(user.uid).get();
+
+    if (!doc.exists) {
+      final DateTime now = DateTime.now();
+      String firstName = '';
+      String lastName = '';
+
+      if (user.displayName != null && user.displayName!.isNotEmpty) {
+        final List<String> parts = user.displayName!.split(' ');
+        if (parts.isNotEmpty) {
+          firstName = parts.first;
+          if (parts.length > 1) {
+            lastName = parts.sublist(1).join(' ');
+          }
+        }
+      }
+
+      final Map<String, dynamic> userData = {
+        'id': now.millisecondsSinceEpoch,
+        'firebase_uid': user.uid,
+        'email': user.email ?? '',
+        'username':
+            user.email?.split('@').first ??
+            'user_${now.millisecondsSinceEpoch}',
+        'nombres': firstName,
+        'apellidos': lastName,
+        'nombre_completo': user.displayName ?? '',
+        'fecha_nacimiento':
+            now.toIso8601String(), // Default to now as we don't have it
+        'fecha_creacion': now.toIso8601String(),
+        'fecha_actualizacion': now.toIso8601String(),
+        'is_active': true,
+        'is_superuser': false,
+        'photo_url': user.photoURL,
+      };
+
+      await _firestore.collection('users').doc(user.uid).set(userData);
+    }
+  }
 
   @override
   Future<void> logout() => _firebaseDataSource.logout();
@@ -248,6 +377,7 @@ class AuthRepositoryImpl implements AuthRepository {
                 ? DateTime.parse(data['fecha_actualizacion'] as String)
                 : DateTime.now(),
         phoneNumber: data['phone_number'] as String?,
+        photoUrl: data['photo_url'] as String?,
       );
 
       return right(response);

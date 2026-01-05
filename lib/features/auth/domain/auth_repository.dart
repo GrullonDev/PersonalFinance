@@ -9,8 +9,8 @@ import 'package:personal_finance/features/auth/data/models/response/current_user
 
 // Auth repository interface
 abstract class AuthRepository {
-  Future<void> signInWithGoogle();
-  Future<void> signInWithApple();
+  Future<Either<AuthFailure, LoginUserResponse>> signInWithGoogle();
+  Future<Either<AuthFailure, LoginUserResponse>> signInWithApple();
   Future<void> logout();
   Future<Either<AuthFailure, RegisterUserResponse>> registerUser(
     RegisterUserRequest request,

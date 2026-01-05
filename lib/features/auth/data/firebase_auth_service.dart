@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'package:personal_finance/core/config/auth_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 
 /// Implementación de AuthDataSource usando Firebase Authentication.
@@ -8,18 +12,100 @@ import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 class FirebaseAuthService implements AuthDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  static bool _isGoogleSignInInitialized = false;
+
   @override
   Future<User?> signInWithGoogle() async {
-    throw UnimplementedError('Autenticación con Google eliminada.');
+    try {
+      if (!_isGoogleSignInInitialized) {
+        if (Platform.isAndroid) {
+          await GoogleSignIn.instance.initialize(
+            serverClientId: AuthConfig.googleWebClientId,
+          );
+        } else {
+          await GoogleSignIn.instance.initialize();
+        }
+        _isGoogleSignInInitialized = true;
+      }
+
+      final GoogleSignInAccount googleUser;
+      try {
+        googleUser = await GoogleSignIn.instance.authenticate();
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) {
+          return null;
+        }
+        rethrow;
+      } catch (e) {
+        // Handle other potential errors during authentication
+        rethrow;
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+      // Create a new credential
+      // Note: accessToken is not available in google_sign_in 7.x authentication object
+      // and typically not required for Firebase Auth with OIDC.
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      // Once signed in, return the UserCredential
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+      return userCredential.user;
+    } catch (e) {
+      throw FirebaseAuthException(
+        code: 'google-sign-in-failed',
+        message: 'Error en Google Sign-In: $e',
+      );
+    }
   }
 
   @override
   Future<void> signInWithApple() async {
-    throw UnimplementedError('Autenticación con Apple eliminada.');
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        webAuthenticationOptions:
+            Platform.isAndroid
+                ? WebAuthenticationOptions(
+                  clientId: AuthConfig.appleServiceId,
+                  redirectUri: Uri.parse(AuthConfig.appleRedirectUri),
+                )
+                : null,
+      );
+
+      final OAuthCredential credential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      await _auth.signInWithCredential(credential);
+    } catch (e) {
+      throw FirebaseAuthException(
+        code: 'apple-sign-in-failed',
+        message: 'Error en Apple Sign-In: $e',
+      );
+    }
   }
 
   @override
   Future<void> logout() async {
+    try {
+      if (!_isGoogleSignInInitialized) {
+        await GoogleSignIn.instance.initialize();
+        _isGoogleSignInInitialized = true;
+      }
+      await GoogleSignIn.instance.signOut();
+    } catch (_) {
+      // Ignore if google sign in fails to sign out (e.g. not initialized)
+    }
     await _auth.signOut();
   }
 

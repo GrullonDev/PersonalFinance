@@ -17,6 +17,7 @@ class User {
     required this.fechaNacimiento,
     required this.fechaCreacion,
     required this.fechaActualizacion,
+    this.photoUrl,
   });
 
   @JsonKey(name: 'id')
@@ -48,6 +49,9 @@ class User {
 
   @JsonKey(name: 'fecha_actualizacion')
   final String fechaActualizacion;
+
+  @JsonKey(name: 'photo_url')
+  final String? photoUrl;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
   Map<String, dynamic> toJson() => _$UserToJson(this);

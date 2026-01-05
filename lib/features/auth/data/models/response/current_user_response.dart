@@ -17,7 +17,10 @@ class CurrentUserResponse {
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
+  @JsonKey(name: 'photo_url')
+  final String? photoUrl;
 
   CurrentUserResponse({
     required this.email,
@@ -28,6 +31,7 @@ class CurrentUserResponse {
     required this.createdAt,
     required this.updatedAt,
     this.phoneNumber,
+    this.photoUrl,
   });
 
   factory CurrentUserResponse.fromJson(Map<String, dynamic> json) =>
