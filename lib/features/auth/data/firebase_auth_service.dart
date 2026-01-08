@@ -99,7 +99,13 @@ class FirebaseAuthService implements AuthDataSource {
   Future<void> logout() async {
     try {
       if (!_isGoogleSignInInitialized) {
-        await GoogleSignIn.instance.initialize();
+        if (Platform.isAndroid) {
+          await GoogleSignIn.instance.initialize(
+            serverClientId: AuthConfig.googleWebClientId,
+          );
+        } else {
+          await GoogleSignIn.instance.initialize();
+        }
         _isGoogleSignInInitialized = true;
       }
       await GoogleSignIn.instance.signOut();
