@@ -47,8 +47,10 @@ extension ResponsiveContext on BuildContext {
     }
 
     // Combine with system text scaling preference
-    final double factor = MediaQuery.textScaleFactorOf(this).clamp(0.9, 1.3);
-    return base * scale * factor;
+    // Combine with system text scaling preference
+    final TextScaler scaler = MediaQuery.textScalerOf(this);
+    final double approximateFactor = (scaler.scale(10) / 10).clamp(0.9, 1.3);
+    return base * scale * approximateFactor;
   }
 
   /// Helper to choose a value based on device size

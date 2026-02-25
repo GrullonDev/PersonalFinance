@@ -99,7 +99,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -136,9 +136,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.2),
+        color: colorScheme.primaryContainer.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
@@ -198,14 +198,14 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: SelectableText(
         _privacyPolicyContent,
         style: theme.textTheme.bodyMedium?.copyWith(
           height: 1.6,
           letterSpacing: 0.2,
-          color: colorScheme.onSurface.withOpacity(0.9),
+          color: colorScheme.onSurface.withValues(alpha: 0.9),
         ),
       ),
     );
@@ -224,7 +224,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

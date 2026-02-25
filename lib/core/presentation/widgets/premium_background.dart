@@ -30,7 +30,7 @@ class PremiumBackground extends StatelessWidget {
             top: -100,
             left: -100,
             child: _buildBlurCircle(
-              color: const Color(0xFF6366F1).withOpacity(0.3), // Indigo
+              color: const Color(0xFF6366F1).withValues(alpha: 0.3), // Indigo
               size: 300,
             ),
           ),
@@ -38,7 +38,7 @@ class PremiumBackground extends StatelessWidget {
             bottom: -50,
             right: -50,
             child: _buildBlurCircle(
-              color: const Color(0xFFEC4899).withOpacity(0.2), // Pink
+              color: const Color(0xFFEC4899).withValues(alpha: 0.2), // Pink
               size: 250,
             ),
           ),
@@ -46,7 +46,7 @@ class PremiumBackground extends StatelessWidget {
             top: MediaQuery.of(context).size.height * 0.4,
             left: MediaQuery.of(context).size.width * 0.6,
             child: _buildBlurCircle(
-              color: const Color(0xFF8B5CF6).withOpacity(0.2), // Violet
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.2), // Violet
               size: 200,
             ),
           ),

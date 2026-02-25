@@ -171,7 +171,7 @@ class RegisterLayout extends StatelessWidget {
                               borderRadius: BorderRadius.circular(15),
                             ),
                             elevation: 0,
-                            shadowColor: Colors.blue.withOpacity(0.5),
+                            shadowColor: Colors.blue.withValues(alpha: 0.5),
                           ),
                           child:
                               isLoading

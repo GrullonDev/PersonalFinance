@@ -11,6 +11,7 @@ import 'package:personal_finance/features/transactions/presentation/pages/transa
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:provider/provider.dart';
+import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -34,10 +35,6 @@ class _DashboardContent extends StatelessWidget {
     builder: (BuildContext context, DashboardLogic logic, _) {
       if (logic.isLoading && !logic.hasData) {
         return const Center(child: CircularProgressIndicator());
-      }
-
-      if (!logic.hasData && !logic.isLoading) {
-        return _buildEmptyState();
       }
 
       if (context.isMobile) {
@@ -72,77 +69,11 @@ class _DashboardContent extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        BudgetCard(
-                          title:
-                              logic.activeBudget?.nombre ??
-                              'Presupuesto Mensual',
-                          amount:
-                              logic.activeBudget != null
-                                  ? logic.activeBudget!.montoAsDouble
-                                  : (logic.totalIncomes > 0
-                                      ? logic.totalIncomes
-                                      : 1000),
-                          spent: logic.totalExpenses,
-                        ),
-                        const SizedBox(height: 24),
-                        _buildSavingsGoalsSection(context, logic),
-                        const SizedBox(height: 24),
-                        _buildRecentTransactionsSection(logic, context),
-                        const SizedBox(height: 24),
-                        if (logic.shouldShowExpensesChart) ...<Widget>[
-                          _buildExpensesChart(logic),
-                          const SizedBox(height: 24),
-                          _buildExpensesList(logic),
-                          const SizedBox(height: 24),
-                        ],
-                        if (logic.shouldShowIncomesList) ...<Widget>[
-                          _buildIncomeList(logic),
-                          const SizedBox(height: 24),
-                        ],
-                        _buildRecommendationsSection(context, logic),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-
-  Widget _buildWideLayout(BuildContext context, DashboardLogic logic) =>
-      RefreshIndicator(
-        onRefresh: () async {
-          await logic.loadDashboardData();
-        },
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: <Widget>[
-            SliverToBoxAdapter(child: _buildHeader(context, logic)),
-            SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: const Offset(0, -20),
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 1000),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.all(Radius.circular(30)),
-                    ),
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          // Left Column: Finances & Savings
-                          Expanded(
-                            flex: 5,
-                            child: Column(
+                    child:
+                        !logic.hasData
+                            ? _buildModernEmptyState(context)
+                            : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 BudgetCard(
                                   title:
@@ -156,38 +87,25 @@ class _DashboardContent extends StatelessWidget {
                                               : 1000),
                                   spent: logic.totalExpenses,
                                 ),
-                                const SizedBox(height: 32),
-                                const SizedBox(height: 32),
+                                const SizedBox(height: 24),
                                 _buildSavingsGoalsSection(context, logic),
-                                const SizedBox(height: 32),
-                                if (logic.shouldShowExpensesChart)
-                                  _buildExpensesChart(logic),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 40),
-                          // Right Column: Activity & Tips
-                          Expanded(
-                            flex: 6,
-                            child: Column(
-                              children: <Widget>[
+                                const SizedBox(height: 24),
                                 _buildRecentTransactionsSection(logic, context),
-                                const SizedBox(height: 32),
+                                const SizedBox(height: 24),
                                 if (logic.shouldShowExpensesChart) ...<Widget>[
+                                  _buildExpensesChart(logic),
+                                  const SizedBox(height: 24),
                                   _buildExpensesList(logic),
-                                  const SizedBox(height: 32),
+                                  const SizedBox(height: 24),
                                 ],
                                 if (logic.shouldShowIncomesList) ...<Widget>[
                                   _buildIncomeList(logic),
-                                  const SizedBox(height: 32),
+                                  const SizedBox(height: 24),
                                 ],
                                 _buildRecommendationsSection(context, logic),
+                                const SizedBox(height: 20),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -195,6 +113,103 @@ class _DashboardContent extends StatelessWidget {
           ],
         ),
       );
+
+  Widget _buildWideLayout(
+    BuildContext context,
+    DashboardLogic logic,
+  ) => RefreshIndicator(
+    onRefresh: () async {
+      await logic.loadDashboardData();
+    },
+    child: CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: <Widget>[
+        SliverToBoxAdapter(child: _buildHeader(context, logic)),
+        SliverToBoxAdapter(
+          child: Transform.translate(
+            offset: const Offset(0, -20),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                ),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child:
+                      !logic.hasData
+                          ? _buildModernEmptyState(context)
+                          : Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              // Left Column: Finances & Savings
+                              Expanded(
+                                flex: 5,
+                                child: Column(
+                                  children: <Widget>[
+                                    BudgetCard(
+                                      title:
+                                          logic.activeBudget?.nombre ??
+                                          'Presupuesto Mensual',
+                                      amount:
+                                          logic.activeBudget != null
+                                              ? logic
+                                                  .activeBudget!
+                                                  .montoAsDouble
+                                              : (logic.totalIncomes > 0
+                                                  ? logic.totalIncomes
+                                                  : 1000),
+                                      spent: logic.totalExpenses,
+                                    ),
+                                    const SizedBox(height: 32),
+                                    const SizedBox(height: 32),
+                                    _buildSavingsGoalsSection(context, logic),
+                                    const SizedBox(height: 32),
+                                    if (logic.shouldShowExpensesChart)
+                                      _buildExpensesChart(logic),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 40),
+                              // Right Column: Activity & Tips
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  children: <Widget>[
+                                    _buildRecentTransactionsSection(
+                                      logic,
+                                      context,
+                                    ),
+                                    const SizedBox(height: 32),
+                                    if (logic
+                                        .shouldShowExpensesChart) ...<Widget>[
+                                      _buildExpensesList(logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    if (logic
+                                        .shouldShowIncomesList) ...<Widget>[
+                                      _buildIncomeList(logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    _buildRecommendationsSection(
+                                      context,
+                                      logic,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildHeader(BuildContext context, DashboardLogic logic) {
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -218,47 +233,71 @@ class _DashboardContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // Period Selector
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(50),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<PeriodFilter>(
-                      value: logic.selectedPeriod,
-                      dropdownColor: primaryColor.withOpacity(0.95),
-                      icon: const Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.white,
-                      ),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      onChanged: (PeriodFilter? newValue) {
-                        if (newValue != null) {
-                          logic.changePeriod(newValue);
-                        }
-                      },
-                      items:
-                          PeriodFilter.values
-                              .map<DropdownMenuItem<PeriodFilter>>(
-                                (PeriodFilter value) =>
-                                    DropdownMenuItem<PeriodFilter>(
-                                      value: value,
-                                      child: Text(value.label),
-                                    ),
-                              )
-                              .toList(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hola ${context.watch<AuthProvider>().currentUser?.fullName.split(' ').first ?? 'Usuario'} 👋',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Así van tus finanzas hoy',
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
+                        ),
+                      ],
                     ),
-                  ),
+                    // Period Selector
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(50),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<PeriodFilter>(
+                          value: logic.selectedPeriod,
+                          dropdownColor: primaryColor.withValues(alpha: 0.95),
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.white,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          onChanged: (PeriodFilter? newValue) {
+                            if (newValue != null) {
+                              logic.changePeriod(newValue);
+                            }
+                          },
+                          items:
+                              PeriodFilter.values
+                                  .map<DropdownMenuItem<PeriodFilter>>(
+                                    (PeriodFilter value) =>
+                                        DropdownMenuItem<PeriodFilter>(
+                                          value: value,
+                                          child: Text(value.label),
+                                        ),
+                                  )
+                                  .toList(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 // Balance total
                 _buildBalanceHeader(logic),
                 const SizedBox(
@@ -341,31 +380,135 @@ class _DashboardContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildEmptyState() => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(
-          Icons.account_balance_wallet_outlined,
-          size: 80,
-          color: Colors.grey[400],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'No hay transacciones registradas',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
+  Widget _buildModernEmptyState(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 40),
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          // Ilustración minimalista fintech
+          SizedBox(
+            height: 160,
+            width: 160,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background subtle dashed circle and empty chart
+                SizedBox(
+                  width: 140,
+                  height: 140,
+                  child: SfCircularChart(
+                    margin: EdgeInsets.zero,
+                    series: <CircularSeries<Map<String, dynamic>, String>>[
+                      DoughnutSeries<Map<String, dynamic>, String>(
+                        dataSource: const [
+                          {'x': '', 'y': 100},
+                        ],
+                        xValueMapper:
+                            (Map<String, dynamic> data, _) =>
+                                data['x'] as String,
+                        yValueMapper:
+                            (Map<String, dynamic> data, _) => data['y'] as int,
+                        pointColorMapper:
+                            (_, __) => Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.05),
+                        innerRadius: '85%',
+                      ),
+                    ],
+                  ),
+                ),
+                // Card 1 (Back)
+                Positioned(
+                  top: 25,
+                  right: 25,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: Container(
+                      width: 80,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+                // Card 2 (Front)
+                Positioned(
+                  top: 45,
+                  left: 20,
+                  child: Transform.rotate(
+                    angle: -0.15,
+                    child: Container(
+                      width: 90,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(2, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.credit_card, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+                // Floating Action widget (Graph element)
+                Positioned(
+                  bottom: 10,
+                  right: 30,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.show_chart_rounded,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Agrega tu primer gasto o ingreso\ntocando el botón +',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-        ),
-      ],
+          const SizedBox(height: 30),
+          const Text(
+            '📉 Aún no tienes movimientos',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Empieza agregando tu primer ingreso o gasto',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, color: Colors.black54, height: 1.4),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
     ),
   );
 

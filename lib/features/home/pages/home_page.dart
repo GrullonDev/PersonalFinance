@@ -21,13 +21,34 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabAnimation;
 
   @override
   void initState() {
     super.initState();
     _checkUpdate();
+
+    _fabAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _fabAnimation = Tween<double>(begin: 0, end: 12).animate(
+      CurvedAnimation(
+        parent: _fabAnimationController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fabAnimationController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkUpdate() async {
@@ -97,13 +118,40 @@ class _HomePageState extends State<HomePage> {
           context.isMobile && (_currentIndex != 1 && _currentIndex != 2)
               ? Builder(
                 builder:
-                    (BuildContext innerCtx) => FloatingActionButton(
-                      onPressed: () => _onAddPressed(innerCtx),
-                      elevation: 4,
-                      child: const Icon(
-                        Icons.add,
-                        size: 32,
-                        color: Colors.white,
+                    (BuildContext innerCtx) => AnimatedBuilder(
+                      animation: _fabAnimation,
+                      builder:
+                          (context, child) => Container(
+                            transform: Matrix4.translationValues(
+                              0,
+                              -_fabAnimation.value,
+                              0,
+                            ),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(
+                                    innerCtx,
+                                  ).primaryColor.withValues(alpha: 0.4),
+                                  blurRadius: 16 + (_fabAnimation.value / 2),
+                                  spreadRadius: 2 + (_fabAnimation.value / 4),
+                                  offset: Offset(0, 6 + _fabAnimation.value),
+                                ),
+                              ],
+                            ),
+                            child: child,
+                          ),
+                      child: FloatingActionButton(
+                        onPressed: () => _onAddPressed(innerCtx),
+                        elevation: 0, // Using Container's shadow
+                        hoverElevation: 2,
+                        highlightElevation: 4,
+                        child: const Icon(
+                          Icons.add,
+                          size: 32,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
               )
@@ -151,7 +199,7 @@ class _HomePageState extends State<HomePage> {
                   fontSize: 14,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w400,
                 ),
               ),

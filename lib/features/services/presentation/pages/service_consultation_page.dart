@@ -113,7 +113,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                               ).textTheme.bodyLarge?.copyWith(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.6),
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -295,7 +295,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, color: color),
@@ -310,7 +310,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
             color:
                 isOverdue
                     ? Colors.redAccent
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             fontSize: 13,
             fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
           ),
@@ -327,7 +327,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
             Icon(
               Icons.chevron_right,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -345,13 +345,13 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
         gradient: LinearGradient(
           colors: [
             Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -374,7 +374,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(

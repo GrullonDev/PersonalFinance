@@ -110,7 +110,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: primaryColor.withOpacity(0.1),
+                        color: primaryColor.withValues(alpha: 0.1),
                         border: Border.all(color: primaryColor, width: 3),
                       ),
                       child:
@@ -379,7 +379,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               _photoUrl == emoji
                                   ? Theme.of(
                                     context,
-                                  ).colorScheme.primary.withOpacity(0.1)
+                                  ).colorScheme.primary.withValues(alpha: 0.1)
                                   : null,
                           borderRadius: BorderRadius.circular(10),
                           border:

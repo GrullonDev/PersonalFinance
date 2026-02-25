@@ -56,7 +56,7 @@ class AuthLayout extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
+              color: Colors.blue.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -207,7 +207,7 @@ class AuthLayout extends StatelessWidget {
             backgroundColor: Colors.blue.shade600,
             foregroundColor: Colors.white,
             elevation: 0,
-            shadowColor: Colors.blue.withOpacity(0.5),
+            shadowColor: Colors.blue.withValues(alpha: 0.5),
           ),
           child:
               authProvider.isLoading
@@ -301,9 +301,9 @@ class AuthLayout extends StatelessWidget {
     required String icon,
   }) => Container(
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.1),
+      color: Colors.white.withValues(alpha: 0.1),
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.white.withOpacity(0.2)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
     ),
     child: IconButton(
       onPressed: onPressed,

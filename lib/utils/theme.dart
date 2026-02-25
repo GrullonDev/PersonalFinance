@@ -80,7 +80,7 @@ class AppTheme {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.outline.withOpacity(0.3)),
+          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -92,7 +92,7 @@ class AppTheme {
           horizontal: 20,
           vertical: 16,
         ),
-        labelStyle: TextStyle(color: scheme.onSurface.withOpacity(0.6)),
+        labelStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -100,7 +100,7 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: Colors.white,
           elevation: 4,
-          shadowColor: scheme.primary.withOpacity(0.4),
+          shadowColor: scheme.primary.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -121,7 +121,7 @@ class AppTheme {
 
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         selectedItemColor: scheme.primary,
-        unselectedItemColor: scheme.onSurface.withOpacity(0.4),
+        unselectedItemColor: scheme.onSurface.withValues(alpha: 0.4),
         backgroundColor: isDark ? const Color(0xFF1E2130) : Colors.white,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -129,7 +129,7 @@ class AppTheme {
       ),
 
       dividerTheme: DividerThemeData(
-        color: scheme.outline.withOpacity(0.1),
+        color: scheme.outline.withValues(alpha: 0.1),
         thickness: 1,
       ),
 
@@ -141,12 +141,12 @@ class AppTheme {
           info: const Color(0xFF2196F3),
           glassBackground:
               isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.white.withOpacity(0.7),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white.withValues(alpha: 0.7),
           glassBorder:
               isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.white.withOpacity(0.2),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.2),
         ),
       ],
     );

@@ -197,7 +197,7 @@ class SettingsPage extends StatelessWidget {
                         onChanged: (_) async {
                           await settings.toggleDarkMode();
                         },
-                        activeColor: Theme.of(context).colorScheme.primary,
+                        activeThumbColor: Theme.of(context).colorScheme.primary,
                       ),
                     ],
                   ),

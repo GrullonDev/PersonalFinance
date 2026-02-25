@@ -76,7 +76,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               )!.translate(step.descriptionKey),
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                                 height: 1.5,
                               ),
                               textAlign: TextAlign.center,
@@ -111,7 +111,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           color:
                               _index == index
                                   ? Colors.blue.shade300
-                                  : Colors.white.withOpacity(0.3),
+                                  : Colors.white.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

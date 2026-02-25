@@ -136,12 +136,12 @@ class BudgetsCrudPage extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -181,7 +181,7 @@ class BudgetsCrudPage extends StatelessWidget {
                       'Planifica tus gastos',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -223,7 +223,7 @@ class BudgetsCrudPage extends StatelessWidget {
               FilledButton.tonal(
                 onPressed: () => Navigator.pop(context, true),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF2D55).withOpacity(0.1),
+                  backgroundColor: const Color(0xFFFF2D55).withValues(alpha: 0.1),
                   foregroundColor: const Color(0xFFFF2D55),
                 ),
                 child: const Text('Eliminar'),
@@ -399,7 +399,7 @@ class _BudgetCardState extends State<_BudgetCard> {
             border: Border.all(color: colors.glassBorder),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -448,7 +448,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                               ).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(
                                   context,
-                                ).textTheme.bodySmall?.color?.withOpacity(0.7),
+                                ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -573,7 +573,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                               backgroundColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceContainerHighest
-                                  .withOpacity(0.5),
+                                  .withValues(alpha: 0.5),
                               side: BorderSide.none,
                               deleteIcon: const Icon(Icons.close, size: 14),
                               onDeleted: () async {
@@ -650,7 +650,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                                       color: (c.tipo.toLowerCase() == 'ingreso'
                                               ? Colors.green
                                               : Colors.red)
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
@@ -904,7 +904,7 @@ class _DateTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.2),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
             ),
             borderRadius: BorderRadius.circular(12),
             color: Theme.of(context).colorScheme.surface,

@@ -148,12 +148,12 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: colorScheme.primary.withOpacity(
-              0.05 + (0.05 * _pulseController.value),
+            color: colorScheme.primary.withValues(
+              alpha: 0.05 + (0.05 * _pulseController.value),
             ),
             border: Border.all(
-              color: colorScheme.primary.withOpacity(
-                0.1 + (0.2 * _pulseController.value),
+              color: colorScheme.primary.withValues(
+                alpha: 0.1 + (0.2 * _pulseController.value),
               ),
               width: 2,
             ),
@@ -167,7 +167,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                 color: colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.3),
+                    color: colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 15 * _pulseController.value,
                     spreadRadius: 2,
                   ),
@@ -224,14 +224,16 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
     decoration: BoxDecoration(
       color: colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+      border: Border.all(
+        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+      ),
     ),
     child: ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: colorScheme.primary.withOpacity(0.1),
+          color: colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: colorScheme.primary, size: 24),
@@ -241,7 +243,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       trailing: Switch.adaptive(
         value: value,
         onChanged: onChanged,
-        activeColor: colorScheme.primary,
+        activeThumbColor: colorScheme.primary,
       ),
     ),
   );
@@ -259,7 +261,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Row(
@@ -285,9 +287,9 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   Widget _buildEmergencyNote(ThemeData theme) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.amber.withOpacity(0.1),
+      color: Colors.amber.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.amber.withOpacity(0.3)),
+      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
     ),
     child: Row(
       children: [

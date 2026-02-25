@@ -170,7 +170,7 @@ class DashboardLayout extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.8),
+                  ).colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
                 iconHeight: 10,
                 iconWidth: 10,
@@ -232,7 +232,7 @@ class DashboardLayout extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -247,7 +247,7 @@ class DashboardLayout extends StatelessWidget {
           const SizedBox(height: 12),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: color.withOpacity(0.1),
+            backgroundColor: color.withValues(alpha: 0.1),
             valueColor: AlwaysStoppedAnimation(color),
             borderRadius: BorderRadius.circular(4),
             minHeight: 6,
@@ -470,7 +470,7 @@ class DashboardLayout extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 8),
             ),
@@ -494,7 +494,7 @@ class DashboardLayout extends StatelessWidget {
                   Text(
                     'Te recomendamos guardar al menos 3 meses de gastos.',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 13,
                     ),
                   ),
@@ -505,7 +505,7 @@ class DashboardLayout extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.savings_outlined, color: Colors.white),
@@ -610,7 +610,7 @@ class DashboardLayout extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -681,7 +681,7 @@ class DashboardLayout extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -707,7 +707,7 @@ class DashboardLayout extends StatelessWidget {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.5),
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                   fontSize: 12,
                 ),
               ),
