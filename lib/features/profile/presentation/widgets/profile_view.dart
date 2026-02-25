@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
@@ -103,7 +101,7 @@ class ProfileView extends StatelessWidget {
                           ],
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 24),
 
                         _buildMenuSection(
                           context,
@@ -141,7 +139,7 @@ class ProfileView extends StatelessWidget {
                           ],
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 24),
 
                         _buildMenuSection(
                           context,
@@ -242,7 +240,7 @@ class ProfileView extends StatelessWidget {
             : fullName;
 
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 250,
       pinned: true,
       backgroundColor: primaryColor,
       automaticallyImplyLeading: false, // Quita la flecha de retroceso
@@ -322,7 +320,6 @@ class ProfileView extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
 
-                  // Email
                   Text(
                     email,
                     style: TextStyle(
@@ -330,6 +327,61 @@ class ProfileView extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
                     textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nivel Pro y Miembro desde
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.workspace_premium,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Nivel: Usuario Pro',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'Miembro desde 2026',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -392,13 +444,18 @@ class ProfileView extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
