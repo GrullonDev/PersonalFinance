@@ -151,6 +151,7 @@ class DashboardLayout extends StatelessWidget {
             child: SfCircularChart(
               series: <CircularSeries<ChartData, String>>[
                 DoughnutSeries<ChartData, String>(
+                  animationDuration: 0,
                   dataSource: chartData,
                   xValueMapper: (ChartData data, _) => data.category,
                   yValueMapper: (ChartData data, _) => data.amount,
@@ -470,7 +471,9 @@ class DashboardLayout extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 8),
             ),

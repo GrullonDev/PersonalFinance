@@ -401,6 +401,7 @@ class _DashboardContent extends StatelessWidget {
                     margin: EdgeInsets.zero,
                     series: <CircularSeries<Map<String, dynamic>, String>>[
                       DoughnutSeries<Map<String, dynamic>, String>(
+                        animationDuration: 0,
                         dataSource: const [
                           {'x': '', 'y': 100},
                         ],
@@ -791,6 +792,7 @@ class _DashboardContent extends StatelessWidget {
           ),
           series: <CircularSeries<ChartData, String>>[
             DoughnutSeries<ChartData, String>(
+              animationDuration: 0,
               dataSource: logic.chartData,
               xValueMapper: (ChartData data, _) => data.category,
               yValueMapper: (ChartData data, _) => data.amount,

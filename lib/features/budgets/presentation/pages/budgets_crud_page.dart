@@ -223,7 +223,9 @@ class BudgetsCrudPage extends StatelessWidget {
               FilledButton.tonal(
                 onPressed: () => Navigator.pop(context, true),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF2D55).withValues(alpha: 0.1),
+                  backgroundColor: const Color(
+                    0xFFFF2D55,
+                  ).withValues(alpha: 0.1),
                   foregroundColor: const Color(0xFFFF2D55),
                 ),
                 child: const Text('Eliminar'),
@@ -389,6 +391,16 @@ class _BudgetCardState extends State<_BudgetCard> {
         final String range =
             '${_fmt2(widget.budget.fechaInicio)} → ${_fmt2(widget.budget.fechaFin)}';
         final bool over = spent > total && total > 0;
+        final double remaining = (total - spent).clamp(0.0, double.infinity);
+
+        Color progressColor;
+        if (progress < 0.5) {
+          progressColor = Colors.blue;
+        } else if (progress < 0.8) {
+          progressColor = Colors.amber;
+        } else {
+          progressColor = const Color(0xFFFF2D55);
+        }
 
         final CategoriesState catsState = context.watch<CategoriesBloc>().state;
 
@@ -446,9 +458,11 @@ class _BudgetCardState extends State<_BudgetCard> {
                               style: Theme.of(
                                 context,
                               ).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -458,14 +472,13 @@ class _BudgetCardState extends State<_BudgetCard> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}%',
+                            over
+                                ? 'Agotado'
+                                : 'Quedan \$${remaining.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color:
-                                  over
-                                      ? const Color(0xFFFF2D55)
-                                      : Theme.of(context).colorScheme.primary,
+                              fontSize: 14,
+                              color: progressColor,
                             ),
                           ),
                           InkWell(
@@ -498,10 +511,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                               Theme.of(
                                 context,
                               ).colorScheme.surfaceContainerHighest,
-                          color:
-                              over
-                                  ? const Color(0xFFFF2D55)
-                                  : Theme.of(context).colorScheme.primary,
+                          color: progressColor,
                         ),
                       ),
                       const SizedBox(height: 8),

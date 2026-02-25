@@ -100,7 +100,9 @@ class _HomePageState extends State<HomePage>
               children: [
                 if (!context.isMobile && _showAppBar[_currentIndex])
                   _buildResponsiveAppBar(context),
-                Expanded(child: _pages[_currentIndex]),
+                Expanded(
+                  child: IndexedStack(index: _currentIndex, children: _pages),
+                ),
               ],
             ),
           ),

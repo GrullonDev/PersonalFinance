@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
 import 'package:personal_finance/utils/theme.dart';
@@ -18,11 +17,28 @@ class ServiceConsultationPage extends StatefulWidget {
 }
 
 class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isFabVisible = true;
+
   @override
   void initState() {
     super.initState();
     // Asegurarse de cargar los presupuestos al entrar
     context.read<BudgetsBloc>().add(BudgetsLoad());
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels > 30) {
+        if (_isFabVisible) setState(() => _isFabVisible = false);
+      } else {
+        if (!_isFabVisible) setState(() => _isFabVisible = true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   IconData _getServiceIcon(String name) {
@@ -73,202 +89,215 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: PremiumBackground(
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: context.isMobile ? double.infinity : 1000,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Mis Servicios',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: -0.5,
-                              ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: context.isMobile ? double.infinity : 1000,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mis Servicios',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Gestiona tus pagos recurrentes',
-                              style: Theme.of(
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Gestiona tus pagos recurrentes',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(
                                 context,
-                              ).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.6),
-                              ),
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      if (!context.isMobile)
-                        FilledButton.icon(
-                          onPressed: () => _openAddServiceDialog(context),
-                          icon: const Icon(Icons.add_card_rounded),
-                          label: const Text('Agregar Servicio'),
-                        ),
-                    ],
-                  ),
+                    ),
+                    if (!context.isMobile)
+                      FilledButton.icon(
+                        onPressed: () => _openAddServiceDialog(context),
+                        icon: const Icon(Icons.add_card_rounded),
+                        label: const Text('Agregar Servicio'),
+                      ),
+                  ],
                 ),
               ),
+            ),
 
-              Expanded(
-                child: BlocBuilder<BudgetsBloc, BudgetsState>(
-                  builder: (context, state) {
-                    if (state.loading && state.items.isEmpty) {
-                      return const Center(child: AppLoadingWidget());
-                    }
+            Expanded(
+              child: BlocBuilder<BudgetsBloc, BudgetsState>(
+                builder: (context, state) {
+                  if (state.loading && state.items.isEmpty) {
+                    return const Center(child: AppLoadingWidget());
+                  }
 
-                    if (state.error != null && state.items.isEmpty) {
-                      return Center(child: Text('Error: ${state.error}'));
-                    }
+                  if (state.error != null && state.items.isEmpty) {
+                    return Center(child: Text('Error: ${state.error}'));
+                  }
 
-                    if (state.items.isEmpty) {
-                      return EmptyState(
-                        title: 'No hay servicios',
-                        message:
-                            'Agrega un servicio para llevar el control de tus pagos.',
-                        action: IconButton.filledTonal(
-                          onPressed: () => _openAddServiceDialog(context),
-                          icon: const Icon(Icons.add),
-                        ),
-                      );
-                    }
-
-                    final totalAmount = state.items.fold<double>(
-                      0,
-                      (sum, item) => sum + item.montoAsDouble,
+                  if (state.items.isEmpty) {
+                    return EmptyState(
+                      title: 'No hay servicios',
+                      message:
+                          'Agrega un servicio para llevar el control de tus pagos.',
+                      action: IconButton.filledTonal(
+                        onPressed: () => _openAddServiceDialog(context),
+                        icon: const Icon(Icons.add),
+                      ),
                     );
+                  }
 
-                    return RefreshIndicator(
-                      onRefresh:
-                          () async =>
-                              context.read<BudgetsBloc>().add(BudgetsLoad()),
-                      child: Center(
-                        child: Container(
-                          constraints: BoxConstraints(
-                            maxWidth: context.isMobile ? double.infinity : 1000,
-                          ),
-                          child: CustomScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            slivers: [
-                              // Status Summary Header
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    20,
-                                    8,
-                                    20,
-                                    24,
-                                  ),
-                                  child: _buildStatusCard(context, totalAmount),
+                  final totalAmount = state.items.fold<double>(
+                    0,
+                    (sum, item) => sum + item.montoAsDouble,
+                  );
+
+                  return RefreshIndicator(
+                    onRefresh:
+                        () async =>
+                            context.read<BudgetsBloc>().add(BudgetsLoad()),
+                    child: Center(
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: context.isMobile ? double.infinity : 1000,
+                        ),
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            // Status Summary Header
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  8,
+                                  20,
+                                  24,
+                                ),
+                                child: _buildStatusCard(context, totalAmount),
+                              ),
+                            ),
+
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              sliver: SliverToBoxAdapter(
+                                child: Text(
+                                  'Lista de Servicios',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                               ),
+                            ),
 
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
+
+                            if (context.isMobile)
                               SliverPadding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,
                                 ),
-                                sliver: SliverToBoxAdapter(
-                                  child: Text(
-                                    'Lista de Servicios',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final budget = state.items[index];
+                                    return _buildServiceItem(
+                                      context,
+                                      budget,
+                                      colors,
+                                    );
+                                  }, childCount: state.items.length),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverGrid(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithMaxCrossAxisExtent(
+                                        maxCrossAxisExtent: 450,
+                                        mainAxisExtent: 100,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                      ),
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final budget = state.items[index];
+                                    return _buildServiceItem(
+                                      context,
+                                      budget,
+                                      colors,
+                                    );
+                                  }, childCount: state.items.length),
                                 ),
                               ),
 
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 16),
-                              ),
-
-                              if (context.isMobile)
-                                SliverPadding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  sliver: SliverList(
-                                    delegate: SliverChildBuilderDelegate((
-                                      context,
-                                      index,
-                                    ) {
-                                      final budget = state.items[index];
-                                      return _buildServiceItem(
-                                        context,
-                                        budget,
-                                        colors,
-                                      );
-                                    }, childCount: state.items.length),
-                                  ),
-                                )
-                              else
-                                SliverPadding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  sliver: SliverGrid(
-                                    gridDelegate:
-                                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                                          maxCrossAxisExtent: 450,
-                                          mainAxisExtent: 100,
-                                          crossAxisSpacing: 16,
-                                          mainAxisSpacing: 16,
-                                        ),
-                                    delegate: SliverChildBuilderDelegate((
-                                      context,
-                                      index,
-                                    ) {
-                                      final budget = state.items[index];
-                                      return _buildServiceItem(
-                                        context,
-                                        budget,
-                                        colors,
-                                      );
-                                    }, childCount: state.items.length),
-                                  ),
-                                ),
-
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 80),
-                              ), // Space for FAB
-                            ],
-                          ),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 80),
+                            ), // Space for FAB
+                          ],
                         ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       floatingActionButton:
           context.isMobile
-              ? FloatingActionButton.extended(
-                onPressed: () => _openAddServiceDialog(context),
-                icon: const Icon(Icons.add_card_rounded),
-                label: const Text('Agregar Servicio'),
+              ? AnimatedSlide(
+                duration: const Duration(milliseconds: 300),
+                offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: _isFabVisible ? 1.0 : 0.0,
+                  child: FloatingActionButton.extended(
+                    onPressed: () => _openAddServiceDialog(context),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    icon: const Icon(Icons.add_card_rounded, size: 20),
+                    label: const Text(
+                      'Agregar Servicio',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
               )
               : null,
     );
@@ -304,16 +333,34 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           budget.nombre,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        subtitle: Text(
-          'Vence: ${DateFormat.yMMMd().format(budget.fechaFin)}',
-          style: TextStyle(
-            color:
-                isOverdue
-                    ? Colors.redAccent
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-            fontSize: 13,
-            fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
-          ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isOverdue)
+              const Text(
+                'Pago pendiente',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            Text(
+              isOverdue
+                  ? 'Vencido hace ${DateTime.now().difference(budget.fechaFin).inDays} días 🔴'
+                  : 'Vence en ${budget.fechaFin.difference(DateTime.now()).inDays} días',
+              style: TextStyle(
+                color:
+                    isOverdue
+                        ? Colors.redAccent
+                        : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 13,
+                fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -321,13 +368,15 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           children: [
             Text(
               '\$${double.tryParse(budget.montoTotal)?.toStringAsFixed(2) ?? "0.00"}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 4),
             Icon(
               Icons.chevron_right,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -337,75 +386,73 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     );
   }
 
-  Widget _buildStatusCard(BuildContext context, double total) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+  Widget _buildStatusCard(BuildContext context, double total) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+        ],
+      ),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [
+        BoxShadow(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          blurRadius: 30,
+          spreadRadius: 5,
+          offset: const Offset(0, 15),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Icon(
+              Icons.account_balance_wallet,
+              color: Colors.white,
+              size: 32,
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Firebase Sync',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+        const SizedBox(height: 24),
+        const Text(
+          'Presupuesto Total en Servicios',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '\$${total.toStringAsFixed(2)}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Icon(
-                Icons.account_balance_wallet,
-                color: Colors.white,
-                size: 32,
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Firebase Sync',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Presupuesto Total en Servicios',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '\$${total.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 
   Future<void> _openAddServiceDialog(
     BuildContext context, {
