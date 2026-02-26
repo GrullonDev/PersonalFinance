@@ -130,8 +130,7 @@ class BudgetsCrudPage extends StatelessWidget {
     ),
   );
 
-  Widget _buildAppBar(BuildContext context) {
-    return Container(
+  Widget _buildAppBar(BuildContext context) => Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -205,7 +204,6 @@ class BudgetsCrudPage extends StatelessWidget {
         ),
       ),
     );
-  }
 
   Future<bool> _confirmDelete(BuildContext context) async {
     final bool? confirm = await showDialog<bool>(
@@ -597,7 +595,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                             onTap: _assignCategories,
                             borderRadius: BorderRadius.circular(20),
                             child: Padding(
-                              padding: const EdgeInsets.all(4.0),
+                              padding: const EdgeInsets.all(4),
                               child: Icon(
                                 Icons.tune_rounded,
                                 size: 16,
@@ -1118,16 +1116,14 @@ class _DateTile extends StatelessWidget {
             initialDate: value,
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),
-            builder: (BuildContext context, Widget? child) {
-              return Theme(
+            builder: (BuildContext context, Widget? child) => Theme(
                 data: Theme.of(context).copyWith(
                   colorScheme: Theme.of(context).colorScheme.copyWith(
                     primary: Theme.of(context).primaryColor,
                   ),
                 ),
                 child: child!,
-              );
-            },
+              ),
           );
           if (picked != null) onPick(picked);
         },

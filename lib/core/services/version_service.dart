@@ -1,5 +1,6 @@
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'dart:developer' as developer;
 
 class VersionService {
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
@@ -21,13 +22,16 @@ class VersionService {
       await _remoteConfig.fetchAndActivate();
     } catch (e) {
       // If fetching fails, we continue with defaults
-      print('Error initializing Remote Config: $e');
+      developer.log('Error initializing Remote Config: $e');
     }
   }
 
   Future<bool> isUpdateRequired() async {
     try {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      developer.log(
+        'App version: ${packageInfo.version}+${packageInfo.buildNumber}',
+      );
       final String currentVersion = packageInfo.version;
       final String minRequiredVersion = _remoteConfig.getString(
         'min_app_version',
@@ -35,7 +39,7 @@ class VersionService {
 
       return _isVersionLower(currentVersion, minRequiredVersion);
     } catch (e) {
-      print('Error checking for update: $e');
+      developer.log('Error checking update: $e');
       return false;
     }
   }
@@ -66,8 +70,5 @@ class VersionService {
     }
   }
 
-  String get storeUrl {
-    // Basic detection for platform could be added here
-    return _remoteConfig.getString('store_url_android');
-  }
+  String get storeUrl => _remoteConfig.getString('store_url_android');
 }

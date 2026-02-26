@@ -24,7 +24,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebase_auth.User? user =
           firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return Left(AuthFailure(message: 'Google Sign-In failed'));
+        return const Left(AuthFailure(message: 'Google Sign-In failed'));
       }
 
       await _ensureUserDocumentExists(user);
@@ -42,7 +42,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebase_auth.User? user =
           firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return Left(AuthFailure(message: 'Apple Sign-In failed'));
+        return const Left(AuthFailure(message: 'Apple Sign-In failed'));
       }
 
       await _ensureUserDocumentExists(user);
@@ -58,7 +58,7 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     final String? token = await user.getIdToken();
     if (token == null) {
-      return Left(AuthFailure(message: 'Failed to retrieve auth token'));
+      return const Left(AuthFailure(message: 'Failed to retrieve auth token'));
     }
 
     final DocumentSnapshot doc =
@@ -182,14 +182,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String token,
     required String newPassword,
     required String confirmPassword,
-  }) async {
-    // Note: Firebase handles password reset via the link sent to email.
-    // ConfimPassword reset via API is not directly supported by client SDK in the same way as backend tokens.
-    // However, if the user is logged in, we can update password.
-    // If this is a flow where the user receives a code, Firebase dynamic links manage it.
-    // For now, returning success as this flow might need UI adjustment for Firebase.
-    return right(unit);
-  }
+  }) async => right(unit);
 
   @override
   Future<Either<AuthFailure, RegisterUserResponse>> registerUser(
@@ -266,7 +259,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (!doc.exists) {
         // Create basic doc if missing (migrated user or error)
-        return Left(
+        return const Left(
           AuthFailure(message: 'El usuario no tiene un perfil asociado.'),
         );
       }
@@ -305,10 +298,10 @@ class AuthRepositoryImpl implements AuthRepository {
       // Construct LoginUserResponse
       final response = LoginUserResponse(
         accessToken:
-            "firebase-token-placeholder", // Not needed really but req by model
-        tokenType: "bearer",
+            'firebase-token-placeholder', // Not needed really but req by model
+        tokenType: 'bearer',
         user: user,
-        refreshToken: "firebase-refresh-token-placeholder",
+        refreshToken: 'firebase-refresh-token-placeholder',
       );
 
       return Right(response);
@@ -328,23 +321,22 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(
     String refreshToken,
-  ) async {
-    // Firebase handles token refresh automatically.
-    return Left(AuthFailure(message: "Refresh token no necesario en Firebase"));
-  }
+  ) async => const Left(
+    AuthFailure(message: 'Refresh token no necesario en Firebase'),
+  );
 
   @override
   Future<Either<AuthFailure, CurrentUserResponse>> getCurrentUser() async {
     try {
       final user = firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return Left(AuthFailure(message: "No hay usuario autenticado"));
+        return const Left(AuthFailure(message: 'No hay usuario autenticado'));
       }
 
       final DocumentSnapshot doc =
           await _firestore.collection('users').doc(user.uid).get();
       if (!doc.exists) {
-        return Left(
+        return const Left(
           AuthFailure(message: 'Perfil no encontrado en base de datos.'),
         );
       }

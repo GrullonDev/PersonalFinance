@@ -8,7 +8,5 @@ class GetActiveBudgetsUseCase {
 
   GetActiveBudgetsUseCase(this.repository);
 
-  Future<Either<Failure, List<Budget>>> execute() async {
-    return await repository.getBudgets();
-  }
+  Future<Either<Failure, List<Budget>>> execute() async => await repository.getBudgets();
 }
