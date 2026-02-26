@@ -389,6 +389,7 @@ class _GoalsView extends StatelessWidget {
       },
     ),
     floatingActionButton: FloatingActionButton.extended(
+      heroTag: null,
       onPressed: () => _openDialog(context),
       label: const Text('Nueva meta'),
       icon: const Icon(Icons.add),

@@ -4,9 +4,10 @@ class AppTheme {
   // Premium/Neon Palette
   static const Color _seedColor = Color(0xFF6C63FF); // Electric Violet
   static const Color _primaryLight = Color(0xFF6C63FF);
+  static const Color _secondaryLight = Color(0xFF4F46E5); // Indigo
   static const Color _primaryDark = Color(0xFF8B80F9);
 
-  static const Color _bgLight = Color(0xFFF0F2F5);
+  static const Color _bgLight = Color(0xFFF6F7FB); // Claro y fresco
   static const Color _bgDark = Color(0xFF0F111A); // Deep Midnight Blue
 
   static const Color _surfaceLight = Colors.white;
@@ -14,6 +15,9 @@ class AppTheme {
 
   static const Color _success = Color(0xFF00E676); // Neon Green
   static const Color _error = Color(0xFFFF2D55); // Neon Red
+
+  static const Color _textMainLight = Color(0xFF111827); // Dark Gray
+  static const Color _textSecondaryLight = Color(0xFF6B7280); // Gray
 
   static ThemeData dark() {
     final ColorScheme base = ColorScheme.fromSeed(
@@ -34,10 +38,11 @@ class AppTheme {
     final ColorScheme base = ColorScheme.fromSeed(seedColor: _seedColor);
     final ColorScheme scheme = base.copyWith(
       primary: _primaryLight,
-      secondary: const Color(0xFF03DAC6),
+      secondary: _secondaryLight,
       surface: _surfaceLight,
       error: _error,
-      // background: _bgLight,
+      onSurface: _textMainLight,
+      onSurfaceVariant: _textSecondaryLight,
     );
     return _buildTheme(scheme, _bgLight);
   }
@@ -72,25 +77,40 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 10,
+        backgroundColor: isDark ? const Color(0xFF2C2F40) : Colors.black87,
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'Roboto',
+        ),
+      ),
+
       textTheme: Typography.material2021(platform: TargetPlatform.iOS)
           .englishLike
           .apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
 
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.15)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(
+            color: scheme.primary.withValues(alpha: 0.8),
+            width: 2,
+          ),
         ),
         filled: true,
-        fillColor: isDark ? const Color(0xFF2C2F40) : Colors.grey.shade100,
+        fillColor: isDark ? const Color(0xFF2C2F40) : Colors.grey.shade50,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
-          vertical: 16,
+          vertical: 18,
         ),
         labelStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
       ),

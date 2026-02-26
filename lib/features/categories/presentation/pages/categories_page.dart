@@ -109,6 +109,7 @@ class CategoriesPage extends StatelessWidget {
             ? Builder(
               builder:
                   (BuildContext context) => FloatingActionButton.extended(
+                    heroTag: null,
                     onPressed: () => _openCategoryDialog(context),
                     label: const Text('Nueva categoría'),
                     icon: const Icon(Icons.add),

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
+import 'package:personal_finance/utils/premium_modals.dart';
 import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
@@ -284,6 +285,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                   duration: const Duration(milliseconds: 300),
                   opacity: _isFabVisible ? 1.0 : 0.0,
                   child: FloatingActionButton.extended(
+                    heroTag: null,
                     onPressed: () => _openAddServiceDialog(context),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -465,150 +467,381 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     DateTime start = budget?.fechaInicio ?? DateTime.now();
     DateTime end =
         budget?.fechaFin ?? DateTime.now().add(const Duration(days: 30));
+    String frecuencia = 'Mensual';
 
-    await showModalBottomSheet<void>(
+    await showPremiumBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder:
           (context) => StatefulBuilder(
             builder:
-                (context, setState) => Container(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                    top: 24,
-                    left: 24,
-                    right: 24,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(32),
+                (context, setState) => SafeArea(
+                  bottom: false,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: context.isMobile ? double.infinity : 500,
+                      maxHeight: MediaQuery.of(context).size.height * 0.9,
                     ),
-                  ),
-                  child: SingleChildScrollView(
-                    child: Form(
-                      key: key,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            budget == null
-                                ? 'Nuevo Servicio'
-                                : 'Editar Servicio',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 24),
-                          TextFormField(
-                            controller: nameCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'Nombre del Servicio',
-                              prefixIcon: const Icon(Icons.label_outline),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            validator:
-                                (v) =>
-                                    v == null || v.isEmpty ? 'Requerido' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: amountCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Monto a Presupuestar',
-                              prefixIcon: const Icon(Icons.attach_money),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            validator:
-                                (v) =>
-                                    (double.tryParse(v ?? '') ?? 0) <= 0
-                                        ? 'Monto inválido'
-                                        : null,
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ListTile(
-                                  title: const Text(
-                                    'Inicio',
-                                    style: TextStyle(fontSize: 12),
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                      top: 24,
+                      left: 24,
+                      right: 24,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(32),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: key,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
-                                  subtitle: Text(
-                                    DateFormat.yMMMd().format(start),
+                                  child: Icon(
+                                    Icons.bolt_rounded,
+                                    color: Theme.of(context).primaryColor,
+                                    size: 32,
                                   ),
-                                  onTap: () async {
-                                    final d = await showDatePicker(
-                                      context: context,
-                                      initialDate: start,
-                                      firstDate: DateTime(2020),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (d != null) setState(() => start = d);
-                                  },
                                 ),
-                              ),
-                              Expanded(
-                                child: ListTile(
-                                  title: const Text(
-                                    'Vencimiento',
-                                    style: TextStyle(fontSize: 12),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        budget == null
+                                            ? 'Agregar Servicio'
+                                            : 'Editar Servicio',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Gestiona pagos recurrentes',
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  subtitle: Text(
-                                    DateFormat.yMMMd().format(end),
-                                  ),
-                                  onTap: () async {
-                                    final d = await showDatePicker(
-                                      context: context,
-                                      initialDate: end,
-                                      firstDate: DateTime(2020),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (d != null) setState(() => end = d);
-                                  },
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            TextFormField(
+                              controller: nameCtrl,
+                              decoration: InputDecoration(
+                                labelText: 'Nombre del Servicio',
+                                prefixIcon: const Icon(Icons.label_outline),
+                                border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
+                                filled: true,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
                               ),
-                              onPressed: () {
-                                if (!key.currentState!.validate()) return;
-                                final payload = Budget(
-                                  id: budget?.id,
-                                  nombre: nameCtrl.text.trim(),
-                                  montoTotal: amountCtrl.text.trim(),
-                                  fechaInicio: start,
-                                  fechaFin: end,
-                                );
-                                if (budget == null) {
-                                  parentBloc.add(BudgetCreate(payload));
-                                } else {
-                                  parentBloc.add(BudgetUpdate(payload));
-                                }
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Guardar'),
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Requerido'
+                                          : null,
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
+                            const SizedBox(height: 16),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: amountCtrl,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    decoration: InputDecoration(
+                                      labelText: 'Monto Total',
+                                      prefixIcon: const Icon(
+                                        Icons.attach_money,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      filled: true,
+                                      fillColor: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                    validator:
+                                        (v) =>
+                                            (double.tryParse(v ?? '') ?? 0) <= 0
+                                                ? 'Monto inválido'
+                                                : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: frecuencia,
+                                    decoration: InputDecoration(
+                                      labelText: 'Frecuencia',
+                                      prefixIcon: const Icon(
+                                        Icons.autorenew_rounded,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      filled: true,
+                                      fillColor: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'Mensual',
+                                        child: Text('Mensual'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'Anual',
+                                        child: Text('Anual'),
+                                      ),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null)
+                                        setState(() => frecuencia = val);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final d = await showDatePicker(
+                                        context: context,
+                                        initialDate: start,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (d != null) setState(() => start = d);
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.3),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline
+                                              .withValues(alpha: 0.2),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Inicio',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.calendar_today,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                DateFormat.yMMMd().format(
+                                                  start,
+                                                ),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final d = await showDatePicker(
+                                        context: context,
+                                        initialDate: end,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (d != null) setState(() => end = d);
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.3),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline
+                                              .withValues(alpha: 0.2),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Vencimiento',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.event_available,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                DateFormat.yMMMd().format(end),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextButton(
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      foregroundColor: Colors.grey.shade600,
+                                    ),
+                                    child: const Text(
+                                      'Cancelar',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 2,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      elevation: 2,
+                                    ),
+                                    onPressed: () {
+                                      if (!key.currentState!.validate()) return;
+                                      final payload = Budget(
+                                        id: budget?.id,
+                                        nombre:
+                                            '${nameCtrl.text.trim()} ($frecuencia)',
+                                        montoTotal: amountCtrl.text.trim(),
+                                        fechaInicio: start,
+                                        fechaFin: end,
+                                      );
+                                      if (budget == null) {
+                                        parentBloc.add(BudgetCreate(payload));
+                                      } else {
+                                        parentBloc.add(BudgetUpdate(payload));
+                                      }
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      budget == null
+                                          ? 'Guardar Servicio'
+                                          : 'Actualizar',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                       ),
                     ),
                   ),

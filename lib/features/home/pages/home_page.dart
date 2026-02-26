@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/budgets/presentation/pages/budgets_crud_page.dart';
 import 'package:personal_finance/features/dashboard/presentation/pages/dashboard_page.dart';
@@ -13,6 +14,7 @@ import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/core/services/version_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/utils/premium_modals.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -101,7 +103,10 @@ class _HomePageState extends State<HomePage>
                 if (!context.isMobile && _showAppBar[_currentIndex])
                   _buildResponsiveAppBar(context),
                 Expanded(
-                  child: IndexedStack(index: _currentIndex, children: _pages),
+                  child: _FadeIndexedStack(
+                    index: _currentIndex,
+                    children: _pages,
+                  ),
                 ),
               ],
             ),
@@ -145,6 +150,7 @@ class _HomePageState extends State<HomePage>
                             child: child,
                           ),
                       child: FloatingActionButton(
+                        heroTag: null,
                         onPressed: () => _onAddPressed(innerCtx),
                         elevation: 0, // Using Container's shadow
                         hoverElevation: 2,
@@ -223,6 +229,7 @@ class _HomePageState extends State<HomePage>
         children: [
           const SizedBox(height: 20),
           FloatingActionButton(
+            heroTag: null,
             onPressed: () => _onAddPressed(context),
             elevation: 2,
             child: const Icon(Icons.add),
@@ -282,18 +289,22 @@ class _HomePageState extends State<HomePage>
   }
 
   void _onAddPressed(BuildContext ctx) {
+    HapticFeedback.lightImpact();
     final TransactionsBloc bloc = ctx.read<TransactionsBloc>();
-    showModalBottomSheet<void>(
+    showPremiumBottomSheet<void>(
       context: ctx,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(ctx).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder:
           (BuildContext _) => BlocProvider.value(
             value: bloc,
-            child: const AddTransactionModal(),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+              ),
+              child: const AddTransactionModal(),
+            ),
           ),
     ).then((_) {
       setState(() {});
@@ -301,8 +312,55 @@ class _HomePageState extends State<HomePage>
   }
 
   void _onNavTap(int index) {
+    HapticFeedback.selectionClick();
     setState(() {
       _currentIndex = index;
     });
+  }
+}
+
+class _FadeIndexedStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const _FadeIndexedStack({required this.index, required this.children});
+
+  @override
+  State<_FadeIndexedStack> createState() => _FadeIndexedStackState();
+}
+
+class _FadeIndexedStackState extends State<_FadeIndexedStack>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..forward();
+  }
+
+  @override
+  void didUpdateWidget(_FadeIndexedStack oldWidget) {
+    if (widget.index != oldWidget.index) {
+      _controller.forward(from: 0.0);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _controller,
+      child: IndexedStack(index: widget.index, children: widget.children),
+    );
   }
 }

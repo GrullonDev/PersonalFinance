@@ -134,6 +134,7 @@ class TransactionsCrudPage extends StatelessWidget {
         floatingActionButton: Builder(
           builder:
               (BuildContext context) => FloatingActionButton.extended(
+                heroTag: null,
                 onPressed: () => _openDialog(context),
                 label: const Text('Nueva transacción'),
                 icon: const Icon(Icons.add),

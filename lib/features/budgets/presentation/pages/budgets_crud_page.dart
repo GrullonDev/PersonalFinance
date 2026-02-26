@@ -14,6 +14,7 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
 import 'package:personal_finance/utils/budget_category_prefs.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/premium_modals.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
@@ -119,6 +120,7 @@ class BudgetsCrudPage extends StatelessWidget {
               ? Builder(
                 builder:
                     (BuildContext context) => FloatingActionButton.extended(
+                      heroTag: null,
                       onPressed: () => _openDialog(context),
                       label: const Text('Nuevo presupuesto'),
                       icon: const Icon(Icons.add),
@@ -249,14 +251,51 @@ class BudgetsCrudPage extends StatelessWidget {
     DateTime end =
         budget?.fechaFin ?? DateTime.now().add(const Duration(days: 30));
 
-    final bool? saved = await showDialog<bool>(
+    final bool? saved = await showPremiumDialog<bool>(
       context: context,
       builder:
           (BuildContext context) => StatefulBuilder(
             builder:
                 (BuildContext context, StateSetter setState) => AlertDialog(
-                  title: Text(
-                    budget == null ? 'Crear presupuesto' : 'Editar presupuesto',
+                  title: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.track_changes_rounded,
+                          color: Theme.of(context).primaryColor,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        budget == null
+                            ? 'Define tu límite de gasto'
+                            : 'Editar límite de gasto',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Te notificaremos cuando estés cerca del límite',
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 13,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                   content: Form(
                     key: key,
@@ -267,8 +306,17 @@ class BudgetsCrudPage extends StatelessWidget {
                         children: <Widget>[
                           TextFormField(
                             controller: nameCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Nombre',
+                            decoration: InputDecoration(
+                              labelText: 'Nombre del Presupuesto (ej: Comida)',
+                              prefixIcon: const Icon(Icons.label_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
                             ),
                             validator:
                                 (String? v) =>
@@ -276,14 +324,23 @@ class BudgetsCrudPage extends StatelessWidget {
                                         ? 'Ingresa un nombre'
                                         : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           TextFormField(
                             controller: amountCtrl,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'Monto total',
+                            decoration: InputDecoration(
+                              labelText: 'Monto Límite',
+                              prefixIcon: const Icon(Icons.attach_money),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
                             ),
                             validator:
                                 (String? v) =>
@@ -291,7 +348,7 @@ class BudgetsCrudPage extends StatelessWidget {
                                         ? 'Ingresa un monto válido'
                                         : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           Row(
                             children: <Widget>[
                               Expanded(
@@ -315,34 +372,89 @@ class BudgetsCrudPage extends StatelessWidget {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.timer_outlined, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Duración: ${end.difference(start).inDays} días',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                   actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    FilledButton(
-                      onPressed: () async {
-                        if (!key.currentState!.validate()) return;
-                        final Budget payload = Budget(
-                          id: budget?.id,
-                          nombre: nameCtrl.text.trim(),
-                          montoTotal:
-                              (double.parse(amountCtrl.text.trim())).toString(),
-                          fechaInicio: start,
-                          fechaFin: end,
-                        );
-                        if (budget == null) {
-                          parentBloc.add(BudgetCreate(payload));
-                        } else {
-                          parentBloc.add(BudgetUpdate(payload));
-                        }
-                        if (context.mounted) Navigator.pop(context, true);
-                      },
-                      child: const Text('Guardar'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              foregroundColor: Colors.grey.shade600,
+                            ),
+                            child: const Text(
+                              'Cancelar',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 2,
+                            ),
+                            onPressed: () async {
+                              if (!key.currentState!.validate()) return;
+                              final Budget payload = Budget(
+                                id: budget?.id,
+                                nombre: nameCtrl.text.trim(),
+                                montoTotal:
+                                    (double.parse(
+                                      amountCtrl.text.trim(),
+                                    )).toString(),
+                                fechaInicio: start,
+                                fechaFin: end,
+                              );
+                              if (budget == null) {
+                                parentBloc.add(BudgetCreate(payload));
+                              } else {
+                                parentBloc.add(BudgetUpdate(payload));
+                              }
+                              if (context.mounted) Navigator.pop(context, true);
+                            },
+                            child: const Text(
+                              'Guardar',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -736,13 +848,50 @@ class _BudgetCardState extends State<_BudgetCard> {
     DateTime start = widget.budget.fechaInicio;
     DateTime end = widget.budget.fechaFin;
 
-    final bool? saved = await showDialog<bool>(
+    final bool? saved = await showPremiumDialog<bool>(
       context: context,
       builder:
           (BuildContext context) => StatefulBuilder(
             builder:
                 (BuildContext context, StateSetter setState) => AlertDialog(
-                  title: const Text('Editar presupuesto'),
+                  title: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.track_changes_rounded,
+                          color: Theme.of(context).primaryColor,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Editar límite de gasto',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Te notificaremos cuando estés cerca del límite',
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 13,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                   content: Form(
                     key: key,
                     child: SizedBox(
@@ -752,8 +901,17 @@ class _BudgetCardState extends State<_BudgetCard> {
                         children: <Widget>[
                           TextFormField(
                             controller: nameCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Nombre',
+                            decoration: InputDecoration(
+                              labelText: 'Nombre del Presupuesto',
+                              prefixIcon: const Icon(Icons.label_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
                             ),
                             validator:
                                 (String? v) =>
@@ -761,14 +919,23 @@ class _BudgetCardState extends State<_BudgetCard> {
                                         ? 'Ingresa un nombre'
                                         : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           TextFormField(
                             controller: amountCtrl,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'Monto total',
+                            decoration: InputDecoration(
+                              labelText: 'Monto Límite',
+                              prefixIcon: const Icon(Icons.attach_money),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
                             ),
                             validator:
                                 (String? v) =>
@@ -800,30 +967,85 @@ class _BudgetCardState extends State<_BudgetCard> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.timer_outlined, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Duración: ${end.difference(start).inDays} días',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                   actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    FilledButton(
-                      onPressed: () async {
-                        if (!key.currentState!.validate()) return;
-                        final Budget payload = Budget(
-                          id: widget.budget.id,
-                          nombre: nameCtrl.text.trim(),
-                          montoTotal:
-                              (double.parse(amountCtrl.text.trim())).toString(),
-                          fechaInicio: start,
-                          fechaFin: end,
-                        );
-                        parentBloc.add(BudgetUpdate(payload));
-                        if (context.mounted) Navigator.pop(context, true);
-                      },
-                      child: const Text('Guardar'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              foregroundColor: Colors.grey.shade600,
+                            ),
+                            child: const Text(
+                              'Cancelar',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 2,
+                            ),
+                            onPressed: () async {
+                              if (!key.currentState!.validate()) return;
+                              final Budget payload = Budget(
+                                id: widget.budget.id,
+                                nombre: nameCtrl.text.trim(),
+                                montoTotal:
+                                    (double.parse(
+                                      amountCtrl.text.trim(),
+                                    )).toString(),
+                                fechaInicio: start,
+                                fechaFin: end,
+                              );
+                              parentBloc.add(BudgetUpdate(payload));
+                              if (context.mounted) Navigator.pop(context, true);
+                            },
+                            child: const Text(
+                              'Guardar',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -87,47 +87,98 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
 
   Widget _buildSearchHeader(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: '¿En qué podemos ayudarte?',
-          prefixIcon: const Icon(Icons.search),
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Busca preguntas o temas…',
+            prefixIcon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                _searchController.text.isEmpty
+                    ? Icons.search_rounded
+                    : Icons.manage_search_rounded,
+                key: ValueKey(_searchController.text.isEmpty),
+                color: colorScheme.primary,
+              ),
+            ),
+            filled: true,
+            fillColor: Colors.transparent,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          onChanged: (val) => setState(() {}),
         ),
       ),
     );
   }
 
   Widget _buildCategoryFilter(ColorScheme colorScheme) {
-    return SizedBox(
+    return Container(
       height: 60,
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ),
+      ),
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: _categories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final category = _categories[index];
           final isSelected = _selectedCategory == category;
-          return FilterChip(
-            label: Text(category),
-            selected: isSelected,
-            onSelected: (val) => setState(() => _selectedCategory = category),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            child: ChoiceChip(
+              label: Text(category),
+              selected: isSelected,
+              onSelected: (val) {
+                if (val) setState(() => _selectedCategory = category);
+              },
+              backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
+              selectedColor: colorScheme.primaryContainer,
+              labelStyle: TextStyle(
+                color:
+                    isSelected
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSurfaceVariant,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color:
+                      isSelected
+                          ? colorScheme.primary.withValues(alpha: 0.2)
+                          : Colors.transparent,
+                ),
+              ),
+              showCheckmark: false,
+              elevation: isSelected ? 2 : 0,
             ),
-            showCheckmark: false,
           );
         },
       ),
@@ -136,36 +187,69 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
 
   List<Widget> _buildFaqList(ThemeData theme) {
     return _faqs
-        .where(
-          (faq) =>
+        .where((faq) {
+          final matchesCategory =
               _selectedCategory == 'Todos' ||
-              faq['category'] == _selectedCategory,
-        )
+              faq['category'] == _selectedCategory;
+          final matchesSearch =
+              _searchController.text.isEmpty ||
+              faq['question']!.toLowerCase().contains(
+                _searchController.text.toLowerCase(),
+              ) ||
+              faq['answer']!.toLowerCase().contains(
+                _searchController.text.toLowerCase(),
+              );
+          return matchesCategory && matchesSearch;
+        })
         .map(
           (faq) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: ExpansionTile(
-              title: Text(faq['question']!),
-              leading: const Icon(Icons.help_outline, size: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: theme.colorScheme.outlineVariant),
-              ),
-              collapsedShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: theme.colorScheme.outlineVariant),
-              ),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Text(
-                    faq['answer']!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.2,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.3,
                   ),
                 ),
-              ],
+              ),
+              child: Theme(
+                data: theme.copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  title: Text(
+                    faq['question']!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  iconColor: theme.colorScheme.primary,
+                  collapsedIconColor: theme.colorScheme.onSurfaceVariant,
+                  children: [
+                    Divider(
+                      height: 1,
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.2,
+                      ),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      child: Text(
+                        faq['answer']!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         )
@@ -174,17 +258,22 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
 
   Widget _buildContactCard(ColorScheme colorScheme, ThemeData theme) {
     return Card(
-      elevation: 0,
+      elevation: 4,
+      shadowColor: colorScheme.primary.withValues(alpha: 0.3),
       color: colorScheme.primary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const Icon(Icons.support_agent, color: Colors.white, size: 48),
+            const Icon(
+              Icons.support_agent_rounded,
+              color: Colors.white,
+              size: 48,
+            ),
             const SizedBox(height: 16),
             const Text(
-              '¿Aún necesitas ayuda?',
+              '¿No encuentras lo que buscas?',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -193,7 +282,7 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Nuestros expertos están listos para asistirte 24/7.',
+              'Nuestro equipo está disponible 24/7.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
             ),
@@ -207,12 +296,13 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
                   foregroundColor: colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  elevation: 0,
                 ),
                 child: const Text(
-                  'Contactar Soporte Pro',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  'Enviar mensaje directo',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
             ),

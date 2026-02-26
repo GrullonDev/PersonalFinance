@@ -71,8 +71,62 @@ class AboutPage extends StatelessWidget {
           color: colorScheme.onSurfaceVariant,
         ),
       ),
+      const SizedBox(height: 8),
+      Text(
+        'Finanzas inteligentes para tu día a día',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: 24),
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 40),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Column(
+          children: [
+            _buildDetailRow('Build', '9842.1a', theme, colorScheme),
+            const Divider(height: 16),
+            _buildDetailRow('Servidor', 'En línea 🟢', theme, colorScheme),
+            const Divider(height: 16),
+            _buildDetailRow('Cuenta', 'Pro ✨', theme, colorScheme),
+          ],
+        ),
+      ),
     ],
   );
+
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildInfoList(
     ColorScheme colorScheme,
