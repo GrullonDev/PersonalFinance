@@ -189,11 +189,11 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                             // Status Summary Header
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  8,
-                                  20,
-                                  24,
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 24,
+                                  left: 20,
+                                  right: 20,
                                 ),
                                 child: _buildStatusCard(context, totalAmount),
                               ),
@@ -594,11 +594,18 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                                           .surfaceContainerHighest
                                           .withValues(alpha: 0.3),
                                     ),
-                                    validator:
-                                        (v) =>
-                                            (double.tryParse(v ?? '') ?? 0) <= 0
-                                                ? 'Monto inválido'
-                                                : null,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Requerido';
+                                      }
+                                      if (double.tryParse(value) == null) {
+                                        return 'Inválido';
+                                      }
+                                      if (double.parse(value) <= 0) {
+                                        return 'Monto inválido';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -630,8 +637,9 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                                       ),
                                     ],
                                     onChanged: (val) {
-                                      if (val != null)
+                                      if (val != null) {
                                         setState(() => frecuencia = val);
+                                      }
                                     },
                                   ),
                                 ),

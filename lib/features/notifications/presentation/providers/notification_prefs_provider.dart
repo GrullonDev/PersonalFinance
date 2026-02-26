@@ -29,13 +29,31 @@ class NotificationPrefsProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-  Future<bool> save({bool? email, bool? push, bool? marketing}) async {
+  Future<bool> save({
+    bool? email,
+    bool? push,
+    bool? marketing,
+    String? emailFrequency,
+    bool? servicesDueEnabled,
+    String? servicesDueTiming,
+    bool? budgetAlertsEnabled,
+    double? budgetThreshold,
+    bool? savingsGoalsEnabled,
+    bool? weeklySummaryEnabled,
+  }) async {
     if (_prefs == null) return false;
     final NotificationPreferences original = _prefs!;
     _prefs = _prefs!.copyWith(
       emailEnabled: email,
       pushEnabled: push,
       marketingEnabled: marketing,
+      emailFrequency: emailFrequency,
+      servicesDueEnabled: servicesDueEnabled,
+      servicesDueTiming: servicesDueTiming,
+      budgetAlertsEnabled: budgetAlertsEnabled,
+      budgetThreshold: budgetThreshold,
+      savingsGoalsEnabled: savingsGoalsEnabled,
+      weeklySummaryEnabled: weeklySummaryEnabled,
     );
     notifyListeners();
     final Either<Failure, NotificationPreferences> r = await _repo
