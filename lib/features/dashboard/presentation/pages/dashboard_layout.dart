@@ -91,7 +91,7 @@ class DashboardLayout extends StatelessWidget {
                     const SizedBox(height: 24),
                   ],
                   if (logic.shouldShowIncomesList) ...<Widget>[
-                    _buildIncomeList(logic),
+                    _buildIncomeList(context, logic),
                     const SizedBox(height: 24),
                   ],
                   if (logic.shouldShowTransactions) ...<Widget>[
@@ -108,8 +108,7 @@ class DashboardLayout extends StatelessWidget {
     },
   );
 
-  Widget _buildSmartAlerts(BuildContext context) {
-    return Container(
+  Widget _buildSmartAlerts(BuildContext context) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
@@ -159,10 +158,8 @@ class DashboardLayout extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildPredictionAndSummary(BuildContext context) {
-    return Column(
+  Widget _buildPredictionAndSummary(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -199,7 +196,6 @@ class DashboardLayout extends StatelessWidget {
         ),
       ],
     );
-  }
 
   Widget _buildInsightCard(
     BuildContext context, {
@@ -208,8 +204,7 @@ class DashboardLayout extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required Color color,
-  }) {
-    return Container(
+  }) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -260,7 +255,6 @@ class DashboardLayout extends StatelessWidget {
         ],
       ),
     );
-  }
 
   Widget _buildExpensesChart(BuildContext context, DashboardLogic logic) {
     final List<ChartData> chartData = logic.getChartData();
@@ -457,7 +451,7 @@ class DashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildIncomeList(DashboardLogic logic) {
+  Widget _buildIncomeList(BuildContext context, DashboardLogic logic) {
     final List<IncomeEntity> incomes = logic.filteredIncomes;
     final double total = logic.totalIncomes;
 
@@ -506,9 +500,15 @@ class DashboardLayout extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: <Widget>[

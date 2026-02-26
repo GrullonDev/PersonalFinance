@@ -73,11 +73,11 @@ class _HomePageState extends State<HomePage>
     'Finanzas',
     'Servicios',
     'Presupuestos',
-    'Perfil',
+    'Cuenta',
   ];
 
   // Mostrar AppBar solo en las pantallas que lo requieren
-  final List<bool> _showAppBar = <bool>[true, false, false, true];
+  final List<bool> _showAppBar = <bool>[false, false, false, false];
 
   @override
   Widget build(BuildContext context) => BlocProvider<TransactionsBloc>(
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage>
           ctx.read<tx_backend.TransactionBackendRepository>(),
         )..add(TransactionsLoad()),
     child: Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar:
           context.isMobile && _showAppBar[_currentIndex]
               ? PreferredSize(
@@ -168,62 +168,57 @@ class _HomePageState extends State<HomePage>
     ),
   );
 
-  Widget _buildResponsiveAppBar(BuildContext context) {
-    return Container(
-      color: Colors.transparent,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    _getIconForIndex(_currentIndex),
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _titles[_currentIndex],
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+  Widget _buildResponsiveAppBar(BuildContext context) => Container(
+    color: Colors.transparent,
+    child: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _getIconForIndex(_currentIndex),
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _titles[_currentIndex],
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _getSubtitleForIndex(_currentIndex),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w400,
                 ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _getSubtitleForIndex(_currentIndex),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w400,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 
-  Widget _buildNavigationRail(BuildContext context) {
-    return NavigationRail(
+  Widget _buildNavigationRail(BuildContext context) => NavigationRail(
       selectedIndex: _currentIndex,
       onDestinationSelected: _onNavTap,
       labelType: NavigationRailLabelType.all,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       elevation: 5,
       leading: Column(
         children: [
@@ -256,7 +251,6 @@ class _HomePageState extends State<HomePage>
         ),
       ],
     );
-  }
 
   IconData _getIconForIndex(int index) {
     switch (index) {
@@ -345,7 +339,7 @@ class _FadeIndexedStackState extends State<_FadeIndexedStack>
   @override
   void didUpdateWidget(_FadeIndexedStack oldWidget) {
     if (widget.index != oldWidget.index) {
-      _controller.forward(from: 0.0);
+      _controller.forward(from: 0);
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -357,10 +351,8 @@ class _FadeIndexedStackState extends State<_FadeIndexedStack>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
+  Widget build(BuildContext context) => FadeTransition(
       opacity: _controller,
       child: IndexedStack(index: widget.index, children: widget.children),
     );
-  }
 }

@@ -11,19 +11,15 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   NotificationRemoteDataSourceImpl();
 
   @override
-  Future<NotificationPreferencesModel> getPreferences() async {
-    return NotificationPreferencesModel(
-      emailEnabled: true,
-      pushEnabled: true,
-      marketingEnabled: true,
-    );
-  }
+  Future<NotificationPreferencesModel> getPreferences() async =>
+      const NotificationPreferencesModel(
+        emailEnabled: true,
+        pushEnabled: true,
+        marketingEnabled: true,
+      );
 
   @override
   Future<NotificationPreferencesModel> updatePreferences(
     NotificationPreferencesModel prefs,
-  ) async {
-    // Mock update
-    return prefs;
-  }
+  ) async => prefs;
 }

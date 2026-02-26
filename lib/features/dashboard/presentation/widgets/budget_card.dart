@@ -81,7 +81,7 @@ class BudgetCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
               Text(
-                '${spent.toStringAsFixed(0)}',
+                spent.toStringAsFixed(0),
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,

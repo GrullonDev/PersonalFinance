@@ -12,6 +12,8 @@ import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:provider/provider.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -60,9 +62,9 @@ class _DashboardContent extends StatelessWidget {
               child: Transform.translate(
                 offset: const Offset(0, -20),
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
@@ -93,13 +95,13 @@ class _DashboardContent extends StatelessWidget {
                                 _buildRecentTransactionsSection(logic, context),
                                 const SizedBox(height: 24),
                                 if (logic.shouldShowExpensesChart) ...<Widget>[
-                                  _buildExpensesChart(logic),
+                                  _buildExpensesChart(context, logic),
                                   const SizedBox(height: 24),
-                                  _buildExpensesList(logic),
+                                  _buildExpensesList(context, logic),
                                   const SizedBox(height: 24),
                                 ],
                                 if (logic.shouldShowIncomesList) ...<Widget>[
-                                  _buildIncomeList(logic),
+                                  _buildIncomeList(context, logic),
                                   const SizedBox(height: 24),
                                 ],
                                 _buildRecommendationsSection(context, logic),
@@ -131,9 +133,9 @@ class _DashboardContent extends StatelessWidget {
             child: Center(
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 1000),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.all(Radius.circular(30)),
                 ),
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 child: Padding(
@@ -168,7 +170,7 @@ class _DashboardContent extends StatelessWidget {
                                     _buildSavingsGoalsSection(context, logic),
                                     const SizedBox(height: 32),
                                     if (logic.shouldShowExpensesChart)
-                                      _buildExpensesChart(logic),
+                                      _buildExpensesChart(context, logic),
                                   ],
                                 ),
                               ),
@@ -185,12 +187,12 @@ class _DashboardContent extends StatelessWidget {
                                     const SizedBox(height: 32),
                                     if (logic
                                         .shouldShowExpensesChart) ...<Widget>[
-                                      _buildExpensesList(logic),
+                                      _buildExpensesList(context, logic),
                                       const SizedBox(height: 32),
                                     ],
                                     if (logic
                                         .shouldShowIncomesList) ...<Widget>[
-                                      _buildIncomeList(logic),
+                                      _buildIncomeList(context, logic),
                                       const SizedBox(height: 32),
                                     ],
                                     _buildRecommendationsSection(
@@ -240,13 +242,71 @@ class _DashboardContent extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Hola ${context.watch<AuthProvider>().currentUser?.fullName.split(' ').first ?? 'Usuario'} 👋',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              'Hola ${context.watch<AuthProvider>().currentUser?.fullName.split(' ').first ?? 'Usuario'} 👋',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Consumer<NotificationInboxProvider>(
+                              builder: (context, inboxProvider, _) {
+                                final unreadCount = inboxProvider.unreadCount;
+                                return Stack(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.notifications_outlined,
+                                        color: Colors.white,
+                                        size: 28,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          RoutePath.notificationsInbox,
+                                        );
+                                      },
+                                    ),
+                                    if (unreadCount > 0)
+                                      Positioned(
+                                        right: 8,
+                                        top: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: primaryColor,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 16,
+                                            minHeight: 16,
+                                          ),
+                                          child: Text(
+                                            unreadCount > 9
+                                                ? '9+'
+                                                : unreadCount.toString(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         const Text(
@@ -493,19 +553,23 @@ class _DashboardContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 30),
-          const Text(
+          Text(
             '📉 Aún no tienes movimientos',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Empieza agregando tu primer ingreso o gasto',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 15, color: Colors.black54, height: 1.4),
+            style: TextStyle(
+              fontSize: 15,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 30),
         ],
@@ -552,12 +616,12 @@ class _DashboardContent extends StatelessWidget {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          const Text(
+          Text(
             'Metas de Ahorro',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           TextButton(
@@ -577,18 +641,32 @@ class _DashboardContent extends StatelessWidget {
           height: 150,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
-          child: const Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.savings_outlined, size: 40, color: Colors.grey),
-              SizedBox(height: 8),
+              Icon(
+                Icons.savings_outlined,
+                size: 40,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 8),
               Text(
                 'No hay metas activas',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -629,12 +707,12 @@ class _DashboardContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text(
+        Text(
           'Últimas Transacciones',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
@@ -724,12 +802,12 @@ class _DashboardContent extends StatelessWidget {
   ) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
-      const Text(
+      Text(
         'Recomendaciones Personalizadas',
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       const SizedBox(height: 12),
@@ -771,75 +849,77 @@ class _DashboardContent extends StatelessWidget {
     ],
   );
 
-  Widget _buildExpensesChart(DashboardLogic logic) => Column(
-    children: <Widget>[
-      const Text(
-        'Gastos por Categoría',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-      const SizedBox(height: 20),
-      SizedBox(
-        height: 300,
-        child: SfCircularChart(
-          legend: const Legend(
-            isVisible: true,
-            overflowMode: LegendItemOverflowMode.wrap,
-            position: LegendPosition.bottom,
-          ),
-          series: <CircularSeries<ChartData, String>>[
-            DoughnutSeries<ChartData, String>(
-              animationDuration: 0,
-              dataSource: logic.chartData,
-              xValueMapper: (ChartData data, _) => data.category,
-              yValueMapper: (ChartData data, _) => data.amount,
-              pointColorMapper: (ChartData data, _) => data.color,
-              dataLabelSettings: const DataLabelSettings(isVisible: true),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildExpensesList(DashboardLogic logic) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      const Text(
-        'Desglose de Gastos',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-      const SizedBox(height: 12),
-      ...logic
-          .getExpenseTransactions(limit: 10)
-          .map(
-            (TransactionItem transaction) => RecentTransactionItem(
-              icon: _getIconForTransaction(transaction),
-              title: transaction.title,
-              subtitle: _getCategoryForTransaction(transaction),
-              amount: transaction.amount,
-              onTap: () {},
+  Widget _buildExpensesChart(BuildContext context, DashboardLogic logic) =>
+      Column(
+        children: <Widget>[
+          Text(
+            'Gastos por Categoría',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-    ],
-  );
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 300,
+            child: SfCircularChart(
+              legend: const Legend(
+                isVisible: true,
+                overflowMode: LegendItemOverflowMode.wrap,
+                position: LegendPosition.bottom,
+              ),
+              series: <CircularSeries<ChartData, String>>[
+                DoughnutSeries<ChartData, String>(
+                  animationDuration: 0,
+                  dataSource: logic.chartData,
+                  xValueMapper: (ChartData data, _) => data.category,
+                  yValueMapper: (ChartData data, _) => data.amount,
+                  pointColorMapper: (ChartData data, _) => data.color,
+                  dataLabelSettings: const DataLabelSettings(isVisible: true),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
 
-  Widget _buildIncomeList(DashboardLogic logic) => Column(
+  Widget _buildExpensesList(BuildContext context, DashboardLogic logic) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'Desglose de Gastos',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...logic
+              .getExpenseTransactions(limit: 10)
+              .map(
+                (TransactionItem transaction) => RecentTransactionItem(
+                  icon: _getIconForTransaction(transaction),
+                  title: transaction.title,
+                  subtitle: _getCategoryForTransaction(transaction),
+                  amount: transaction.amount,
+                  onTap: () {},
+                ),
+              ),
+        ],
+      );
+
+  Widget _buildIncomeList(BuildContext context, DashboardLogic logic) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
-      const Text(
+      Text(
         'Desglose de Ingresos',
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       const SizedBox(height: 12),

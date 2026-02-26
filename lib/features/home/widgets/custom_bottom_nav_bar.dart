@@ -26,7 +26,7 @@ class CustomBottomNavBar extends StatelessWidget {
     // final double spacing = isSmall ? 3 : 4;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: Colors.black.withAlpha(10),
@@ -72,7 +72,7 @@ class CustomBottomNavBar extends StatelessWidget {
               context,
               icon: Icons.person_outline,
               activeIcon: Icons.person,
-              label: 'Perfil',
+              label: 'Cuenta',
               index: 3,
               scheme: scheme,
             ),
@@ -91,7 +91,7 @@ class CustomBottomNavBar extends StatelessWidget {
     required ColorScheme scheme,
   }) {
     final bool isSelected = currentIndex == index;
-    final Color color = isSelected ? scheme.primary : Colors.grey.shade600;
+    final Color color = isSelected ? scheme.primary : scheme.onSurfaceVariant;
     final double width = MediaQuery.sizeOf(context).width;
     final double iconSize = width < 360 ? 22 : (width < 420 ? 24 : 26);
     final double fontSize = width < 360 ? 11 : (width < 420 ? 12 : 13);
