@@ -1,35 +1,76 @@
-import 'package:equatable/equatable.dart';
+import 'package:personal_finance/core/data/models/syncable_model.dart';
+import 'package:personal_finance/features/categories/domain/entities/category.dart';
 
-class CategoryModel extends Equatable {
-  final String? id;
+class CategoryModel extends SyncableModel {
   final String nombre;
-  final String tipo; // 'ingreso' | 'egreso'
+  final String tipo;
   final int? profileId;
 
   const CategoryModel({
+    required super.id,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.deviceId,
+    required super.version,
     required this.nombre,
     required this.tipo,
-    this.id,
+    super.deletedAt,
+    super.syncStatus,
     this.profileId,
   });
 
-  factory CategoryModel.fromJson(Map<String, dynamic> json) => CategoryModel(
-    id: json['id']?.toString(), // Ensure ID is string
-    nombre: json['nombre']?.toString() ?? '',
-    tipo: json['tipo']?.toString() ?? '',
-    profileId:
-        json['profile_id'] is int
-            ? json['profile_id'] as int
-            : int.tryParse(json['profile_id']?.toString() ?? ''),
-  );
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    if (id != null) 'id': id,
-    'nombre': nombre,
-    'tipo': tipo,
-    if (profileId != null) 'profile_id': profileId,
-  };
+  factory CategoryModel.fromFirestore(Map<String, dynamic> json) =>
+      CategoryModel(
+        id: json['id'] as String,
+        createdAt: dateTimeFromTimestamp(json['createdAt']),
+        updatedAt: dateTimeFromTimestamp(json['updatedAt']),
+        deletedAt:
+            json['deletedAt'] != null
+                ? dateTimeFromTimestamp(json['deletedAt'])
+                : null,
+        deviceId: json['deviceId'] as String? ?? '',
+        version: json['version'] as int? ?? 0,
+        nombre: json['nombre'] as String? ?? '',
+        tipo: json['tipo'] as String? ?? '',
+        profileId: json['profileId'] as int?,
+      );
 
   @override
-  List<Object?> get props => <Object?>[id, nombre, tipo, profileId];
+  Map<String, dynamic> toFirestore() {
+    final map = super.toFirestore();
+    map.addAll({'nombre': nombre, 'tipo': tipo, 'profileId': profileId});
+    return map;
+  }
+
+  factory CategoryModel.fromEntity(Category category) => CategoryModel(
+    id: category.id,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
+    deletedAt: category.deletedAt,
+    deviceId: category.deviceId,
+    version: category.version,
+    syncStatus: category.syncStatus,
+    nombre: category.nombre,
+    tipo: category.tipo,
+    profileId: category.profileId,
+  );
+
+  Category toEntity() => Category(
+    id: id,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    deletedAt: deletedAt,
+    deviceId: deviceId,
+    version: version,
+    syncStatus: syncStatus,
+    nombre: nombre,
+    tipo: tipo,
+    profileId: profileId,
+  );
+
+  @override
+  Map<String, dynamic> toJson() => toFirestore();
+
+  @override
+  List<Object?> get props => [...super.props, nombre, tipo, profileId];
 }

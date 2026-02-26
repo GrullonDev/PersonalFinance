@@ -77,7 +77,7 @@ class CategoriesPage extends StatelessWidget {
                             await _confirmDelete(context),
                     onDismissed:
                         (_) => context.read<CategoriesBloc>().add(
-                          CategoryDelete(category.id!),
+                          CategoryDelete(category.id),
                         ),
                     child: Container(
                       margin: const EdgeInsets.symmetric(
@@ -472,7 +472,7 @@ class CategoriesPage extends StatelessWidget {
                         } else {
                           bloc.add(
                             CategoryUpdate(
-                              category.id!,
+                              category.id,
                               nameCtrl.text.trim(),
                               tipo,
                             ),

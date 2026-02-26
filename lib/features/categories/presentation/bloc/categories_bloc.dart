@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:personal_finance/core/error/failures.dart';
+import 'package:personal_finance/core/services/device_service.dart';
 
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
 import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
@@ -85,8 +87,19 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     Emitter<CategoriesState> emit,
   ) async {
     emit(state.copyWith(loading: true));
+    final now = DateTime.now();
+    final deviceId = GetIt.I<DeviceService>().deviceId;
+
     final Either<Failure, Category> res = await _repo.createCategory(
-      Category(nombre: event.nombre, tipo: event.tipo),
+      Category(
+        id: 'cat_${now.microsecondsSinceEpoch}',
+        nombre: event.nombre,
+        tipo: event.tipo,
+        createdAt: now,
+        updatedAt: now,
+        deviceId: deviceId,
+        version: 1,
+      ),
     );
     res.fold(
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
@@ -103,8 +116,18 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     Emitter<CategoriesState> emit,
   ) async {
     emit(state.copyWith(loading: true));
+
+    // Find existing category to preserve its createdAt and version
+    final existing = state.items.firstWhere((c) => c.id == event.id);
+    final now = DateTime.now();
+
     final Either<Failure, Category> res = await _repo.updateCategory(
-      Category(id: event.id, nombre: event.nombre, tipo: event.tipo),
+      existing.copyWith(
+        nombre: event.nombre,
+        tipo: event.tipo,
+        updatedAt: now,
+        version: existing.version + 1,
+      ),
     );
     res.fold(
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),

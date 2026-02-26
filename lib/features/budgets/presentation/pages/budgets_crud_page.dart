@@ -12,6 +12,7 @@ import 'package:personal_finance/features/transactions/domain/entities/transacti
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
     as tx_backend;
 import 'package:personal_finance/utils/budget_category_prefs.dart';
+import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/premium_modals.dart';
@@ -103,7 +104,7 @@ class BudgetsCrudPage extends StatelessWidget {
                       confirmDismiss: (_) => _confirmDelete(context),
                       onDismissed:
                           (_) => context.read<BudgetsBloc>().add(
-                            BudgetDelete(b.id!),
+                            BudgetDelete(b.id),
                           ),
                       child: _BudgetCard(budget: b),
                     );
@@ -131,79 +132,79 @@ class BudgetsCrudPage extends StatelessWidget {
   );
 
   Widget _buildAppBar(BuildContext context) => Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
         ],
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.account_balance_wallet_rounded,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          'Presupuestos',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Planifica tus gastos',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w400,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        size: 28,
                       ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Presupuestos',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Planifica tus gastos',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w400,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            if (!context.isMobile)
+              FilledButton.icon(
+                onPressed: () => _openDialog(context),
+                icon: const Icon(Icons.add),
+                label: const Text('Nuevo presupuesto'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              if (!context.isMobile)
-                FilledButton.icon(
-                  onPressed: () => _openDialog(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Nuevo presupuesto'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
-    );
+    ),
+  );
 
   Future<bool> _confirmDelete(BuildContext context) async {
     final bool? confirm = await showDialog<bool>(
@@ -426,8 +427,16 @@ class BudgetsCrudPage extends StatelessWidget {
                             ),
                             onPressed: () async {
                               if (!key.currentState!.validate()) return;
+                              final now = DateTime.now();
+                              final deviceId = getIt<DeviceService>().deviceId;
                               final Budget payload = Budget(
-                                id: budget?.id,
+                                id:
+                                    budget?.id ??
+                                    'budget_${now.microsecondsSinceEpoch}',
+                                createdAt: budget?.createdAt ?? now,
+                                updatedAt: now,
+                                deviceId: budget?.deviceId ?? deviceId,
+                                version: (budget?.version ?? 0) + 1,
                                 nombre: nameCtrl.text.trim(),
                                 montoTotal:
                                     (double.parse(
@@ -677,6 +686,10 @@ class _BudgetCardState extends State<_BudgetCard> {
                                             id: id,
                                             nombre: 'Cat #$id',
                                             tipo: 'gasto',
+                                            createdAt: DateTime.now(),
+                                            updatedAt: DateTime.now(),
+                                            deviceId: 'system',
+                                            version: 1,
                                           ),
                                     )
                                     .nombre;
@@ -700,12 +713,10 @@ class _BudgetCardState extends State<_BudgetCard> {
                                 final List<String> list = List<String>.from(
                                   _categoryIds,
                                 )..remove(id);
-                                if (widget.budget.id != null) {
-                                  await BudgetCategoryPrefs.save(
-                                    widget.budget.id!,
-                                    list,
-                                  );
-                                }
+                                await BudgetCategoryPrefs.save(
+                                  widget.budget.id,
+                                  list,
+                                );
                                 if (mounted) {
                                   setState(() => _categoryIds = list);
                                 }
@@ -730,7 +741,6 @@ class _BudgetCardState extends State<_BudgetCard> {
   }
 
   Future<void> _assignCategories() async {
-    if (widget.budget.id == null) return;
     final Set<String> selected = _categoryIds.toSet();
     final bool? saved = await showModalBottomSheet<bool>(
       context: context,
@@ -786,7 +796,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                                   ),
                                   onChanged: (bool? v) {
                                     if (v == true) {
-                                      selected.add(c.id!);
+                                      selected.add(c.id);
                                     } else {
                                       selected.remove(c.id);
                                     }
@@ -818,7 +828,7 @@ class _BudgetCardState extends State<_BudgetCard> {
     );
     if (saved == true) {
       final List<String> list = selected.toList();
-      await BudgetCategoryPrefs.save(widget.budget.id!, list);
+      await BudgetCategoryPrefs.save(widget.budget.id, list);
       if (mounted) setState(() => _categoryIds = list);
     }
   }
@@ -826,12 +836,8 @@ class _BudgetCardState extends State<_BudgetCard> {
   String _fmt2(DateTime d) => '${d.day}/${d.month}';
 
   Future<void> _loadCategories() async {
-    if (widget.budget.id != null) {
-      final List<String> ids = await BudgetCategoryPrefs.load(
-        widget.budget.id!,
-      );
-      if (mounted) setState(() => _categoryIds = ids);
-    }
+    final List<String> ids = await BudgetCategoryPrefs.load(widget.budget.id);
+    if (mounted) setState(() => _categoryIds = ids);
   }
 
   Future<void> _openBudgetDialog(BuildContext context) async {
@@ -1021,8 +1027,13 @@ class _BudgetCardState extends State<_BudgetCard> {
                             ),
                             onPressed: () async {
                               if (!key.currentState!.validate()) return;
+                              final now = DateTime.now();
                               final Budget payload = Budget(
                                 id: widget.budget.id,
+                                createdAt: widget.budget.createdAt,
+                                updatedAt: now,
+                                deviceId: widget.budget.deviceId,
+                                version: widget.budget.version + 1,
                                 nombre: nameCtrl.text.trim(),
                                 montoTotal:
                                     (double.parse(
@@ -1116,14 +1127,15 @@ class _DateTile extends StatelessWidget {
             initialDate: value,
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),
-            builder: (BuildContext context, Widget? child) => Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: Theme.of(context).colorScheme.copyWith(
-                    primary: Theme.of(context).primaryColor,
+            builder:
+                (BuildContext context, Widget? child) => Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: Theme.of(context).colorScheme.copyWith(
+                      primary: Theme.of(context).primaryColor,
+                    ),
                   ),
+                  child: child!,
                 ),
-                child: child!,
-              ),
           );
           if (picked != null) onPick(picked);
         },
