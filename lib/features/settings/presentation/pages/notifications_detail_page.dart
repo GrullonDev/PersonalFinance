@@ -103,7 +103,9 @@ class _NotificationsDetailPageState extends State<NotificationsDetailPage>
 
                     // Finanzas e Insights (Animated Size si no hay permisos)
                     AnimatedCrossFade(
+                      key: const ValueKey('notifications_sections_fade'),
                       firstChild: Column(
+                        key: const ValueKey('finance_alerts_section'),
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionHeader(
@@ -116,6 +118,7 @@ class _NotificationsDetailPageState extends State<NotificationsDetailPage>
                         ],
                       ),
                       secondChild: Container(
+                        key: const ValueKey('notifications_disabled_warning'),
                         padding: const EdgeInsets.symmetric(
                           vertical: 24,
                           horizontal: 16,
@@ -282,6 +285,7 @@ class _NotificationsDetailPageState extends State<NotificationsDetailPage>
             child:
                 prefs.emailEnabled
                     ? Column(
+                      key: const ValueKey('email_frequency_expanded'),
                       children: [
                         const Divider(height: 1),
                         Padding(
@@ -330,7 +334,9 @@ class _NotificationsDetailPageState extends State<NotificationsDetailPage>
                         ),
                       ],
                     )
-                    : const SizedBox.shrink(),
+                    : const SizedBox.shrink(
+                      key: ValueKey('email_frequency_collapsed'),
+                    ),
           ),
         ],
       ),
