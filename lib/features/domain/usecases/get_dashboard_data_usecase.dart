@@ -1,3 +1,5 @@
+import 'package:dartz/dartz.dart';
+import 'package:personal_finance/core/error/failures.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
@@ -35,37 +37,49 @@ class GetDashboardDataUseCase {
   const GetDashboardDataUseCase(this.repository);
 
   /// Ejecuta el caso de uso
-  Future<DashboardResult> execute(DashboardParams params) async {
+  Future<Either<Failure, DashboardResult>> execute(
+    DashboardParams params,
+  ) async {
     try {
-      // Obtener datos en paralelo para mejor rendimiento
-      final Future<List<ExpenseEntity>> expensesFuture = repository
-          .getExpensesByPeriod(params.startDate, params.endDate);
-      final Future<List<IncomeEntity>> incomesFuture = repository
-          .getIncomesByPeriod(params.startDate, params.endDate);
-
-      final List<ExpenseEntity> expenses = await expensesFuture;
-      final List<IncomeEntity> incomes = await incomesFuture;
-
-      // Calcular totales
-      final double totalExpenses = expenses.fold(
-        0,
-        (double sum, ExpenseEntity expense) => sum + expense.amount,
+      final resExpenses = await repository.getExpensesByPeriod(
+        params.startDate,
+        params.endDate,
       );
-      final double totalIncomes = incomes.fold(
-        0,
-        (double sum, IncomeEntity income) => sum + income.amount,
+      final resIncomes = await repository.getIncomesByPeriod(
+        params.startDate,
+        params.endDate,
       );
-      final double balance = totalIncomes - totalExpenses;
 
-      return DashboardResult(
-        expenses: expenses,
-        incomes: incomes,
-        totalExpenses: totalExpenses,
-        totalIncomes: totalIncomes,
-        balance: balance,
+      return resExpenses.fold(
+        (Failure l) => Left(l),
+        (List<ExpenseEntity> expenses) => resIncomes.fold(
+          (Failure l) => Left(l),
+          (List<IncomeEntity> incomes) {
+            // Calcular totales
+            final double totalExpenses = expenses.fold(
+              0,
+              (double sum, ExpenseEntity expense) => sum + expense.amount,
+            );
+            final double totalIncomes = incomes.fold(
+              0,
+              (double sum, IncomeEntity income) => sum + income.amount,
+            );
+            final double balance = totalIncomes - totalExpenses;
+
+            return Right(
+              DashboardResult(
+                expenses: expenses,
+                incomes: incomes,
+                totalExpenses: totalExpenses,
+                totalIncomes: totalIncomes,
+                balance: balance,
+              ),
+            );
+          },
+        ),
       );
     } catch (e) {
-      throw Exception('Error al obtener datos del dashboard: $e');
+      return Left(ServerFailure(message: 'Error en dashboard: $e'));
     }
   }
 }

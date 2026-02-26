@@ -1,7 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:personal_finance/core/data/datasources/base_firestore_service.dart';
 import 'package:personal_finance/core/error/exceptions.dart';
 import 'package:personal_finance/features/transactions/data/models/transaction_backend_model.dart';
 
@@ -19,26 +17,14 @@ abstract class TransactionBackendRemoteDataSource {
 }
 
 class TransactionBackendRemoteDataSourceImpl
+    extends BaseFirestoreService<TransactionBackendModel>
     implements TransactionBackendRemoteDataSource {
-  TransactionBackendRemoteDataSourceImpl({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance,
-       _auth = auth ?? FirebaseAuth.instance;
+  @override
+  String get collectionName => 'transactions';
 
-  final FirebaseFirestore _firestore;
-  final FirebaseAuth _auth;
-
-  String get _uid {
-    final User? user = _auth.currentUser;
-    if (user == null) {
-      throw ApiException(message: 'User not authenticated', statusCode: 401);
-    }
-    return user.uid;
-  }
-
-  CollectionReference<Map<String, dynamic>> get _transactionsCollection =>
-      _firestore.collection('users').doc(_uid).collection('transactions');
+  @override
+  TransactionBackendModel fromFirestore(Map<String, dynamic> json) =>
+      TransactionBackendModel.fromFirestore(json);
 
   @override
   Future<List<TransactionBackendModel>> list({
@@ -48,30 +34,12 @@ class TransactionBackendRemoteDataSourceImpl
     String? tipo,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _transactionsCollection;
+      List<TransactionBackendModel> results = await getAll();
 
-      // Filter by type only in Firestore to avoid composite index issues
       if (tipo != null && tipo.isNotEmpty) {
-        query = query.where('tipo', isEqualTo: tipo);
+        results = results.where((tx) => tx.tipo == tipo).toList();
       }
 
-      // Removed server-side date filtering and sorting to prevent FAILED_PRECONDITION
-      // until composite indexes are fully deployed.
-
-      final QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
-
-      List<TransactionBackendModel> results =
-          snapshot.docs
-              .map(
-                (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
-                    TransactionBackendModel.fromJson({
-                      ...doc.data(),
-                      'id': doc.id,
-                    }),
-              )
-              .toList();
-
-      // Client-side filtering
       if (fechaDesde != null) {
         final DateTime start = DateUtils.dateOnly(fechaDesde);
         results = results.where((tx) => !tx.fecha.isBefore(start)).toList();
@@ -88,7 +56,6 @@ class TransactionBackendRemoteDataSourceImpl
         results = results.where((tx) => tx.categoriaId == categoriaId).toList();
       }
 
-      // Client-side sorting
       results.sort((a, b) => b.fecha.compareTo(a.fecha));
 
       return results;
@@ -100,12 +67,11 @@ class TransactionBackendRemoteDataSourceImpl
   @override
   Future<TransactionBackendModel> getById(String id) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc =
-          await _transactionsCollection.doc(id).get();
-      if (!doc.exists) {
+      final model = await get(id);
+      if (model == null) {
         throw ApiException(message: 'Transaction not found', statusCode: 404);
       }
-      return TransactionBackendModel.fromJson({...doc.data()!, 'id': doc.id});
+      return model;
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(message: e.toString(), statusCode: 500);
@@ -115,11 +81,8 @@ class TransactionBackendRemoteDataSourceImpl
   @override
   Future<TransactionBackendModel> create(TransactionBackendModel tx) async {
     try {
-      final DocumentReference<Map<String, dynamic>> docRef =
-          _transactionsCollection.doc();
-      final Map<String, dynamic> data = tx.toJson()..remove('id');
-      await docRef.set(data);
-      return TransactionBackendModel.fromJson({...data, 'id': docRef.id});
+      await upsert(tx);
+      return tx;
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }
@@ -131,9 +94,8 @@ class TransactionBackendRemoteDataSourceImpl
     TransactionBackendModel tx,
   ) async {
     try {
-      final Map<String, dynamic> data = tx.toJson()..remove('id');
-      await _transactionsCollection.doc(id).update(data);
-      return TransactionBackendModel.fromJson({...data, 'id': id});
+      await upsert(tx);
+      return tx;
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }
@@ -142,7 +104,7 @@ class TransactionBackendRemoteDataSourceImpl
   @override
   Future<void> delete(String id) async {
     try {
-      await _transactionsCollection.doc(id).delete();
+      await softDelete(id);
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }

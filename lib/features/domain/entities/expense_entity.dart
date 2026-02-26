@@ -7,10 +7,16 @@ class ExpenseEntity extends TransactionEntity {
 
   const ExpenseEntity({
     required super.id,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.deviceId,
+    required super.version,
     required super.title,
     required super.amount,
     required super.date,
     required this.category,
+    super.deletedAt,
+    super.syncStatus,
     super.description,
     this.notes,
   });
@@ -19,7 +25,7 @@ class ExpenseEntity extends TransactionEntity {
   String get transactionType => 'expense';
 
   @override
-  List<Object?> get props => <Object?>[...super.props, category, notes];
+  List<Object?> get props => [...super.props, category, notes];
 
   /// Verifica si el gasto es de una categoría específica
   bool isCategory(String categoryName) =>
@@ -51,6 +57,11 @@ class ExpenseEntity extends TransactionEntity {
   /// Crea una copia con nuevos valores
   ExpenseEntity copyWith({
     String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    String? deviceId,
+    int? version,
     String? title,
     double? amount,
     DateTime? date,
@@ -59,6 +70,11 @@ class ExpenseEntity extends TransactionEntity {
     String? notes,
   }) => ExpenseEntity(
     id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt ?? this.deletedAt,
+    deviceId: deviceId ?? this.deviceId,
+    version: version ?? this.version,
     title: title ?? this.title,
     amount: amount ?? this.amount,
     date: date ?? this.date,

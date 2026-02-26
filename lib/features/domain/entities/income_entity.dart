@@ -7,10 +7,16 @@ class IncomeEntity extends TransactionEntity {
 
   const IncomeEntity({
     required super.id,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.deviceId,
+    required super.version,
     required super.title,
     required super.amount,
     required super.date,
     required this.source,
+    super.deletedAt,
+    super.syncStatus,
     super.description,
     this.notes,
   });
@@ -19,7 +25,7 @@ class IncomeEntity extends TransactionEntity {
   String get transactionType => 'income';
 
   @override
-  List<Object?> get props => <Object?>[...super.props, source, notes];
+  List<Object?> get props => [...super.props, source, notes];
 
   /// Verifica si el ingreso proviene de una fuente específica
   bool isFromSource(String sourceName) =>
@@ -47,6 +53,11 @@ class IncomeEntity extends TransactionEntity {
   /// Crea una copia con nuevos valores
   IncomeEntity copyWith({
     String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    String? deviceId,
+    int? version,
     String? title,
     double? amount,
     DateTime? date,
@@ -55,6 +66,11 @@ class IncomeEntity extends TransactionEntity {
     String? notes,
   }) => IncomeEntity(
     id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt ?? this.deletedAt,
+    deviceId: deviceId ?? this.deviceId,
+    version: version ?? this.version,
     title: title ?? this.title,
     amount: amount ?? this.amount,
     date: date ?? this.date,

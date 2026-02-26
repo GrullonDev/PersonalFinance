@@ -1,7 +1,6 @@
-import 'package:equatable/equatable.dart';
+import 'package:personal_finance/core/domain/entities/syncable_entity.dart';
 
-class Transaction extends Equatable {
-  final String id;
+class Transaction extends SyncableEntity {
   final String accountId;
   final double amount;
   final String category;
@@ -10,18 +9,24 @@ class Transaction extends Equatable {
   final String type; // 'income' or 'expense'
 
   const Transaction({
-    required this.id,
+    required super.id,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.deviceId,
+    required super.version,
     required this.accountId,
     required this.amount,
     required this.category,
     required this.description,
     required this.date,
     required this.type,
+    super.deletedAt,
+    super.syncStatus,
   });
 
   @override
-  List<Object?> get props => <Object?>[
-    id,
+  List<Object?> get props => [
+    ...super.props,
     accountId,
     amount,
     category,

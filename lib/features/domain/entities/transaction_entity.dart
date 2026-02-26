@@ -1,23 +1,28 @@
-import 'package:equatable/equatable.dart';
+import 'package:personal_finance/core/domain/entities/syncable_entity.dart';
 
 /// Entidad base para todas las transacciones financieras
-abstract class TransactionEntity extends Equatable {
-  final String id;
+abstract class TransactionEntity extends SyncableEntity {
   final String title;
   final double amount;
   final DateTime date;
   final String? description;
 
   const TransactionEntity({
-    required this.id,
+    required super.id,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.deviceId,
+    required super.version,
     required this.title,
     required this.amount,
     required this.date,
+    super.deletedAt,
+    super.syncStatus,
     this.description,
   });
 
   @override
-  List<Object?> get props => <Object?>[id, title, amount, date, description];
+  List<Object?> get props => [...super.props, title, amount, date, description];
 
   /// Verifica si la transacción es válida
   bool get isValid => title.isNotEmpty && amount > 0;

@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-
 import 'package:personal_finance/core/error/exceptions.dart';
 import 'package:personal_finance/core/error/failures.dart';
 import 'package:personal_finance/features/transactions/data/datasources/transaction_backend_remote_data_source.dart';
@@ -26,22 +25,7 @@ class TransactionBackendRepositoryImpl implements TransactionBackendRepository {
         categoriaId: categoriaId,
         tipo: tipo,
       );
-      return Right(
-        list
-            .map(
-              (TransactionBackendModel e) => TransactionBackend(
-                id: e.id,
-                tipo: e.tipo,
-                monto: e.monto,
-                descripcion: e.descripcion,
-                fecha: e.fecha,
-                categoriaId: e.categoriaId,
-                esRecurrente: e.esRecurrente,
-                profileId: e.profileId,
-              ),
-            )
-            .toList(),
-      );
+      return Right(list.map((e) => e.toEntity()).toList());
     } on ApiException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } catch (e) {
@@ -54,28 +38,11 @@ class TransactionBackendRepositoryImpl implements TransactionBackendRepository {
     TransactionBackend tx,
   ) async {
     try {
-      final TransactionBackendModel created = await _remote.create(
-        TransactionBackendModel(
-          tipo: tx.tipo,
-          monto: tx.monto,
-          descripcion: tx.descripcion,
-          fecha: tx.fecha,
-          categoriaId: tx.categoriaId,
-          esRecurrente: tx.esRecurrente,
-        ),
+      final TransactionBackendModel model = TransactionBackendModel.fromEntity(
+        tx,
       );
-      return Right(
-        TransactionBackend(
-          id: created.id,
-          tipo: created.tipo,
-          monto: created.monto,
-          descripcion: created.descripcion,
-          fecha: created.fecha,
-          categoriaId: created.categoriaId,
-          esRecurrente: created.esRecurrente,
-          profileId: created.profileId,
-        ),
-      );
+      final TransactionBackendModel created = await _remote.create(model);
+      return Right(created.toEntity());
     } on ApiException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } catch (e) {
@@ -88,30 +55,14 @@ class TransactionBackendRepositoryImpl implements TransactionBackendRepository {
     TransactionBackend tx,
   ) async {
     try {
+      final TransactionBackendModel model = TransactionBackendModel.fromEntity(
+        tx,
+      );
       final TransactionBackendModel updated = await _remote.update(
-        tx.id!,
-        TransactionBackendModel(
-          id: tx.id,
-          tipo: tx.tipo,
-          monto: tx.monto,
-          descripcion: tx.descripcion,
-          fecha: tx.fecha,
-          categoriaId: tx.categoriaId,
-          esRecurrente: tx.esRecurrente,
-        ),
+        tx.id,
+        model,
       );
-      return Right(
-        TransactionBackend(
-          id: updated.id,
-          tipo: updated.tipo,
-          monto: updated.monto,
-          descripcion: updated.descripcion,
-          fecha: updated.fecha,
-          categoriaId: updated.categoriaId,
-          esRecurrente: updated.esRecurrente,
-          profileId: updated.profileId,
-        ),
-      );
+      return Right(updated.toEntity());
     } on ApiException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } catch (e) {

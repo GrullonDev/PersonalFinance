@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
@@ -70,7 +72,7 @@ class TransactionsCrudPage extends StatelessWidget {
                         confirmDismiss: (_) => _confirmDelete(context),
                         onDismissed:
                             (_) => context.read<TransactionsBloc>().add(
-                              TransactionDelete(t.id!),
+                              TransactionDelete(t.id),
                             ),
                         child: BlocBuilder<CategoriesBloc, CategoriesState>(
                           builder: (
@@ -86,6 +88,10 @@ class TransactionsCrudPage extends StatelessWidget {
                                             id: t.categoriaId,
                                             nombre: 'Cat #${t.categoriaId}',
                                             tipo: 'gasto',
+                                            createdAt: DateTime.now(),
+                                            updatedAt: DateTime.now(),
+                                            deviceId: 'system',
+                                            version: 1,
                                           ),
                                     )
                                     .nombre;
@@ -241,13 +247,17 @@ class TransactionsCrudPage extends StatelessWidget {
                   final TransactionsBloc bloc =
                       context.read<TransactionsBloc>();
                   final TransactionBackend payload = TransactionBackend(
-                    id: tx?.id,
+                    id: tx?.id ?? 'tx_${DateTime.now().microsecondsSinceEpoch}',
                     tipo: tipo,
                     monto: (double.parse(amountCtrl.text.trim())).toString(),
                     descripcion: descCtrl.text.trim(),
                     fecha: fecha,
                     categoriaId: categoriaId!,
                     esRecurrente: recurrente,
+                    createdAt: tx?.createdAt ?? DateTime.now(),
+                    updatedAt: DateTime.now(),
+                    deviceId: getIt<DeviceService>().deviceId,
+                    version: tx?.version ?? 1,
                   );
                   if (tx == null) {
                     bloc.add(TransactionCreate(payload));
@@ -302,123 +312,126 @@ class _FiltersBarState extends State<_FiltersBar> {
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<CategoriesBloc, CategoriesState>(
-        builder: (BuildContext context, CategoriesState cats) => Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: <Widget>[
-                // ... (Date filters remain same)
-                FilterChip(
-                  label: Text(desde == null ? 'Desde' : _fmt(desde!)),
-                  onSelected: (_) async {
-                    final DateTime? d = await showDatePicker(
-                      context: context,
-                      initialDate: desde ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    setState(() => desde = d);
-                    context.read<TransactionsBloc>().add(
-                      TransactionsLoad(
-                        desde: desde,
-                        hasta: hasta,
-                        categoriaId: categoriaId,
-                        tipo: tipo,
-                      ),
-                    );
-                  },
-                ),
-                FilterChip(
-                  label: Text(hasta == null ? 'Hasta' : _fmt(hasta!)),
-                  onSelected: (_) async {
-                    final DateTime? d = await showDatePicker(
-                      context: context,
-                      initialDate: hasta ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    setState(() => hasta = d);
-                    context.read<TransactionsBloc>().add(
-                      TransactionsLoad(
-                        desde: desde,
-                        hasta: hasta,
-                        categoriaId: categoriaId,
-                        tipo: tipo,
-                      ),
-                    );
-                  },
-                ),
-                DropdownButton<String>(
-                  value: tipo,
-                  hint: const Text('Tipo'),
-                  items: const <DropdownMenuItem<String>>[
-                    DropdownMenuItem<String>(
-                      value: 'ingreso',
-                      child: Text('Ingreso'),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'gasto',
-                      child: Text('Gasto'),
-                    ),
-                  ],
-                  onChanged: (String? v) {
-                    setState(() => tipo = v);
-                    context.read<TransactionsBloc>().add(
-                      TransactionsLoad(
-                        desde: desde,
-                        hasta: hasta,
-                        categoriaId: categoriaId,
-                        tipo: tipo,
-                      ),
-                    );
-                  },
-                ),
-                DropdownButton<String>(
-                  value: categoriaId,
-                  hint: const Text('Categoría'),
-                  items:
-                      cats.items
-                          .map(
-                            (Category c) => DropdownMenuItem<String>(
-                              value: c.id,
-                              child: Text(c.nombre),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (String? v) {
-                    setState(() => categoriaId = v);
-                    context.read<TransactionsBloc>().add(
-                      TransactionsLoad(
-                        desde: desde,
-                        hasta: hasta,
-                        categoriaId: categoriaId,
-                        tipo: tipo,
-                      ),
-                    );
-                  },
-                ),
-                if (desde != null ||
-                    hasta != null ||
-                    tipo != null ||
-                    categoriaId != null)
-                  TextButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        desde = null;
-                        hasta = null;
-                        tipo = null;
-                        categoriaId = null;
-                      });
-                      context.read<TransactionsBloc>().add(TransactionsLoad());
+        builder:
+            (BuildContext context, CategoriesState cats) => Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  // ... (Date filters remain same)
+                  FilterChip(
+                    label: Text(desde == null ? 'Desde' : _fmt(desde!)),
+                    onSelected: (_) async {
+                      final DateTime? d = await showDatePicker(
+                        context: context,
+                        initialDate: desde ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      setState(() => desde = d);
+                      context.read<TransactionsBloc>().add(
+                        TransactionsLoad(
+                          desde: desde,
+                          hasta: hasta,
+                          categoriaId: categoriaId,
+                          tipo: tipo,
+                        ),
+                      );
                     },
-                    icon: const Icon(Icons.clear),
-                    label: const Text('Limpiar'),
                   ),
-              ],
+                  FilterChip(
+                    label: Text(hasta == null ? 'Hasta' : _fmt(hasta!)),
+                    onSelected: (_) async {
+                      final DateTime? d = await showDatePicker(
+                        context: context,
+                        initialDate: hasta ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      setState(() => hasta = d);
+                      context.read<TransactionsBloc>().add(
+                        TransactionsLoad(
+                          desde: desde,
+                          hasta: hasta,
+                          categoriaId: categoriaId,
+                          tipo: tipo,
+                        ),
+                      );
+                    },
+                  ),
+                  DropdownButton<String>(
+                    value: tipo,
+                    hint: const Text('Tipo'),
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem<String>(
+                        value: 'ingreso',
+                        child: Text('Ingreso'),
+                      ),
+                      DropdownMenuItem<String>(
+                        value: 'gasto',
+                        child: Text('Gasto'),
+                      ),
+                    ],
+                    onChanged: (String? v) {
+                      setState(() => tipo = v);
+                      context.read<TransactionsBloc>().add(
+                        TransactionsLoad(
+                          desde: desde,
+                          hasta: hasta,
+                          categoriaId: categoriaId,
+                          tipo: tipo,
+                        ),
+                      );
+                    },
+                  ),
+                  DropdownButton<String>(
+                    value: categoriaId,
+                    hint: const Text('Categoría'),
+                    items:
+                        cats.items
+                            .map(
+                              (Category c) => DropdownMenuItem<String>(
+                                value: c.id,
+                                child: Text(c.nombre),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (String? v) {
+                      setState(() => categoriaId = v);
+                      context.read<TransactionsBloc>().add(
+                        TransactionsLoad(
+                          desde: desde,
+                          hasta: hasta,
+                          categoriaId: categoriaId,
+                          tipo: tipo,
+                        ),
+                      );
+                    },
+                  ),
+                  if (desde != null ||
+                      hasta != null ||
+                      tipo != null ||
+                      categoriaId != null)
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          desde = null;
+                          hasta = null;
+                          tipo = null;
+                          categoriaId = null;
+                        });
+                        context.read<TransactionsBloc>().add(
+                          TransactionsLoad(),
+                        );
+                      },
+                      icon: const Icon(Icons.clear),
+                      label: const Text('Limpiar'),
+                    ),
+                ],
+              ),
             ),
-          ),
       );
 }
 

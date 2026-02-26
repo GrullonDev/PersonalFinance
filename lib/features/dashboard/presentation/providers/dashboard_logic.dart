@@ -281,55 +281,51 @@ class DashboardLogic extends ChangeNotifier {
   }
 
   // Métodos públicos
+  /// Genera recomendaciones dinámicas basadas en los datos del usuario
   Future<void> loadDashboardData() async {
     _setLoading(true);
     _clearError();
 
-    try {
-      final DateTimeRange dateRange = _getDateRangeForPeriod(_selectedPeriod);
-      final DashboardParams params = DashboardParams(
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-      );
+    final DateTimeRange dateRange = _getDateRangeForPeriod(_selectedPeriod);
+    final DashboardParams params = DashboardParams(
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+    );
 
-      final DashboardResult result = await _getDashboardDataUseCase.execute(
-        params,
-      );
+    final result = await _getDashboardDataUseCase.execute(params);
 
-      _expenses =
-          result.expenses
-              .where(
-                (ExpenseEntity e) =>
-                    _categoryFilter == null || e.category == _categoryFilter,
-              )
-              .toList();
+    await result.fold(
+      (failure) async {
+        _setError('Error al cargar datos: ${failure.message}');
+      },
+      (dashboardResult) async {
+        _expenses = dashboardResult.expenses;
+        _incomes = dashboardResult.incomes;
 
-      // Fetch goals and budgets in parallel could be better, but sequential for simplicity first
-      // or better yet, move this to the use case if they were part of "Dashboard Data".
-      // Since they are separate features, we fetch them here.
-
-      final goalsResult = await _getActiveGoalsUseCase.execute();
-      goalsResult.fold((failure) => _goals = [], (goals) => _goals = goals);
-
-      final budgetsResult = await _getActiveBudgetsUseCase.execute();
-      budgetsResult.fold((failure) => _activeBudget = null, (budgets) {
-        // For now take the first one or logic to find active
-        if (budgets.isNotEmpty) {
-          _activeBudget = budgets.first;
-        } else {
-          _activeBudget = null;
+        // Si tenemos filtro de categoría, aplicarlo
+        if (_categoryFilter != null) {
+          _expenses =
+              _expenses.where((e) => e.category == _categoryFilter).toList();
         }
-      });
 
-      _expenses = result.expenses;
-      _incomes = result.incomes;
+        // Fetch goals and budgets in parallel
+        final goalsResult = await _getActiveGoalsUseCase.execute();
+        goalsResult.fold((failure) => _goals = [], (goals) => _goals = goals);
 
-      notifyListeners();
-    } catch (e) {
-      _setError('Error al cargar datos: $e');
-    } finally {
-      _setLoading(false);
-    }
+        final budgetsResult = await _getActiveBudgetsUseCase.execute();
+        budgetsResult.fold((failure) => _activeBudget = null, (budgets) {
+          if (budgets.isNotEmpty) {
+            _activeBudget = budgets.first;
+          } else {
+            _activeBudget = null;
+          }
+        });
+
+        notifyListeners();
+      },
+    );
+
+    _setLoading(false);
   }
 
   Future<void> addExpense({
@@ -340,26 +336,30 @@ class DashboardLogic extends ChangeNotifier {
     String? description,
     String? notes,
   }) async {
-    try {
-      final double parsedAmount = double.tryParse(amount) ?? 0.0;
-      if (parsedAmount <= 0) {
-        throw Exception('El monto debe ser mayor a 0');
-      }
-
-      final AddExpenseParams params = AddExpenseParams(
-        title: title,
-        amount: parsedAmount,
-        date: date,
-        category: category,
-        description: description,
-        notes: notes,
-      );
-
-      await _addTransactionUseCase.addExpense(params);
-      await loadDashboardData(); // Recargar datos
-    } catch (e) {
-      _setError('Error al agregar gasto: $e');
+    final double parsedAmount = double.tryParse(amount) ?? 0.0;
+    if (parsedAmount <= 0) {
+      _setError('El monto debe ser mayor a 0');
+      return;
     }
+
+    final AddExpenseParams params = AddExpenseParams(
+      title: title,
+      amount: parsedAmount,
+      date: date,
+      category: category,
+      description: description,
+      notes: notes,
+    );
+
+    final result = await _addTransactionUseCase.addExpense(params);
+    await result.fold(
+      (failure) async {
+        _setError('Error al agregar gasto: ${failure.message}');
+      },
+      (_) async {
+        await loadDashboardData(); // Recargar datos
+      },
+    );
   }
 
   Future<void> addIncome({
@@ -370,26 +370,30 @@ class DashboardLogic extends ChangeNotifier {
     String? description,
     String? notes,
   }) async {
-    try {
-      final double parsedAmount = double.tryParse(amount) ?? 0.0;
-      if (parsedAmount <= 0) {
-        throw Exception('El monto debe ser mayor a 0');
-      }
-
-      final AddIncomeParams params = AddIncomeParams(
-        title: title,
-        amount: parsedAmount,
-        date: date,
-        source: source,
-        description: description,
-        notes: notes,
-      );
-
-      await _addTransactionUseCase.addIncome(params);
-      await loadDashboardData(); // Recargar datos
-    } catch (e) {
-      _setError('Error al agregar ingreso: $e');
+    final double parsedAmount = double.tryParse(amount) ?? 0.0;
+    if (parsedAmount <= 0) {
+      _setError('El monto debe ser mayor a 0');
+      return;
     }
+
+    final AddIncomeParams params = AddIncomeParams(
+      title: title,
+      amount: parsedAmount,
+      date: date,
+      source: source,
+      description: description,
+      notes: notes,
+    );
+
+    final result = await _addTransactionUseCase.addIncome(params);
+    await result.fold(
+      (failure) async {
+        _setError('Error al agregar ingreso: ${failure.message}');
+      },
+      (_) async {
+        await loadDashboardData(); // Recargar datos
+      },
+    );
   }
 
   void changePeriod(PeriodFilter period, {DateTimeRange? range}) {

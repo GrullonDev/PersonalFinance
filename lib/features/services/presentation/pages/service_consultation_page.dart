@@ -8,6 +8,8 @@ import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 
 class ServiceConsultationPage extends StatefulWidget {
   const ServiceConsultationPage({super.key});
@@ -819,8 +821,17 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                                     ),
                                     onPressed: () {
                                       if (!key.currentState!.validate()) return;
+                                      final now = DateTime.now();
+                                      final deviceId =
+                                          getIt<DeviceService>().deviceId;
                                       final payload = Budget(
-                                        id: budget?.id,
+                                        id:
+                                            budget?.id ??
+                                            'service_${now.microsecondsSinceEpoch}',
+                                        createdAt: budget?.createdAt ?? now,
+                                        updatedAt: now,
+                                        deviceId: budget?.deviceId ?? deviceId,
+                                        version: (budget?.version ?? 0) + 1,
                                         nombre:
                                             '${nameCtrl.text.trim()} ($frecuencia)',
                                         montoTotal: amountCtrl.text.trim(),
@@ -884,7 +895,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     );
 
     if (confirm == true && mounted) {
-      context.read<BudgetsBloc>().add(BudgetDelete(budget.id!));
+      context.read<BudgetsBloc>().add(BudgetDelete(budget.id));
     }
   }
 }
