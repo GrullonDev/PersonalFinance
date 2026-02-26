@@ -4,9 +4,13 @@ import 'dart:developer' as developer;
 
 class VersionService {
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
+  late PackageInfo _packageInfo;
+
+  PackageInfo get packageInfo => _packageInfo;
 
   Future<void> init() async {
     try {
+      _packageInfo = await PackageInfo.fromPlatform();
       await _remoteConfig.setConfigSettings(
         RemoteConfigSettings(
           fetchTimeout: const Duration(minutes: 1),
@@ -28,11 +32,10 @@ class VersionService {
 
   Future<bool> isUpdateRequired() async {
     try {
-      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       developer.log(
-        'App version: ${packageInfo.version}+${packageInfo.buildNumber}',
+        'App version: ${_packageInfo.version}+${_packageInfo.buildNumber}',
       );
-      final String currentVersion = packageInfo.version;
+      final String currentVersion = _packageInfo.version;
       final String minRequiredVersion = _remoteConfig.getString(
         'min_app_version',
       );
