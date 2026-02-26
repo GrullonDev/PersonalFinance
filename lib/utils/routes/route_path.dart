@@ -13,4 +13,5 @@ class RoutePath {
   static const String goalsCrud = '/goals-crud';
   static const String transactionsCrud = '/transactions-crud';
   static const String forceUpdate = '/force-update';
+  static const String notificationsInbox = '/notifications-inbox';
 }

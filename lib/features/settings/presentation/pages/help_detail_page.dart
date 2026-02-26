@@ -85,108 +85,103 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
     );
   }
 
-  Widget _buildSearchHeader(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Busca preguntas o temas…',
-            prefixIcon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: Icon(
-                _searchController.text.isEmpty
-                    ? Icons.search_rounded
-                    : Icons.manage_search_rounded,
-                key: ValueKey(_searchController.text.isEmpty),
-                color: colorScheme.primary,
-              ),
-            ),
-            filled: true,
-            fillColor: Colors.transparent,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          onChanged: (val) => setState(() {}),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryFilter(ColorScheme colorScheme) {
-    return Container(
-      height: 60,
+  Widget _buildSearchHeader(ColorScheme colorScheme) => Container(
+    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+    child: Container(
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Busca preguntas o temas…',
+          prefixIcon: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Icon(
+              _searchController.text.isEmpty
+                  ? Icons.search_rounded
+                  : Icons.manage_search_rounded,
+              key: ValueKey(_searchController.text.isEmpty),
+              color: colorScheme.primary,
+            ),
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        onChanged: (val) => setState(() {}),
+      ),
+    ),
+  );
+
+  Widget _buildCategoryFilter(ColorScheme colorScheme) => Container(
+    height: 60,
+    decoration: BoxDecoration(
+      border: Border(
+        bottom: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: _categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          final isSelected = _selectedCategory == category;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-            child: ChoiceChip(
-              label: Text(category),
-              selected: isSelected,
-              onSelected: (val) {
-                if (val) setState(() => _selectedCategory = category);
-              },
-              backgroundColor: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.3,
-              ),
-              selectedColor: colorScheme.primaryContainer,
-              labelStyle: TextStyle(
+    ),
+    child: ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      itemCount: _categories.length,
+      separatorBuilder: (_, __) => const SizedBox(width: 8),
+      itemBuilder: (context, index) {
+        final category = _categories[index];
+        final isSelected = _selectedCategory == category;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          child: ChoiceChip(
+            label: Text(category),
+            selected: isSelected,
+            onSelected: (val) {
+              if (val) setState(() => _selectedCategory = category);
+            },
+            backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.3,
+            ),
+            selectedColor: colorScheme.primaryContainer,
+            labelStyle: TextStyle(
+              color:
+                  isSelected
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurfaceVariant,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
                 color:
                     isSelected
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSurfaceVariant,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ? colorScheme.primary.withValues(alpha: 0.2)
+                        : Colors.transparent,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color:
-                      isSelected
-                          ? colorScheme.primary.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                ),
-              ),
-              showCheckmark: false,
-              elevation: isSelected ? 2 : 0,
             ),
-          );
-        },
-      ),
-    );
-  }
+            showCheckmark: false,
+            elevation: isSelected ? 2 : 0,
+          ),
+        );
+      },
+    ),
+  );
 
-  List<Widget> _buildFaqList(ThemeData theme) {
-    return _faqs
+  List<Widget> _buildFaqList(ThemeData theme) => _faqs
         .where((faq) {
           final matchesCategory =
               _selectedCategory == 'Todos' ||
@@ -254,61 +249,58 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
           ),
         )
         .toList();
-  }
 
-  Widget _buildContactCard(ColorScheme colorScheme, ThemeData theme) {
-    return Card(
-      elevation: 4,
-      shadowColor: colorScheme.primary.withValues(alpha: 0.3),
-      color: colorScheme.primary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.support_agent_rounded,
+  Widget _buildContactCard(ColorScheme colorScheme, ThemeData theme) => Card(
+    elevation: 4,
+    shadowColor: colorScheme.primary.withValues(alpha: 0.3),
+    color: colorScheme.primary,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.support_agent_rounded,
+            color: Colors.white,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '¿No encuentras lo que buscas?',
+            style: TextStyle(
               color: Colors.white,
-              size: 48,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              '¿No encuentras lo que buscas?',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Nuestro equipo está disponible 24/7.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: colorScheme.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Enviar mensaje directo',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Nuestro equipo está disponible 24/7.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Enviar mensaje directo',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }

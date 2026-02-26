@@ -50,6 +50,17 @@ import 'package:personal_finance/features/notifications/data/repositories/notifi
 import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
     as notif_repo;
 import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/core/services/navigation_service.dart';
+import 'package:personal_finance/core/services/notifications/local_notification_service.dart';
+import 'package:personal_finance/core/services/notifications/push_notification_service.dart';
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
+import 'package:personal_finance/core/services/notifications/notification_permission_service.dart';
+import 'package:personal_finance/core/services/notifications/push_token_manager.dart';
+import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart'
+    as notif_inbox_repo;
+import 'package:personal_finance/features/notifications/data/repositories/notification_inbox_repository_impl.dart'
+    as notif_inbox_repo_impl;
+import 'package:personal_finance/features/notifications/domain/entities/notification_item.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -260,5 +271,57 @@ Future<void> initDependencies() async {
   }
   if (!getIt.isRegistered<VersionService>()) {
     getIt.registerLazySingleton<VersionService>(() => VersionService());
+  }
+
+  // Notification Services
+  if (!getIt.isRegistered<LocalNotificationService>()) {
+    getIt.registerLazySingleton<LocalNotificationService>(
+      () => LocalNotificationService(
+        getIt<NavigationService>(),
+        getIt<notif_inbox_repo.NotificationInboxRepository>(),
+      ),
+    );
+  }
+
+  if (!getIt.isRegistered<PushNotificationService>()) {
+    getIt.registerLazySingleton<PushNotificationService>(
+      () => PushNotificationService(
+        getIt<notif_inbox_repo.NotificationInboxRepository>(),
+        getIt<NavigationService>(),
+      ),
+    );
+  }
+
+  if (!getIt.isRegistered<NotificationService>()) {
+    getIt.registerLazySingleton<NotificationService>(
+      () => NotificationService(
+        local: getIt<LocalNotificationService>(),
+        push: getIt<PushNotificationService>(),
+      ),
+    );
+  }
+
+  if (!getIt.isRegistered<NotificationPermissionService>()) {
+    getIt.registerLazySingleton<NotificationPermissionService>(
+      () => NotificationPermissionService(getIt<LocalNotificationService>()),
+    );
+  }
+
+  if (!getIt.isRegistered<PushTokenManager>()) {
+    getIt.registerLazySingleton<PushTokenManager>(
+      () => PushTokenManager(getIt<SharedPreferences>()),
+    );
+  }
+
+  if (!getIt.isRegistered<NavigationService>()) {
+    getIt.registerLazySingleton<NavigationService>(() => NavigationService());
+  }
+
+  if (!getIt.isRegistered<notif_inbox_repo.NotificationInboxRepository>()) {
+    getIt.registerLazySingleton<notif_inbox_repo.NotificationInboxRepository>(
+      () => notif_inbox_repo_impl.NotificationInboxRepositoryImpl(
+        Hive.box<NotificationItem>('notifications_inbox'),
+      ),
+    );
   }
 }

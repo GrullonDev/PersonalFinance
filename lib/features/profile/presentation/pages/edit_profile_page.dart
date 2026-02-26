@@ -173,8 +173,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildFields() {
-    return Column(
+  Widget _buildFields() => Column(
       children: [
         // Nombre
         TextFormField(
@@ -268,10 +267,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ],
     );
-  }
 
-  Widget _buildActionButtons(Color primaryColor) {
-    return Column(
+  Widget _buildActionButtons(Color primaryColor) => Column(
       children: [
         // Botón de resetear contraseña
         SizedBox(
@@ -311,7 +308,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ],
     );
-  }
 
   Widget _buildDefaultAvatar() {
     final String initials = _getInitials();
@@ -344,8 +340,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return Container(
+      builder: (context) => Container(
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -416,8 +411,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ],
           ),
-        );
-      },
+        ),
     );
   }
 
@@ -452,7 +446,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
             'con instrucciones para resetear tu contraseña.',
           ),
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 4),
         ),
       );
     }

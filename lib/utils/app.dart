@@ -24,6 +24,13 @@ import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
+import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
+import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
+import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
+    as notif_repo;
+import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart'
+    as notif_inbox_repo;
+import 'package:personal_finance/core/services/navigation_service.dart';
 import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/widgets/app_lifecycle_listener.dart';
 
@@ -65,6 +72,18 @@ class MyApp extends StatelessWidget {
         create:
             (_) => BudgetsBloc(getIt<BudgetRepository>())..add(BudgetsLoad()),
       ),
+      ChangeNotifierProvider<NotificationInboxProvider>(
+        create:
+            (_) => NotificationInboxProvider(
+              getIt<notif_inbox_repo.NotificationInboxRepository>(),
+            ),
+      ),
+      ChangeNotifierProvider<NotificationPrefsProvider>(
+        create:
+            (_) => NotificationPrefsProvider(
+              getIt<notif_repo.NotificationRepository>(),
+            )..load(),
+      ),
     ],
     child: Consumer2<AuthProvider, SettingsProvider>(
       builder:
@@ -74,6 +93,7 @@ class MyApp extends StatelessWidget {
             SettingsProvider settingsProvider,
             _,
           ) => MaterialApp(
+            navigatorKey: getIt<NavigationService>().navigatorKey,
             themeMode: settingsProvider.themeMode,
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -19,7 +18,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -43,7 +42,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                     child: Opacity(
                       opacity: 0.5,
                       child: Text(
-                        'Versión Legal: 2026.1.0',
+                        'Versión Legal: 2025.1.0',
                         style: theme.textTheme.labelSmall,
                       ),
                     ),
@@ -58,135 +57,127 @@ class PrivacyPolicyPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTrustHeader(ColorScheme colorScheme, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.security_rounded,
-                color: Colors.blue,
-                size: 28,
-              ),
+  Widget _buildTrustHeader(ColorScheme colorScheme, ThemeData theme) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Tu Datos están Seguros',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+            child: const Icon(
+              Icons.security_rounded,
+              color: Colors.blue,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tu Datos están Seguros',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  Text(
-                    'Protegemos tu información con estándares bancarios.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                ),
+                Text(
+                  'Protegemos tu información con estándares bancarios.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green,
+              size: 14,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Cumple con GDPR / Protección de Datos',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                color: Colors.green,
-                size: 14,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Cumple con GDPR / Protección de Datos',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSafetySummary(ColorScheme colorScheme, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
       ),
-      child: Column(
-        children: [
-          _buildSummaryItem(
-            Icons.enhanced_encryption_rounded,
-            'Encriptación AES-256',
-            'Tus datos financieros viajan y se guardan cifrados.',
-          ),
-          const Divider(height: 24, indent: 40),
-          _buildSummaryItem(
-            Icons.cloud_done_rounded,
-            'Respaldo Seguro en la Nube',
-            'Nunca pierdes tu información con nuestra infraestructura cloud.',
-          ),
-          const Divider(height: 24, indent: 40),
-          _buildSummaryItem(
-            Icons.privacy_tip_rounded,
-            'Nunca Vendemos Datos',
-            'Tu información es tuya. No la compartimos con terceros.',
-          ),
-        ],
-      ),
-    );
-  }
+    ],
+  );
 
-  Widget _buildSummaryItem(IconData icon, String title, String desc) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.blueGrey),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-              Text(
-                desc,
-                style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
-              ),
-            ],
-          ),
+  Widget _buildSafetySummary(ColorScheme colorScheme, ThemeData theme) =>
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
         ),
-      ],
-    );
-  }
+        child: Column(
+          children: [
+            _buildSummaryItem(
+              Icons.enhanced_encryption_rounded,
+              'Encriptación AES-256',
+              'Tus datos financieros viajan y se guardan cifrados.',
+            ),
+            const Divider(height: 24, indent: 40),
+            _buildSummaryItem(
+              Icons.cloud_done_rounded,
+              'Respaldo Seguro en la Nube',
+              'Nunca pierdes tu información con nuestra infraestructura cloud.',
+            ),
+            const Divider(height: 24, indent: 40),
+            _buildSummaryItem(
+              Icons.privacy_tip_rounded,
+              'Nunca Vendemos Datos',
+              'Tu información es tuya. No la compartimos con terceros.',
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildSummaryItem(IconData icon, String title, String desc) => Row(
+    children: [
+      Icon(icon, size: 20, color: Colors.blueGrey),
+      const SizedBox(width: 16),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            Text(
+              desc,
+              style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 
   Widget _buildPolicyCard(ColorScheme colorScheme, ThemeData theme) {
     final List<Map<String, String>> policySections = [
@@ -274,58 +265,59 @@ class PrivacyPolicyPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContactSupportCard(ColorScheme colorScheme, ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.primary.withBlue(200)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildContactSupportCard(
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [colorScheme.primary, colorScheme.primary.withBlue(200)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [
+        BoxShadow(
+          color: colorScheme.primary.withValues(alpha: 0.3),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+      ],
+    ),
+    child: Column(
+      children: [
+        const Text(
+          '¿Preguntas sobre Privacidad?',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            '¿Preguntas sobre Privacidad?',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Nuestro delegado de protección de datos está disponible para ti.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: () {},
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: colorScheme.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Nuestro delegado de protección de datos está disponible para ti.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+          child: const Text(
+            'Enviar mensaje directo',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: () {},
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: colorScheme.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Enviar mensaje directo',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }

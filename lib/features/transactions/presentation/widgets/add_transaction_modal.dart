@@ -247,8 +247,9 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                             if (value == null || value.isEmpty) {
                               return 'Monto requerido';
                             }
-                            if (double.tryParse(value) == null)
+                            if (double.tryParse(value) == null) {
                               return 'Inválido';
+                            }
                             return null;
                           },
                         ),
@@ -260,10 +261,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                     child:
                         _tipo == 'gasto'
                             ? Padding(
-                              padding: const EdgeInsets.only(
-                                top: 8.0,
-                                bottom: 8.0,
-                              ),
+                              padding: const EdgeInsets.only(top: 8, bottom: 8),
                               child: Text(
                                 'Impactará tu presupuesto de ${toBeginningOfSentenceCase(DateFormat.MMMM('es').format(_fecha))}',
                                 style: TextStyle(

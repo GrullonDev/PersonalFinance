@@ -12,10 +12,10 @@ import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/settings/presentation/pages/notifications_detail_page.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
-import 'package:personal_finance/features/categories/presentation/pages/categories_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/appearance_settings_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
 import 'package:personal_finance/utils/responsive.dart';
 
@@ -69,11 +69,11 @@ class ProfileView extends StatelessWidget {
                         // Secciones de menú
                         _buildMenuSection(
                           context,
-                          title: 'CUENTA',
+                          title: 'INFORMACIÓN',
                           items: <Widget>[
                             ProfileMenuItem(
-                              icon: Icons.person_outline,
-                              title: 'Editar perfil',
+                              icon: Icons.person_outline_rounded,
+                              title: 'Ver Perfil',
                               onTap: () {
                                 final bloc = context.read<ProfileBloc>();
                                 Navigator.of(context).push(
@@ -88,15 +88,14 @@ class ProfileView extends StatelessWidget {
                               },
                             ),
                             ProfileMenuItem(
-                              icon: Icons.security,
-                              title: 'Seguridad',
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const SecurityDetailPage(),
-                                  ),
-                                );
-                              },
+                              icon: Icons.star_outline_rounded,
+                              title: 'Plan (Pro)',
+                              onTap: () {},
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.cloud_sync_outlined,
+                              title: 'Sincronización',
+                              onTap: () {},
                             ),
                           ],
                         ),
@@ -105,10 +104,22 @@ class ProfileView extends StatelessWidget {
 
                         _buildMenuSection(
                           context,
-                          title: 'PREFERENCIAS',
+                          title: 'AJUSTES',
                           items: <Widget>[
                             ProfileMenuItem(
-                              icon: Icons.notifications_none,
+                              icon: Icons.palette_outlined,
+                              title: 'Apariencia',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder:
+                                        (_) => const AppearanceSettingsPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.notifications_none_rounded,
                               title: 'Notificaciones',
                               onTap: () {
                                 Navigator.of(context).push(
@@ -119,22 +130,9 @@ class ProfileView extends StatelessWidget {
                               },
                             ),
                             ProfileMenuItem(
-                              icon: Icons.category_outlined,
-                              title: 'Gestionar Categorías',
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const CategoriesPage(),
-                                  ),
-                                );
-                              },
-                            ),
-                            ProfileMenuItem(
-                              icon: Icons.palette_outlined,
-                              title: 'Apariencia',
-                              onTap: () {
-                                Navigator.pushNamed(context, '/settings');
-                              },
+                              icon: Icons.alarm_rounded,
+                              title: 'Recordatorios',
+                              onTap: () {},
                             ),
                           ],
                         ),
@@ -143,10 +141,35 @@ class ProfileView extends StatelessWidget {
 
                         _buildMenuSection(
                           context,
-                          title: 'AYUDA Y SOPORTE',
+                          title: 'SEGURIDAD',
                           items: <Widget>[
                             ProfileMenuItem(
-                              icon: Icons.help_outline,
+                              icon: Icons.lock_outline_rounded,
+                              title: 'Centro de Seguridad',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const SecurityDetailPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            /* ProfileMenuItem(
+                              icon: Icons.fingerprint_rounded,
+                              title: 'Autenticación biométrica',
+                              onTap: () {},
+                            ), */
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        _buildMenuSection(
+                          context,
+                          title: 'LEGAL Y SOPORTE',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.help_outline_rounded,
                               title: 'Centro de ayuda',
                               onTap: () {
                                 Navigator.of(context).push(
@@ -157,23 +180,28 @@ class ProfileView extends StatelessWidget {
                               },
                             ),
                             ProfileMenuItem(
-                              icon: Icons.info_outline,
-                              title: 'Acerca de',
+                              icon: Icons.privacy_tip_outlined,
+                              title: 'Privacidad',
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute<void>(
-                                    builder: (_) => const AboutPage(),
+                                    builder: (_) => const PrivacyPolicyPage(),
                                   ),
                                 );
                               },
                             ),
                             ProfileMenuItem(
-                              icon: Icons.privacy_tip_outlined,
-                              title: 'Política de privacidad',
+                              icon: Icons.description_outlined,
+                              title: 'Términos',
+                              onTap: () {},
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.info_outline_rounded,
+                              title: 'Acerca de',
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute<void>(
-                                    builder: (_) => const PrivacyPolicyPage(),
+                                    builder: (_) => const AboutPage(),
                                   ),
                                 );
                               },
@@ -437,7 +465,7 @@ class ProfileView extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               letterSpacing: 0.5,
             ),
           ),

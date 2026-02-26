@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
+import 'package:personal_finance/features/settings/presentation/pages/appearance_settings_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/notifications_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/profile_detail_page.dart';
@@ -26,12 +26,10 @@ class SettingsPage extends StatelessWidget {
     ),
     body: ListView(
       children: <Widget>[
-        _buildSectionTitle(context, 'APARIENCIA'),
-        _buildDarkModeOption(context),
         _buildSectionTitle(context, 'CUENTA'),
         _buildSettingItem(
           context,
-          icon: Icons.person,
+          icon: Icons.person_outline_rounded,
           iconColor: Theme.of(context).colorScheme.primary,
           title: 'Perfil',
           subtitle: 'Administra tu información personal',
@@ -46,10 +44,10 @@ class SettingsPage extends StatelessWidget {
         ),
         _buildSettingItem(
           context,
-          icon: Icons.security,
+          icon: Icons.security_rounded,
           iconColor: Colors.green,
           title: 'Seguridad',
-          subtitle: 'Cambia tu contraseña',
+          subtitle: 'Contraseñas y métodos de acceso',
           onTap: () {
             Navigator.push<void>(
               context,
@@ -59,13 +57,39 @@ class SettingsPage extends StatelessWidget {
             );
           },
         ),
+        _buildSettingItem(
+          context,
+          icon: Icons.cloud_sync_rounded,
+          iconColor: Colors.blue,
+          title: 'Sincronización',
+          subtitle: 'Respaldo en la nube y dispositivos',
+          onTap: () {
+            // TODO: Implement Sincronización
+          },
+        ),
         _buildSectionTitle(context, 'PREFERENCIAS'),
         _buildSettingItem(
           context,
-          icon: Icons.notifications,
+          icon: Icons.color_lens_outlined,
+          iconColor: Colors.purple,
+          title: 'Apariencia',
+          subtitle: 'Tema, colores y comportamiento visual',
+          onTap: () {
+            Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder:
+                    (BuildContext context) => const AppearanceSettingsPage(),
+              ),
+            );
+          },
+        ),
+        _buildSettingItem(
+          context,
+          icon: Icons.notifications_none_rounded,
           iconColor: Colors.orange,
           title: 'Notificaciones',
-          subtitle: 'Activa o desactiva las notificaciones',
+          subtitle: 'Configura tus alertas y avisos',
           onTap: () {
             Navigator.push<void>(
               context,
@@ -83,11 +107,27 @@ class SettingsPage extends StatelessWidget {
             );
           },
         ),
+        _buildSettingItem(
+          context,
+          icon: Icons.alarm_rounded,
+          iconColor: Colors.redAccent,
+          title: 'Recordatorios',
+          subtitle: 'Facturas, ahorros y presupuestos',
+          onTap: () {},
+        ),
+        _buildSettingItem(
+          context,
+          icon: Icons.summarize_outlined,
+          iconColor: Colors.teal,
+          title: 'Frecuencia de resumen',
+          subtitle: 'Semanal',
+          onTap: () {},
+        ),
         _buildSectionTitle(context, 'AYUDA Y LEGAL'),
         _buildSettingItem(
           context,
-          icon: Icons.help_outline,
-          iconColor: Colors.purple,
+          icon: Icons.help_outline_rounded,
+          iconColor: Colors.indigo,
           title: 'Centro de Ayuda',
           subtitle: 'Preguntas frecuentes y soporte',
           onTap: () {
@@ -103,7 +143,7 @@ class SettingsPage extends StatelessWidget {
           context,
           icon: Icons.privacy_tip_outlined,
           iconColor: Colors.blueGrey,
-          title: 'Privacidad',
+          title: 'Política de Privacidad',
           subtitle: 'Tu protección es nuestra prioridad',
           onTap: () {
             Navigator.push<void>(
@@ -116,10 +156,18 @@ class SettingsPage extends StatelessWidget {
         ),
         _buildSettingItem(
           context,
-          icon: Icons.info_outline,
-          iconColor: Colors.teal,
+          icon: Icons.description_outlined,
+          iconColor: Colors.brown,
+          title: 'Términos y Licencias',
+          subtitle: 'Acuerdos legales',
+          onTap: () {},
+        ),
+        _buildSettingItem(
+          context,
+          icon: Icons.info_outline_rounded,
+          iconColor: Colors.cyan,
           title: 'Acerca de',
-          subtitle: 'Versión e información legal',
+          subtitle: 'Versión de la aplicación y equipo',
           onTap: () {
             Navigator.push<void>(
               context,
@@ -129,80 +177,23 @@ class SettingsPage extends StatelessWidget {
             );
           },
         ),
+        const SizedBox(height: 48),
       ],
     ),
   );
 
   Widget _buildSectionTitle(BuildContext context, String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+    padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
     child: Text(
       title,
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.bold,
-        color: Colors.grey[600],
+        letterSpacing: 1.2,
+        color: Theme.of(context).colorScheme.primary,
       ),
     ),
   );
-
-  Widget _buildDarkModeOption(BuildContext context) =>
-      Consumer<SettingsProvider>(
-        builder:
-            (BuildContext context, SettingsProvider settings, Widget? child) =>
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.dark_mode,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            const Text(
-                              'Modo Oscuro',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              'Activa o desactiva el modo oscuro',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: settings.darkMode,
-                        onChanged: (_) async {
-                          await settings.toggleDarkMode();
-                        },
-                        activeThumbColor: Theme.of(context).colorScheme.primary,
-                      ),
-                    ],
-                  ),
-                ),
-      );
 
   Widget _buildSettingItem(
     BuildContext context, {
@@ -213,18 +204,20 @@ class SettingsPage extends StatelessWidget {
     required VoidCallback onTap,
   }) => InkWell(
     onTap: onTap,
+    splashColor: iconColor.withValues(alpha: 0.1),
+    highlightColor: iconColor.withValues(alpha: 0.05),
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: <Widget>[
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: iconColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -235,17 +228,26 @@ class SettingsPage extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
         ],
       ),
     ),

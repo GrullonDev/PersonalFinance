@@ -11,6 +11,7 @@ import 'package:personal_finance/features/settings/presentation/pages/settings_p
 import 'package:personal_finance/features/splash/splash_screen.dart';
 import 'package:personal_finance/features/transactions/presentation/pages/transactions_crud_page.dart';
 import 'package:personal_finance/features/update/pages/force_update_page.dart';
+import 'package:personal_finance/features/notifications/presentation/pages/notification_inbox_page.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/core/services/version_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
@@ -67,6 +68,10 @@ class RouteSwitch {
           builder:
               (BuildContext context) =>
                   ForceUpdatePage(storeUrl: getIt<VersionService>().storeUrl),
+        );
+      case RoutePath.notificationsInbox:
+        return MaterialPageRoute<void>(
+          builder: (BuildContext context) => const NotificationInboxPage(),
         );
       default:
         return MaterialPageRoute<void>(
