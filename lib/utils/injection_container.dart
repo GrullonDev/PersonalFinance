@@ -61,6 +61,7 @@ import 'package:personal_finance/features/notifications/domain/repositories/noti
 import 'package:personal_finance/features/notifications/data/repositories/notification_inbox_repository_impl.dart'
     as notif_inbox_repo_impl;
 import 'package:personal_finance/features/notifications/domain/entities/notification_item.dart';
+import 'package:personal_finance/core/services/device_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -271,6 +272,13 @@ Future<void> initDependencies() async {
   }
   if (!getIt.isRegistered<VersionService>()) {
     getIt.registerLazySingleton<VersionService>(() => VersionService());
+  }
+
+  // Device Service
+  if (!getIt.isRegistered<DeviceService>()) {
+    final deviceService = DeviceService();
+    await deviceService.init();
+    getIt.registerLazySingleton<DeviceService>(() => deviceService);
   }
 
   // Notification Services
