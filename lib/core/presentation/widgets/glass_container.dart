@@ -13,8 +13,7 @@ class GlassContainer extends StatelessWidget {
   final Color? color;
 
   const GlassContainer({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.width,
     this.height,
     this.padding,
@@ -26,8 +25,7 @@ class GlassContainer extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: width,
       height: height,
       margin: margin,
@@ -58,5 +56,4 @@ class GlassContainer extends StatelessWidget {
         ),
       ),
     );
-  }
 }

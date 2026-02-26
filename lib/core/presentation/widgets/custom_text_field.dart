@@ -13,8 +13,7 @@ class CustomTextField extends StatelessWidget {
   final bool readOnly;
 
   const CustomTextField({
-    super.key,
-    required this.label,
+    required this.label, super.key,
     this.controller,
     this.prefixIcon,
     this.suffixIcon,
@@ -27,8 +26,7 @@ class CustomTextField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return TextFormField(
+  Widget build(BuildContext context) => TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
@@ -70,5 +68,4 @@ class CustomTextField extends StatelessWidget {
         ),
       ),
     );
-  }
 }

@@ -37,7 +37,6 @@ class BiometricService {
         options: AuthenticationOptions(
           stickyAuth: stickyAuth,
           biometricOnly: biometricOnly,
-          useErrorDialogs: true,
         ),
       );
     } on PlatformException {

@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 class PremiumBackground extends StatelessWidget {
   final Widget child;
 
-  const PremiumBackground({super.key, required this.child});
+  const PremiumBackground({required this.child, super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       body: Stack(
         children: [
           // Base black/dark background
@@ -56,22 +55,19 @@ class PremiumBackground extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildBlurCircle({required Color color, required double size}) {
-    return Container(
+  Widget _buildBlurCircle({required Color color, required double size}) => Container(
       width: size,
       height: size,
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
         child: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.transparent,
           ),
         ),
       ),
     );
-  }
 }

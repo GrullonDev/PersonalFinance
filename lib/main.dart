@@ -11,9 +11,11 @@ import 'package:intl/intl.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
+import 'package:personal_finance/features/notifications/domain/entities/notification_item.dart';
 import 'package:personal_finance/utils/app.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
 import 'package:personal_finance/utils/offline_sync_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
 
@@ -36,6 +38,8 @@ Future<void> main() async {
   if (!Hive.isAdapterRegistered(0)) {
     Hive.registerAdapter(PendingActionAdapter());
   }
+  Hive.registerAdapter(NotificationItemAdapter());
+  await Hive.openBox<NotificationItem>('notifications_inbox');
   await OfflineSyncService().init();
 
   // Inicializa Firebase con las opciones generadas por FlutterFire
@@ -46,6 +50,9 @@ Future<void> main() async {
 
   // Inicializa Remote Config para actualizaciones forzosas
   await getIt<VersionService>().init();
+
+  // Inicializa el servicio de notificaciones
+  await getIt<NotificationService>().init();
 
   runApp(const MyApp());
 }
