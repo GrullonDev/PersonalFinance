@@ -13,7 +13,7 @@ class VersionService {
       _packageInfo = await PackageInfo.fromPlatform();
       await _remoteConfig.setConfigSettings(
         RemoteConfigSettings(
-          fetchTimeout: const Duration(minutes: 1),
+          fetchTimeout: const Duration(seconds: 15),
           minimumFetchInterval: const Duration(hours: 1),
         ),
       );

@@ -3,6 +3,7 @@
     <!-- Android 13+ notifications permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- android/app/src/main/AndroidManifest.xml -->
     <application

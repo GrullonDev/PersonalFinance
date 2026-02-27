@@ -20,39 +20,62 @@ import 'package:personal_finance/utils/offline_sync_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Settings or other init logic can go here if needed
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Establece la configuración regional predeterminada según el dispositivo
-  final Locale deviceLocale = ui.PlatformDispatcher.instance.locale;
-  Intl.defaultLocale = deviceLocale.toLanguageTag();
+    // 1. Core initialization
+    final Locale deviceLocale = ui.PlatformDispatcher.instance.locale;
+    Intl.defaultLocale = deviceLocale.toLanguageTag();
 
-  // Inicializa Hive
-  await Hive.initFlutter();
-  Hive.registerAdapter(ExpenseAdapter());
-  await Hive.openBox<Expense>('expenses');
-  Hive.registerAdapter(IncomeAdapter());
-  await Hive.openBox<Income>('incomes');
-  Hive.registerAdapter(AlertItemAdapter());
-  await Hive.openBox<AlertItem>('alerts');
-  if (!Hive.isAdapterRegistered(0)) {
-    Hive.registerAdapter(PendingActionAdapter());
+    await Hive.initFlutter();
+
+    // 2. Register all adapters
+    Hive.registerAdapter(ExpenseAdapter());
+    Hive.registerAdapter(IncomeAdapter());
+    Hive.registerAdapter(AlertItemAdapter());
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(PendingActionAdapter());
+    }
+    Hive.registerAdapter(NotificationItemAdapter());
+
+    // 3. Open ALL boxes required by Providers synchronously to avoid initialization crashes
+    // These are required by global providers in app.dart
+    await Hive.openBox<Expense>('expenses');
+    await Hive.openBox<Income>('incomes');
+    await Hive.openBox<AlertItem>('alerts');
+    await Hive.openBox<NotificationItem>('notifications_inbox');
+    await Hive.openBox<PendingAction>('pending_actions');
+
+    // 4. Firebase Initialization (Must happen before runApp because of AnalyticsObserver)
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // 5. Dependency Injection
+    await initDependencies();
+
+    // 6. Start the app
+    runApp(const MyApp());
+
+    // 7. Post-runApp initialization (Services that don't block the UI)
+    _initializeBackgroundServices();
+  } catch (e) {
+    debugPrint('Fatal error in main: $e');
+    runApp(const MyApp());
   }
-  Hive.registerAdapter(NotificationItemAdapter());
-  await Hive.openBox<NotificationItem>('notifications_inbox');
-  await OfflineSyncService().init();
+}
 
-  // Inicializa Firebase con las opciones generadas por FlutterFire
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+Future<void> _initializeBackgroundServices() async {
+  try {
+    // OfflineSyncService uses 'pending_actions' which is already open now
+    await OfflineSyncService().init();
 
-  // Configura dependencias
-  await initDependencies();
+    // Services that depend on Firebase (Already initialized)
+    await getIt<VersionService>().init();
+    await getIt<NotificationService>().init();
 
-  // Inicializa Remote Config para actualizaciones forzosas
-  await getIt<VersionService>().init();
-
-  // Inicializa el servicio de notificaciones
-  await getIt<NotificationService>().init();
-
-  runApp(const MyApp());
+    debugPrint('Background services initialized successfully');
+  } catch (e) {
+    debugPrint('Error initializing background services: $e');
+  }
 }

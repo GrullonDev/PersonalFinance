@@ -21,24 +21,42 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final bool onboardingComplete =
-        prefs.getBool('onboarding_complete') ?? false;
+    try {
+      // Damos un tiempo mínimo para que la animación del Splash se vea y la UI respire
+      await Future<void>.delayed(const Duration(seconds: 2));
 
-    if (mounted) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final bool onboardingComplete =
+          prefs.getBool('onboarding_complete') ?? false;
+
+      if (!mounted) return;
+
       if (onboardingComplete) {
-        // Intentar restaurar sesión mediante refresh si es posible
         final AuthProvider auth = context.read<AuthProvider>();
-        await auth.onAppResumed();
+
+        // Esperamos a que los servicios de fondo se inicialicen con un timeout razonable
+        try {
+          await auth.onAppResumed().timeout(const Duration(seconds: 15));
+        } catch (e) {
+          debugPrint('Session restore timeout or error (continuing...): $e');
+        }
+
+        if (!mounted) return;
+
         if (auth.isAuthenticated) {
-          if (!mounted) return;
           Navigator.of(context).pushReplacementNamed(RoutePath.dashboard);
         } else {
-          if (!mounted) return;
+          // Si no está autenticado, vamos al login
           Navigator.of(context).pushReplacementNamed(RoutePath.login);
         }
       } else {
         Navigator.of(context).pushReplacementNamed(RoutePath.onboarding);
+      }
+    } catch (e) {
+      debugPrint('Error in _bootstrap: $e');
+      if (mounted) {
+        // En caso de error crítico, ir al login por seguridad
+        Navigator.of(context).pushReplacementNamed(RoutePath.login);
       }
     }
   }
