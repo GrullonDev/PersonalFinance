@@ -52,7 +52,7 @@ class BudgetsCrudPage extends StatelessWidget {
                   title: 'Sin presupuestos',
                   message: 'Crea un presupuesto para planear tus gastos.',
                   action: FilledButton.icon(
-                    onPressed: () => _openDialog(context),
+                    onPressed: () => showAddBudgetDialog(context),
                     icon: const Icon(Icons.add),
                     label: const Text('Nuevo presupuesto'),
                   ),
@@ -116,18 +116,8 @@ class BudgetsCrudPage extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton:
-          context.isMobile
-              ? Builder(
-                builder:
-                    (BuildContext context) => FloatingActionButton.extended(
-                      heroTag: null,
-                      onPressed: () => _openDialog(context),
-                      label: const Text('Nuevo presupuesto'),
-                      icon: const Icon(Icons.add),
-                    ),
-              )
-              : null,
+      // Floating action button removed because it's now handled by the central FAB in HomePage
+      floatingActionButton: null,
     ),
   );
 
@@ -192,7 +182,7 @@ class BudgetsCrudPage extends StatelessWidget {
             ),
             if (!context.isMobile)
               FilledButton.icon(
-                onPressed: () => _openDialog(context),
+                onPressed: () => showAddBudgetDialog(context),
                 icon: const Icon(Icons.add),
                 label: const Text('Nuevo presupuesto'),
                 style: FilledButton.styleFrom(
@@ -237,7 +227,7 @@ class BudgetsCrudPage extends StatelessWidget {
     return confirm ?? false;
   }
 
-  Future<void> _openDialog(BuildContext context, {Budget? budget}) async {
+  static Future<void> showAddBudgetDialog(BuildContext context, {Budget? budget}) async {
     final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final TextEditingController nameCtrl = TextEditingController(
@@ -538,7 +528,7 @@ class _BudgetCardState extends State<_BudgetCard> {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => _openBudgetDialog(context),
+            onTap: () => showAddBudgetDialog(context, budget: widget.budget),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -838,234 +828,6 @@ class _BudgetCardState extends State<_BudgetCard> {
   Future<void> _loadCategories() async {
     final List<String> ids = await BudgetCategoryPrefs.load(widget.budget.id);
     if (mounted) setState(() => _categoryIds = ids);
-  }
-
-  Future<void> _openBudgetDialog(BuildContext context) async {
-    final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
-    final GlobalKey<FormState> key = GlobalKey<FormState>();
-    final TextEditingController nameCtrl = TextEditingController(
-      text: widget.budget.nombre,
-    );
-    final TextEditingController amountCtrl = TextEditingController(
-      text: widget.budget.montoAsDouble.toStringAsFixed(2),
-    );
-    DateTime start = widget.budget.fechaInicio;
-    DateTime end = widget.budget.fechaFin;
-
-    final bool? saved = await showPremiumDialog<bool>(
-      context: context,
-      builder:
-          (BuildContext context) => StatefulBuilder(
-            builder:
-                (BuildContext context, StateSetter setState) => AlertDialog(
-                  title: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.track_changes_rounded,
-                          color: Theme.of(context).primaryColor,
-                          size: 32,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Editar límite de gasto',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Te notificaremos cuando estés cerca del límite',
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontSize: 13,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  content: Form(
-                    key: key,
-                    child: SizedBox(
-                      width: 360,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          TextFormField(
-                            controller: nameCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'Nombre del Presupuesto',
-                              prefixIcon: const Icon(Icons.label_outline),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              filled: true,
-                              fillColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                            ),
-                            validator:
-                                (String? v) =>
-                                    v == null || v.trim().isEmpty
-                                        ? 'Ingresa un nombre'
-                                        : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: amountCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Monto Límite',
-                              prefixIcon: const Icon(Icons.attach_money),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              filled: true,
-                              fillColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                            ),
-                            validator:
-                                (String? v) =>
-                                    (double.tryParse(v ?? '') ?? -1) <= 0
-                                        ? 'Ingresa un monto válido'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Inicio',
-                                  value: start,
-                                  onPick: (DateTime d) {
-                                    setState(() => start = d);
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Fin',
-                                  value: end,
-                                  onPick: (DateTime d) {
-                                    setState(() => end = d);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.timer_outlined, size: 20),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Duración: ${end.difference(start).inDays} días',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  actions: <Widget>[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              foregroundColor: Colors.grey.shade600,
-                            ),
-                            child: const Text(
-                              'Cancelar',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 2,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 2,
-                            ),
-                            onPressed: () async {
-                              if (!key.currentState!.validate()) return;
-                              final now = DateTime.now();
-                              final Budget payload = Budget(
-                                id: widget.budget.id,
-                                createdAt: widget.budget.createdAt,
-                                updatedAt: now,
-                                deviceId: widget.budget.deviceId,
-                                version: widget.budget.version + 1,
-                                nombre: nameCtrl.text.trim(),
-                                montoTotal:
-                                    (double.parse(
-                                      amountCtrl.text.trim(),
-                                    )).toString(),
-                                fechaInicio: start,
-                                fechaFin: end,
-                              );
-                              parentBloc.add(BudgetUpdate(payload));
-                              if (context.mounted) Navigator.pop(context, true);
-                            },
-                            child: const Text(
-                              'Guardar',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-          ),
-    );
-
-    if (saved == true && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Presupuesto actualizado')));
-    }
   }
 
   Future<double> _spent(tx_backend.TransactionBackendRepository repo) async =>

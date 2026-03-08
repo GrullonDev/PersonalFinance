@@ -19,6 +19,7 @@ import 'package:personal_finance/utils/injection_container.dart';
 class RouteSwitch {
   static Route<dynamic> generateRoute(final RouteSettings settings) {
     switch (settings.name) {
+      case RoutePath.home:
       case RoutePath.splash:
         return MaterialPageRoute<void>(
           builder: (BuildContext context) => const SplashScreen(),

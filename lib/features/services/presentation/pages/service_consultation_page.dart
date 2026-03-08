@@ -21,7 +21,6 @@ class ServiceConsultationPage extends StatefulWidget {
 
 class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
   final ScrollController _scrollController = ScrollController();
-  bool _isFabVisible = true;
 
   @override
   void initState() {
@@ -29,13 +28,6 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     // Asegurarse de cargar los presupuestos al entrar
     context.read<BudgetsBloc>().add(BudgetsLoad());
 
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels > 30) {
-        if (_isFabVisible) setState(() => _isFabVisible = false);
-      } else {
-        if (!_isFabVisible) setState(() => _isFabVisible = true);
-      }
-    });
   }
 
   @override
@@ -138,7 +130,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                     ),
                     if (!context.isMobile)
                       FilledButton.icon(
-                        onPressed: () => _openAddServiceDialog(context),
+                        onPressed: () => showAddServiceDialog(context),
                         icon: const Icon(Icons.add_card_rounded),
                         label: const Text('Agregar Servicio'),
                       ),
@@ -164,7 +156,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                       message:
                           'Agrega un servicio para llevar el control de tus pagos.',
                       action: IconButton.filledTonal(
-                        onPressed: () => _openAddServiceDialog(context),
+                        onPressed: () => showAddServiceDialog(context),
                         icon: const Icon(Icons.add),
                       ),
                     );
@@ -278,32 +270,8 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           ],
         ),
       ),
-      floatingActionButton:
-          context.isMobile
-              ? AnimatedSlide(
-                duration: const Duration(milliseconds: 300),
-                offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 300),
-                  opacity: _isFabVisible ? 1.0 : 0.0,
-                  child: FloatingActionButton.extended(
-                    heroTag: null,
-                    onPressed: () => _openAddServiceDialog(context),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    icon: const Icon(Icons.add_card_rounded, size: 20),
-                    label: const Text(
-                      'Agregar Servicio',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              : null,
+      // Floating action button removed because it's now handled by the central FAB in HomePage
+      floatingActionButton: null,
     );
   }
 
@@ -384,7 +352,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
             ),
           ],
         ),
-        onTap: () => _openAddServiceDialog(context, budget: budget),
+        onTap: () => showAddServiceDialog(context, budget: budget),
         onLongPress: () => _confirmDelete(context, budget),
       ),
     );
@@ -458,7 +426,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     ),
   );
 
-  Future<void> _openAddServiceDialog(
+  static Future<void> showAddServiceDialog(
     BuildContext context, {
     Budget? budget,
   }) async {

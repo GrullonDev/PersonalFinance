@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,7 +23,6 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
-import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
@@ -33,6 +33,7 @@ import 'package:personal_finance/features/notifications/domain/repositories/noti
 import 'package:personal_finance/core/services/navigation_service.dart';
 import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/widgets/app_lifecycle_listener.dart';
+import 'package:personal_finance/features/splash/splash_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -99,7 +100,8 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.dark(),
             onGenerateTitle:
                 (BuildContext context) =>
-                    AppLocalizations.of(context)!.appTitle,
+                    AppLocalizations.of(context)?.appTitle ??
+                    'Finanzas Maestras',
             debugShowCheckedModeBanner: false,
             // Global builder to clamp text scale and handle App Locking
             builder: (BuildContext context, Widget? child) {
@@ -112,7 +114,7 @@ class MyApp extends StatelessWidget {
                 ),
               );
             },
-            initialRoute: RoutePath.splash,
+            home: const SplashScreen(),
             onGenerateRoute: RouteSwitch.generateRoute,
             localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
               AppLocalizations.delegate,
@@ -121,7 +123,10 @@ class MyApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             navigatorObservers: <NavigatorObserver>[
-              FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+              if (Firebase.apps.isNotEmpty)
+                FirebaseAnalyticsObserver(
+                  analytics: FirebaseAnalytics.instance,
+                ),
             ],
             supportedLocales: const <Locale>[
               Locale('es', 'GT'), // Guatemala - Quetzal (GTQ)

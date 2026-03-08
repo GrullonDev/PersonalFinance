@@ -70,6 +70,16 @@ class SettingsPage extends StatelessWidget {
         _buildSectionTitle(context, 'PREFERENCIAS'),
         _buildSettingItem(
           context,
+          icon: Icons.category_rounded,
+          iconColor: Colors.amber,
+          title: 'Categorías',
+          subtitle: 'Administra tus categorías de ingreso y gasto',
+          onTap: () {
+            Navigator.pushNamed(context, '/categories');
+          },
+        ),
+        _buildSettingItem(
+          context,
           icon: Icons.color_lens_outlined,
           iconColor: Colors.purple,
           title: 'Apariencia',

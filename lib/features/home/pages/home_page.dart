@@ -122,7 +122,7 @@ class _HomePageState extends State<HomePage>
               )
               : null,
       floatingActionButton:
-          context.isMobile && (_currentIndex != 1 && _currentIndex != 2)
+          context.isMobile
               ? Builder(
                 builder:
                     (BuildContext innerCtx) => AnimatedBuilder(
@@ -284,6 +284,20 @@ class _HomePageState extends State<HomePage>
 
   void _onAddPressed(BuildContext ctx) {
     HapticFeedback.lightImpact();
+
+    if (_currentIndex == 1) {
+      // Screen 1: Services
+      ServiceConsultationPage.showAddServiceDialog(ctx);
+      return;
+    }
+
+    if (_currentIndex == 2) {
+      // Screen 2: Budgets
+      BudgetsCrudPage.showAddBudgetDialog(ctx);
+      return;
+    }
+
+    // Default or Screens 0/3: Transactions
     final TransactionsBloc bloc = ctx.read<TransactionsBloc>();
     showPremiumBottomSheet<void>(
       context: ctx,

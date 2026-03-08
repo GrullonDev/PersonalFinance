@@ -107,6 +107,15 @@ class ProfileView extends StatelessWidget {
                           title: 'AJUSTES',
                           items: <Widget>[
                             ProfileMenuItem(
+                              icon: Icons.category_outlined,
+                              title: 'Categorías',
+                              onTap: () {
+                                Navigator.of(
+                                  context,
+                                ).pushNamed(RoutePath.categories);
+                              },
+                            ),
+                            ProfileMenuItem(
                               icon: Icons.palette_outlined,
                               title: 'Apariencia',
                               onTap: () {
