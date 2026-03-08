@@ -197,7 +197,7 @@ Future<void> initDependencies() async {
   // Notifications Remote Data Source
   if (!getIt.isRegistered<notif_ds.NotificationRemoteDataSource>()) {
     getIt.registerLazySingleton<notif_ds.NotificationRemoteDataSource>(
-      () => notif_ds.NotificationRemoteDataSourceImpl(),
+      () => notif_ds.NotificationRemoteDataSourceImpl(getIt<SharedPreferences>()),
     );
   }
 

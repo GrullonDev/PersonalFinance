@@ -17,414 +17,6 @@ class ServiceConsultationPage extends StatefulWidget {
   @override
   State<ServiceConsultationPage> createState() =>
       _ServiceConsultationPageState();
-}
-
-class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    // Asegurarse de cargar los presupuestos al entrar
-    context.read<BudgetsBloc>().add(BudgetsLoad());
-
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  IconData _getServiceIcon(String name) {
-    final n = name.toLowerCase();
-    if (n.contains('luz') || n.contains('electricidad') || n.contains('cfe')) {
-      return Icons.lightbulb_outline;
-    }
-    if (n.contains('agua')) return Icons.water_drop_outlined;
-    if (n.contains('internet') ||
-        n.contains('wifi') ||
-        n.contains('telmex') ||
-        n.contains('totalplay')) {
-      return Icons.wifi;
-    }
-    if (n.contains('teléfono') ||
-        n.contains('celular') ||
-        n.contains('telcel') ||
-        n.contains('att')) {
-      return Icons.phone_android;
-    }
-    if (n.contains('gas')) return Icons.local_fire_department_outlined;
-    if (n.contains('netflix') ||
-        n.contains('streaming') ||
-        n.contains('disney') ||
-        n.contains('spotify')) {
-      return Icons.movie_outlined;
-    }
-    if (n.contains('renta') || n.contains('alquiler') || n.contains('casa')) {
-      return Icons.home_outlined;
-    }
-    return Icons.receipt_long_outlined;
-  }
-
-  Color _getServiceColor(String name) {
-    final n = name.toLowerCase();
-    if (n.contains('luz') || n.contains('electricidad')) return Colors.amber;
-    if (n.contains('agua')) return Colors.blue;
-    if (n.contains('internet') || n.contains('wifi')) return Colors.cyan;
-    if (n.contains('teléfono') || n.contains('celular')) return Colors.purple;
-    if (n.contains('gas')) return Colors.orange;
-    if (n.contains('netflix') || n.contains('streaming')) return Colors.red;
-    if (n.contains('renta') || n.contains('alquiler')) return Colors.green;
-    return Colors.grey;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
-
-    return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: context.isMobile ? double.infinity : 1000,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Mis Servicios',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Gestiona tus pagos recurrentes',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!context.isMobile)
-                      FilledButton.icon(
-                        onPressed: () => showAddServiceDialog(context),
-                        icon: const Icon(Icons.add_card_rounded),
-                        label: const Text('Agregar Servicio'),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            Expanded(
-              child: BlocBuilder<BudgetsBloc, BudgetsState>(
-                builder: (context, state) {
-                  if (state.loading && state.items.isEmpty) {
-                    return const Center(child: AppLoadingWidget());
-                  }
-
-                  if (state.error != null && state.items.isEmpty) {
-                    return Center(child: Text('Error: ${state.error}'));
-                  }
-
-                  if (state.items.isEmpty) {
-                    return EmptyState(
-                      title: 'No hay servicios',
-                      message:
-                          'Agrega un servicio para llevar el control de tus pagos.',
-                      action: IconButton.filledTonal(
-                        onPressed: () => showAddServiceDialog(context),
-                        icon: const Icon(Icons.add),
-                      ),
-                    );
-                  }
-
-                  final totalAmount = state.items.fold<double>(
-                    0,
-                    (sum, item) => sum + item.montoAsDouble,
-                  );
-
-                  return RefreshIndicator(
-                    onRefresh:
-                        () async =>
-                            context.read<BudgetsBloc>().add(BudgetsLoad()),
-                    child: Center(
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: context.isMobile ? double.infinity : 1000,
-                        ),
-                        child: CustomScrollView(
-                          controller: _scrollController,
-                          physics: const BouncingScrollPhysics(),
-                          slivers: [
-                            // Status Summary Header
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 8,
-                                  bottom: 24,
-                                  left: 20,
-                                  right: 20,
-                                ),
-                                child: _buildStatusCard(context, totalAmount),
-                              ),
-                            ),
-
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              sliver: SliverToBoxAdapter(
-                                child: Text(
-                                  'Lista de Servicios',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 16),
-                            ),
-
-                            if (context.isMobile)
-                              SliverPadding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                sliver: SliverList(
-                                  delegate: SliverChildBuilderDelegate((
-                                    context,
-                                    index,
-                                  ) {
-                                    final budget = state.items[index];
-                                    return _buildServiceItem(
-                                      context,
-                                      budget,
-                                      colors,
-                                    );
-                                  }, childCount: state.items.length),
-                                ),
-                              )
-                            else
-                              SliverPadding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                sliver: SliverGrid(
-                                  gridDelegate:
-                                      const SliverGridDelegateWithMaxCrossAxisExtent(
-                                        maxCrossAxisExtent: 450,
-                                        mainAxisExtent: 100,
-                                        crossAxisSpacing: 16,
-                                        mainAxisSpacing: 16,
-                                      ),
-                                  delegate: SliverChildBuilderDelegate((
-                                    context,
-                                    index,
-                                  ) {
-                                    final budget = state.items[index];
-                                    return _buildServiceItem(
-                                      context,
-                                      budget,
-                                      colors,
-                                    );
-                                  }, childCount: state.items.length),
-                                ),
-                              ),
-
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 80),
-                            ), // Space for FAB
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      // Floating action button removed because it's now handled by the central FAB in HomePage
-      floatingActionButton: null,
-    );
-  }
-
-  Widget _buildServiceItem(
-    BuildContext context,
-    Budget budget,
-    FinanceColors colors,
-  ) {
-    final icon = _getServiceIcon(budget.nombre);
-    final color = _getServiceColor(budget.nombre);
-    final isOverdue = budget.fechaFin.isBefore(DateTime.now());
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: colors.glassBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colors.glassBorder),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(
-          budget.nombre,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isOverdue)
-              const Text(
-                'Pago pendiente',
-                style: TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            Text(
-              isOverdue
-                  ? 'Vencido hace ${DateTime.now().difference(budget.fechaFin).inDays} días 🔴'
-                  : 'Vence en ${budget.fechaFin.difference(DateTime.now()).inDays} días',
-              style: TextStyle(
-                color:
-                    isOverdue
-                        ? Colors.redAccent
-                        : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
-                fontSize: 13,
-                fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '\$${double.tryParse(budget.montoTotal)?.toStringAsFixed(2) ?? "0.00"}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 4),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-          ],
-        ),
-        onTap: () => showAddServiceDialog(context, budget: budget),
-        onLongPress: () => _confirmDelete(context, budget),
-      ),
-    );
-  }
-
-  Widget _buildStatusCard(BuildContext context, double total) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Theme.of(context).colorScheme.primary,
-          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
-        ],
-      ),
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: [
-        BoxShadow(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          blurRadius: 30,
-          spreadRadius: 5,
-          offset: const Offset(0, 15),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Icon(
-              Icons.account_balance_wallet,
-              color: Colors.white,
-              size: 32,
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Firebase Sync',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'Presupuesto Total en Servicios',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '\$${total.toStringAsFixed(2)}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
-  );
 
   static Future<void> showAddServiceDialog(
     BuildContext context, {
@@ -836,6 +428,415 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           ),
     );
   }
+}
+
+class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Asegurarse de cargar los presupuestos al entrar
+    context.read<BudgetsBloc>().add(BudgetsLoad());
+
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  IconData _getServiceIcon(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('luz') || n.contains('electricidad') || n.contains('cfe')) {
+      return Icons.lightbulb_outline;
+    }
+    if (n.contains('agua')) return Icons.water_drop_outlined;
+    if (n.contains('internet') ||
+        n.contains('wifi') ||
+        n.contains('telmex') ||
+        n.contains('totalplay')) {
+      return Icons.wifi;
+    }
+    if (n.contains('teléfono') ||
+        n.contains('celular') ||
+        n.contains('telcel') ||
+        n.contains('att')) {
+      return Icons.phone_android;
+    }
+    if (n.contains('gas')) return Icons.local_fire_department_outlined;
+    if (n.contains('netflix') ||
+        n.contains('streaming') ||
+        n.contains('disney') ||
+        n.contains('spotify')) {
+      return Icons.movie_outlined;
+    }
+    if (n.contains('renta') || n.contains('alquiler') || n.contains('casa')) {
+      return Icons.home_outlined;
+    }
+    return Icons.receipt_long_outlined;
+  }
+
+  Color _getServiceColor(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('luz') || n.contains('electricidad')) return Colors.amber;
+    if (n.contains('agua')) return Colors.blue;
+    if (n.contains('internet') || n.contains('wifi')) return Colors.cyan;
+    if (n.contains('teléfono') || n.contains('celular')) return Colors.purple;
+    if (n.contains('gas')) return Colors.orange;
+    if (n.contains('netflix') || n.contains('streaming')) return Colors.red;
+    if (n.contains('renta') || n.contains('alquiler')) return Colors.green;
+    return Colors.grey;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
+
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: context.isMobile ? double.infinity : 1000,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mis Servicios',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Gestiona tus pagos recurrentes',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!context.isMobile)
+                      FilledButton.icon(
+                        onPressed: () => ServiceConsultationPage.showAddServiceDialog(context),
+                        icon: const Icon(Icons.add_card_rounded),
+                        label: const Text('Agregar Servicio'),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            Expanded(
+              child: BlocBuilder<BudgetsBloc, BudgetsState>(
+                builder: (context, state) {
+                  if (state.loading && state.items.isEmpty) {
+                    return const Center(child: AppLoadingWidget());
+                  }
+
+                  if (state.error != null && state.items.isEmpty) {
+                    return Center(child: Text('Error: ${state.error}'));
+                  }
+
+                  if (state.items.isEmpty) {
+                    return EmptyState(
+                      title: 'No hay servicios',
+                      message:
+                          'Agrega un servicio para llevar el control de tus pagos.',
+                      action: IconButton.filledTonal(
+                        onPressed: () => ServiceConsultationPage.showAddServiceDialog(context),
+                        icon: const Icon(Icons.add),
+                      ),
+                    );
+                  }
+
+                  final totalAmount = state.items.fold<double>(
+                    0,
+                    (sum, item) => sum + item.montoAsDouble,
+                  );
+
+                  return RefreshIndicator(
+                    onRefresh:
+                        () async =>
+                            context.read<BudgetsBloc>().add(BudgetsLoad()),
+                    child: Center(
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: context.isMobile ? double.infinity : 1000,
+                        ),
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            // Status Summary Header
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 24,
+                                  left: 20,
+                                  right: 20,
+                                ),
+                                child: _buildStatusCard(context, totalAmount),
+                              ),
+                            ),
+
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              sliver: SliverToBoxAdapter(
+                                child: Text(
+                                  'Lista de Servicios',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
+
+                            if (context.isMobile)
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final budget = state.items[index];
+                                    return _buildServiceItem(
+                                      context,
+                                      budget,
+                                      colors,
+                                    );
+                                  }, childCount: state.items.length),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverGrid(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithMaxCrossAxisExtent(
+                                        maxCrossAxisExtent: 450,
+                                        mainAxisExtent: 100,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                      ),
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final budget = state.items[index];
+                                    return _buildServiceItem(
+                                      context,
+                                      budget,
+                                      colors,
+                                    );
+                                  }, childCount: state.items.length),
+                                ),
+                              ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 80),
+                            ), // Space for FAB
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      // Floating action button removed because it's now handled by the central FAB in HomePage
+      floatingActionButton: null,
+    );
+  }
+
+  Widget _buildServiceItem(
+    BuildContext context,
+    Budget budget,
+    FinanceColors colors,
+  ) {
+    final icon = _getServiceIcon(budget.nombre);
+    final color = _getServiceColor(budget.nombre);
+    final isOverdue = budget.fechaFin.isBefore(DateTime.now());
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: colors.glassBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.glassBorder),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(
+          budget.nombre,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isOverdue)
+              const Text(
+                'Pago pendiente',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            Text(
+              isOverdue
+                  ? 'Vencido hace ${DateTime.now().difference(budget.fechaFin).inDays} días 🔴'
+                  : 'Vence en ${budget.fechaFin.difference(DateTime.now()).inDays} días',
+              style: TextStyle(
+                color:
+                    isOverdue
+                        ? Colors.redAccent
+                        : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 13,
+                fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '\$${double.tryParse(budget.montoTotal)?.toStringAsFixed(2) ?? "0.00"}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 4),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+          ],
+        ),
+        onTap: () => ServiceConsultationPage.showAddServiceDialog(context, budget: budget),
+        onLongPress: () => _confirmDelete(context, budget),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(BuildContext context, double total) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+        ],
+      ),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [
+        BoxShadow(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          blurRadius: 30,
+          spreadRadius: 5,
+          offset: const Offset(0, 15),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Icon(
+              Icons.account_balance_wallet,
+              color: Colors.white,
+              size: 32,
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Firebase Sync',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Presupuesto Total en Servicios',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '\$${total.toStringAsFixed(2)}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+
 
   Future<void> _confirmDelete(BuildContext context, Budget budget) async {
     final confirm = await showDialog<bool>(

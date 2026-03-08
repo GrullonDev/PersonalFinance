@@ -39,14 +39,45 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
 
   Future<void> _toggleBiometrics(bool value) async {
     if (value) {
-      final authenticated = await _biometricService.authenticate(
-        localizedReason:
-            'Confirma tu identidad para habilitar el desbloqueo biométrico',
-      );
-      if (authenticated) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('biometric_enabled', true);
-        setState(() => _biometricEnabled = true);
+      // Check if any biometrics are enrolled first
+      final hasEnrolled = await _biometricService.hasEnrolledBiometrics();
+
+      if (!hasEnrolled) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No tienes biometría configurada en tu dispositivo. Por favor, configúrala en los ajustes del sistema.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        setState(() => _biometricEnabled = false);
+        return;
+      }
+
+      try {
+        final authenticated = await _biometricService.authenticate(
+          localizedReason:
+              'Confirma tu identidad para habilitar el desbloqueo biométrico',
+        );
+
+        if (authenticated) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('biometric_enabled', true);
+          setState(() => _biometricEnabled = true);
+        } else {
+          setState(() => _biometricEnabled = false);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al autenticar: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        setState(() => _biometricEnabled = false);
       }
     } else {
       final prefs = await SharedPreferences.getInstance();

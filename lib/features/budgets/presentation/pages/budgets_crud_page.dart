@@ -528,7 +528,7 @@ class _BudgetCardState extends State<_BudgetCard> {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => showAddBudgetDialog(context, budget: widget.budget),
+            onTap: () => BudgetsCrudPage.showAddBudgetDialog(context, budget: widget.budget),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(

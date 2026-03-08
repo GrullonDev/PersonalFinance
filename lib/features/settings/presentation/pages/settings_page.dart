@@ -11,6 +11,8 @@ import 'package:personal_finance/features/notifications/domain/repositories/noti
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
+
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -99,22 +101,9 @@ class SettingsPage extends StatelessWidget {
           icon: Icons.notifications_none_rounded,
           iconColor: Colors.orange,
           title: 'Notificaciones',
-          subtitle: 'Configura tus alertas y avisos',
+          subtitle: 'Mira tus avisos y alertas recibidos',
           onTap: () {
-            Navigator.push<void>(
-              context,
-              MaterialPageRoute<void>(
-                builder:
-                    (BuildContext context) =>
-                        ChangeNotifierProvider<NotificationPrefsProvider>(
-                          create:
-                              (_) => NotificationPrefsProvider(
-                                getIt<notif_repo.NotificationRepository>(),
-                              )..load(),
-                          child: const NotificationsDetailPage(),
-                        ),
-              ),
-            );
+            Navigator.pushNamed(context, RoutePath.notificationsInbox);
           },
         ),
         _buildSettingItem(
@@ -123,7 +112,14 @@ class SettingsPage extends StatelessWidget {
           iconColor: Colors.redAccent,
           title: 'Recordatorios',
           subtitle: 'Facturas, ahorros y presupuestos',
-          onTap: () {},
+          onTap: () {
+            Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const NotificationsDetailPage(),
+              ),
+            );
+          },
         ),
         _buildSettingItem(
           context,

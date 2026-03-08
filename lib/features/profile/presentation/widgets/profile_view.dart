@@ -131,17 +131,21 @@ class ProfileView extends StatelessWidget {
                               icon: Icons.notifications_none_rounded,
                               title: 'Notificaciones',
                               onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const _NotificationsEntry(),
-                                  ),
+                                Navigator.of(context).pushNamed(
+                                  RoutePath.notificationsInbox,
                                 );
                               },
                             ),
                             ProfileMenuItem(
                               icon: Icons.alarm_rounded,
                               title: 'Recordatorios',
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const NotificationsDetailPage(),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -533,19 +537,4 @@ class ProfileView extends StatelessWidget {
       }
     }
   }
-}
-
-// Entry para notificaciones con provider inyectado desde Profile
-class _NotificationsEntry extends StatelessWidget {
-  const _NotificationsEntry();
-
-  @override
-  Widget build(BuildContext context) =>
-      ChangeNotifierProvider<NotificationPrefsProvider>(
-        create:
-            (_) => NotificationPrefsProvider(
-              getIt<notif_repo.NotificationRepository>(),
-            )..load(),
-        child: const NotificationsDetailPage(),
-      );
 }

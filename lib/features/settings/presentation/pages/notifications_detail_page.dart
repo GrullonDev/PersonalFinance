@@ -61,7 +61,7 @@ class _NotificationsDetailPageState extends State<NotificationsDetailPage>
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Notificaciones'),
+        title: const Text('Recordatorios y Notificaciones'),
         backgroundColor: colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
