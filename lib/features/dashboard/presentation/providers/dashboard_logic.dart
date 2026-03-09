@@ -143,18 +143,18 @@ class DashboardLogic extends ChangeNotifier {
           )
           .toList();
 
-  List<TransactionItem> getExpenseTransactions({int limit = 5}) =>
-      sortedExpenses
-          .take(limit)
-          .map(
-            (ExpenseEntity expense) => TransactionItem(
-              title: expense.title,
-              amount: expense.amount,
-              date: expense.date,
-              isIncome: false,
-            ),
-          )
-          .toList();
+  List<TransactionItem> getExpenseTransactions({int limit = 5}) {
+    final list = sortedExpenses;
+    final items = (limit == -1 ? list : list.take(limit)).map(
+      (ExpenseEntity expense) => TransactionItem(
+        title: expense.title,
+        amount: expense.amount,
+        date: expense.date,
+        isIncome: false,
+      ),
+    ).toList();
+    return items;
+  }
 
   /// Genera recomendaciones dinámicas basadas en los datos del usuario
   List<RecommendationItem> get recommendations {

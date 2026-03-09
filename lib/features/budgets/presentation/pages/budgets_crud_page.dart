@@ -238,7 +238,7 @@ class BudgetsCrudPage extends StatelessWidget {
     );
     DateTime start = budget?.fechaInicio ?? DateTime.now();
     DateTime end =
-        budget?.fechaFin ?? DateTime.now().add(const Duration(days: 30));
+        budget?.fechaFin ?? DateTime.now().add(const Duration(days: 7));
 
     final bool? saved = await showPremiumDialog<bool>(
       context: context,

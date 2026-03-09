@@ -132,6 +132,28 @@ class BudgetCard extends StatelessWidget {
                 ],
               ),
             ),
+          if (amount == 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 18,
+                    color: Colors.blue[700],
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Toca para establecer un presupuesto',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     ),

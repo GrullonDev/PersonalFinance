@@ -77,17 +77,21 @@ class _DashboardContent extends StatelessWidget {
                             : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                BudgetCard(
-                                  title:
-                                      logic.activeBudget?.nombre ??
-                                      'Presupuesto Mensual',
-                                  amount:
-                                      logic.activeBudget != null
-                                          ? logic.activeBudget!.montoAsDouble
-                                          : (logic.totalIncomes > 0
-                                              ? logic.totalIncomes
-                                              : 1000),
-                                  spent: logic.totalExpenses,
+                                GestureDetector(
+                                  onTap: () => Navigator.pushNamed(
+                                    context,
+                                    RoutePath.budgetsCrud,
+                                  ),
+                                  child: BudgetCard(
+                                    title:
+                                        logic.activeBudget?.nombre ??
+                                        'Presupuesto Semanal',
+                                    amount:
+                                        logic.activeBudget != null
+                                            ? logic.activeBudget!.montoAsDouble
+                                            : 0,
+                                    spent: logic.totalExpenses,
+                                  ),
                                 ),
                                 const SizedBox(height: 24),
                                 _buildSavingsGoalsSection(context, logic),
@@ -151,19 +155,23 @@ class _DashboardContent extends StatelessWidget {
                                 flex: 5,
                                 child: Column(
                                   children: <Widget>[
-                                    BudgetCard(
-                                      title:
-                                          logic.activeBudget?.nombre ??
-                                          'Presupuesto Mensual',
-                                      amount:
-                                          logic.activeBudget != null
-                                              ? logic
-                                                  .activeBudget!
-                                                  .montoAsDouble
-                                              : (logic.totalIncomes > 0
-                                                  ? logic.totalIncomes
-                                                  : 1000),
-                                      spent: logic.totalExpenses,
+                                    GestureDetector(
+                                      onTap: () => Navigator.pushNamed(
+                                        context,
+                                        RoutePath.budgetsCrud,
+                                      ),
+                                      child: BudgetCard(
+                                        title:
+                                            logic.activeBudget?.nombre ??
+                                            'Presupuesto Semanal',
+                                        amount:
+                                            logic.activeBudget != null
+                                                ? logic
+                                                    .activeBudget!
+                                                    .montoAsDouble
+                                                : 0,
+                                        spent: logic.totalExpenses,
+                                      ),
                                     ),
                                     const SizedBox(height: 32),
                                     const SizedBox(height: 32),
@@ -624,14 +632,26 @@ class _DashboardContent extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          TextButton(
-            onPressed: () {
-              // Ver todas las metas
-            },
-            child: const Text(
-              'Ver todas',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, RoutePath.goalsCrud);
+                },
+                icon: const Icon(Icons.add_circle_outline, size: 20),
+                color: Theme.of(context).primaryColor,
+                tooltip: 'Nueva meta',
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, RoutePath.goalsCrud);
+                },
+                child: const Text(
+                  'Ver todas',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -829,10 +849,10 @@ class _DashboardContent extends StatelessWidget {
                 // Handle action based on type
                 switch (recommendation.actionType) {
                   case RecommendationActionType.createGoal:
-                    // Navigate to create goal
+                    Navigator.pushNamed(context, RoutePath.goalsCrud);
                     break;
                   case RecommendationActionType.viewExpenses:
-                    // Navigate to expenses view
+                    _showExpensesDetails(context, logic);
                     break;
                   case RecommendationActionType.viewInvestments:
                     // Navigate to investments (if exists)
@@ -937,4 +957,88 @@ class _DashboardContent extends StatelessWidget {
           ),
     ],
   );
+
+  void _showExpensesDetails(BuildContext context, DashboardLogic logic) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Todos tus Gastos',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Has gastado un total de \$${logic.totalExpenses.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: logic.getExpenseTransactions(limit: -1).length,
+                itemBuilder: (context, index) {
+                  final tx = logic.getExpenseTransactions(limit: -1)[index];
+                  return RecentTransactionItem(
+                    icon: _getIconForTransaction(tx),
+                    title: tx.title,
+                    subtitle: _getCategoryForTransaction(tx),
+                    amount: tx.amount,
+                    isExpense: true,
+                    onTap: () {
+                      // Opcional: navegar al detalle
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
