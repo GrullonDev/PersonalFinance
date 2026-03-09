@@ -7,14 +7,30 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:297362519599:android:f4653eeb7846c22e2ef8da",
+        "mobilesdk_app_id": "1:116411792004:android:a713a79228fc59a773e0d1",
         "android_client_info": {
-          "package_name": "com.GrullonDev.personal_finance"
+          "package_name": "com.grullondev.personal_finance"
         }
       },
       "oauth_client": [
         {
-          "client_id": "297362519599-12h40vv566s2rfv1v69q56sjl228na4p.apps.googleusercontent.com",
+          "client_id": "116411792004-0ci0vm31052eftoas1egrtbdc8kqkgb1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.grullondev.personal_finance",
+            "certificate_hash": "0a440a9a74558c1bb89c816ccd2003da772ce08c"
+          }
+        },
+        {
+          "client_id": "116411792004-0qft9i6sbeq4is6ndc0ge8nljlf281j1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.grullondev.personal_finance",
+            "certificate_hash": "6076a114a3003f4b03f9fdedf2224b85d0ce0f27"
+          }
+        },
+        {
+          "client_id": "116411792004-o75ph5p5c103qtaa4nhvt3e1su84ghho.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -25,26 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:116411792004:android:a713a79228fc59a773e0d1",
-        "android_client_info": {
-          "package_name": "com.grullondev.personal_finance"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBIreL8PjQKV7fPEW301M5LIfxtZeMXFUM"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "116411792004-o75ph5p5c103qtaa4nhvt3e1su84ghho.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "116411792004-ockrenvueh05dn5l54rvdjphh4hjj7el.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.grullondev.personalFinance"
+              }
+            }
+          ]
         }
       }
     }
