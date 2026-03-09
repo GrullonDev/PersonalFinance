@@ -21,6 +21,7 @@ import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:personal_finance/utils/dashboard_budget_prefs.dart';
 
 class BudgetsCrudPage extends StatelessWidget {
   final bool showAppBar;
@@ -226,7 +227,10 @@ class BudgetsCrudPage extends StatelessWidget {
     return confirm ?? false;
   }
 
-  static Future<void> showAddBudgetDialog(BuildContext context, {Budget? budget}) async {
+  static Future<void> showAddBudgetDialog(
+    BuildContext context, {
+    Budget? budget,
+  }) async {
     final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final TextEditingController nameCtrl = TextEditingController(
@@ -238,6 +242,13 @@ class BudgetsCrudPage extends StatelessWidget {
     DateTime start = budget?.fechaInicio ?? DateTime.now();
     DateTime end =
         budget?.fechaFin ?? DateTime.now().add(const Duration(days: 7));
+    bool isDashboardWeekly = false;
+
+    // Load current preference
+    if (budget != null) {
+      final currentWeeklyId = await DashboardBudgetPrefs.getWeeklyBudgetId();
+      isDashboardWeekly = (currentWeeklyId == budget.id);
+    }
 
     final bool? saved = await showPremiumDialog<bool>(
       context: context,
@@ -292,102 +303,125 @@ class BudgetsCrudPage extends StatelessWidget {
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          TextFormField(
-                            controller: nameCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'Nombre del Presupuesto (ej: Comida)',
-                              prefixIcon: const Icon(Icons.label_outline),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              filled: true,
-                              fillColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                            ),
-                            validator:
-                                (String? v) =>
-                                    v == null || v.trim().isEmpty
-                                        ? 'Ingresa un nombre'
-                                        : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: amountCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Monto Límite',
-                              prefixIcon: const Icon(Icons.attach_money),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              filled: true,
-                              fillColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                            ),
-                            validator:
-                                (String? v) =>
-                                    (double.tryParse(v ?? '') ?? -1) <= 0
-                                        ? 'Ingresa un monto válido'
-                                        : null,
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Inicio',
-                                  value: start,
-                                  onPick: (DateTime d) {
-                                    setState(() => start = d);
-                                  },
+                          children: <Widget>[
+                            TextFormField(
+                              controller: nameCtrl,
+                              decoration: InputDecoration(
+                                labelText:
+                                    'Nombre del Presupuesto (ej: Comida)',
+                                prefixIcon: const Icon(Icons.label_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
+                                filled: true,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Fin',
-                                  value: end,
-                                  onPick: (DateTime d) {
-                                    setState(() => end = d);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
+                              validator:
+                                  (String? v) =>
+                                      v == null || v.trim().isEmpty
+                                          ? 'Ingresa un nombre'
+                                          : null,
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.timer_outlined, size: 20),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: amountCtrl,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                labelText: 'Monto Límite',
+                                prefixIcon: const Icon(Icons.attach_money),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
+                              ),
+                              validator:
+                                  (String? v) =>
+                                      (double.tryParse(v ?? '') ?? -1) <= 0
+                                          ? 'Ingresa un monto válido'
+                                          : null,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: _DateTile(
+                                    label: 'Inicio',
+                                    value: start,
+                                    onPick: (DateTime d) {
+                                      setState(() => start = d);
+                                    },
+                                  ),
+                                ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'Duración: ${end.difference(start).inDays} días',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: _DateTile(
+                                    label: 'Fin',
+                                    value: end,
+                                    onPick: (DateTime d) {
+                                      setState(() => end = d);
+                                    },
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.timer_outlined, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Duración: ${end.difference(start).inDays} días',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SwitchListTile(
+                              title: const Text(
+                                'Presupuesto semanal principal',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              subtitle: const Text(
+                                'Mostrar este presupuesto y calcular gastos de la semana actual en el Panel Principal.',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                              value: isDashboardWeekly,
+                              onChanged: (bool val) {
+                                setState(() => isDashboardWeekly = val);
+                              },
+                              activeThumbColor:
+                                  Theme.of(context).colorScheme.primary,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                   ),
                   actions: <Widget>[
                     Row(
@@ -438,8 +472,26 @@ class BudgetsCrudPage extends StatelessWidget {
                               );
                               if (budget == null) {
                                 parentBloc.add(BudgetCreate(payload));
+                                // Can't easily set weekly if it's new because ID is generated during save in some architectures,
+                                // but here we actually generate the ID upfront:
+                                if (isDashboardWeekly) {
+                                  await DashboardBudgetPrefs.setWeeklyBudgetId(
+                                    payload.id,
+                                  );
+                                }
                               } else {
                                 parentBloc.add(BudgetUpdate(payload));
+                                if (isDashboardWeekly) {
+                                  await DashboardBudgetPrefs.setWeeklyBudgetId(
+                                    payload.id,
+                                  );
+                                } else {
+                                  final currentWeeklyId =
+                                      await DashboardBudgetPrefs.getWeeklyBudgetId();
+                                  if (currentWeeklyId == payload.id) {
+                                    await DashboardBudgetPrefs.clearWeeklyBudgetId();
+                                  }
+                                }
                               }
                               if (context.mounted) Navigator.pop(context, true);
                             },
@@ -528,7 +580,11 @@ class _BudgetCardState extends State<_BudgetCard> {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => BudgetsCrudPage.showAddBudgetDialog(context, budget: widget.budget),
+            onTap:
+                () => BudgetsCrudPage.showAddBudgetDialog(
+                  context,
+                  budget: widget.budget,
+                ),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(

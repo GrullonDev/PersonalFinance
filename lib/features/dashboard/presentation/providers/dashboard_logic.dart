@@ -10,8 +10,15 @@ import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/usecases/get_active_goals_usecase.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/usecases/get_active_budgets_usecase.dart';
+import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
+    as tx_backend;
+import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
+import 'package:personal_finance/utils/dashboard_budget_prefs.dart';
+import 'package:personal_finance/utils/budget_category_prefs.dart';
+import 'package:dartz/dartz.dart';
+import 'package:personal_finance/core/error/failures.dart';
 
-/// Lógica del dashboard mejorada siguiendo Clean Architecture
 class DashboardLogic extends ChangeNotifier {
   final GetDashboardDataUseCase _getDashboardDataUseCase;
   final AddTransactionUseCase _addTransactionUseCase;
@@ -50,6 +57,9 @@ class DashboardLogic extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  double _weeklyBudgetSpent = 0;
+  double get weeklyBudgetSpent => _weeklyBudgetSpent;
+
   // Getters computados
   bool get hasData =>
       _expenses.isNotEmpty || _incomes.isNotEmpty || _goals.isNotEmpty;
@@ -84,16 +94,16 @@ class DashboardLogic extends ChangeNotifier {
         return 'Has excedido tu presupuesto en ${CurrencyHelper.format(remaining.abs())}.';
       }
     }
-    
+
     if (totalIncomes > 0) {
-       final percentage = (totalExpenses / totalIncomes) * 100;
-       if (percentage > 80) {
-          return 'Cuidado: Has gastado el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
-       } else {
-          return 'Buen trabajo manteniendo tus gastos bajo el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
-       }
+      final percentage = (totalExpenses / totalIncomes) * 100;
+      if (percentage > 80) {
+        return 'Cuidado: Has gastado el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
+      } else {
+        return 'Buen trabajo manteniendo tus gastos bajo el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
+      }
     }
-    
+
     return null;
   }
 
@@ -168,14 +178,17 @@ class DashboardLogic extends ChangeNotifier {
 
   List<TransactionItem> getExpenseTransactions({int limit = 5}) {
     final list = sortedExpenses;
-    final items = (limit == -1 ? list : list.take(limit)).map(
-      (ExpenseEntity expense) => TransactionItem(
-        title: expense.title,
-        amount: expense.amount,
-        date: expense.date,
-        isIncome: false,
-      ),
-    ).toList();
+    final items =
+        (limit == -1 ? list : list.take(limit))
+            .map(
+              (ExpenseEntity expense) => TransactionItem(
+                title: expense.title,
+                amount: expense.amount,
+                date: expense.date,
+                isIncome: false,
+              ),
+            )
+            .toList();
     return items;
   }
 
@@ -336,13 +349,66 @@ class DashboardLogic extends ChangeNotifier {
         goalsResult.fold((failure) => _goals = [], (goals) => _goals = goals);
 
         final budgetsResult = await _getActiveBudgetsUseCase.execute();
-        budgetsResult.fold((failure) => _activeBudget = null, (budgets) {
-          if (budgets.isNotEmpty) {
-            _activeBudget = budgets.first;
-          } else {
+        await budgetsResult.fold(
+          (failure) async {
             _activeBudget = null;
-          }
-        });
+            _weeklyBudgetSpent = 0.0;
+          },
+          (budgets) async {
+            if (budgets.isNotEmpty) {
+              final String? customId =
+                  await DashboardBudgetPrefs.getWeeklyBudgetId();
+              _activeBudget =
+                  budgets.cast<Budget?>().firstWhere(
+                    (b) => b?.id == customId,
+                    orElse: () => null,
+                  ) ??
+                  budgets.first;
+
+              // Generate weekly start/end explicitly for the weekly dashboard budget card
+              final now = DateTime.now();
+              final startOfWeek = DateTime(
+                now.year,
+                now.month,
+                now.day,
+              ).subtract(Duration(days: now.weekday - 1));
+              final endOfWeek = startOfWeek.add(
+                const Duration(days: 7, milliseconds: -1),
+              );
+
+              final tx_backend.TransactionBackendRepository repo =
+                  getIt<tx_backend.TransactionBackendRepository>();
+              final Either<Failure, List<TransactionBackend>> res = await repo
+                  .list(
+                    fechaDesde: startOfWeek,
+                    fechaHasta: endOfWeek,
+                    tipo: 'gasto',
+                  );
+
+              final List<String> budgetCatIds = await BudgetCategoryPrefs.load(
+                _activeBudget!.id,
+              );
+
+              _weeklyBudgetSpent = res.fold<double>((_) => 0.0, (
+                List<TransactionBackend> r,
+              ) {
+                final filtered =
+                    budgetCatIds.isEmpty
+                        ? r
+                        : r
+                            .where((t) => budgetCatIds.contains(t.categoriaId))
+                            .toList();
+                return filtered.fold<double>(
+                  0,
+                  (sum, t) => sum + t.montoAsDouble,
+                );
+              });
+            } else {
+              _activeBudget = null;
+              _weeklyBudgetSpent = 0.0;
+            }
+          },
+        );
 
         notifyListeners();
       },

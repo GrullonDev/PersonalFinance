@@ -82,10 +82,11 @@ class _DashboardContent extends StatelessWidget {
                                   const SizedBox(height: 24),
                                 ],
                                 GestureDetector(
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    RoutePath.budgetsCrud,
-                                  ),
+                                  onTap:
+                                      () => Navigator.pushNamed(
+                                        context,
+                                        RoutePath.budgetsCrud,
+                                      ),
                                   child: BudgetCard(
                                     title:
                                         logic.activeBudget?.nombre ??
@@ -94,7 +95,7 @@ class _DashboardContent extends StatelessWidget {
                                         logic.activeBudget != null
                                             ? logic.activeBudget!.montoAsDouble
                                             : 0,
-                                    spent: logic.totalExpenses,
+                                    spent: logic.weeklyBudgetSpent,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -164,10 +165,13 @@ class _DashboardContent extends StatelessWidget {
                                       const SizedBox(height: 32),
                                     ],
                                     GestureDetector(
-                                      onTap: () => Navigator.pushNamed(
-                                        context,
-                                        RoutePath.budgetsCrud,
-                                      ),
+                                      onTap: () async {
+                                        await Navigator.pushNamed(
+                                          context,
+                                          RoutePath.budgetsCrud,
+                                        );
+                                        logic.loadDashboardData();
+                                      },
                                       child: BudgetCard(
                                         title:
                                             logic.activeBudget?.nombre ??
@@ -178,7 +182,7 @@ class _DashboardContent extends StatelessWidget {
                                                     .activeBudget!
                                                     .montoAsDouble
                                                 : 0,
-                                        spent: logic.totalExpenses,
+                                        spent: logic.weeklyBudgetSpent,
                                       ),
                                     ),
                                     const SizedBox(height: 32),
@@ -229,52 +233,53 @@ class _DashboardContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) => Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) =>
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+          ),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.tips_and_updates,
-            color: Theme.of(context).colorScheme.primary,
-            size: 28,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Insight',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  logic.insightMessage!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    height: 1.4,
-                  ),
-                ),
-              ],
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.tips_and_updates,
+              color: Theme.of(context).colorScheme.primary,
+              size: 28,
             ),
-          ),
-        ],
-      ),
-    );
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Insight',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    logic.insightMessage!,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildHeader(BuildContext context, DashboardLogic logic) {
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -378,7 +383,10 @@ class _DashboardContent extends StatelessWidget {
                           const SizedBox(height: 4),
                           const Text(
                             'Así van tus finanzas hoy',
-                            style: TextStyle(fontSize: 14, color: Colors.white70),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
                           ),
                         ],
                       ),
@@ -1023,85 +1031,88 @@ class _DashboardContent extends StatelessWidget {
   );
 
   void _showExpensesDetails(BuildContext context, DashboardLogic logic) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      builder:
+          (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.75,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
               ),
             ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Todos tus Gastos',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Has gastado un total de \$${logic.totalExpenses.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 14,
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Divider(),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: logic.getExpenseTransactions(limit: -1).length,
-                itemBuilder: (context, index) {
-                  final tx = logic.getExpenseTransactions(limit: -1)[index];
-                  return RecentTransactionItem(
-                    icon: _getIconForTransaction(tx),
-                    title: tx.title,
-                    subtitle: _getCategoryForTransaction(tx),
-                    amount: tx.amount,
-                    onTap: () {
-                      // Opcional: navegar al detalle
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Todos tus Gastos',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Has gastado un total de \$${logic.totalExpenses.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: logic.getExpenseTransactions(limit: -1).length,
+                    itemBuilder: (context, index) {
+                      final tx = logic.getExpenseTransactions(limit: -1)[index];
+                      return RecentTransactionItem(
+                        icon: _getIconForTransaction(tx),
+                        title: tx.title,
+                        subtitle: _getCategoryForTransaction(tx),
+                        amount: tx.amount,
+                        onTap: () {
+                          // Opcional: navegar al detalle
+                        },
+                      );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }
