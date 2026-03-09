@@ -9,6 +9,8 @@ import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:table_calendar/table_calendar.dart';
+
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 
@@ -433,13 +435,16 @@ class ServiceConsultationPage extends StatefulWidget {
 
 class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
   final ScrollController _scrollController = ScrollController();
+  bool _isCalendarView = false;
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
 
   @override
   void initState() {
     super.initState();
     // Asegurarse de cargar los presupuestos al entrar
     context.read<BudgetsBloc>().add(BudgetsLoad());
-
   }
 
   @override
@@ -542,7 +547,10 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                     ),
                     if (!context.isMobile)
                       FilledButton.icon(
-                        onPressed: () => ServiceConsultationPage.showAddServiceDialog(context),
+                        onPressed:
+                            () => ServiceConsultationPage.showAddServiceDialog(
+                              context,
+                            ),
                         icon: const Icon(Icons.add_card_rounded),
                         label: const Text('Agregar Servicio'),
                       ),
@@ -568,7 +576,10 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                       message:
                           'Agrega un servicio para llevar el control de tus pagos.',
                       action: IconButton.filledTonal(
-                        onPressed: () => ServiceConsultationPage.showAddServiceDialog(context),
+                        onPressed:
+                            () => ServiceConsultationPage.showAddServiceDialog(
+                              context,
+                            ),
                         icon: const Icon(Icons.add),
                       ),
                     );
@@ -610,10 +621,37 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                                 horizontal: 20,
                               ),
                               sliver: SliverToBoxAdapter(
-                                child: Text(
-                                  'Lista de Servicios',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Mis Pagos',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SegmentedButton<bool>(
+                                      segments: const [
+                                        ButtonSegment(
+                                          value: false,
+                                          icon: Icon(Icons.list),
+                                        ),
+                                        ButtonSegment(
+                                          value: true,
+                                          icon: Icon(Icons.calendar_month),
+                                        ),
+                                      ],
+                                      selected: {_isCalendarView},
+                                      onSelectionChanged: (set) {
+                                        setState(
+                                          () => _isCalendarView = set.first,
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -622,7 +660,20 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
                               child: SizedBox(height: 16),
                             ),
 
-                            if (context.isMobile)
+                            if (_isCalendarView)
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverToBoxAdapter(
+                                  child: _buildCalendarView(
+                                    context,
+                                    state.items,
+                                    colors,
+                                  ),
+                                ),
+                              )
+                            else if (context.isMobile)
                               SliverPadding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,
@@ -682,6 +733,104 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           ],
         ),
       ),
+    );
+  }
+
+  List<Budget> _getEventsForDay(List<Budget> budgets, DateTime day) =>
+      budgets.where((b) {
+        final fin = b.fechaFin;
+        // Asume simple lógica para (Mensual)
+        if (b.nombre.contains('(Mensual)')) {
+          return fin.day == day.day &&
+              (day.isAfter(b.fechaInicio.add(const Duration(days: -31))) ||
+                  isSameDay(b.fechaInicio, day));
+        } else {
+          return isSameDay(fin, day);
+        }
+      }).toList();
+
+  Widget _buildCalendarView(
+    BuildContext context,
+    List<Budget> budgets,
+    FinanceColors colors,
+  ) {
+    final selectedDay = _selectedDay ?? _focusedDay;
+    final eventsToday = _getEventsForDay(budgets, selectedDay);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: colors.glassBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colors.glassBorder),
+          ),
+          child: TableCalendar<Budget>(
+            firstDay: DateTime(2020),
+            lastDay: DateTime(2100),
+            focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            eventLoader: (day) => _getEventsForDay(budgets, day),
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            calendarStyle: CalendarStyle(
+              markerDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              todayDecoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+            onDaySelected: (selectedDay, focusedDay) {
+              if (!isSameDay(_selectedDay, selectedDay)) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+              }
+            },
+            onFormatChanged: (format) {
+              if (_calendarFormat != format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              }
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Pagos para el ${DateFormat.yMMMd().format(selectedDay)}',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        if (eventsToday.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'No hay pagos programados para este día.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          ...eventsToday.map((b) => _buildServiceItem(context, b, colors)),
+      ],
     );
   }
 
@@ -762,7 +911,11 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
             ),
           ],
         ),
-        onTap: () => ServiceConsultationPage.showAddServiceDialog(context, budget: budget),
+        onTap:
+            () => ServiceConsultationPage.showAddServiceDialog(
+              context,
+              budget: budget,
+            ),
         onLongPress: () => _confirmDelete(context, budget),
       ),
     );
@@ -835,7 +988,6 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
       ],
     ),
   );
-
 
   Future<void> _confirmDelete(BuildContext context, Budget budget) async {
     final confirm = await showDialog<bool>(

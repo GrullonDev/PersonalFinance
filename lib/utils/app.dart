@@ -5,6 +5,9 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
+import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -47,6 +50,7 @@ class MyApp extends StatelessWidget {
       Provider<CategoryRepository>(create: (_) => getIt<CategoryRepository>()),
       Provider<BudgetRepository>(create: (_) => getIt<BudgetRepository>()),
       Provider<GoalRepository>(create: (_) => getIt<GoalRepository>()),
+      Provider<DebtRepository>(create: (_) => getIt<DebtRepository>()),
       Provider<tx_backend.TransactionBackendRepository>(
         create: (_) => getIt<tx_backend.TransactionBackendRepository>(),
       ),
@@ -74,6 +78,10 @@ class MyApp extends StatelessWidget {
       BlocProvider<BudgetsBloc>(
         create:
             (_) => BudgetsBloc(getIt<BudgetRepository>())..add(BudgetsLoad()),
+      ),
+      BlocProvider<DebtsBloc>(
+        create:
+            (_) => DebtsBloc(getIt<DebtRepository>())..add(DebtsLoad()),
       ),
       ChangeNotifierProvider<NotificationInboxProvider>(
         create:

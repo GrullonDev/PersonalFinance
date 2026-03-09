@@ -56,6 +56,8 @@ dependencies:
   in_app_update: ^4.2.5
   upgrader: ^12.5.0
   confetti: ^0.8.0
+  table_calendar: ^3.2.0
+  uuid: ^4.5.3
 
 dev_dependencies:
   flutter_test:

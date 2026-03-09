@@ -36,6 +36,10 @@ import 'package:personal_finance/features/profile/data/repositories/profile_back
 import 'package:personal_finance/features/profile/domain/profile_datasource.dart';
 import 'package:personal_finance/features/profile/domain/profile_repository.dart';
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
+import 'package:personal_finance/features/debts/data/datasources/debt_remote_data_source.dart';
+import 'package:personal_finance/features/debts/data/repositories/debt_repository_impl.dart';
+import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
+import 'package:personal_finance/utils/offline_sync_service.dart';
 
 import 'package:personal_finance/features/transactions/data/datasources/transaction_backend_remote_data_source.dart'
     as backend_tx_ds;
@@ -175,6 +179,23 @@ Future<void> initDependencies() async {
   if (!getIt.isRegistered<GoalRepository>()) {
     getIt.registerLazySingleton<GoalRepository>(
       () => GoalRepositoryImpl(getIt<GoalRemoteDataSource>()),
+    );
+  }
+
+  // Debts Data Source
+  if (!getIt.isRegistered<DebtRemoteDataSource>()) {
+    getIt.registerLazySingleton<DebtRemoteDataSource>(
+      () => DebtRemoteDataSourceImpl(),
+    );
+  }
+
+  // Debts Repository
+  if (!getIt.isRegistered<DebtRepository>()) {
+    getIt.registerLazySingleton<DebtRepository>(
+      () => DebtRepositoryImpl(
+        remoteDataSource: getIt<DebtRemoteDataSource>(),
+        offlineSyncService: OfflineSyncService(),
+      ),
     );
   }
 

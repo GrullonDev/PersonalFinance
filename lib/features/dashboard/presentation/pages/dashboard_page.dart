@@ -101,6 +101,8 @@ class _DashboardContent extends StatelessWidget {
                                 const SizedBox(height: 24),
                                 _buildSavingsGoalsSection(context, logic),
                                 const SizedBox(height: 24),
+                                _buildDebtsOverviewSection(context),
+                                const SizedBox(height: 24),
                                 _buildRecentTransactionsSection(logic, context),
                                 const SizedBox(height: 24),
                                 if (logic.shouldShowExpensesChart) ...<Widget>[
@@ -188,6 +190,8 @@ class _DashboardContent extends StatelessWidget {
                                     const SizedBox(height: 32),
                                     const SizedBox(height: 32),
                                     _buildSavingsGoalsSection(context, logic),
+                                    const SizedBox(height: 32),
+                                    _buildDebtsOverviewSection(context),
                                     const SizedBox(height: 32),
                                     if (logic.shouldShowExpensesChart)
                                       _buildExpensesChart(context, logic),
@@ -782,6 +786,82 @@ class _DashboardContent extends StatelessWidget {
             },
           ),
         ),
+    ],
+  );
+
+  Widget _buildDebtsOverviewSection(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Préstamos y Tarjetas',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, RoutePath.debts);
+            },
+            child: const Text(
+              'Gestionar',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      // Banner to redirect to DebtsPage
+      GestureDetector(
+        onTap: () => Navigator.pushNamed(context, RoutePath.debts),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.redAccent.shade400, Colors.redAccent.shade700],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.redAccent.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.credit_card_outlined, color: Colors.white, size: 32),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Control de Deudas',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Usa el método Bola de Nieve o Avalancha',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+            ],
+          ),
+        ),
+      ),
     ],
   );
 
