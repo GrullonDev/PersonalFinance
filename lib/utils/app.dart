@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:upgrader/upgrader.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
@@ -114,7 +115,22 @@ class MyApp extends StatelessWidget {
                 ),
               );
             },
-            home: const SplashScreen(),
+            home: UpgradeAlert(
+              navigatorKey: getIt<NavigationService>().navigatorKey,
+              upgrader: Upgrader(
+                debugLogging: true,
+                durationUntilAlertAgain: const Duration(seconds: 30),
+                minAppVersion: getIt<VersionService>().minAppVersion, // Use min version from Remote Config
+                canDismissDialog: false, // Force update for both platforms
+                showIgnore: false,
+                showLater: false,
+                countryCode: 'es', 
+                messages: UpgraderMessages(code: 'es'),
+                // Ensure the iOS store ID or URL is correctly provided if available
+                appCastConfig: null, // Only if using AppCast
+              ),
+              child: const SplashScreen(),
+            ),
             onGenerateRoute: RouteSwitch.generateRoute,
             localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
               AppLocalizations.delegate,

@@ -1,5 +1,7 @@
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:in_app_update/in_app_update.dart';
+import 'dart:io';
 import 'dart:developer' as developer;
 
 class VersionService {
@@ -24,9 +26,32 @@ class VersionService {
         'store_url_ios': '',
       });
       await _remoteConfig.fetchAndActivate();
+      
+      // Check for Android in-app update
+      if (Platform.isAndroid) {
+        await _performAndroidUpdate();
+      }
     } catch (e) {
       // If fetching fails, we continue with defaults
       developer.log('Error initializing Remote Config: $e');
+    }
+  }
+
+  Future<void> _performAndroidUpdate() async {
+    try {
+      final AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
+      if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
+        // Enforce immediate update if allowed
+        if (updateInfo.immediateUpdateAllowed) {
+          await InAppUpdate.performImmediateUpdate();
+        } else if (updateInfo.flexibleUpdateAllowed) {
+          // Fallback to flexible if immediate not allowed but update available
+          await InAppUpdate.startFlexibleUpdate();
+          await InAppUpdate.completeFlexibleUpdate();
+        }
+      }
+    } catch (e) {
+      developer.log('Error in Android In-App Update: $e');
     }
   }
 
@@ -74,4 +99,6 @@ class VersionService {
   }
 
   String get storeUrl => _remoteConfig.getString('store_url_android');
+  String get storeUrlIos => _remoteConfig.getString('store_url_ios');
+  String get minAppVersion => _remoteConfig.getString('min_app_version');
 }

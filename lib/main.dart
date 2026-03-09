@@ -54,10 +54,13 @@ Future<void> main() async {
     // 5. Dependency Injection
     await initDependencies();
 
-    // 6. Start the app
+    // 6. Pre-runApp Services
+    await getIt<VersionService>().init();
+
+    // 7. Start the app
     runApp(const MyApp());
 
-    // 7. Post-runApp initialization (Services that don't block the UI)
+    // 8. Post-runApp initialization (Services that don't block the UI)
     _initializeBackgroundServices();
   } catch (e) {
     debugPrint('Fatal error in main: $e');
@@ -71,7 +74,7 @@ Future<void> _initializeBackgroundServices() async {
     await OfflineSyncService().init();
 
     // Services that depend on Firebase (Already initialized)
-    await getIt<VersionService>().init();
+    // VersionService initialized in main()
     await getIt<NotificationService>().init();
 
     debugPrint('Background services initialized successfully');
