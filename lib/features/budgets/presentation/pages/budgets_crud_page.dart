@@ -5,6 +5,8 @@ import 'package:personal_finance/core/error/failures.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart'
     as cat_entity;
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
@@ -13,7 +15,6 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
     as tx_backend;
 import 'package:personal_finance/utils/budget_category_prefs.dart';
 import 'package:personal_finance/core/services/device_service.dart';
-import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/premium_modals.dart';
 import 'package:personal_finance/utils/responsive.dart';
@@ -116,8 +117,6 @@ class BudgetsCrudPage extends StatelessWidget {
           ),
         ),
       ),
-      // Floating action button removed because it's now handled by the central FAB in HomePage
-      floatingActionButton: null,
     ),
   );
 
@@ -499,7 +498,6 @@ class _BudgetCardState extends State<_BudgetCard> {
             total <= 0 ? 0.0 : (spent / total).clamp(0.0, 1.0);
         final String range =
             '${_fmt2(widget.budget.fechaInicio)} → ${_fmt2(widget.budget.fechaFin)}';
-        final bool over = spent > total && total > 0;
         final double remaining = (total - spent).clamp(0.0, double.infinity);
 
         Color progressColor;
@@ -581,9 +579,9 @@ class _BudgetCardState extends State<_BudgetCard> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            over
-                                ? 'Agotado'
-                                : 'Quedan \$${remaining.toStringAsFixed(0)}',
+                            remaining <= 0
+                                ? 'Presupuesto agotado'
+                                : 'Quedan ${CurrencyHelper.symbol}${remaining.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -628,7 +626,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           Text(
-                            'Gastado: \$${spent.toStringAsFixed(2)}',
+                            'Gastado: ${CurrencyHelper.symbol}${spent.toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -639,7 +637,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                             ),
                           ),
                           Text(
-                            'Total: \$${total.toStringAsFixed(2)}',
+                            'Total: ${CurrencyHelper.symbol}${total.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,

@@ -4,13 +4,8 @@ import 'package:personal_finance/features/settings/presentation/pages/help_detai
 import 'package:personal_finance/features/settings/presentation/pages/notifications_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/profile_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
-import 'package:provider/provider.dart';
-import 'package:personal_finance/utils/injection_container.dart';
-import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
-    as notif_repo;
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
-import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
 

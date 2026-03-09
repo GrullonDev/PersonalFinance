@@ -1,4 +1,7 @@
 import 'package:personal_finance/core/domain/entities/syncable_entity.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
+
+enum TransactionType { income, expense }
 
 /// Entidad base para todas las transacciones financieras
 abstract class TransactionEntity extends SyncableEntity {
@@ -30,8 +33,11 @@ abstract class TransactionEntity extends SyncableEntity {
   /// Obtiene el tipo de transacción
   String get transactionType;
 
+  String get formattedDate =>
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
   /// Formatea el monto para mostrar
-  String get formattedAmount => '\$${amount.toStringAsFixed(2)}';
+  String get formattedAmount => '${CurrencyHelper.symbol}${amount.toStringAsFixed(2)}';
 
   /// Verifica si la transacción es reciente (últimos 7 días)
   bool get isRecent {

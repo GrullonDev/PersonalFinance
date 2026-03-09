@@ -77,6 +77,10 @@ class _DashboardContent extends StatelessWidget {
                             : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
+                                if (logic.insightMessage != null) ...[
+                                  _buildInsightsCard(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
                                 GestureDetector(
                                   onTap: () => Navigator.pushNamed(
                                     context,
@@ -155,6 +159,10 @@ class _DashboardContent extends StatelessWidget {
                                 flex: 5,
                                 child: Column(
                                   children: <Widget>[
+                                    if (logic.insightMessage != null) ...[
+                                      _buildInsightsCard(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
                                     GestureDetector(
                                       onTap: () => Navigator.pushNamed(
                                         context,
@@ -220,6 +228,53 @@ class _DashboardContent extends StatelessWidget {
       ],
     ),
   );
+
+  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) => Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.tips_and_updates,
+            color: Theme.of(context).colorScheme.primary,
+            size: 28,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Insight',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  logic.insightMessage!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
 
   Widget _buildHeader(BuildContext context, DashboardLogic logic) {
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -437,7 +492,7 @@ class _DashboardContent extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          '\$${amount.toStringAsFixed(0)}',
+          logic.formatCurrency(amount),
           style: TextStyle(
             color: textColor,
             fontSize: 20,
@@ -603,7 +658,7 @@ class _DashboardContent extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '\$${logic.balance.toStringAsFixed(2)}',
+          logic.formatCurrency(logic.balance),
           style: TextStyle(
             fontSize: 42,
             fontWeight: FontWeight.bold,
@@ -1028,7 +1083,6 @@ class _DashboardContent extends StatelessWidget {
                     title: tx.title,
                     subtitle: _getCategoryForTransaction(tx),
                     amount: tx.amount,
-                    isExpense: true,
                     onTap: () {
                       // Opcional: navegar al detalle
                     },

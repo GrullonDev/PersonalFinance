@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/dashboard/presentation/widgets/periodic_selector.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/animated_counter.dart';
 
@@ -153,7 +154,7 @@ class _DashboardTransactionsPageState extends State<DashboardTransactionsPage> {
                         ],
                       ),
                       trailing: Text(
-                        '${isIngreso ? '+' : '-'}\$${t.montoAsDouble.toStringAsFixed(2)}',
+                        '${isIngreso ? '+' : '-'}${CurrencyHelper.symbol}${t.montoAsDouble.toStringAsFixed(2)}',
                         style: TextStyle(
                           color: isIngreso ? Colors.green : Colors.red,
                           fontWeight: FontWeight.bold,
@@ -249,7 +250,7 @@ class _BalanceCard extends StatelessWidget {
               Text('Balance', style: Theme.of(context).textTheme.titleLarge),
               AnimatedCounter(
                 value: balance,
-                prefix: '\$',
+                prefix: CurrencyHelper.symbol,
                 style: Theme.of(context).textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isPositive ? Colors.green : Colors.red,
@@ -285,7 +286,7 @@ class _IncomeExpensesCard extends StatelessWidget {
                 ),
                 AnimatedCounter(
                   value: ingresos,
-                  prefix: '\$',
+                  prefix: CurrencyHelper.symbol,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.green,

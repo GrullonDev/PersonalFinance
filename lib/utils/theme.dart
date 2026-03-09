@@ -8,10 +8,10 @@ class AppTheme {
   static const Color _primaryDark = Color(0xFF8B80F9);
 
   static const Color _bgLight = Color(0xFFF6F7FB); // Claro y fresco
-  static const Color _bgDark = Color(0xFF0F111A); // Deep Midnight Blue
+  static const Color _bgDark = Color(0xFF07090F); // Ultra Deep Premium Navy
 
   static const Color _surfaceLight = Colors.white;
-  static const Color _surfaceDark = Color(0xFF1E2130);
+  static const Color _surfaceDark = Color(0xFF131620); // Premium dark card
 
   static const Color _success = Color(0xFF00E676); // Neon Green
   static const Color _error = Color(0xFFFF2D55); // Neon Red
@@ -81,7 +81,7 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 10,
-        backgroundColor: isDark ? const Color(0xFF2C2F40) : Colors.black87,
+        backgroundColor: isDark ? const Color(0xFF1E2132) : Colors.black87,
         contentTextStyle: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
@@ -107,7 +107,7 @@ class AppTheme {
           ),
         ),
         filled: true,
-        fillColor: isDark ? const Color(0xFF2C2F40) : Colors.grey.shade50,
+        fillColor: isDark ? const Color(0xFF191C2B) : Colors.grey.shade50,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
-import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
+import 'package:personal_finance/features/services/domain/repositories/service_repository.dart';
+import 'package:personal_finance/features/services/presentation/bloc/service_bloc.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/utils/premium_modals.dart';
 import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/responsive.dart';
@@ -681,8 +682,6 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           ],
         ),
       ),
-      // Floating action button removed because it's now handled by the central FAB in HomePage
-      floatingActionButton: null,
     );
   }
 
@@ -750,7 +749,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '\$${double.tryParse(budget.montoTotal)?.toStringAsFixed(2) ?? "0.00"}',
+              '${CurrencyHelper.symbol}${double.tryParse(budget.montoTotal)?.toStringAsFixed(2) ?? "0.00"}',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 4),
@@ -826,7 +825,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
         ),
         const SizedBox(height: 4),
         Text(
-          '\$${total.toStringAsFixed(2)}',
+          'Total: ${CurrencyHelper.symbol}${total.toStringAsFixed(2)}',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 32,

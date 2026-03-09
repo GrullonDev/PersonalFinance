@@ -16,11 +16,13 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _controller = PageController();
   int _index = 0;
+  String _selectedUsageType = 'ambos'; // personal, negocio, ambos
 
   final List<_OnboardStep> _steps = <_OnboardStep>[
-    const _OnboardStep(titleKey: 'step1Title', descriptionKey: 'step1Desc'),
-    const _OnboardStep(titleKey: 'step2Title', descriptionKey: 'step2Desc'),
-    const _OnboardStep(titleKey: 'step3Title', descriptionKey: 'step3Desc'),
+    const _OnboardStep(titleKey: 'step1Title', descriptionKey: 'step1Desc', icon: Icons.account_balance_wallet),
+    const _OnboardStep(titleKey: 'step2Title', descriptionKey: 'step2Desc', icon: Icons.insights),
+    const _OnboardStep(titleKey: 'step3Title', descriptionKey: 'step3Desc', icon: Icons.lightbulb),
+    const _OnboardStep(titleKey: 'step4Title', descriptionKey: 'step4Desc', icon: Icons.person_search),
   ];
 
   @override
@@ -52,7 +54,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                             Icon(
-                              Icons.savings,
+                              step.icon,
                               size: 100,
                               color: Colors.blue.shade300,
                             ),
@@ -81,6 +83,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               ),
                               textAlign: TextAlign.center,
                             ),
+                            if (i == 3) ...[
+                              const SizedBox(height: 32),
+                              _buildUsageOption('personal', AppLocalizations.of(context)!.translate('usagePersonal'), Icons.person),
+                              const SizedBox(height: 12),
+                              _buildUsageOption('negocio', AppLocalizations.of(context)!.translate('usageBusiness'), Icons.storefront),
+                              const SizedBox(height: 12),
+                              _buildUsageOption('ambos', AppLocalizations.of(context)!.translate('usageBoth'), Icons.handshake),
+                            ],
                           ],
                         ),
                       ),
@@ -137,6 +147,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       if (_index == _steps.length - 1) {
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setBool('onboarding_complete', true);
+                        await prefs.setString('usage_type', _selectedUsageType);
                         if (mounted) {
                           Navigator.pushReplacementNamed(
                             context,
@@ -175,10 +186,51 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ),
     ),
   );
+  Widget _buildUsageOption(String value, String title, IconData icon) {
+    final bool isSelected = _selectedUsageType == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedUsageType = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.shade600 : Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? Colors.blue.shade300 : Colors.white.withValues(alpha: 0.3),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Colors.white, size: 24),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _OnboardStep {
   final String titleKey;
   final String descriptionKey;
-  const _OnboardStep({required this.titleKey, required this.descriptionKey});
+  final IconData icon;
+  const _OnboardStep({
+    required this.titleKey,
+    required this.descriptionKey,
+    this.icon = Icons.savings,
+  });
 }

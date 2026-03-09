@@ -565,8 +565,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   items:
                       _centralAmericanCodes.map<DropdownMenuItem<String>>((
                         String value,
-                      ) {
-                        return DropdownMenuItem<String>(
+                      ) => DropdownMenuItem<String>(
                           value: value,
                           child: Text(
                             value,
@@ -575,8 +574,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        );
-                      }).toList(),
+                        )).toList(),
                 ),
                 Container(
                   height: 24,

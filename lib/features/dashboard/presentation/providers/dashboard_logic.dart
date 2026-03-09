@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
 import 'package:personal_finance/features/domain/usecases/get_dashboard_data_usecase.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
@@ -73,6 +73,29 @@ class DashboardLogic extends ChangeNotifier {
     (double sum, IncomeEntity income) => sum + income.amount,
   );
   double get balance => totalIncomes - totalExpenses;
+
+  String? get insightMessage {
+    if (!hasData) return null;
+    if (_activeBudget != null) {
+      final double remaining = _activeBudget!.montoAsDouble - totalExpenses;
+      if (remaining > 0) {
+        return 'Te quedan ${CurrencyHelper.format(remaining)} libres para gastar en este periodo.';
+      } else {
+        return 'Has excedido tu presupuesto en ${CurrencyHelper.format(remaining.abs())}.';
+      }
+    }
+    
+    if (totalIncomes > 0) {
+       final percentage = (totalExpenses / totalIncomes) * 100;
+       if (percentage > 80) {
+          return 'Cuidado: Has gastado el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
+       } else {
+          return 'Buen trabajo manteniendo tus gastos bajo el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
+       }
+    }
+    
+    return null;
+  }
 
   List<ExpenseEntity> get sortedExpenses {
     final List<ExpenseEntity> sorted = List<ExpenseEntity>.from(_expenses);
@@ -412,13 +435,7 @@ class DashboardLogic extends ChangeNotifier {
   }
 
   // Métodos de utilidad
-  String formatCurrency(double amount) {
-    // Usa el locale del dispositivo para formatear la moneda correctamente
-    final formatter = NumberFormat.simpleCurrency(
-      locale: Intl.getCurrentLocale(),
-    );
-    return formatter.format(amount);
-  }
+  String formatCurrency(double amount) => CurrencyHelper.format(amount);
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';

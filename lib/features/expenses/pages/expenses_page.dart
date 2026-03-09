@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_detail.dart';
 import 'package:personal_finance/features/transactions/presentation/pages/transaction_detail_page.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 class ExpensesPage extends StatelessWidget {
   const ExpensesPage({super.key});
@@ -82,7 +83,7 @@ class ExpensesPage extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '\$${_calculateTotal(expenses).toStringAsFixed(2)}',
+                                '${CurrencyHelper.symbol}${_calculateTotal(expenses).toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -190,7 +191,7 @@ class ExpensesPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '-\$${monthTotal.toStringAsFixed(2)}',
+                  '-${CurrencyHelper.symbol}${monthTotal.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -295,7 +296,7 @@ class ExpensesPage extends StatelessWidget {
               Row(
                 children: <Widget>[
                   Text(
-                    '-\$${expense.amount.toStringAsFixed(2)}',
+                    '-${CurrencyHelper.symbol}${expense.amount.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

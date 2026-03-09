@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 
 class AppLocalizations {
   final Locale locale;
@@ -37,6 +38,11 @@ class AppLocalizations {
           'step2Desc': 'Check your daily, weekly or monthly balance.',
           'step3Title': 'Learn tips',
           'step3Desc': 'Get personalized financial advice every day.',
+          'step4Title': 'How will you use the app?',
+          'step4Desc': 'Choose the profile that best fits you.',
+          'usagePersonal': 'Personal Finance',
+          'usageBusiness': 'My Business',
+          'usageBoth': 'Both',
         },
         'es': <String, String>{
           'welcome': '¡Bienvenido a tu app de finanzas personales!',
@@ -60,6 +66,11 @@ class AppLocalizations {
           'step2Desc': 'Consulta tu balance diario, semanal o mensual.',
           'step3Title': 'Aprende consejos',
           'step3Desc': 'Recibe tips financieros personalizados cada día.',
+          'step4Title': '¿Para qué usarás la app?',
+          'step4Desc': 'Elige el perfil que mejor se adapte a ti.',
+          'usagePersonal': 'Finanzas Personales',
+          'usageBusiness': 'Mi Negocio',
+          'usageBoth': 'Ambas',
         },
       };
 
@@ -91,9 +102,16 @@ class AppLocalizations {
   String get step2Desc => _text('step2Desc');
   String get step3Title => _text('step3Title');
   String get step3Desc => _text('step3Desc');
+  String get step4Title => _text('step4Title');
+  String get step4Desc => _text('step4Desc');
+  String get usagePersonal => _text('usagePersonal');
+  String get usageBusiness => _text('usageBusiness');
+  String get usageBoth => _text('usageBoth');
 
-  NumberFormat get currencyFormatter =>
-      NumberFormat.simpleCurrency(locale: locale.toLanguageTag());
+  NumberFormat get currencyFormatter {
+    final String localeName = kIsWeb ? locale.toLanguageTag() : Platform.localeName;
+    return NumberFormat.simpleCurrency(locale: localeName);
+  }
 
   NumberFormat get decimalFormatter =>
       NumberFormat.decimalPattern(locale.toLanguageTag());

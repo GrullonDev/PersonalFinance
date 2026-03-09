@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/reports/presentation/providers/reports_logic.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -16,7 +17,7 @@ class ReportsPage extends StatelessWidget {
           Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(
-            '\$${amount.toStringAsFixed(2)}',
+            '${CurrencyHelper.symbol}${amount.toStringAsFixed(2)}',
             style: TextStyle(color: color, fontSize: 16),
           ),
         ],
