@@ -9,6 +9,7 @@ abstract class TransactionBackendRepository {
     DateTime? fechaHasta,
     String? categoriaId,
     String? tipo,
+    String? profileType,
   });
   Future<Either<Failure, TransactionBackend>> create(TransactionBackend tx);
   Future<Either<Failure, TransactionBackend>> update(TransactionBackend tx);

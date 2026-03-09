@@ -8,6 +8,7 @@ class TransactionBackend extends SyncableEntity {
   final String categoriaId;
   final bool esRecurrente;
   final int? profileId;
+  final String? profileType;
 
   const TransactionBackend({
     required super.id,
@@ -24,6 +25,7 @@ class TransactionBackend extends SyncableEntity {
     super.deletedAt,
     super.syncStatus,
     this.profileId,
+    this.profileType,
   });
 
   TransactionBackend copyWith({
@@ -40,6 +42,7 @@ class TransactionBackend extends SyncableEntity {
     String? categoriaId,
     bool? esRecurrente,
     int? profileId,
+    String? profileType,
   }) => TransactionBackend(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -54,6 +57,7 @@ class TransactionBackend extends SyncableEntity {
     categoriaId: categoriaId ?? this.categoriaId,
     esRecurrente: esRecurrente ?? this.esRecurrente,
     profileId: profileId ?? this.profileId,
+    profileType: profileType ?? this.profileType,
   );
 
   double get montoAsDouble => double.tryParse(monto) ?? 0.0;
@@ -68,5 +72,6 @@ class TransactionBackend extends SyncableEntity {
     categoriaId,
     esRecurrente,
     profileId,
+    profileType,
   ];
 }

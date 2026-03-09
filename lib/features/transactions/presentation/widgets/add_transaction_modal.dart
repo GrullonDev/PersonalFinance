@@ -9,6 +9,7 @@ import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:intl/intl.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 
 class AddTransactionModal extends StatefulWidget {
   const AddTransactionModal({super.key});
@@ -437,6 +438,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                         fecha: _fecha,
                         categoriaId: _categoriaId ?? '',
                         esRecurrente: _recurrente,
+                        profileType: context.read<SettingsProvider>().isBusinessMode ? 'negocio' : 'personal',
                       );
                       bloc.add(TransactionCreate(payload));
 

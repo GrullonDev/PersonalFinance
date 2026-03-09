@@ -10,6 +10,7 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
     as tx_backend;
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/core/services/version_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
@@ -84,7 +85,12 @@ class _HomePageState extends State<HomePage>
     create:
         (BuildContext ctx) => TransactionsBloc(
           ctx.read<tx_backend.TransactionBackendRepository>(),
-        )..add(TransactionsLoad()),
+        )..add(TransactionsLoad(
+          profileType:
+              ctx.read<SettingsProvider>().isBusinessMode
+                  ? 'negocio'
+                  : 'personal',
+        )),
     child: Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar:

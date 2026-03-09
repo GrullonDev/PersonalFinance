@@ -9,6 +9,7 @@ class TransactionBackendModel extends SyncableModel {
   final String categoriaId;
   final bool esRecurrente;
   final int? profileId;
+  final String? profileType;
 
   const TransactionBackendModel({
     required super.id,
@@ -25,6 +26,7 @@ class TransactionBackendModel extends SyncableModel {
     super.deletedAt,
     super.syncStatus,
     this.profileId,
+    this.profileType,
   });
 
   factory TransactionBackendModel.fromFirestore(
@@ -49,6 +51,7 @@ class TransactionBackendModel extends SyncableModel {
         json['profile_id'] is int
             ? json['profile_id'] as int
             : int.tryParse(json['profile_id']?.toString() ?? ''),
+    profileType: json['profile_type'] as String?,
   );
 
   @override
@@ -61,6 +64,7 @@ class TransactionBackendModel extends SyncableModel {
     'categoria_id': categoriaId,
     'es_recurrente': esRecurrente,
     'profile_id': profileId,
+    'profile_type': profileType,
   };
 
   @override
@@ -82,6 +86,7 @@ class TransactionBackendModel extends SyncableModel {
         categoriaId: entity.categoriaId,
         esRecurrente: entity.esRecurrente,
         profileId: entity.profileId,
+        profileType: entity.profileType,
       );
 
   TransactionBackend toEntity() => TransactionBackend(
@@ -99,6 +104,7 @@ class TransactionBackendModel extends SyncableModel {
     categoriaId: categoriaId,
     esRecurrente: esRecurrente,
     profileId: profileId,
+    profileType: profileType,
   );
 
   double get montoAsDouble => double.tryParse(monto) ?? 0.0;
@@ -113,5 +119,6 @@ class TransactionBackendModel extends SyncableModel {
     categoriaId,
     esRecurrente,
     profileId,
+    profileType,
   ];
 }

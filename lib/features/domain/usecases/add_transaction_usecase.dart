@@ -14,6 +14,7 @@ class AddExpenseParams {
   final String category;
   final String? description;
   final String? notes;
+  final String? profileType;
 
   const AddExpenseParams({
     required this.title,
@@ -22,6 +23,7 @@ class AddExpenseParams {
     required this.category,
     this.description,
     this.notes,
+    this.profileType,
   });
 }
 
@@ -33,6 +35,7 @@ class AddIncomeParams {
   final String source;
   final String? description;
   final String? notes;
+  final String? profileType;
 
   const AddIncomeParams({
     required this.title,
@@ -41,6 +44,7 @@ class AddIncomeParams {
     required this.source,
     this.description,
     this.notes,
+    this.profileType,
   });
 }
 
@@ -89,6 +93,7 @@ class AddTransactionUseCase {
         category: params.category,
         description: params.description,
         notes: params.notes,
+        profileType: params.profileType,
       );
 
       return await repository.addExpense(expense);
@@ -136,6 +141,7 @@ class AddTransactionUseCase {
         source: params.source,
         description: params.description,
         notes: params.notes,
+        profileType: params.profileType,
       );
 
       return await repository.addIncome(income);

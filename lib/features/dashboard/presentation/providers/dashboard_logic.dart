@@ -45,6 +45,7 @@ class DashboardLogic extends ChangeNotifier {
   Budget? _activeBudget;
   bool _isLoading = false;
   String? _error;
+  String? _profileType; // 'personal' or 'negocio'
 
   // Getters públicos
   PeriodFilter get selectedPeriod => _selectedPeriod;
@@ -56,6 +57,7 @@ class DashboardLogic extends ChangeNotifier {
   Budget? get activeBudget => _activeBudget;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get profileType => _profileType;
 
   double _weeklyBudgetSpent = 0;
   double get weeklyBudgetSpent => _weeklyBudgetSpent;
@@ -317,6 +319,10 @@ class DashboardLogic extends ChangeNotifier {
   }
 
   // Métodos públicos
+  void setProfileType(String? profileType) {
+    _profileType = profileType;
+  }
+
   /// Genera recomendaciones dinámicas basadas en los datos del usuario
   Future<void> loadDashboardData() async {
     _setLoading(true);
@@ -326,6 +332,7 @@ class DashboardLogic extends ChangeNotifier {
     final DashboardParams params = DashboardParams(
       startDate: dateRange.start,
       endDate: dateRange.end,
+      profileType: _profileType,
     );
 
     final result = await _getDashboardDataUseCase.execute(params);
@@ -383,6 +390,7 @@ class DashboardLogic extends ChangeNotifier {
                     fechaDesde: startOfWeek,
                     fechaHasta: endOfWeek,
                     tipo: 'gasto',
+                    profileType: _profileType,
                   );
 
               final List<String> budgetCatIds = await BudgetCategoryPrefs.load(
@@ -438,6 +446,7 @@ class DashboardLogic extends ChangeNotifier {
       category: category,
       description: description,
       notes: notes,
+      profileType: _profileType,
     );
 
     final result = await _addTransactionUseCase.addExpense(params);
@@ -472,6 +481,7 @@ class DashboardLogic extends ChangeNotifier {
       source: source,
       description: description,
       notes: notes,
+      profileType: _profileType,
     );
 
     final result = await _addTransactionUseCase.addIncome(params);

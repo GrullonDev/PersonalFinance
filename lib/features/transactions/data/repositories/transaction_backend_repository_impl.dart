@@ -17,6 +17,7 @@ class TransactionBackendRepositoryImpl implements TransactionBackendRepository {
     DateTime? fechaHasta,
     String? categoriaId,
     String? tipo,
+    String? profileType,
   }) async {
     try {
       final List<TransactionBackendModel> list = await _remote.list(
@@ -24,6 +25,7 @@ class TransactionBackendRepositoryImpl implements TransactionBackendRepository {
         fechaHasta: fechaHasta,
         categoriaId: categoriaId,
         tipo: tipo,
+        profileType: profileType,
       );
       return Right(list.map((e) => e.toEntity()).toList());
     } on ApiException catch (e) {

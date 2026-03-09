@@ -11,7 +11,9 @@ import 'package:personal_finance/features/transactions/presentation/pages/transa
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/responsive.dart';
 import 'package:provider/provider.dart';
+import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
@@ -20,8 +22,10 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider<DashboardLogic>(
-    create: (_) {
+    create: (context) {
       final logic = getIt<DashboardLogic>();
+      final isBusiness = context.read<SettingsProvider>().isBusinessMode;
+      logic.setProfileType(isBusiness ? 'negocio' : 'personal');
       logic.loadDashboardData();
       return logic;
     },
@@ -307,6 +311,60 @@ class _DashboardContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                // ===== MAGIC SWITCH START =====
+                if (context.watch<SettingsProvider>().canToggleMode)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildModeTab(
+                              context,
+                              title: 'Personal',
+                              icon: Icons.person,
+                              isSelected:
+                                  !context
+                                      .watch<SettingsProvider>()
+                                      .isBusinessMode,
+                              onTap: () {
+                                context
+                                    .read<SettingsProvider>()
+                                    .toggleBusinessMode(false);
+                                logic.setProfileType('personal');
+                                logic.loadDashboardData();
+                                context.read<TransactionsBloc>().add(TransactionsLoad(profileType: 'personal'));
+                              },
+                            ),
+                            _buildModeTab(
+                              context,
+                              title: 'Negocio',
+                              icon: Icons.storefront,
+                              isSelected:
+                                  context
+                                      .watch<SettingsProvider>()
+                                      .isBusinessMode,
+                              onTap: () {
+                                context
+                                    .read<SettingsProvider>()
+                                    .toggleBusinessMode(true);
+                                logic.setProfileType('negocio');
+                                logic.loadDashboardData();
+                                context.read<TransactionsBloc>().add(TransactionsLoad(profileType: 'negocio'));
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // ===== MAGIC SWITCH END =====
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,6 +511,48 @@ class _DashboardContent extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildModeTab(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.white : Colors.transparent,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.white70,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color:
+                  isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildSummaryCards(DashboardLogic logic) => Row(
     children: <Widget>[

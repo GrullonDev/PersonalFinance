@@ -7,10 +7,10 @@ import 'package:personal_finance/features/domain/entities/income_entity.dart';
 /// Sigue el principio de inversión de dependencias (DIP)
 abstract class TransactionRepository {
   /// Obtiene todos los gastos
-  Future<Either<Failure, List<ExpenseEntity>>> getExpenses();
+  Future<Either<Failure, List<ExpenseEntity>>> getExpenses({String? profileType});
 
   /// Obtiene todos los ingresos
-  Future<Either<Failure, List<IncomeEntity>>> getIncomes();
+  Future<Either<Failure, List<IncomeEntity>>> getIncomes({String? profileType});
 
   /// Agrega un nuevo gasto
   Future<Either<Failure, void>> addExpense(ExpenseEntity expense);
@@ -33,32 +33,47 @@ abstract class TransactionRepository {
   /// Obtiene gastos filtrados por período
   Future<Either<Failure, List<ExpenseEntity>>> getExpensesByPeriod(
     DateTime start,
-    DateTime end,
-  );
+    DateTime end, {
+    String? profileType,
+  });
 
   /// Obtiene ingresos filtrados por período
   Future<Either<Failure, List<IncomeEntity>>> getIncomesByPeriod(
     DateTime start,
-    DateTime end,
-  );
+    DateTime end, {
+    String? profileType,
+  });
 
   /// Obtiene gastos por categoría
   Future<Either<Failure, List<ExpenseEntity>>> getExpensesByCategory(
-    String category,
-  );
+    String category, {
+    String? profileType,
+  });
 
   /// Obtiene ingresos por fuente
-  Future<Either<Failure, List<IncomeEntity>>> getIncomesBySource(String source);
+  Future<Either<Failure, List<IncomeEntity>>> getIncomesBySource(
+    String source, {
+    String? profileType,
+  });
 
   /// Obtiene el total de gastos en un período
   Future<Either<Failure, double>> getTotalExpenses(
     DateTime start,
-    DateTime end,
-  );
+    DateTime end, {
+    String? profileType,
+  });
 
   /// Obtiene el total de ingresos en un período
-  Future<Either<Failure, double>> getTotalIncomes(DateTime start, DateTime end);
+  Future<Either<Failure, double>> getTotalIncomes(
+    DateTime start,
+    DateTime end, {
+    String? profileType,
+  });
 
   /// Obtiene el balance en un período
-  Future<Either<Failure, double>> getBalance(DateTime start, DateTime end);
+  Future<Either<Failure, double>> getBalance(
+    DateTime start,
+    DateTime end, {
+    String? profileType,
+  });
 }

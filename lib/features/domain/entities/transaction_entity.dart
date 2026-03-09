@@ -9,6 +9,7 @@ abstract class TransactionEntity extends SyncableEntity {
   final double amount;
   final DateTime date;
   final String? description;
+  final String? profileType;
 
   const TransactionEntity({
     required super.id,
@@ -19,13 +20,21 @@ abstract class TransactionEntity extends SyncableEntity {
     required this.title,
     required this.amount,
     required this.date,
+    this.description,
+    this.profileType,
     super.deletedAt,
     super.syncStatus,
-    this.description,
   });
 
   @override
-  List<Object?> get props => [...super.props, title, amount, date, description];
+  List<Object?> get props => [
+    ...super.props,
+    title,
+    amount,
+    date,
+    description,
+    profileType,
+  ];
 
   /// Verifica si la transacción es válida
   bool get isValid => title.isNotEmpty && amount > 0;

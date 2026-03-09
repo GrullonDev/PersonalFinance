@@ -8,8 +8,13 @@ import 'package:personal_finance/features/domain/repositories/transaction_reposi
 class DashboardParams {
   final DateTime startDate;
   final DateTime endDate;
+  final String? profileType;
 
-  const DashboardParams({required this.startDate, required this.endDate});
+  const DashboardParams({
+    required this.startDate,
+    required this.endDate,
+    this.profileType,
+  });
 }
 
 /// Resultado del dashboard
@@ -44,10 +49,12 @@ class GetDashboardDataUseCase {
       final resExpenses = await repository.getExpensesByPeriod(
         params.startDate,
         params.endDate,
+        profileType: params.profileType,
       );
       final resIncomes = await repository.getIncomesByPeriod(
         params.startDate,
         params.endDate,
+        profileType: params.profileType,
       );
 
       return resExpenses.fold(

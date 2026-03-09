@@ -18,6 +18,7 @@ class ExpenseEntity extends TransactionEntity {
     super.deletedAt,
     super.syncStatus,
     super.description,
+    super.profileType,
     this.notes,
   });
 
@@ -67,6 +68,7 @@ class ExpenseEntity extends TransactionEntity {
     DateTime? date,
     String? category,
     String? description,
+    String? profileType,
     String? notes,
   }) => ExpenseEntity(
     id: id ?? this.id,
@@ -80,6 +82,7 @@ class ExpenseEntity extends TransactionEntity {
     date: date ?? this.date,
     category: category ?? this.category,
     description: description ?? this.description,
+    profileType: profileType ?? this.profileType,
     notes: notes ?? this.notes,
   );
 }

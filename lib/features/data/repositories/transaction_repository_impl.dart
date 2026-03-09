@@ -14,10 +14,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
   TransactionRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<Either<Failure, List<ExpenseEntity>>> getExpenses() async {
+  Future<Either<Failure, List<ExpenseEntity>>> getExpenses({String? profileType}) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'gasto');
+          .list(tipo: 'gasto', profileType: profileType);
       return Right(
         transactions
             .map((TransactionBackendModel tx) => _mapModelToExpense(tx))
@@ -29,10 +29,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<Either<Failure, List<IncomeEntity>>> getIncomes() async {
+  Future<Either<Failure, List<IncomeEntity>>> getIncomes({String? profileType}) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'ingreso');
+          .list(tipo: 'ingreso', profileType: profileType);
       return Right(
         transactions
             .map((TransactionBackendModel tx) => _mapModelToIncome(tx))
@@ -60,6 +60,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
           fecha: expense.date,
           categoriaId: expense.category,
           esRecurrente: false,
+          profileType: expense.profileType,
         ),
       );
       return const Right(null);
@@ -85,6 +86,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
           fecha: income.date,
           categoriaId: '0',
           esRecurrente: false,
+          profileType: income.profileType,
         ),
       );
       return const Right(null);
@@ -111,6 +113,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
           fecha: expense.date,
           categoriaId: expense.category,
           esRecurrente: false,
+          profileType: expense.profileType,
         ),
       );
       return const Right(null);
@@ -137,6 +140,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
           fecha: income.date,
           categoriaId: '0',
           esRecurrente: false,
+          profileType: income.profileType,
         ),
       );
       return const Right(null);
@@ -168,11 +172,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<Either<Failure, List<ExpenseEntity>>> getExpensesByPeriod(
     DateTime start,
-    DateTime end,
-  ) async {
+    DateTime end, {
+    String? profileType,
+  }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'gasto', fechaDesde: start, fechaHasta: end);
+          .list(tipo: 'gasto', fechaDesde: start, fechaHasta: end, profileType: profileType);
       return Right(
         transactions
             .map((TransactionBackendModel tx) => _mapModelToExpense(tx))
@@ -188,11 +193,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<Either<Failure, List<IncomeEntity>>> getIncomesByPeriod(
     DateTime start,
-    DateTime end,
-  ) async {
+    DateTime end, {
+    String? profileType,
+  }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'ingreso', fechaDesde: start, fechaHasta: end);
+          .list(tipo: 'ingreso', fechaDesde: start, fechaHasta: end, profileType: profileType);
       return Right(
         transactions
             .map((TransactionBackendModel tx) => _mapModelToIncome(tx))
@@ -207,11 +213,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Future<Either<Failure, List<ExpenseEntity>>> getExpensesByCategory(
-    String category,
-  ) async {
+    String category, {
+    String? profileType,
+  }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'gasto', categoriaId: category);
+          .list(tipo: 'gasto', categoriaId: category, profileType: profileType);
       return Right(
         transactions
             .map((TransactionBackendModel tx) => _mapModelToExpense(tx))
@@ -226,11 +233,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Future<Either<Failure, List<IncomeEntity>>> getIncomesBySource(
-    String source,
-  ) async {
+    String source, {
+    String? profileType,
+  }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'ingreso');
+          .list(tipo: 'ingreso', profileType: profileType);
       return Right(
         transactions
             .where(
@@ -250,11 +258,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<Either<Failure, double>> getTotalExpenses(
     DateTime start,
-    DateTime end,
-  ) async {
+    DateTime end, {
+    String? profileType,
+  }) async {
     try {
       final Either<Failure, List<ExpenseEntity>> result =
-          await getExpensesByPeriod(start, end);
+          await getExpensesByPeriod(start, end, profileType: profileType);
 
       return result.fold(
         (Failure l) => Left(l),
@@ -275,11 +284,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<Either<Failure, double>> getTotalIncomes(
     DateTime start,
-    DateTime end,
-  ) async {
+    DateTime end, {
+    String? profileType,
+  }) async {
     try {
       final Either<Failure, List<IncomeEntity>> result =
-          await getIncomesByPeriod(start, end);
+          await getIncomesByPeriod(start, end, profileType: profileType);
 
       return result.fold(
         (Failure l) => Left(l),
@@ -300,11 +310,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<Either<Failure, double>> getBalance(
     DateTime start,
-    DateTime end,
-  ) async {
+    DateTime end, {
+    String? profileType,
+  }) async {
     try {
-      final resultIncomes = await getTotalIncomes(start, end);
-      final resultExpenses = await getTotalExpenses(start, end);
+      final resultIncomes = await getTotalIncomes(start, end, profileType: profileType);
+      final resultExpenses = await getTotalExpenses(start, end, profileType: profileType);
 
       return resultIncomes.fold(
         (Failure l) => Left(l),
@@ -332,6 +343,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         amount: model.montoAsDouble,
         date: model.fecha,
         category: model.categoriaId,
+        profileType: model.profileType,
       );
 
   IncomeEntity _mapModelToIncome(TransactionBackendModel model) => IncomeEntity(
@@ -346,5 +358,6 @@ class TransactionRepositoryImpl implements TransactionRepository {
     amount: model.montoAsDouble,
     date: model.fecha,
     source: model.descripcion, // Using description as source
+    profileType: model.profileType,
   );
 }

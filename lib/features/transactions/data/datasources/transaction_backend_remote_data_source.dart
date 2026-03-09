@@ -9,6 +9,7 @@ abstract class TransactionBackendRemoteDataSource {
     DateTime? fechaHasta,
     String? categoriaId,
     String? tipo,
+    String? profileType,
   });
   Future<TransactionBackendModel> getById(String id);
   Future<TransactionBackendModel> create(TransactionBackendModel tx);
@@ -32,12 +33,17 @@ class TransactionBackendRemoteDataSourceImpl
     DateTime? fechaHasta,
     String? categoriaId,
     String? tipo,
+    String? profileType,
   }) async {
     try {
       List<TransactionBackendModel> results = await getAll();
 
       if (tipo != null && tipo.isNotEmpty) {
         results = results.where((tx) => tx.tipo == tipo).toList();
+      }
+      
+      if (profileType != null && profileType.isNotEmpty) {
+        results = results.where((tx) => tx.profileType == profileType).toList();
       }
 
       if (fechaDesde != null) {

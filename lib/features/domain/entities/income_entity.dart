@@ -18,6 +18,7 @@ class IncomeEntity extends TransactionEntity {
     super.deletedAt,
     super.syncStatus,
     super.description,
+    super.profileType,
     this.notes,
   });
 
@@ -63,6 +64,7 @@ class IncomeEntity extends TransactionEntity {
     DateTime? date,
     String? source,
     String? description,
+    String? profileType,
     String? notes,
   }) => IncomeEntity(
     id: id ?? this.id,
@@ -76,6 +78,7 @@ class IncomeEntity extends TransactionEntity {
     date: date ?? this.date,
     source: source ?? this.source,
     description: description ?? this.description,
+    profileType: profileType ?? this.profileType,
     notes: notes ?? this.notes,
   );
 }
