@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import 'package:personal_finance/features/alerts/presentation/providers/alerts_provider.dart';
+import 'package:personal_finance/core/services/version_service.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
@@ -121,13 +122,9 @@ class MyApp extends StatelessWidget {
                 debugLogging: true,
                 durationUntilAlertAgain: const Duration(seconds: 30),
                 minAppVersion: getIt<VersionService>().minAppVersion, // Use min version from Remote Config
-                canDismissDialog: false, // Force update for both platforms
-                showIgnore: false,
-                showLater: false,
                 countryCode: 'es', 
                 messages: UpgraderMessages(code: 'es'),
                 // Ensure the iOS store ID or URL is correctly provided if available
-                appCastConfig: null, // Only if using AppCast
               ),
               child: const SplashScreen(),
             ),

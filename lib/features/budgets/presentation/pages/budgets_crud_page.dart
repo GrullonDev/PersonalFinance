@@ -289,8 +289,9 @@ class BudgetsCrudPage extends StatelessWidget {
                     key: key,
                     child: SizedBox(
                       width: 360,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           TextFormField(
                             controller: nameCtrl,
@@ -386,6 +387,7 @@ class BudgetsCrudPage extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ),
                   ),
                   actions: <Widget>[
                     Row(

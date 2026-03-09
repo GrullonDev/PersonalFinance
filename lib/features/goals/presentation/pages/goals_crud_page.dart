@@ -468,8 +468,9 @@ class _GoalsViewState extends State<_GoalsView> {
               key: key,
               child: SizedBox(
                 width: 360,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     TextFormField(
                       controller: nameCtrl,
@@ -545,6 +546,7 @@ class _GoalsViewState extends State<_GoalsView> {
                     ),
                   ],
                 ),
+               ),
               ),
             ),
             actions: <Widget>[

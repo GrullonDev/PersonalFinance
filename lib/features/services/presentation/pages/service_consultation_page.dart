@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:personal_finance/features/services/domain/repositories/service_repository.dart';
-import 'package:personal_finance/features/services/presentation/bloc/service_bloc.dart';
+import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
+import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/utils/premium_modals.dart';
 import 'package:personal_finance/utils/theme.dart';

@@ -302,82 +302,88 @@ class _DashboardContent extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Hola ${context.watch<AuthProvider>().currentUser?.fullName.split(' ').first ?? 'Usuario'} 👋',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Hola ${context.watch<AuthProvider>().currentUser?.fullName.split(' ').first ?? 'Usuario'} 👋',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Consumer<NotificationInboxProvider>(
-                              builder: (context, inboxProvider, _) {
-                                final unreadCount = inboxProvider.unreadCount;
-                                return Stack(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.notifications_outlined,
-                                        color: Colors.white,
-                                        size: 28,
+                              const SizedBox(width: 8),
+                              Consumer<NotificationInboxProvider>(
+                                builder: (context, inboxProvider, _) {
+                                  final unreadCount = inboxProvider.unreadCount;
+                                  return Stack(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.notifications_outlined,
+                                          color: Colors.white,
+                                          size: 28,
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pushNamed(
+                                            context,
+                                            RoutePath.notificationsInbox,
+                                          );
+                                        },
                                       ),
-                                      onPressed: () {
-                                        Navigator.pushNamed(
-                                          context,
-                                          RoutePath.notificationsInbox,
-                                        );
-                                      },
-                                    ),
-                                    if (unreadCount > 0)
-                                      Positioned(
-                                        right: 8,
-                                        top: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: primaryColor,
-                                              width: 2,
+                                      if (unreadCount > 0)
+                                        Positioned(
+                                          right: 8,
+                                          top: 8,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: primaryColor,
+                                                width: 2,
+                                              ),
                                             ),
-                                          ),
-                                          constraints: const BoxConstraints(
-                                            minWidth: 16,
-                                            minHeight: 16,
-                                          ),
-                                          child: Text(
-                                            unreadCount > 9
-                                                ? '9+'
-                                                : unreadCount.toString(),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 16,
+                                              minHeight: 16,
                                             ),
-                                            textAlign: TextAlign.center,
+                                            child: Text(
+                                              unreadCount > 9
+                                                  ? '9+'
+                                                  : unreadCount.toString(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Así van tus finanzas hoy',
-                          style: TextStyle(fontSize: 14, color: Colors.white70),
-                        ),
-                      ],
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Así van tus finanzas hoy',
+                            style: TextStyle(fontSize: 14, color: Colors.white70),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     // Period Selector
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -440,6 +446,7 @@ class _DashboardContent extends StatelessWidget {
     children: <Widget>[
       Expanded(
         child: _buildSummaryCard(
+          logic: logic,
           title: 'INGRESOS',
           amount: logic.totalIncomes,
           icon: Icons.arrow_upward,
@@ -450,6 +457,7 @@ class _DashboardContent extends StatelessWidget {
       const SizedBox(width: 12),
       Expanded(
         child: _buildSummaryCard(
+          logic: logic,
           title: 'GASTOS',
           amount: logic.totalExpenses,
           icon: Icons.arrow_downward,
@@ -461,6 +469,7 @@ class _DashboardContent extends StatelessWidget {
   );
 
   Widget _buildSummaryCard({
+    required DashboardLogic logic,
     required String title,
     required double amount,
     required IconData icon,
