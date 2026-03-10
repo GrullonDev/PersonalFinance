@@ -10,11 +10,6 @@ class AppearanceSettingsPage extends StatefulWidget {
 }
 
 class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
-  String _selectedTheme = 'Sistema'; // Claro, Oscuro, Sistema
-  String _textSize = 'Mediano';
-  bool _animationsEnabled = true;
-  String _chartStyle = 'Anillo';
-
   final List<Color> _primaryColors = [
     Colors.blue,
     Colors.purple,
@@ -22,26 +17,12 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     Colors.orange,
     Colors.pink,
   ];
-  Color _selectedColor = Colors.blue; // Simulación
-
-  @override
-  void initState() {
-    super.initState();
-    // In here we would map _selectedTheme based on settingsProvider.darkMode
-    _selectedColor = _primaryColors[0];
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final settingsProvider = context.watch<SettingsProvider>();
-
-    if (settingsProvider.darkMode) {
-      _selectedTheme = 'Oscuro';
-    } else {
-      _selectedTheme = 'Claro';
-    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -52,14 +33,14 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           _buildSectionHeader(context, 'TEMA Y COLORES'),
           _buildThemeSelector(colorScheme, settingsProvider),
           const SizedBox(height: 24),
-          _buildColorPicker(colorScheme),
+          _buildColorPicker(colorScheme, settingsProvider),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'INTERFAZ'),
-          _buildTextSizeSelector(colorScheme),
-          _buildAnimationsToggle(colorScheme),
+          _buildTextSizeSelector(colorScheme, settingsProvider),
+          _buildAnimationsToggle(colorScheme, settingsProvider),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'DATOS Y REPORTES'),
-          _buildChartStyleSelector(colorScheme),
+          _buildChartStyleSelector(colorScheme, settingsProvider),
           const SizedBox(height: 40),
         ],
       ),
@@ -97,12 +78,8 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           _buildThemeOption(
             'Claro',
             Icons.light_mode_rounded,
-            _selectedTheme == 'Claro',
-            () async {
-              if (settings.darkMode) {
-                await settings.toggleDarkMode();
-              }
-            },
+            settings.themeModeString == 'Claro',
+            () => settings.setThemeMode('Claro'),
             colorScheme,
           ),
           Container(
@@ -113,12 +90,8 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           _buildThemeOption(
             'Oscuro',
             Icons.dark_mode_rounded,
-            _selectedTheme == 'Oscuro',
-            () async {
-              if (!settings.darkMode) {
-                await settings.toggleDarkMode();
-              }
-            },
+            settings.themeModeString == 'Oscuro',
+            () => settings.setThemeMode('Oscuro'),
             colorScheme,
           ),
           Container(
@@ -129,10 +102,8 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           _buildThemeOption(
             'Sistema',
             Icons.brightness_auto_rounded,
-            _selectedTheme == 'Sistema',
-            () {
-              // Simulación de tema sistema, ya que actualmente solo es un boolean toggle en el provider temporal
-            },
+            settings.themeModeString == 'Sistema',
+            () => settings.setThemeMode('Sistema'),
             colorScheme,
           ),
         ],
@@ -184,7 +155,10 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ),
   );
 
-  Widget _buildColorPicker(ColorScheme colorScheme) => Column(
+  Widget _buildColorPicker(
+    ColorScheme colorScheme,
+    SettingsProvider settings,
+  ) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Padding(
@@ -208,9 +182,9 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           separatorBuilder: (_, __) => const SizedBox(width: 16),
           itemBuilder: (context, index) {
             final color = _primaryColors[index];
-            final isSelected = _selectedColor == color;
+            final isSelected = settings.primaryColor.value == color.value;
             return GestureDetector(
-              onTap: () => setState(() => _selectedColor = color),
+              onTap: () => settings.setPrimaryColor(color),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 width: 50,
@@ -244,49 +218,57 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ],
   );
 
-  Widget _buildTextSizeSelector(ColorScheme colorScheme) => ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          Icons.text_fields_rounded,
-          color: colorScheme.onSurfaceVariant,
-        ),
-      ),
-      title: const Text(
-        'Tamaño de texto',
-        style: TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        'Ajusta la lectura de la app',
-        style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
-      ),
-      trailing: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _textSize,
-          borderRadius: BorderRadius.circular(16),
-          items:
-              ['Pequeño', 'Mediano', 'Grande']
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e,
-                      child: Text(e, style: const TextStyle(fontSize: 14)),
-                    ),
-                  )
-                  .toList(),
-          onChanged: (val) => setState(() => _textSize = val!),
-        ),
-      ),
-    );
-
-  Widget _buildAnimationsToggle(ColorScheme colorScheme) => SwitchListTile(
+  Widget _buildTextSizeSelector(
+    ColorScheme colorScheme,
+    SettingsProvider settings,
+  ) => ListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-    value: _animationsEnabled,
-    onChanged: (val) => setState(() => _animationsEnabled = val),
+    leading: Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.text_fields_rounded,
+        color: colorScheme.onSurfaceVariant,
+      ),
+    ),
+    title: const Text(
+      'Tamaño de texto',
+      style: TextStyle(fontWeight: FontWeight.w600),
+    ),
+    subtitle: Text(
+      'Ajusta la lectura de la app',
+      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+    ),
+    trailing: DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: settings.textSize,
+        borderRadius: BorderRadius.circular(16),
+        items:
+            ['Pequeño', 'Mediano', 'Grande']
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e,
+                    child: Text(e, style: const TextStyle(fontSize: 14)),
+                  ),
+                )
+                .toList(),
+        onChanged: (val) {
+          if (val != null) settings.setTextSize(val);
+        },
+      ),
+    ),
+  );
+
+  Widget _buildAnimationsToggle(
+    ColorScheme colorScheme,
+    SettingsProvider settings,
+  ) => SwitchListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+    value: settings.animationsEnabled,
+    onChanged: (val) => settings.setAnimationsEnabled(val),
     activeThumbColor: colorScheme.primary,
     secondary: Container(
       padding: const EdgeInsets.all(10),
@@ -306,7 +288,10 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ),
   );
 
-  Widget _buildChartStyleSelector(ColorScheme colorScheme) => ListTile(
+  Widget _buildChartStyleSelector(
+    ColorScheme colorScheme,
+    SettingsProvider settings,
+  ) => ListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     leading: Container(
       padding: const EdgeInsets.all(10),
@@ -340,8 +325,14 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
             Icons.donut_large_rounded,
             'Anillo',
             colorScheme,
+            settings,
           ),
-          _buildChartIconOption(Icons.bar_chart_rounded, 'Barras', colorScheme),
+          _buildChartIconOption(
+            Icons.bar_chart_rounded,
+            'Barras',
+            colorScheme,
+            settings,
+          ),
         ],
       ),
     ),
@@ -351,10 +342,11 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     IconData icon,
     String value,
     ColorScheme colorScheme,
+    SettingsProvider settings,
   ) {
-    final isSelected = _chartStyle == value;
+    final isSelected = settings.chartStyle == value;
     return GestureDetector(
-      onTap: () => setState(() => _chartStyle = value),
+      onTap: () => settings.setChartStyle(value),
       child: Container(
         padding: const EdgeInsets.all(8),
         margin: const EdgeInsets.all(4),

@@ -13,7 +13,9 @@ import 'package:personal_finance/features/settings/presentation/pages/help_detai
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/appearance_settings_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
+import 'package:personal_finance/features/privacy/pages/terms_page.dart';
 import 'package:personal_finance/utils/responsive.dart';
+import 'package:personal_finance/utils/offline_sync_service.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -84,14 +86,24 @@ class ProfileView extends StatelessWidget {
                               },
                             ),
                             ProfileMenuItem(
-                              icon: Icons.star_outline_rounded,
-                              title: 'Plan (Pro)',
-                              onTap: () {},
-                            ),
-                            ProfileMenuItem(
                               icon: Icons.cloud_sync_outlined,
                               title: 'Sincronización',
-                              onTap: () {},
+                              onTap: () async {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Sincronizando datos...'),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                                await OfflineSyncService().syncPendingActions();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Sincronización completada'),
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -202,7 +214,13 @@ class ProfileView extends StatelessWidget {
                             ProfileMenuItem(
                               icon: Icons.description_outlined,
                               title: 'Términos',
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const TermsPage(),
+                                  ),
+                                );
+                              },
                             ),
                             ProfileMenuItem(
                               icon: Icons.info_outline_rounded,
@@ -387,13 +405,13 @@ class ProfileView extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.workspace_premium,
-                              color: Colors.amber,
+                              Icons.person_outline,
+                              color: Colors.white,
                               size: 16,
                             ),
                             SizedBox(width: 4),
                             Text(
-                              'Nivel: Usuario Pro',
+                              'Nivel: Usuario',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,

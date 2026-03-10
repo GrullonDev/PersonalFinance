@@ -4,6 +4,7 @@ import 'package:personal_finance/features/reports/presentation/providers/reports
 import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 
 class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
@@ -26,85 +27,104 @@ class ReportsPage extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => ChangeNotifierProvider<ReportsLogic>(
-    create: (BuildContext context) => ReportsLogic()..loadReportData(),
-    child: Consumer<ReportsLogic>(
-      builder: (BuildContext context, ReportsLogic logic, Widget? child) {
-        if (logic.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    
+    return ChangeNotifierProvider<ReportsLogic>(
+      create: (BuildContext context) => ReportsLogic()..loadReportData(),
+      child: Consumer<ReportsLogic>(
+        builder: (BuildContext context, ReportsLogic logic, Widget? child) {
+          if (logic.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        if (logic.error != null) {
-          return Center(child: Text(logic.error!));
-        }
+          if (logic.error != null) {
+            return Center(child: Text(logic.error!));
+          }
 
-        if (!logic.hasData) {
-          return const Center(child: Text('Sin datos para mostrar'));
-        }
+          if (!logic.hasData) {
+            return const Center(child: Text('Sin datos para mostrar'));
+          }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: _buildSummary(
-                      'Ingresos',
-                      logic.totalIncomes,
-                      Colors.green,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSummary(
-                      'Gastos',
-                      logic.totalExpenses,
-                      Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const Text(
-                        'Distribución de gastos',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _buildSummary(
+                        'Ingresos',
+                        logic.totalIncomes,
+                        Colors.green,
                       ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 200,
-                        child: SfCircularChart(
-                          series: <CircularSeries<ChartData, String>>[
-                            DoughnutSeries<ChartData, String>(
-                              dataSource: logic.chartData,
-                              xValueMapper: (ChartData d, _) => d.category,
-                              yValueMapper: (ChartData d, _) => d.amount,
-                              pointColorMapper: (ChartData d, _) => d.color,
-                              dataLabelSettings: const DataLabelSettings(
-                                isVisible: true,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildSummary(
+                        'Gastos',
+                        logic.totalExpenses,
+                        Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Text(
+                          'Distribución de gastos',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 250,
+                          child: settingsProvider.chartStyle == 'Anillo'
+                              ? SfCircularChart(
+                                series: <CircularSeries<ChartData, String>>[
+                                  DoughnutSeries<ChartData, String>(
+                                    dataSource: logic.chartData,
+                                    xValueMapper: (ChartData d, _) => d.category,
+                                    yValueMapper: (ChartData d, _) => d.amount,
+                                    pointColorMapper: (ChartData d, _) => d.color,
+                                    dataLabelSettings: const DataLabelSettings(
+                                      isVisible: true,
+                                    ),
+                                  ),
+                                ],
+                              )
+                              : SfCartesianChart(
+                                primaryXAxis: const CategoryAxis(),
+                                series: <CartesianSeries<ChartData, String>>[
+                                  ColumnSeries<ChartData, String>(
+                                    dataSource: logic.chartData,
+                                    xValueMapper: (ChartData d, _) => d.category,
+                                    yValueMapper: (ChartData d, _) => d.amount,
+                                    pointColorMapper: (ChartData d, _) => d.color,
+                                    dataLabelSettings: const DataLabelSettings(
+                                      isVisible: true,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    ),
-  );
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 }

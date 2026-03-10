@@ -6,6 +6,7 @@ import 'package:personal_finance/features/profile/domain/entities/profile_info.d
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/core/error/failures.dart';
+import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -812,15 +813,31 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
 
     if (confirm == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Se ha enviado un correo a ${_emailController.text} '
-            'con instrucciones para resetear tu contraseña.',
+      final email = _emailController.text.trim();
+      if (email.isEmpty) return;
+
+      final authRepo = getIt<AuthRepository>();
+      final result = await authRepo.recoverPassword(email);
+
+      if (mounted) {
+        result.fold(
+          (failure) => ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${failure.message}'),
+              backgroundColor: Colors.red,
+            ),
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
+          (_) => ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Se ha enviado un correo a $email '
+                'con instrucciones para resetear tu contraseña.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          ),
+        );
+      }
     }
   }
 

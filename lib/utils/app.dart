@@ -106,8 +106,8 @@ class MyApp extends StatelessWidget {
           ) => MaterialApp(
             navigatorKey: getIt<NavigationService>().navigatorKey,
             themeMode: settingsProvider.themeMode,
-            theme: AppTheme.light(),
-            darkTheme: AppTheme.dark(),
+            theme: AppTheme.light(primaryColor: settingsProvider.primaryColor),
+            darkTheme: AppTheme.dark(primaryColor: settingsProvider.primaryColor),
             onGenerateTitle:
                 (BuildContext context) =>
                     AppLocalizations.of(context)?.appTitle ??
@@ -116,9 +116,20 @@ class MyApp extends StatelessWidget {
             // Global builder to clamp text scale and handle App Locking
             builder: (BuildContext context, Widget? child) {
               final MediaQueryData mq = MediaQuery.of(context);
-              final double clamped = mq.textScaler.scale(1).clamp(0.9, 1.2);
+              
+              double textScale = 1.0;
+              switch (settingsProvider.textSize) {
+                case 'Pequeño':
+                  textScale = 0.85;
+                case 'Grande':
+                  textScale = 1.2;
+                case 'Mediano':
+                default:
+                  textScale = 1.0;
+              }
+
               return MediaQuery(
-                data: mq.copyWith(textScaler: TextScaler.linear(clamped)),
+                data: mq.copyWith(textScaler: TextScaler.linear(textScale)),
                 child: AppLifecycleWrapper(
                   child: child ?? const SizedBox.shrink(),
                 ),

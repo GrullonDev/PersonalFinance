@@ -158,7 +158,24 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                     theme: theme,
                     title: 'Dispositivos Vinculados',
                     icon: Icons.devices_other_rounded,
-                    onTap: () {},
+                    onTap: () {
+                      showDialog<void>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              title: const Text('Dispositivos Vinculados'),
+                              content: const Text(
+                                'Actualmente solo este dispositivo está vinculado a tu cuenta.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cerrar'),
+                                ),
+                              ],
+                            ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 48),
                   _buildEmergencyNote(theme),

@@ -6,7 +6,14 @@ import 'package:personal_finance/features/settings/presentation/pages/profile_de
 import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
+import 'package:personal_finance/features/privacy/pages/terms_page.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
+import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/offline_sync_service.dart';
 
 
 class SettingsPage extends StatelessWidget {
@@ -34,7 +41,11 @@ class SettingsPage extends StatelessWidget {
             Navigator.push<void>(
               context,
               MaterialPageRoute<void>(
-                builder: (BuildContext context) => const ProfileDetailPage(),
+                builder: (BuildContext context) => BlocProvider<ProfileBloc>(
+                  create: (_) => ProfileBloc(getIt<ProfileBackendRepository>())
+                    ..add(ProfileLoadMe()),
+                  child: const EditProfilePage(),
+                ),
               ),
             );
           },
@@ -60,8 +71,21 @@ class SettingsPage extends StatelessWidget {
           iconColor: Colors.blue,
           title: 'Sincronización',
           subtitle: 'Respaldo en la nube y dispositivos',
-          onTap: () {
-            // TODO: Implement Sincronización
+          onTap: () async {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sincronizando datos...'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+            await OfflineSyncService().syncPendingActions();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Sincronización completada'),
+                ),
+              );
+            }
           },
         ),
         _buildSectionTitle(context, 'PREFERENCIAS'),
@@ -161,7 +185,14 @@ class SettingsPage extends StatelessWidget {
           iconColor: Colors.brown,
           title: 'Términos y Licencias',
           subtitle: 'Acuerdos legales',
-          onTap: () {},
+          onTap: () {
+            Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const TermsPage(),
+              ),
+            );
+          },
         ),
         _buildSettingItem(
           context,
