@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
+import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 import 'package:provider/provider.dart';
 
 class AddExpenseModal extends StatefulWidget {
@@ -30,6 +32,33 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     'Otros',
   ];
 
+  bool _isScanning = false;
+
+  Future<void> _scanReceipt() async {
+    setState(() => _isScanning = true);
+    try {
+      final scanner = getIt<ReceiptScannerService>();
+      final result = await scanner.scanReceipt();
+      if (result != null) {
+        if (result.title != null) _titleController.text = result.title!;
+        if (result.amount != null)
+          _amountController.text = result.amount!.toStringAsFixed(2);
+        if (result.category != null &&
+            _categorySuggestions.contains(result.category)) {
+          setState(() => _selectedCategory = result.category!);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al escanear: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final DashboardLogic dashboardLogic = context.read<DashboardLogic>();
@@ -56,6 +85,27 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              if (_isScanning)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: OutlinedButton.icon(
+                    onPressed: _scanReceipt,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Escanear Ticket/Factura'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
               Autocomplete<String>(
                 optionsBuilder: (TextEditingValue value) {
                   if (value.text.isEmpty) return const Iterable<String>.empty();

@@ -18,22 +18,26 @@ import 'package:personal_finance/utils/dashboard_budget_prefs.dart';
 import 'package:personal_finance/utils/budget_category_prefs.dart';
 import 'package:dartz/dartz.dart';
 import 'package:personal_finance/core/error/failures.dart';
+import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
 
 class DashboardLogic extends ChangeNotifier {
   final GetDashboardDataUseCase _getDashboardDataUseCase;
   final AddTransactionUseCase _addTransactionUseCase;
   final GetActiveGoalsUseCase _getActiveGoalsUseCase;
   final GetActiveBudgetsUseCase _getActiveBudgetsUseCase;
+  final TrendAnalyzerService _trendAnalyzerService;
 
   DashboardLogic({
     required GetDashboardDataUseCase getDashboardDataUseCase,
     required AddTransactionUseCase addTransactionUseCase,
     required GetActiveGoalsUseCase getActiveGoalsUseCase,
     required GetActiveBudgetsUseCase getActiveBudgetsUseCase,
+    required TrendAnalyzerService trendAnalyzerService,
   }) : _getDashboardDataUseCase = getDashboardDataUseCase,
        _addTransactionUseCase = addTransactionUseCase,
        _getActiveGoalsUseCase = getActiveGoalsUseCase,
-       _getActiveBudgetsUseCase = getActiveBudgetsUseCase;
+       _getActiveBudgetsUseCase = getActiveBudgetsUseCase,
+       _trendAnalyzerService = trendAnalyzerService;
 
   // Estado privado
   PeriodFilter _selectedPeriod = PeriodFilter.mes;
@@ -46,6 +50,7 @@ class DashboardLogic extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String? _profileType; // 'personal' or 'negocio'
+  List<RecommendationItem> _trendRecommendations = [];
 
   // Getters públicos
   PeriodFilter get selectedPeriod => _selectedPeriod;
@@ -201,14 +206,12 @@ class DashboardLogic extends ChangeNotifier {
     // Si no hay datos, recomendar empezar
     if (!hasData) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '📊',
           title: 'Comienza tu viaje',
           description:
               'Registra tus primeras transacciones para obtener recomendaciones personalizadas.',
           actionLabel: 'Agregar transacción',
-          accentColor: Colors.blue,
-          actionType: RecommendationActionType.none,
         ),
       );
       return items;
@@ -232,7 +235,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Crear meta de ahorro (si hay balance positivo pero no hay metas)
     if (balance > 0 && _goals.isEmpty) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '💰',
           title: 'Ahorro',
           description:
@@ -247,7 +250,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Invertir (si el balance es muy alto)
     if (balance > totalIncomes * 2) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '📈',
           title: 'Invierte',
           description:
@@ -274,17 +277,19 @@ class DashboardLogic extends ChangeNotifier {
       );
     }
 
+    // Recomendaciones de tendencias
+    items.addAll(_trendRecommendations);
+
     // Si no hay recomendaciones específicas, mostrar una genérica positiva
     if (items.isEmpty) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '✨',
           title: '¡Buen trabajo!',
           description:
               'Tus finanzas están en buen estado. Sigue registrando tus transacciones.',
           actionLabel: 'Continuar',
           accentColor: Colors.green,
-          actionType: RecommendationActionType.none,
         ),
       );
     }
@@ -323,7 +328,6 @@ class DashboardLogic extends ChangeNotifier {
     _profileType = profileType;
   }
 
-  /// Genera recomendaciones dinámicas basadas en los datos del usuario
   Future<void> loadDashboardData() async {
     _setLoading(true);
     _clearError();
@@ -416,6 +420,11 @@ class DashboardLogic extends ChangeNotifier {
               _weeklyBudgetSpent = 0.0;
             }
           },
+        );
+
+        // Cargar recomendaciones de tendencias
+        _trendRecommendations = await _trendAnalyzerService.analyzeTrends(
+          profileType: _profileType,
         );
 
         notifyListeners();

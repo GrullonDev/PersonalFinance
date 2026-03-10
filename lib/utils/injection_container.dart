@@ -66,6 +66,8 @@ import 'package:personal_finance/features/notifications/data/repositories/notifi
     as notif_inbox_repo_impl;
 import 'package:personal_finance/features/notifications/domain/entities/notification_item.dart';
 import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
+import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -218,7 +220,8 @@ Future<void> initDependencies() async {
   // Notifications Remote Data Source
   if (!getIt.isRegistered<notif_ds.NotificationRemoteDataSource>()) {
     getIt.registerLazySingleton<notif_ds.NotificationRemoteDataSource>(
-      () => notif_ds.NotificationRemoteDataSourceImpl(getIt<SharedPreferences>()),
+      () =>
+          notif_ds.NotificationRemoteDataSourceImpl(getIt<SharedPreferences>()),
     );
   }
 
@@ -280,6 +283,22 @@ Future<void> initDependencies() async {
     );
   }
 
+  // Trend Analyzer Service
+  if (!getIt.isRegistered<TrendAnalyzerService>()) {
+    getIt.registerLazySingleton<TrendAnalyzerService>(
+      () => TrendAnalyzerService(
+        getIt<backend_tx_repo.TransactionBackendRepository>(),
+      ),
+    );
+  }
+
+  // Receipt Scanner Service
+  if (!getIt.isRegistered<ReceiptScannerService>()) {
+    getIt.registerLazySingleton<ReceiptScannerService>(
+      () => ReceiptScannerService(),
+    );
+  }
+
   // Dashboard Logic
   if (!getIt.isRegistered<DashboardLogic>()) {
     getIt.registerFactory<DashboardLogic>(
@@ -288,6 +307,7 @@ Future<void> initDependencies() async {
         addTransactionUseCase: getIt<AddTransactionUseCase>(),
         getActiveGoalsUseCase: getIt<GetActiveGoalsUseCase>(),
         getActiveBudgetsUseCase: getIt<GetActiveBudgetsUseCase>(),
+        trendAnalyzerService: getIt<TrendAnalyzerService>(),
       ),
     );
   }

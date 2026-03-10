@@ -23,7 +23,7 @@ class SettingsProvider extends ChangeNotifier {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     _darkMode = prefs.getBool('dark_mode') ?? false;
     _usageType = prefs.getString('usage_type') ?? 'personal';
-    
+
     if (_usageType == 'negocio') {
       _isBusinessMode = true;
     } else if (_usageType == 'ambos') {
@@ -41,7 +41,7 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleBusinessMode(bool value) async {
+  Future<void> toggleBusinessMode({required bool value}) async {
     if (!canToggleMode) return;
     _isBusinessMode = value;
     final SharedPreferences prefs = await SharedPreferences.getInstance();

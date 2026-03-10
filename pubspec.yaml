@@ -58,6 +58,7 @@ dependencies:
   confetti: ^0.8.0
   table_calendar: ^3.2.0
   uuid: ^4.5.3
+  google_mlkit_text_recognition: ^0.14.0
 
 dev_dependencies:
   flutter_test:

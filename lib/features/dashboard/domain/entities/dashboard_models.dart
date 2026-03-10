@@ -1,48 +1,46 @@
 import 'package:flutter/material.dart';
 
-/// Enumeración para filtros de período
-enum PeriodFilter { dia, semana, mes, anio, historico, personalizado }
+enum PeriodFilter { 
+  dia, 
+  semana, 
+  mes, 
+  anio, 
+  personalizado, 
+  historico 
+}
 
 extension PeriodFilterExtension on PeriodFilter {
   String get label {
     switch (this) {
-      case PeriodFilter.dia:
-        return 'Hoy';
-      case PeriodFilter.semana:
-        return 'Semana';
-      case PeriodFilter.mes:
-        return 'Mes';
-      case PeriodFilter.anio:
-        return 'Año';
-      case PeriodFilter.historico:
-        return 'Todo';
-      case PeriodFilter.personalizado:
-        return 'Personalizado';
+      case PeriodFilter.dia: return 'Hoy';
+      case PeriodFilter.semana: return 'Esta Semana';
+      case PeriodFilter.mes: return 'Este Mes';
+      case PeriodFilter.anio: return 'Este Año';
+      case PeriodFilter.personalizado: return 'Personalizado';
+      case PeriodFilter.historico: return 'Histórico';
     }
   }
 }
 
-/// Datos para el gráfico
 class ChartData {
   final String category;
   final double amount;
   final Color color;
 
-  ChartData({
+  const ChartData({
     required this.category,
     required this.amount,
     required this.color,
   });
 }
 
-/// Elemento de transacción para mostrar en la UI
 class TransactionItem {
   final String title;
   final double amount;
   final DateTime date;
   final bool isIncome;
 
-  TransactionItem({
+  const TransactionItem({
     required this.title,
     required this.amount,
     required this.date,
@@ -50,15 +48,16 @@ class TransactionItem {
   });
 }
 
-/// Tipos de acción para recomendaciones
+enum RecommendationType { savings, investment, budgetAlert, goal, tip, trend }
+
 enum RecommendationActionType {
-  createGoal,
-  viewExpenses,
-  viewInvestments,
   none,
+  viewExpenses,
+  createGoal,
+  viewInvestments,
+  createBudgetAlert,
 }
 
-/// Modelo de Recomendación
 class RecommendationItem {
   final String icon;
   final String title;
@@ -66,13 +65,15 @@ class RecommendationItem {
   final String actionLabel;
   final Color accentColor;
   final RecommendationActionType actionType;
+  final Map<String, dynamic>? metadata;
 
-  RecommendationItem({
+  const RecommendationItem({
     required this.icon,
     required this.title,
     required this.description,
     required this.actionLabel,
-    required this.accentColor,
-    required this.actionType,
+    this.accentColor = Colors.blue,
+    this.actionType = RecommendationActionType.none,
+    this.metadata,
   });
 }

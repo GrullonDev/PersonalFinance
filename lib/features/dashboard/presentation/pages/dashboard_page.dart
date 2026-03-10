@@ -335,10 +335,12 @@ class _DashboardContent extends StatelessWidget {
                               onTap: () {
                                 context
                                     .read<SettingsProvider>()
-                                    .toggleBusinessMode(false);
+                                    .toggleBusinessMode(value: false);
                                 logic.setProfileType('personal');
                                 logic.loadDashboardData();
-                                context.read<TransactionsBloc>().add(TransactionsLoad(profileType: 'personal'));
+                                context.read<TransactionsBloc>().add(
+                                  TransactionsLoad(profileType: 'personal'),
+                                );
                               },
                             ),
                             _buildModeTab(
@@ -352,10 +354,12 @@ class _DashboardContent extends StatelessWidget {
                               onTap: () {
                                 context
                                     .read<SettingsProvider>()
-                                    .toggleBusinessMode(true);
+                                    .toggleBusinessMode(value: true);
                                 logic.setProfileType('negocio');
                                 logic.loadDashboardData();
-                                context.read<TransactionsBloc>().add(TransactionsLoad(profileType: 'negocio'));
+                                context.read<TransactionsBloc>().add(
+                                  TransactionsLoad(profileType: 'negocio'),
+                                );
                               },
                             ),
                           ],
@@ -1112,6 +1116,9 @@ class _DashboardContent extends StatelessWidget {
                   case RecommendationActionType.none:
                     // No action
                     break;
+                  case RecommendationActionType.createBudgetAlert:
+                    // TODO: Handle this case.
+                    throw UnimplementedError();
                 }
               },
             );

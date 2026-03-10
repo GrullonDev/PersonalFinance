@@ -44,180 +44,189 @@ class _DebtsPageState extends State<DebtsPage> {
             // Avalanche: Mayor interés primero
             final sortedDebts = List<Debt>.from(debts);
             if (_isSnowballMethod) {
-              sortedDebts.sort((a, b) => a.currentBalance.compareTo(b.currentBalance));
+              sortedDebts.sort(
+                (a, b) => a.currentBalance.compareTo(b.currentBalance),
+              );
             } else {
-              sortedDebts.sort((a, b) => b.interestRate.compareTo(a.interestRate));
+              sortedDebts.sort(
+                (a, b) => b.interestRate.compareTo(a.interestRate),
+              );
             }
 
-            final recommendedDebt = sortedDebts.isNotEmpty ? sortedDebts.first : null;
+            final recommendedDebt =
+                sortedDebts.isNotEmpty ? sortedDebts.first : null;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // AppBar Custom
-            Center(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: context.isMobile ? double.infinity : 1000,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Mis Deudas',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Gestiona y elimina tus deudas inteligentemente',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ],
-                      ),
+                // AppBar Custom
+                Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: context.isMobile ? double.infinity : 1000,
                     ),
-                    if (!context.isMobile)
-                      FilledButton.icon(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => const AddDebtDialog(),
-                          );
-                        },
-                        icon: const Icon(Icons.add_card_rounded),
-                        label: const Text('Agregar Deuda'),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            Expanded(
-              child: Center(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: context.isMobile ? double.infinity : 1000,
-                  ),
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      // Header Card
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        sliver: SliverToBoxAdapter(
-                          child: _buildHeaderCard(context, totalDebt),
-                        ),
-                      ),
-
-                      // Strategy Selector
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverToBoxAdapter(
-                          child: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            alignment: WrapAlignment.spaceBetween,
-                            runSpacing: 12,
-                            spacing: 12,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Estrategia de Pago',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold, fontSize: context.sp(20)),
+                                'Mis Deudas',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.5,
+                                ),
                               ),
-                              SegmentedButton<bool>(
-                                segments: const [
-                                  ButtonSegment(
-                                    value: true,
-                                    label: Text('Bola de Nieve'),
-                                  ),
-                                  ButtonSegment(
-                                    value: false,
-                                    label: Text('Avalancha'),
-                                  ),
-                                ],
-                                selected: {_isSnowballMethod},
-                                onSelectionChanged: (set) {
-                                  setState(() {
-                                    _isSnowballMethod = set.first;
-                                  });
-                                },
+                              const SizedBox(height: 8),
+                              Text(
+                                'Gestiona y elimina tus deudas inteligentemente',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-
-                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                      // Recommendation Card
-                      if (recommendedDebt != null)
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          sliver: SliverToBoxAdapter(
-                            child: _buildRecommendationCard(
-                              context,
-                              recommendedDebt,
-                              colors,
-                            ),
+                        if (!context.isMobile)
+                          FilledButton.icon(
+                            onPressed:
+                                () => showDialog<void>(
+                                  context: context,
+                                  builder: (context) => const AddDebtDialog(),
+                                ),
+                            icon: const Icon(Icons.add_card_rounded),
+                            label: const Text('Agregar Deuda'),
                           ),
-                        ),
-
-                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                      // Lista de Deudas
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverToBoxAdapter(
-                          child: Text(
-                            'Detalle de Deudas',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-
-                      const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final debt = sortedDebts[index];
-                            return _buildDebtItem(context, debt, colors);
-                          }, childCount: sortedDebts.length),
-                        ),
-                      ),
-
-                      const SliverToBoxAdapter(child: SizedBox(height: 80)),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: context.isMobile ? double.infinity : 1000,
+                      ),
+                      child: CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          // Header Card
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: _buildHeaderCard(context, totalDebt),
+                            ),
+                          ),
+
+                          // Strategy Selector
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            sliver: SliverToBoxAdapter(
+                              child: Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                alignment: WrapAlignment.spaceBetween,
+                                runSpacing: 12,
+                                spacing: 12,
+                                children: [
+                                  Text(
+                                    'Estrategia de Pago',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: context.sp(20),
+                                    ),
+                                  ),
+                                  SegmentedButton<bool>(
+                                    segments: const [
+                                      ButtonSegment(
+                                        value: true,
+                                        label: Text('Bola de Nieve'),
+                                      ),
+                                      ButtonSegment(
+                                        value: false,
+                                        label: Text('Avalancha'),
+                                      ),
+                                    ],
+                                    selected: {_isSnowballMethod},
+                                    onSelectionChanged: (set) {
+                                      setState(() {
+                                        _isSnowballMethod = set.first;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                          // Recommendation Card
+                          if (recommendedDebt != null)
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              sliver: SliverToBoxAdapter(
+                                child: _buildRecommendationCard(
+                                  context,
+                                  recommendedDebt,
+                                  colors,
+                                ),
+                              ),
+                            ),
+
+                          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                          // Lista de Deudas
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            sliver: SliverToBoxAdapter(
+                              child: Text(
+                                'Detalle de Deudas',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+
+                          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final debt = sortedDebts[index];
+                                return _buildDebtItem(context, debt, colors);
+                              }, childCount: sortedDebts.length),
+                            ),
+                          ),
+
+                          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ],
             );
           },
@@ -226,12 +235,11 @@ class _DebtsPageState extends State<DebtsPage> {
       floatingActionButton:
           context.isMobile
               ? FloatingActionButton.extended(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const AddDebtDialog(),
-                  );
-                },
+                onPressed:
+                    () => showDialog<void>(
+                      context: context,
+                      builder: (context) => const AddDebtDialog(),
+                    ),
                 icon: const Icon(Icons.add),
                 label: const Text('Nueva Deuda'),
               )
@@ -261,51 +269,55 @@ class _DebtsPageState extends State<DebtsPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.account_balance, color: Colors.white, size: 28),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Saldo Pendiente',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: context.sp(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              '${CurrencyHelper.symbol}${totalDebt.toStringAsFixed(2)}',
-              style: TextStyle(
+              child: const Icon(
+                Icons.account_balance,
                 color: Colors.white,
-                fontSize: context.sp(36),
-                fontWeight: FontWeight.bold,
+                size: 28,
               ),
             ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Saldo Pendiente',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: context.sp(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '${CurrencyHelper.symbol}${totalDebt.toStringAsFixed(2)}',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: context.sp(36),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Lleva el control total de lo que debes',
-            style: TextStyle(color: Colors.white70, fontSize: context.sp(14)),
-          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Lleva el control total de lo que debes',
+          style: TextStyle(color: Colors.white70, fontSize: context.sp(14)),
+        ),
       ],
     ),
   );
