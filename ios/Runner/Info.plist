@@ -39,8 +39,31 @@
 	<string>tu-client-id-de-google.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>¿Deseas usar FaceID para proteger el acceso a tus finanzas personalizadas?</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Esta app necesita acceso a la red local para depuración y comunicación con servicios locales.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -60,8 +83,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSFaceIDUsageDescription</key>
-	<string>¿Deseas usar FaceID para proteger el acceso a tus finanzas personalizadas?</string>
 	<key>google</key>
 	<string>689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com</string>
 </dict>
