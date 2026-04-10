@@ -7,6 +7,7 @@ import 'package:personal_finance/firebase_options.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
@@ -15,6 +16,9 @@ import 'package:personal_finance/utils/injection_container.dart' as old_di;
 import 'package:personal_finance/injection_container.dart' as mvp_di;
 import 'package:personal_finance/utils/offline_sync_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
+import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
+import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
 import 'package:personal_finance/features/quick_finance/presentation/pages/quick_finance_home_page.dart';
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,6 +31,7 @@ Future<void> main() async {
   // Establece la configuración regional predeterminada según el dispositivo
   final Locale deviceLocale = ui.PlatformDispatcher.instance.locale;
   Intl.defaultLocale = deviceLocale.toLanguageTag();
+  await initializeDateFormatting(Intl.defaultLocale);
 
   // Inicializa Hive
   await Hive.initFlutter();
@@ -41,8 +46,37 @@ Future<void> main() async {
   }
   await OfflineSyncService().init();
 
+  // Registra adapters del MVP (quick_finance feature)
+  if (!Hive.isAdapterRegistered(TransactionTypeAdapter().typeId)) {
+    Hive.registerAdapter(TransactionTypeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(SyncStatusAdapter().typeId)) {
+    Hive.registerAdapter(SyncStatusAdapter());
+  }
+  if (!Hive.isAdapterRegistered(SyncActionAdapter().typeId)) {
+    Hive.registerAdapter(SyncActionAdapter());
+  }
+  if (!Hive.isAdapterRegistered(TransactionModelAdapter().typeId)) {
+    Hive.registerAdapter(TransactionModelAdapter());
+  }
+  if (!Hive.isAdapterRegistered(SyncOperationModelAdapter().typeId)) {
+    Hive.registerAdapter(SyncOperationModelAdapter());
+  }
+
   // Inicializa Firebase con las opciones generadas por FlutterFire
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    if (e.toString().contains('duplicate-app')) {
+      debugPrint('Firebase ya está inicializado.');
+    } else {
+      rethrow;
+    }
+  }
 
   // Configura dependencias (Old Architecture)
   await old_di.initDependencies();

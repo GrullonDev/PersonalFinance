@@ -8,10 +8,10 @@ import 'features/quick_finance/data/datasources/quick_finance_remote_datasource_
 import 'features/quick_finance/data/models/transaction_model.dart';
 import 'features/quick_finance/data/models/sync_operation_model.dart';
 import 'features/quick_finance/data/repositories/quick_finance_repository_impl.dart';
+import 'features/quick_finance/data/sync/sync_manager.dart';
 import 'features/quick_finance/domain/repositories/quick_finance_repository.dart';
 import 'features/quick_finance/domain/usecases/add_transaction.dart';
 import 'features/quick_finance/domain/usecases/delete_transaction.dart';
-import 'features/quick_finance/domain/usecases/sync_pending_transactions.dart';
 import 'features/quick_finance/domain/usecases/update_transaction.dart';
 import 'features/quick_finance/domain/usecases/watch_balance.dart';
 import 'features/quick_finance/domain/usecases/watch_transactions.dart';
@@ -20,35 +20,22 @@ import 'features/quick_finance/presentation/bloc/quick_finance_bloc.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // Features - Quick Finance
-  // Bloc
-  sl.registerFactory(
-    () => QuickFinanceBloc(
-      addTransaction: sl(),
-      deleteTransaction: sl(),
-      watchBalance: sl(),
-      watchTransactions: sl(),
-      syncPendingTransactions: sl(),
-    ),
-  );
+  // -------------------------------------------------------------------------
+  // External
+  // -------------------------------------------------------------------------
 
-  // Use cases
-  sl.registerLazySingleton(() => AddTransaction(sl()));
-  sl.registerLazySingleton(() => DeleteTransaction(sl()));
-  sl.registerLazySingleton(() => WatchBalance(sl()));
-  sl.registerLazySingleton(() => WatchTransactions(sl()));
-  sl.registerLazySingleton(() => SyncPendingTransactions(sl()));
-  sl.registerLazySingleton(() => UpdateTransaction(sl()));
+  final transactionBox = await Hive.openBox<TransactionModel>('transactions');
+  final syncOperationBox =
+      await Hive.openBox<SyncOperationModel>('sync_operations');
 
-  // Repository
-  sl.registerLazySingleton<QuickFinanceRepository>(
-    () => QuickFinanceRepositoryImpl(
-      localDataSource: sl(),
-      remoteDataSource: sl(),
-    ),
-  );
+  sl.registerLazySingleton(() => transactionBox);
+  sl.registerLazySingleton(() => syncOperationBox);
+  sl.registerLazySingleton(() => FirebaseFirestore.instance);
 
+  // -------------------------------------------------------------------------
   // Data sources
+  // -------------------------------------------------------------------------
+
   sl.registerLazySingleton<QuickFinanceLocalDataSource>(
     () => QuickFinanceLocalDataSourceImpl(
       transactionBox: sl(),
@@ -60,11 +47,50 @@ Future<void> init() async {
     () => QuickFinanceRemoteDataSourceImpl(firestore: sl()),
   );
 
-  // External
-  final transactionBox = await Hive.openBox<TransactionModel>('transactions');
-  final syncOperationBox = await Hive.openBox<SyncOperationModel>('sync_operations');
-  
-  sl.registerLazySingleton(() => transactionBox);
-  sl.registerLazySingleton(() => syncOperationBox);
-  sl.registerLazySingleton(() => FirebaseFirestore.instance);
+  // -------------------------------------------------------------------------
+  // SyncManager
+  // -------------------------------------------------------------------------
+
+  sl.registerLazySingleton(
+    () => SyncManager(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    )..setUserId('current-user'), // TODO: obtener de AuthBloc
+  );
+
+  // -------------------------------------------------------------------------
+  // Repository
+  // -------------------------------------------------------------------------
+
+  sl.registerLazySingleton<QuickFinanceRepository>(
+    () => QuickFinanceRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // -------------------------------------------------------------------------
+  // Use cases
+  // -------------------------------------------------------------------------
+
+  sl.registerLazySingleton(() => AddTransaction(sl()));
+  sl.registerLazySingleton(() => DeleteTransaction(sl()));
+  sl.registerLazySingleton(() => WatchBalance(sl()));
+  sl.registerLazySingleton(() => WatchTransactions(sl()));
+  sl.registerLazySingleton(() => UpdateTransaction(sl()));
+
+  // -------------------------------------------------------------------------
+  // Bloc
+  // -------------------------------------------------------------------------
+
+  sl.registerFactory(
+    () => QuickFinanceBloc(
+      addTransaction: sl(),
+      deleteTransaction: sl(),
+      watchBalance: sl(),
+      watchTransactions: sl(),
+      updateTransaction: sl(),
+      syncManager: sl(),
+    ),
+  );
 }

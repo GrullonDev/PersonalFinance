@@ -10,6 +10,9 @@ class QuickFinanceState extends Equatable {
   final BalanceSummaryEntity balance;
   final String? errorMessage;
 
+  /// `true` cuando el SyncManager está ejecutando push/pull.
+  final bool isSyncing;
+
   const QuickFinanceState({
     this.status = QuickFinanceStatus.initial,
     this.transactions = const [],
@@ -19,6 +22,7 @@ class QuickFinanceState extends Equatable {
       totalExpenses: 0,
     ),
     this.errorMessage,
+    this.isSyncing = false,
   });
 
   QuickFinanceState copyWith({
@@ -26,15 +30,18 @@ class QuickFinanceState extends Equatable {
     List<TransactionEntity>? transactions,
     BalanceSummaryEntity? balance,
     String? errorMessage,
+    bool clearError = false,
+    bool? isSyncing,
   }) {
     return QuickFinanceState(
       status: status ?? this.status,
       transactions: transactions ?? this.transactions,
       balance: balance ?? this.balance,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      isSyncing: isSyncing ?? this.isSyncing,
     );
   }
 
   @override
-  List<Object?> get props => [status, transactions, balance, errorMessage];
+  List<Object?> get props => [status, transactions, balance, errorMessage, isSyncing];
 }

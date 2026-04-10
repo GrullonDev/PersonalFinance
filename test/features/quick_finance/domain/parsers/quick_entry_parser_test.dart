@@ -32,6 +32,32 @@ void main() {
       });
     });
 
+    group('casos del usuario — Día 2', () {
+      test('"+500 salario" → income, 500.0, "salario"', () {
+        final result = parser.parse('+500 salario');
+        expect(result, isNotNull);
+        expect(result!.type, TransactionType.income);
+        expect(result.amount, 500.0);
+        expect(result.note, 'salario');
+      });
+
+      test('"-80 comida" → expense, 80.0, "comida"', () {
+        final result = parser.parse('-80 comida');
+        expect(result, isNotNull);
+        expect(result!.type, TransactionType.expense);
+        expect(result.amount, 80.0);
+        expect(result.note, 'comida');
+      });
+
+      test('"120 taxi" → expense, 120.0, "taxi"', () {
+        final result = parser.parse('120 taxi');
+        expect(result, isNotNull);
+        expect(result!.type, TransactionType.expense);
+        expect(result.amount, 120.0);
+        expect(result.note, 'taxi');
+      });
+    });
+
     group('parseado de montos', () {
       test('acepta decimales: "-50.5 café" → 50.5', () {
         final result = parser.parse('-50.5 café');

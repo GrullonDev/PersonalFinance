@@ -1,23 +1,46 @@
 import 'package:personal_finance/core/constants/enums.dart';
 
-/// Resultado del parsing de una entrada rápida.
-///
-/// Contiene el tipo de transacción, el monto y la nota extraídos
-/// del texto crudo ingresado por el usuario.
+// ---------------------------------------------------------------------------
+// Result types
+// ---------------------------------------------------------------------------
+
+sealed class ParseResult {
+  const ParseResult();
+}
+
+final class ParseSuccess extends ParseResult {
+  final ParsedEntry entry;
+  const ParseSuccess(this.entry);
+}
+
+final class ParseFailure extends ParseResult {
+  final String reason;
+  const ParseFailure(this.reason);
+}
+
+// ---------------------------------------------------------------------------
+// ParsedEntry
+// ---------------------------------------------------------------------------
+
+/// Datos extraídos de una entrada rápida válida.
 class ParsedEntry {
   final TransactionType type;
   final double amount;
   final String note;
 
+  /// Primera categoría `#tag` encontrada en la entrada, si existía.
+  final String? category;
+
   const ParsedEntry({
     required this.type,
     required this.amount,
     required this.note,
+    this.category,
   });
 
   @override
   String toString() =>
-      'ParsedEntry(type: $type, amount: $amount, note: "$note")';
+      'ParsedEntry(type: $type, amount: $amount, note: "$note", category: $category)';
 
   @override
   bool operator ==(Object other) =>
@@ -26,74 +49,119 @@ class ParsedEntry {
           runtimeType == other.runtimeType &&
           type == other.type &&
           amount == other.amount &&
-          note == other.note;
+          note == other.note &&
+          category == other.category;
 
   @override
-  int get hashCode => type.hashCode ^ amount.hashCode ^ note.hashCode;
+  int get hashCode =>
+      type.hashCode ^ amount.hashCode ^ note.hashCode ^ category.hashCode;
 }
 
-/// Parser por reglas para entrada rápida de transacciones.
+// ---------------------------------------------------------------------------
+// Parser
+// ---------------------------------------------------------------------------
+
+/// Parser robusto para entrada rápida de transacciones financieras.
 ///
-/// Reglas:
-/// - Detecta signo `+` (ingreso) o `-` (gasto).
-/// - Si no hay signo, asume **gasto** por defecto.
-/// - El primer número encontrado es el **monto** (acepta decimales).
-/// - El texto restante se usa como **nota**.
-/// - Si no hay nota, se asigna "Sin descripción".
-/// - Devuelve `null` si no logra extraer un monto válido.
+/// ### Formato aceptado
+/// ```
+/// [signo] [símbolo] monto [nota] [#categoría]
+/// ```
 ///
-/// Ejemplos válidos:
-///   "-35 cena"       → expense, 35.0, "cena"
-///   "+1500 salario"  → income, 1500.0, "salario"
-///   "50.5 café"      → expense, 50.5, "café"     (sin signo = gasto)
-///   "-200"           → expense, 200.0, "Sin descripción"
-///   "100"            → expense, 100.0, "Sin descripción"
-///   "+100"           → income, 100.0, "Sin descripción"
+/// **Signo** (`+` / `-`): opcional, antes del símbolo o del monto.
+/// - `+` → ingreso; `-` o ausente → gasto.
+///
+/// **Símbolo de moneda**: `$`, `€`, `£`, `¥`, `₹`, `₽`, `¢`, `₩`, `₪`, `฿`.
+/// Ignorado al parsear; puede ir antes o después del número.
+///
+/// **Monto**: primer número encontrado tras el signo.
+/// Acepta `.` o `,` como separador decimal.
+///
+/// **Nota**: texto restante después del monto (sin tags).
+/// Si está vacía se usa `"Sin descripción"`.
+///
+/// **Categoría** (`#tag`): primera etiqueta `#palabra`; se extrae y elimina
+/// del texto antes de procesar nota y monto.
+///
+/// ### Ejemplos válidos
+/// ```
+/// "-35 cena"            → expense, 35.0,   "cena"
+/// "+1500 salario"       → income,  1500.0, "salario"
+/// "50 café"             → expense, 50.0,   "café"
+/// "-35,50 almuerzo"     → expense, 35.5,   "almuerzo"
+/// "$50 grocery"         → expense, 50.0,   "grocery"
+/// "+€1500 sueldo"       → income,  1500.0, "sueldo"
+/// "20 taxi #transporte" → expense, 20.0,   "taxi", category:"transporte"
+/// "-200"                → expense, 200.0,  "Sin descripción"
+/// ```
 class QuickEntryParser {
-  /// Regex principal:
-  ///   Grupo 1: signo opcional (+/-)
-  ///   Grupo 2: número con decimales opcionales
-  ///   Grupo 3: texto restante (nota)
-  static final RegExp _pattern = RegExp(
-    r'^\s*([+-])?\s*(\d+\.?\d*)\s*(.*?)\s*$',
-  );
+  static const _defaultNote = 'Sin descripción';
+
+  static final _tagPattern = RegExp(r'#(\w+)');
+  static final _currencyPattern = RegExp(r'[$€£¥₹₽¢₩₪฿]');
+  static final _signPattern = RegExp(r'^([+-])');
+  // Acepta número con separador decimal punto o coma
+  static final _amountPattern = RegExp(r'(\d+(?:[.,]\d+)?)');
 
   const QuickEntryParser();
 
-  /// Parsea el texto [input] y devuelve un [ParsedEntry] o `null`
-  /// si el input es inválido (vacío, sin número, etc.)
-  ParsedEntry? parse(String input) {
-    if (input.trim().isEmpty) return null;
-
-    final match = _pattern.firstMatch(input);
-    if (match == null) return null;
-
-    final sign = match.group(1); // '+', '-', o null
-    final rawAmount = match.group(2); // '35', '50.5', etc.
-    final rawNote = match.group(3); // 'cena', '', etc.
-
-    // Parsear el monto
-    final amount = double.tryParse(rawAmount ?? '');
-    if (amount == null || amount <= 0) return null;
-
-    // Determinar tipo: + → income, - → expense, nada → expense
-    final TransactionType type;
-    if (sign == '+') {
-      type = TransactionType.income;
-    } else {
-      // '-' explícito o sin signo → gasto por defecto
-      type = TransactionType.expense;
+  /// Parsea [input] y devuelve [ParseSuccess] con los datos o
+  /// [ParseFailure] con la razón del error.
+  ParseResult parse(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) {
+      return const ParseFailure('La entrada no puede estar vacía');
     }
 
-    // Nota: si está vacía, usar placeholder
-    final note = (rawNote != null && rawNote.trim().isNotEmpty)
-        ? rawNote.trim()
-        : 'Sin descripción';
+    var working = trimmed;
 
-    return ParsedEntry(
+    // 1 ── Extraer etiquetas #tag
+    final tags =
+        _tagPattern.allMatches(working).map((m) => m.group(1)!).toList();
+    working = working.replaceAll(_tagPattern, '').trim();
+
+    if (working.isEmpty) {
+      return const ParseFailure('No se encontró un monto válido');
+    }
+
+    // 2 ── Extraer signo (+ / -)
+    var type = TransactionType.expense; // gasto por defecto sin signo
+    final signMatch = _signPattern.firstMatch(working);
+    if (signMatch != null) {
+      type = signMatch.group(1) == '+'
+          ? TransactionType.income
+          : TransactionType.expense;
+      working = working.substring(1).trim();
+    }
+
+    // 3 ── Eliminar símbolos de moneda (antes o después del número)
+    working = working.replaceAll(_currencyPattern, '').trim();
+
+    if (working.isEmpty) {
+      return const ParseFailure('No se encontró un monto válido');
+    }
+
+    // 4 ── Extraer el primer número; acepta '.' o ',' como decimal
+    final amountMatch = _amountPattern.firstMatch(working);
+    if (amountMatch == null) {
+      return const ParseFailure('No se encontró un monto válido');
+    }
+
+    final rawAmount = amountMatch.group(1)!.replaceAll(',', '.');
+    final amount = double.tryParse(rawAmount);
+    if (amount == null || amount <= 0) {
+      return const ParseFailure('El monto debe ser mayor que cero');
+    }
+
+    // 5 ── Nota = todo lo que queda después del monto
+    final noteRaw = working.substring(amountMatch.end).trim();
+    final note = noteRaw.isEmpty ? _defaultNote : noteRaw;
+
+    return ParseSuccess(ParsedEntry(
       type: type,
       amount: amount,
       note: note,
-    );
+      category: tags.isNotEmpty ? tags.first : null,
+    ));
   }
 }

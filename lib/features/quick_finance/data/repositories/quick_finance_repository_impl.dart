@@ -7,6 +7,12 @@ import 'package:personal_finance/features/quick_finance/domain/entities/balance_
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 import 'package:personal_finance/features/quick_finance/domain/repositories/quick_finance_repository.dart';
 
+/// Implementación del repositorio Quick Finance.
+///
+/// Estrategia Local-First:
+///   - Toda mutación escribe primero en Hive (UI instantáneo).
+///   - Crea una SyncOperation para que el SyncManager la envíe después.
+///   - NO intenta push inmediato; eso lo hace el SyncManager.
 class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
   final QuickFinanceLocalDataSource localDataSource;
   final QuickFinanceRemoteDataSource remoteDataSource;
@@ -18,55 +24,37 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
 
   @override
   Stream<List<TransactionEntity>> watchTransactions() {
-    // UI reads from Hive
-    return localDataSource.watchTransactions();
+    // UI lee directo de Hive
+    return localDataSource.watchTransactions().map(
+      (models) => models.cast<TransactionEntity>().toList(),
+    );
   }
 
   @override
   Future<void> addTransaction(TransactionEntity transaction) async {
     final model = TransactionModel.fromEntity(transaction);
-    
-    // 1. UI always reads from Local Source - Status Pending
+
+    // 1. Guardar localmente (UI se actualiza instantáneamente)
     await localDataSource.saveTransaction(model);
-    
-    // 2. Create sync operation
-    final syncOp = SyncOperationModel(
-      id: 'op_${DateTime.now().millisecondsSinceEpoch}',
-      transactionId: model.id,
-      action: SyncAction.create,
-      createdAt: DateTime.now(),
-      processed: false,
-    );
-    await localDataSource.saveSyncOperation(syncOp);
-    
-    // 3. Try immediate push if possible
-    _tryImmediatePush(model, syncOp.id);
+
+    // 2. Crear operación de sync
+    await _createSyncOp(model.id, SyncAction.create);
   }
 
   @override
   Future<void> deleteTransaction(String id) async {
-    // Soft delete: UI reads from Hive and we'll filter out records with deletedAt != null
+    // Soft-delete: marcar con deletedAt
     final transactions = await localDataSource.getTransactions();
     final transaction = transactions.firstWhere((t) => t.id == id);
-    
+
     final updatedModel = transaction.copyWith(
       deletedAt: DateTime.now(),
       syncStatus: SyncStatus.pending,
       updatedAt: DateTime.now(),
     );
-    
+
     await localDataSource.saveTransaction(updatedModel);
-    
-    final syncOp = SyncOperationModel(
-      id: 'op_${DateTime.now().millisecondsSinceEpoch}',
-      transactionId: id,
-      action: SyncAction.delete,
-      createdAt: DateTime.now(),
-      processed: false,
-    );
-    await localDataSource.saveSyncOperation(syncOp);
-    
-    _tryImmediatePush(updatedModel, syncOp.id);
+    await _createSyncOp(id, SyncAction.delete);
   }
 
   @override
@@ -76,31 +64,7 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
       updatedAt: DateTime.now(),
     );
     await localDataSource.saveTransaction(model);
-    
-    final syncOp = SyncOperationModel(
-      id: 'op_${DateTime.now().millisecondsSinceEpoch}',
-      transactionId: model.id,
-      action: SyncAction.update,
-      createdAt: DateTime.now(),
-      processed: false,
-    );
-    await localDataSource.saveSyncOperation(syncOp);
-    
-    _tryImmediatePush(model, syncOp.id);
-  }
-
-  void _tryImmediatePush(TransactionModel model, String opId) async {
-    try {
-      // In a real implementation we'd check connectivity_plus here
-      await remoteDataSource.pushTransactions([model]);
-      
-      // If success, update local status
-      final syncedModel = model.copyWith(syncStatus: SyncStatus.synced);
-      await localDataSource.saveTransaction(syncedModel);
-      await localDataSource.markSyncOperationAsProcessed(opId);
-    } catch (e) {
-      // If fails, stays pending. Background sync will pick it up.
-    }
+    await _createSyncOp(model.id, SyncAction.update);
   }
 
   @override
@@ -108,7 +72,7 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
     return localDataSource.watchTransactions().map((transactions) {
       double income = 0;
       double expenses = 0;
-      
+
       for (var t in transactions) {
         if (t.deletedAt != null) continue;
         if (t.type == TransactionType.income) {
@@ -117,7 +81,7 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
           expenses += t.amount;
         }
       }
-      
+
       return BalanceSummaryEntity(
         totalBalance: income - expenses,
         totalIncome: income,
@@ -128,29 +92,23 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
 
   @override
   Future<void> syncPendingTransactions() async {
-    await _syncInBackground();
+    // Delegado al SyncManager. Este método se mantiene por compatibilidad
+    // con el contrato del repositorio, pero no debería llamarse directamente.
+    // El SyncManager usa los datasources directamente.
   }
 
-  Future<void> _syncInBackground() async {
-    try {
-      final pendingOps = await localDataSource.getPendingSyncOperations();
-      if (pendingOps.isEmpty) return;
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
-      final transactions = await localDataSource.getTransactions();
-
-      for (var op in pendingOps) {
-        final transaction = transactions.firstWhere((t) => t.id == op.transactionId);
-        
-        // Push to remote
-        await remoteDataSource.pushTransactions([transaction]);
-        
-        // Mark as synced
-        final syncedModel = transaction.copyWith(syncStatus: SyncStatus.synced);
-        await localDataSource.saveTransaction(syncedModel);
-        await localDataSource.markSyncOperationAsProcessed(op.id);
-      }
-    } catch (e) {
-      // Log or handle sync error
-    }
+  Future<void> _createSyncOp(String transactionId, SyncAction action) async {
+    final syncOp = SyncOperationModel(
+      id: 'op_${DateTime.now().millisecondsSinceEpoch}',
+      transactionId: transactionId,
+      action: action,
+      createdAt: DateTime.now(),
+      processed: false,
+    );
+    await localDataSource.saveSyncOperation(syncOp);
   }
 }

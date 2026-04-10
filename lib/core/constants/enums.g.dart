@@ -8,7 +8,7 @@ part of 'enums.dart';
 
 class TransactionTypeAdapter extends TypeAdapter<TransactionType> {
   @override
-  final int typeId = 0;
+  final int typeId = 5;
 
   @override
   TransactionType read(BinaryReader reader) {
@@ -47,7 +47,7 @@ class TransactionTypeAdapter extends TypeAdapter<TransactionType> {
 
 class SyncStatusAdapter extends TypeAdapter<SyncStatus> {
   @override
-  final int typeId = 1;
+  final int typeId = 6;
 
   @override
   SyncStatus read(BinaryReader reader) {
@@ -91,7 +91,7 @@ class SyncStatusAdapter extends TypeAdapter<SyncStatus> {
 
 class SyncActionAdapter extends TypeAdapter<SyncAction> {
   @override
-  final int typeId = 2;
+  final int typeId = 7;
 
   @override
   SyncAction read(BinaryReader reader) {

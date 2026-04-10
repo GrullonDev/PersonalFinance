@@ -24,8 +24,11 @@ class QuickFinanceLocalDataSourceImpl implements QuickFinanceLocalDataSource {
   }
 
   @override
-  Stream<List<TransactionModel>> watchTransactions() {
-    return transactionBox.watch().map((_) => transactionBox.values.toList());
+  Stream<List<TransactionModel>> watchTransactions() async* {
+    yield transactionBox.values.toList();
+    await for (final _ in transactionBox.watch()) {
+      yield transactionBox.values.toList();
+    }
   }
 
   @override
