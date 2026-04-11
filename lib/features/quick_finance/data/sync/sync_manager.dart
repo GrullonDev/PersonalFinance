@@ -49,7 +49,7 @@ class SyncManager {
   final _stateController = StreamController<SyncResult>.broadcast();
   Stream<SyncResult> get syncStream => _stateController.stream;
 
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   /// ID del usuario actual. Se debe asignar antes de sincronizar.
   String? _userId;
@@ -87,11 +87,8 @@ class SyncManager {
   void startConnectivityListener() {
     _connectivitySubscription?.cancel();
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-      (results) {
-        final hasConnection = results.any(
-          (r) => r != ConnectivityResult.none,
-        );
-        if (hasConnection) {
+      (result) {
+        if (result != ConnectivityResult.none) {
           syncNow();
         }
       },

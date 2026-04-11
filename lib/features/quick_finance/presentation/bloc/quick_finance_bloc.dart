@@ -24,6 +24,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   StreamSubscription<dynamic>? _balanceSubscription;
   StreamSubscription<SyncResult>? _syncSubscription;
 
+  static const _parser = QuickEntryParser();
+
   QuickFinanceBloc({
     required this.addTransaction,
     required this.deleteTransaction,
@@ -31,8 +33,6 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     required this.watchTransactions,
     required this.updateTransaction,
     required this.syncManager,
-  static const _parser = QuickEntryParser();
-
   }) : super(const QuickFinanceState()) {
     on<WatchDataRequested>(_onWatchDataRequested);
     on<TransactionsObserved>(_onTransactionsObserved);

@@ -146,13 +146,9 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
                   ),
                   const SizedBox(height: 12),
                   QuickEntryInput(
-                    onAdd: (amount, type, note) => context
+                    onSubmit: (raw) => context
                         .read<QuickFinanceBloc>()
-                        .add(AddTransactionRequested(
-                          amount: amount,
-                          type: type,
-                          note: note,
-                        )),
+                        .add(RawEntrySubmitted(raw)),
                   ),
                 ],
               ),

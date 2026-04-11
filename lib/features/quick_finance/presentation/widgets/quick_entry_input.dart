@@ -5,24 +5,23 @@ import '../../domain/parsers/quick_entry_parser.dart';
 
 /// Widget de entrada rápida de transacciones.
 ///
+/// Parsea el texto localmente para dar feedback inmediato (error inline
+/// y SnackBar de confirmación). Una vez que el parse es exitoso, delega
+/// el guardado al BLoC a través de [onSubmit] con el texto crudo, de modo
+/// que el BLoC es la fuente autoritativa para persistir la transacción.
+///
 /// Soporta:
-///   "+500 salario"  → income, 500, "salario"
-///   "-80 comida"    → expense, 80, "comida"
-///   "120 taxi"      → expense, 120, "taxi" (sin signo = gasto)
-///
-/// Validaciones:
-///   - Input vacío se ignora
-///   - Texto sin número muestra error
-///   - Monto ≤ 0 muestra error
-///
-/// Feedback visual:
-///   - SnackBar con tipo + monto + nota tras guardar
-///   - Animación del botón send
-///   - Auto limpieza del input + unfocus
+///   "-80 comida"           → expense, 80.0, "comida"
+///   "+500 salario"         → income,  500.0, "salario"
+///   "120 taxi #transporte" → expense, 120.0, "taxi", category:"transporte"
+///   "-35,50 almuerzo"      → expense, 35.5, "almuerzo"
+///   "$50 grocery"          → expense, 50.0, "grocery"
 class QuickEntryInput extends StatefulWidget {
-  final void Function(double amount, TransactionType type, String note) onAdd;
+  /// Llamado con el texto crudo cuando el parse local es exitoso.
+  /// El BLoC lo re-parsea con [QuickEntryParser] para persistir.
+  final void Function(String rawInput) onSubmit;
 
-  const QuickEntryInput({super.key, required this.onAdd});
+  const QuickEntryInput({super.key, required this.onSubmit});
 
   @override
   State<QuickEntryInput> createState() => _QuickEntryInputState();
@@ -60,39 +59,35 @@ class _QuickEntryInputState extends State<QuickEntryInput>
   }
 
   void _submit() {
-    final input = _controller.text.trim();
-    if (input.isEmpty) return;
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) return;
 
-    final parsed = _parser.parse(input);
+    // Parse local para feedback inmediato antes de enviar al BLoC
+    final result = _parser.parse(raw);
 
-    if (parsed == null) {
-      setState(() => _errorText = 'Formato inválido. Ej: -80 comida');
-      HapticFeedback.lightImpact();
-      return;
+    switch (result) {
+      case ParseFailure(:final reason):
+        setState(() => _errorText = reason);
+        HapticFeedback.lightImpact();
+
+      case ParseSuccess(:final entry):
+        setState(() => _errorText = null);
+        _animController.forward().then((_) => _animController.reverse());
+        HapticFeedback.mediumImpact();
+
+        // El texto crudo llega al BLoC que lo persiste
+        widget.onSubmit(raw);
+
+        _showFeedback(entry);
+        _controller.clear();
+        _focusNode.unfocus();
     }
-
-    // Limpiar error previo
-    setState(() => _errorText = null);
-
-    // Animación del botón
-    _animController.forward().then((_) => _animController.reverse());
-
-    // Haptic feedback
-    HapticFeedback.mediumImpact();
-
-    // Disparar callback
-    widget.onAdd(parsed.amount, parsed.type, parsed.note);
-
-    // Feedback visual — SnackBar
-    _showFeedback(parsed);
-
-    // Auto limpiar
-    _controller.clear();
-    _focusNode.unfocus();
   }
 
-  void _showFeedback(ParsedEntry parsed) {
-    final isIncome = parsed.type == TransactionType.income;
+  void _showFeedback(ParsedEntry entry) {
+    final isIncome = entry.type == TransactionType.income;
+    final categoryLabel =
+        entry.category != null ? '  •  #${entry.category}' : '';
 
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -100,26 +95,32 @@ class _QuickEntryInputState extends State<QuickEntryInput>
         content: Row(
           children: [
             Icon(
-              isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+              isIncome
+                  ? Icons.arrow_upward_rounded
+                  : Icons.arrow_downward_rounded,
               color: Colors.white,
               size: 18,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '${isIncome ? '+' : '-'}\$${parsed.amount.toStringAsFixed(2)}  •  ${parsed.note}',
+                '${isIncome ? '+' : '-'}\$${entry.amount.toStringAsFixed(2)}'
+                '  •  ${entry.note}$categoryLabel',
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
               ),
             ),
-            const Icon(Icons.check_circle_outline, color: Colors.white70, size: 18),
+            const Icon(
+              Icons.check_circle_outline,
+              color: Colors.white70,
+              size: 18,
+            ),
           ],
         ),
-        backgroundColor: isIncome
-            ? const Color(0xFF2E7D32) // green 800
-            : const Color(0xFFC62828), // red 800
+        backgroundColor:
+            isIncome ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -157,8 +158,9 @@ class _QuickEntryInputState extends State<QuickEntryInput>
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.send,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.flash_on, color: Colors.amber),
-                    hintText: 'Ej: -80 comida, +500 salario',
+                    prefixIcon:
+                        const Icon(Icons.flash_on, color: Colors.amber),
+                    hintText: 'Ej: -80 comida  /  +500 salario #trabajo',
                     errorText: _errorText,
                     errorMaxLines: 2,
                     border: OutlineInputBorder(
@@ -166,14 +168,14 @@ class _QuickEntryInputState extends State<QuickEntryInput>
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: theme.secondaryHeaderColor.withValues(alpha: 0.1),
+                    fillColor:
+                        theme.secondaryHeaderColor.withValues(alpha: 0.1),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 14,
                     ),
                   ),
                   onChanged: (_) {
-                    // Limpiar error al editar
                     if (_errorText != null) {
                       setState(() => _errorText = null);
                     }
@@ -188,7 +190,11 @@ class _QuickEntryInputState extends State<QuickEntryInput>
                   radius: 24,
                   backgroundColor: theme.primaryColor,
                   child: IconButton(
-                    icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: _submit,
                   ),
                 ),
@@ -197,13 +203,10 @@ class _QuickEntryInputState extends State<QuickEntryInput>
           ),
           const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.only(left: 8.0),
+            padding: const EdgeInsets.only(left: 8),
             child: Text(
-              'Usa "-" para gastos y "+" para ingresos  •  Sin signo = gasto',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade500,
-              ),
+              '"-" gastos  •  "+" ingresos  •  sin signo = gasto  •  #categoría',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
             ),
           ),
         ],
