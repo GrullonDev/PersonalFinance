@@ -24,17 +24,18 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
       note: fields[4] as String,
       createdAt: fields[5] as DateTime,
       updatedAt: fields[6] as DateTime,
-      deletedAt: fields[7] as DateTime?,
       syncStatus: fields[8] as SyncStatus,
       version: fields[9] as int,
       deviceId: fields[10] as String,
+      deletedAt: fields[7] as DateTime?,
+      categoryId: fields[11] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, TransactionModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
       ..writeByte(9)
       ..write(obj.version)
       ..writeByte(10)
-      ..write(obj.deviceId);
+      ..write(obj.deviceId)
+      ..writeByte(11)
+      ..write(obj.categoryId);
   }
 
   @override
@@ -83,12 +86,13 @@ TransactionModel _$TransactionModelFromJson(Map<String, dynamic> json) =>
       note: json['note'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      deletedAt: json['deletedAt'] == null
-          ? null
-          : DateTime.parse(json['deletedAt'] as String),
       syncStatus: $enumDecode(_$SyncStatusEnumMap, json['syncStatus']),
       version: (json['version'] as num).toInt(),
       deviceId: json['deviceId'] as String,
+      deletedAt: json['deletedAt'] == null
+          ? null
+          : DateTime.parse(json['deletedAt'] as String),
+      categoryId: json['categoryId'] as String?,
     );
 
 Map<String, dynamic> _$TransactionModelToJson(TransactionModel instance) =>
@@ -104,6 +108,7 @@ Map<String, dynamic> _$TransactionModelToJson(TransactionModel instance) =>
       'syncStatus': _$SyncStatusEnumMap[instance.syncStatus]!,
       'version': instance.version,
       'deviceId': instance.deviceId,
+      'categoryId': instance.categoryId,
     };
 
 const _$TransactionTypeEnumMap = {

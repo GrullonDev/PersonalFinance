@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:personal_finance/core/constants/enums.dart';
-import '../models/transaction_model.dart';
-import '../models/sync_operation_model.dart';
-import 'quick_finance_remote_datasource.dart';
+import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
+import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
+import 'package:personal_finance/core/mappers/legacy_transaction_mapper.dart';
+import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_remote_datasource.dart';
 
 /// Implementación Firestore del datasource remoto.
 ///
@@ -75,16 +76,15 @@ class QuickFinanceRemoteDataSourceImpl implements QuickFinanceRemoteDataSource {
     required String userId,
     required DateTime lastSyncAt,
   }) async {
-    final snapshot = await _txCollection(userId)
-        .where('updatedAt', isGreaterThan: lastSyncAt.toIso8601String())
-        .orderBy('updatedAt', descending: true)
-        .get();
+    final snapshot =
+        await _txCollection(userId)
+            .where('updatedAt', isGreaterThan: lastSyncAt.toIso8601String())
+            .orderBy('updatedAt', descending: true)
+            .get();
 
     return snapshot.docs.map((doc) {
-      final data = doc.data();
-      // Asegurar que el id del documento Firestore se use como id
-      data['id'] = doc.id;
-      return TransactionModel.fromJson(data);
+      // Pasamos el snapshot directamente a nuestra capa purificadora (Mapper Tolerante)
+      return LegacyTransactionMapper.fromFirestore(doc);
     }).toList();
   }
 }

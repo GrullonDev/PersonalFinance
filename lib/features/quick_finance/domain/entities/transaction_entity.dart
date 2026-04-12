@@ -7,6 +7,7 @@ class TransactionEntity extends Equatable {
   final TransactionType type; // income | expense
   final double amount;
   final String note;
+  final String? categoryId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -20,6 +21,7 @@ class TransactionEntity extends Equatable {
     required this.type,
     required this.amount,
     required this.note,
+    this.categoryId,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -35,6 +37,7 @@ class TransactionEntity extends Equatable {
     type,
     amount,
     note,
+    categoryId,
     createdAt,
     updatedAt,
     deletedAt,

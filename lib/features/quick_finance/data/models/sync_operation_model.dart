@@ -30,6 +30,21 @@ class SyncOperationModel extends Equatable {
   @override
   List<Object?> get props => [id, transactionId, action, createdAt, processed];
 
+  SyncOperationModel copyWith({
+    String? id,
+    String? transactionId,
+    SyncAction? action,
+    DateTime? createdAt,
+    bool? processed,
+  }) =>
+      SyncOperationModel(
+        id: id ?? this.id,
+        transactionId: transactionId ?? this.transactionId,
+        action: action ?? this.action,
+        createdAt: createdAt ?? this.createdAt,
+        processed: processed ?? this.processed,
+      );
+
   factory SyncOperationModel.fromJson(Map<String, dynamic> json) =>
       _$SyncOperationModelFromJson(json);
 

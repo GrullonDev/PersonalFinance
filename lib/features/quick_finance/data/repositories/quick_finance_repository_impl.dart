@@ -24,9 +24,9 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
 
   @override
   Stream<List<TransactionEntity>> watchTransactions() {
-    // UI lee directo de Hive
+    // watchTransactions() ya filtra soft-deleted y ordena por createdAt desc
     return localDataSource.watchTransactions().map(
-      (models) => models.cast<TransactionEntity>().toList(),
+      (models) => models.cast<TransactionEntity>(),
     );
   }
 
@@ -43,11 +43,13 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
 
   @override
   Future<void> deleteTransaction(String id) async {
-    // Soft-delete: marcar con deletedAt
-    final transactions = await localDataSource.getTransactions();
-    final transaction = transactions.firstWhere((t) => t.id == id);
+    // Soft-delete: marcar con deletedAt.
+    // getAllTransactions incluye soft-deleted ya existentes, evitando error si
+    // la transacción fue borrada en otro dispositivo antes de hacer sync.
+    final transaction = await localDataSource.getTransaction(id);
+    if (transaction == null) return; // ya eliminada o id inválido
 
-    final updatedModel = transaction.copyWith(
+    final updatedModel = TransactionModel.fromEntity(transaction).copyWith(
       deletedAt: DateTime.now(),
       syncStatus: SyncStatus.pending,
       updatedAt: DateTime.now(),

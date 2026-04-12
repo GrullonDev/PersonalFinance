@@ -127,6 +127,9 @@ class SyncManager {
       // --- PULL ---
       final pulledCount = await _pull();
 
+      // Purgar operaciones procesadas para evitar crecimiento ilimitado del box
+      await _localDataSource.deleteProcessedSyncOperations();
+
       // Guardar timestamp del sync exitoso
       await _saveLastSyncTimestamp();
 
@@ -158,7 +161,9 @@ class SyncManager {
     final pendingOps = await _localDataSource.getPendingSyncOperations();
     if (pendingOps.isEmpty) return 0;
 
-    final allTransactions = await _localDataSource.getTransactions();
+    // getAllTransactions incluye soft-deleted para que los DELETE ops puedan
+    // actualizar el syncStatus antes de que la transacción sea purgada
+    final allTransactions = await _localDataSource.getAllTransactions();
 
     await _remoteDataSource.pushPendingOperations(
       userId: _userId!,
