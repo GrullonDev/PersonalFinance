@@ -8,8 +8,10 @@
     <application
         android:name=".MyApplication"
         android:label="@string/app_name"
-        android:icon="@mipmap/logo"
-        android:enableOnBackInvokedCallback="true">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
 
         <!-- Indica que usas el Android embedding v2 -->
         <meta-data
