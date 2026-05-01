@@ -3,6 +3,7 @@ import 'package:personal_finance/features/notifications/domain/entities/notifica
 import 'package:provider/provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 
 class NotificationsDetailPage extends StatelessWidget {
   const NotificationsDetailPage({super.key});
@@ -23,7 +24,15 @@ class NotificationsDetailPage extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (provider.error != null && provider.prefs == null) {
-          return Center(child: Text(provider.error!));
+          return EmptyState(
+            title: 'No pudimos cargar tus notificaciones',
+            message: provider.error!,
+            icon: Icons.notifications_off_outlined,
+            action: FilledButton(
+              onPressed: provider.load,
+              child: const Text('Reintentar'),
+            ),
+          );
         }
         final NotificationPreferences prefs = provider.prefs!;
         return ListView(

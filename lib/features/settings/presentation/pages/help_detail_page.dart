@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 
 class HelpDetailPage extends StatefulWidget {
   const HelpDetailPage({super.key});
@@ -56,6 +57,7 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final filteredFaqs = _filteredFaqs;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Centro de Ayuda'), centerTitle: true),
@@ -74,7 +76,25 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ..._buildFaqList(theme),
+                if (filteredFaqs.isEmpty)
+                  SizedBox(
+                    height: 280,
+                    child: EmptyState(
+                      title: 'No encontramos resultados',
+                      message:
+                          'Prueba con otra palabra clave o limpia la búsqueda para ver todas las respuestas.',
+                      icon: Icons.search_off_rounded,
+                      action: FilledButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                        child: const Text('Limpiar búsqueda'),
+                      ),
+                    ),
+                  )
+                else
+                  ..._buildFaqList(theme, filteredFaqs),
                 const SizedBox(height: 32),
                 _buildContactCard(colorScheme, theme),
               ],
@@ -94,6 +114,7 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
       ),
       child: TextField(
         controller: _searchController,
+        onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
           hintText: '¿En qué podemos ayudarte?',
           prefixIcon: const Icon(Icons.search),
@@ -134,13 +155,29 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
     );
   }
 
-  List<Widget> _buildFaqList(ThemeData theme) {
-    return _faqs
-        .where(
-          (faq) =>
-              _selectedCategory == 'Todos' ||
-              faq['category'] == _selectedCategory,
-        )
+  List<Map<String, String>> get _filteredFaqs {
+    final query = _searchController.text.trim().toLowerCase();
+    return _faqs.where((faq) {
+      final matchesCategory =
+          _selectedCategory == 'Todos' || faq['category'] == _selectedCategory;
+      if (!matchesCategory) {
+        return false;
+      }
+      if (query.isEmpty) {
+        return true;
+      }
+      final haystack =
+          <String>[
+            faq['question'] ?? '',
+            faq['answer'] ?? '',
+            faq['category'] ?? '',
+          ].join(' ').toLowerCase();
+      return haystack.contains(query);
+    }).toList();
+  }
+
+  List<Widget> _buildFaqList(ThemeData theme, List<Map<String, String>> faqs) {
+    return faqs
         .map(
           (faq) => Padding(
             padding: const EdgeInsets.only(bottom: 12),

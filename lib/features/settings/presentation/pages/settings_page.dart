@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/notifications_detail_page.dart';
@@ -60,6 +61,7 @@ class SettingsPage extends StatelessWidget {
           },
         ),
         _buildSectionTitle(context, 'PREFERENCIAS'),
+        _buildHideAmountsOption(context),
         _buildSettingItem(
           context,
           icon: Icons.notifications,
@@ -196,6 +198,64 @@ class SettingsPage extends StatelessWidget {
                         value: settings.darkMode,
                         onChanged: (_) async {
                           await settings.toggleDarkMode();
+                        },
+                        activeColor: Theme.of(context).colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ),
+      );
+
+  Widget _buildHideAmountsOption(BuildContext context) =>
+      Consumer<SettingsProvider>(
+        builder:
+            (BuildContext context, SettingsProvider settings, Widget? child) =>
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.indigo.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.visibility_off_outlined,
+                          color: Colors.indigo,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            const Text(
+                              'Ocultar montos',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              'Esconde saldos y cantidades en la app',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: settings.hideAmounts,
+                        onChanged: (_) async {
+                          await HapticFeedbackService.selection();
+                          await settings.toggleHideAmounts();
                         },
                         activeColor: Theme.of(context).colorScheme.primary,
                       ),

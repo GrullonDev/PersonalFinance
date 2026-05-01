@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/services/biometric_service.dart';
+import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 
 class SecurityDetailPage extends StatefulWidget {
   const SecurityDetailPage({super.key});
@@ -51,16 +52,25 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       );
       if (authenticated) {
         await SecurityPreferences.setBiometricEnabled(true);
+        await HapticFeedbackService.success();
         setState(() => _biometricEnabled = true);
+      } else {
+        await HapticFeedbackService.error();
       }
     } else {
       await SecurityPreferences.setBiometricEnabled(false);
+      await HapticFeedbackService.selection();
       setState(() => _biometricEnabled = false);
     }
   }
 
   Future<void> _toggleAppLock(bool value) async {
     await SecurityPreferences.setAppLockEnabled(value);
+    if (value) {
+      await HapticFeedbackService.success();
+    } else {
+      await HapticFeedbackService.selection();
+    }
     setState(() => _appLockEnabled = value);
   }
 
@@ -189,23 +199,203 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
         ),
   );
 
-  Widget _buildSecurityScore(ThemeData theme) => Column(
-    children: [
-      Text(
-        _securityHeadline,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.bold,
+  Widget _buildSecurityScore(ThemeData theme) {
+    final score = _securityScore;
+    final progress = score / 100;
+    final checks = _securityChecks;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.35),
         ),
       ),
-      const SizedBox(height: 4),
-      Text(
-        _securitySubtitle,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 128,
+            height: 128,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 128,
+                  height: 128,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 10,
+                    backgroundColor: theme.colorScheme.primary.withOpacity(
+                      0.08,
+                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _scoreColor(theme),
+                    ),
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$score',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: _scoreColor(theme),
+                      ),
+                    ),
+                    Text(
+                      'de 100',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            _securityHeadline,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _securitySubtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 18),
+          ...checks.map((check) => _buildScoreRow(theme, check)),
+        ],
       ),
-    ],
+    );
+  }
+
+  Widget _buildScoreRow(
+    ThemeData theme,
+    ({String title, String subtitle, bool enabled, IconData icon, int weight})
+    check,
+  ) => Padding(
+    padding: const EdgeInsets.only(top: 10),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color:
+                check.enabled
+                    ? Colors.green.withOpacity(0.12)
+                    : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            check.icon,
+            size: 18,
+            color:
+                check.enabled
+                    ? Colors.green.shade700
+                    : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                check.title,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                check.subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          check.enabled ? '+${check.weight}' : '0',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color:
+                check.enabled
+                    ? Colors.green.shade700
+                    : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    ),
   );
+
+  Color _scoreColor(ThemeData theme) {
+    final score = _securityScore;
+    if (score >= 85) {
+      return Colors.green.shade700;
+    }
+    if (score >= 60) {
+      return Colors.orange.shade700;
+    }
+    return theme.colorScheme.error;
+  }
+
+  List<
+    ({String title, String subtitle, bool enabled, IconData icon, int weight})
+  >
+  get _securityChecks => [
+    (
+      title: 'Correo verificado',
+      subtitle:
+          _emailVerified
+              ? 'Tu identidad por correo ya fue validada.'
+              : 'Verifica tu correo para reforzar el acceso.',
+      enabled: _emailVerified,
+      icon: Icons.mark_email_read_outlined,
+      weight: 35,
+    ),
+    (
+      title: 'Bloqueo de aplicación',
+      subtitle:
+          _appLockEnabled
+              ? 'La app solicita autenticación al volver al frente.'
+              : 'Actívalo para proteger sesiones persistidas.',
+      enabled: _appLockEnabled,
+      icon: Icons.lock_person_outlined,
+      weight: 35,
+    ),
+    (
+      title: 'Biometría',
+      subtitle:
+          _isHardwareSupported
+              ? _biometricEnabled
+                  ? 'Usas Face ID o Touch ID para validar acceso.'
+                  : 'Activa biometría para reducir acceso no autorizado.'
+              : 'Este dispositivo no expone biometría compatible.',
+      enabled: !_isHardwareSupported || _biometricEnabled,
+      icon: Icons.fingerprint,
+      weight: 30,
+    ),
+  ];
+
+  int get _securityScore {
+    final checks = _securityChecks;
+    final totalWeight = checks.fold<int>(0, (sum, check) => sum + check.weight);
+    final earnedWeight = checks.fold<int>(
+      0,
+      (sum, check) => sum + (check.enabled ? check.weight : 0),
+    );
+    return ((earnedWeight / totalWeight) * 100).round();
+  }
 
   Widget _buildSectionHeader(ThemeData theme, String title) => Align(
     alignment: Alignment.centerLeft,
@@ -362,15 +552,11 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   }
 
   String get _securityHeadline {
-    final score =
-        (_biometricEnabled ? 1 : 0) +
-        (_appLockEnabled ? 1 : 0) +
-        (_emailVerified ? 1 : 0);
-
+    final score = _securityScore;
     return switch (score) {
-      3 => 'Protección reforzada',
-      2 => 'Protección sólida',
-      1 => 'Protección básica',
+      >= 85 => 'Protección reforzada',
+      >= 60 => 'Protección sólida',
+      >= 35 => 'Protección básica',
       _ => 'Protección pendiente',
     };
   }

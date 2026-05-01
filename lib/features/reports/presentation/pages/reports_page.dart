@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/reports/presentation/providers/reports_logic.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -34,11 +35,28 @@ class ReportsPage extends StatelessWidget {
         }
 
         if (logic.error != null) {
-          return Center(child: Text(logic.error!));
+          return EmptyState(
+            title: 'No pudimos cargar tus reportes',
+            message: logic.error!,
+            icon: Icons.bar_chart_rounded,
+            action: FilledButton(
+              onPressed: logic.loadReportData,
+              child: const Text('Reintentar'),
+            ),
+          );
         }
 
         if (!logic.hasData) {
-          return const Center(child: Text('Sin datos para mostrar'));
+          return EmptyState(
+            title: 'Aún no hay reportes',
+            message:
+                'Agrega ingresos y gastos para generar tus primeros gráficos y resúmenes.',
+            icon: Icons.insights_outlined,
+            action: FilledButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              child: const Text('Volver'),
+            ),
+          );
         }
 
         return SingleChildScrollView(

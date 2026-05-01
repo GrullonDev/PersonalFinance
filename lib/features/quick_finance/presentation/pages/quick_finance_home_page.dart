@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 
 import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
-import '../bloc/quick_finance_bloc.dart';
-import '../bloc/quick_finance_event.dart';
-import '../bloc/quick_finance_state.dart';
-import '../widgets/balance_card.dart';
-import '../widgets/quick_entry_input.dart';
-import '../widgets/transactions_list.dart';
+import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_bloc.dart';
+import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_event.dart';
+import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_state.dart';
+import 'package:personal_finance/features/quick_finance/presentation/widgets/balance_card.dart';
+import 'package:personal_finance/features/quick_finance/presentation/widgets/quick_entry_input.dart';
+import 'package:personal_finance/features/quick_finance/presentation/widgets/transactions_list.dart';
 
 class QuickFinanceHomePage extends StatefulWidget {
   const QuickFinanceHomePage({super.key});
@@ -53,6 +54,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
 
   Future<void> _onRefresh() async {
     final bloc = context.read<QuickFinanceBloc>();
+    await HapticFeedbackService.selection();
     bloc.add(const SyncTransactionsRequested());
     await bloc.stream
         .firstWhere((s) => !s.isSyncing)
@@ -83,16 +85,17 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
     if (confirmed == true && mounted) {
       await context.read<AuthProvider>().logout();
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          RoutePath.login,
-          (_) => false,
-        );
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(RoutePath.login, (_) => false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hideAmounts = context.watch<SettingsProvider>().hideAmounts;
+
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -141,6 +144,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
                 onRefresh: _onRefresh,
                 state: state,
                 entryKey: _entryKey,
+                hideAmounts: hideAmounts,
               );
             },
           ),
@@ -163,16 +167,15 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
         children: [
           Text(
             firstName != null ? 'Hola, $firstName 👋' : 'Mis finanzas',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           Text(
             'Tu resumen de hoy',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -190,17 +193,17 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
                   turns: _syncAnim,
                   child: Icon(
                     Icons.sync_rounded,
-                    color: state.isSyncing
-                        ? Theme.of(context).primaryColor
-                        : null,
+                    color:
+                        state.isSyncing ? Theme.of(context).primaryColor : null,
                   ),
                 ),
                 tooltip: state.isSyncing ? 'Sincronizando…' : 'Sincronizar',
-                onPressed: state.isSyncing
-                    ? null
-                    : () => context
-                        .read<QuickFinanceBloc>()
-                        .add(const SyncTransactionsRequested()),
+                onPressed:
+                    state.isSyncing
+                        ? null
+                        : () => context.read<QuickFinanceBloc>().add(
+                          const SyncTransactionsRequested(),
+                        ),
               ),
         ),
         // Menú de opciones
@@ -230,11 +233,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
                   value: _MenuAction.logout,
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.logout_rounded,
-                        size: 20,
-                        color: Colors.red,
-                      ),
+                      Icon(Icons.logout_rounded, size: 20, color: Colors.red),
                       SizedBox(width: 12),
                       Text(
                         'Cerrar sesión',
@@ -263,11 +262,13 @@ class _Body extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final QuickFinanceState state;
   final GlobalKey<QuickEntryInputState> entryKey;
+  final bool hideAmounts;
 
   const _Body({
     required this.onRefresh,
     required this.state,
     required this.entryKey,
+    required this.hideAmounts,
   });
 
   @override
@@ -295,11 +296,12 @@ class _BodyState extends State<_Body> {
   @override
   Widget build(BuildContext context) {
     final insight = _computeInsight(widget.state.transactions);
-    final pendingCount = widget.state.transactions
-        .where(
-          (t) => t.syncStatus == SyncStatus.pending && t.deletedAt == null,
-        )
-        .length;
+    final pendingCount =
+        widget.state.transactions
+            .where(
+              (t) => t.syncStatus == SyncStatus.pending && t.deletedAt == null,
+            )
+            .length;
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -311,7 +313,10 @@ class _BodyState extends State<_Body> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
             sliver: SliverToBoxAdapter(
-              child: BalanceCard(transactions: widget.state.transactions),
+              child: BalanceCard(
+                transactions: widget.state.transactions,
+                forceHidden: widget.hideAmounts,
+              ),
             ),
           ),
           // Sync status — always visible, discrete
@@ -346,9 +351,10 @@ class _BodyState extends State<_Body> {
                   const SizedBox(height: 12),
                   QuickEntryInput(
                     key: widget.entryKey,
-                    onSubmit: (raw) => context
-                        .read<QuickFinanceBloc>()
-                        .add(RawEntrySubmitted(raw)),
+                    onSubmit:
+                        (raw) => context.read<QuickFinanceBloc>().add(
+                          RawEntrySubmitted(raw),
+                        ),
                   ),
                 ],
               ),
@@ -382,10 +388,12 @@ class _BodyState extends State<_Body> {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
             sliver: SliverToBoxAdapter(
               child: TransactionsList(
+                hideAmounts: widget.hideAmounts,
                 transactions: widget.state.transactions,
-                onDelete: (id) => context
-                    .read<QuickFinanceBloc>()
-                    .add(DeleteTransactionRequested(id)),
+                onDelete:
+                    (id) => context.read<QuickFinanceBloc>().add(
+                      DeleteTransactionRequested(id),
+                    ),
                 onQuickStart: _quickStart,
               ),
             ),
@@ -402,28 +410,26 @@ class _SyncStatusRow extends StatelessWidget {
   final bool isSyncing;
   final int pendingCount;
 
-  const _SyncStatusRow({
-    required this.isSyncing,
-    required this.pendingCount,
-  });
+  const _SyncStatusRow({required this.isSyncing, required this.pendingCount});
 
   @override
   Widget build(BuildContext context) {
-    final (IconData icon, String text, Color color) = isSyncing
-        ? (Icons.sync_rounded, 'Sincronizando...', const Color(0xFF007AFF))
-        : pendingCount > 0
+    final (IconData icon, String text, Color color) =
+        isSyncing
+            ? (Icons.sync_rounded, 'Sincronizando...', const Color(0xFF007AFF))
+            : pendingCount > 0
             ? (
-                Icons.cloud_upload_outlined,
-                pendingCount == 1
-                    ? '1 movimiento pendiente'
-                    : '$pendingCount movimientos pendientes',
-                const Color(0xFFFF9500),
-              )
+              Icons.cloud_upload_outlined,
+              pendingCount == 1
+                  ? '1 movimiento pendiente'
+                  : '$pendingCount movimientos pendientes',
+              const Color(0xFFFF9500),
+            )
             : (
-                Icons.check_circle_outline_rounded,
-                'Sincronizado',
-                const Color(0xFF34C759),
-              );
+              Icons.check_circle_outline_rounded,
+              'Sincronizado',
+              const Color(0xFF34C759),
+            );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -451,28 +457,25 @@ class _InsightBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: insight.color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: insight.color.withValues(alpha: 0.20)),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    decoration: BoxDecoration(
+      color: insight.color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: insight.color.withValues(alpha: 0.20)),
+    ),
+    child: Row(
+      children: [
+        Icon(insight.icon, size: 15, color: insight.color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            insight.text,
+            style: TextStyle(fontSize: 13, color: insight.color),
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(insight.icon, size: 15, color: insight.color),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                insight.text,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: insight.color,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }
 
 // ── Insight computation ───────────────────────────────────────────────────────
@@ -481,7 +484,11 @@ class _InsightData {
   final IconData icon;
   final String text;
   final Color color;
-  const _InsightData({required this.icon, required this.text, required this.color});
+  const _InsightData({
+    required this.icon,
+    required this.text,
+    required this.color,
+  });
 }
 
 _InsightData? _computeInsight(List<TransactionEntity> transactions) {
@@ -505,14 +512,16 @@ _InsightData? _computeInsight(List<TransactionEntity> transactions) {
   }
 
   // Top expense category this week
-  final weekStart =
-      DateTime(now.year, now.month, now.day - (now.weekday - 1));
-  final weekExpenses = transactions.where(
-    (t) =>
-        t.deletedAt == null &&
-        t.type == TransactionType.expense &&
-        !t.createdAt.isBefore(weekStart),
-  ).toList();
+  final weekStart = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+  final weekExpenses =
+      transactions
+          .where(
+            (t) =>
+                t.deletedAt == null &&
+                t.type == TransactionType.expense &&
+                !t.createdAt.isBefore(weekStart),
+          )
+          .toList();
 
   if (weekExpenses.length >= 3) {
     final catAmounts = <String, double>{};
@@ -521,13 +530,11 @@ _InsightData? _computeInsight(List<TransactionEntity> transactions) {
       catAmounts[cat] = (catAmounts[cat] ?? 0) + t.amount;
     }
     final total = catAmounts.values.fold<double>(0, (s, v) => s + v);
-    final top =
-        catAmounts.entries.reduce((a, b) => a.value > b.value ? a : b);
+    final top = catAmounts.entries.reduce((a, b) => a.value > b.value ? a : b);
     final pct = (top.value / total * 100).round();
 
     if (pct >= 50) {
-      final label =
-          top.key[0].toUpperCase() + top.key.substring(1);
+      final label = top.key[0].toUpperCase() + top.key.substring(1);
       return _InsightData(
         icon: Icons.bar_chart_rounded,
         text: '$label representa el $pct% de tus gastos recientes',
@@ -542,10 +549,45 @@ _InsightData? _computeInsight(List<TransactionEntity> transactions) {
 String? _inferCategory(String note, String? categoryId) {
   if (categoryId != null) return categoryId;
   final t = note.toLowerCase();
-  if (['comida', 'almuerzo', 'cena', 'café', 'cafe', 'restaurante', 'super', 'mercado'].any(t.contains)) return 'comida';
-  if (['transporte', 'taxi', 'uber', 'bus', 'metro', 'gasolina', 'coche'].any(t.contains)) return 'transporte';
-  if (['servicio', 'luz', 'agua', 'gas', 'internet', 'renta', 'alquiler'].any(t.contains)) return 'servicios';
-  if (['compra', 'tienda', 'ropa', 'amazon', 'mall'].any(t.contains)) return 'compras';
-  if (['salud', 'medico', 'farmacia', 'gym', 'deporte'].any(t.contains)) return 'salud';
+  if ([
+    'comida',
+    'almuerzo',
+    'cena',
+    'café',
+    'cafe',
+    'restaurante',
+    'super',
+    'mercado',
+  ].any(t.contains)) {
+    return 'comida';
+  }
+  if ([
+    'transporte',
+    'taxi',
+    'uber',
+    'bus',
+    'metro',
+    'gasolina',
+    'coche',
+  ].any(t.contains)) {
+    return 'transporte';
+  }
+  if ([
+    'servicio',
+    'luz',
+    'agua',
+    'gas',
+    'internet',
+    'renta',
+    'alquiler',
+  ].any(t.contains)) {
+    return 'servicios';
+  }
+  if (['compra', 'tienda', 'ropa', 'amazon', 'mall'].any(t.contains)) {
+    return 'compras';
+  }
+  if (['salud', 'medico', 'farmacia', 'gym', 'deporte'].any(t.contains)) {
+    return 'salud';
+  }
   return null;
 }

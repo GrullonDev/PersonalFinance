@@ -73,7 +73,7 @@ class AuthProvider extends ChangeNotifier {
       return await result.fold(
         (failure) {
           _setLoading(false);
-          _setError(failure.message);
+          _setError(_localizeAuthMessage(failure.message));
           return false;
         },
         (response) async {
@@ -94,7 +94,7 @@ class AuthProvider extends ChangeNotifier {
       );
     } catch (e) {
       _setLoading(false);
-      _setError(e.toString());
+      _setError(_localizeAuthMessage(e.toString()));
       return false;
     }
   }
@@ -106,7 +106,7 @@ class AuthProvider extends ChangeNotifier {
       return await result.fold(
         (failure) {
           _setLoading(false);
-          _setError(failure.message);
+          _setError(_localizeAuthMessage(failure.message));
           return false;
         },
         (response) async {
@@ -127,7 +127,7 @@ class AuthProvider extends ChangeNotifier {
       );
     } catch (e) {
       _setLoading(false);
-      _setError(e.toString());
+      _setError(_localizeAuthMessage(e.toString()));
       return false;
     }
   }
@@ -365,7 +365,8 @@ class AuthProvider extends ChangeNotifier {
       final Either<AuthFailure, RegisterUserResponse> result =
           await authRepository.registerUser(request);
       result.fold(
-        (AuthFailure failure) => _setError(failure.message),
+        (AuthFailure failure) =>
+            _setError(_localizeAuthMessage(failure.message)),
         (_) => _setError(null),
       );
       return result;
@@ -410,13 +411,13 @@ class AuthProvider extends ChangeNotifier {
           await authRepository.getCurrentUser();
       return result.fold(
         (AuthFailure failure) {
-          _errorMessage = failure.message;
+          _errorMessage = _localizeAuthMessage(failure.message);
           if (failure.message.toLowerCase().contains('expired') ||
               failure.message.toLowerCase().contains('invalid')) {
             _clearAuthData();
           }
           notifyListeners();
-          return Left(failure);
+          return Left(AuthFailure(message: _errorMessage!));
         },
         (CurrentUserResponse user) {
           _currentUser = user;
@@ -426,10 +427,12 @@ class AuthProvider extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _errorMessage = 'An unexpected error occurred';
+      _errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
       await _clearAuthData();
       notifyListeners();
-      return const Left(AuthFailure(message: 'An unexpected error occurred'));
+      return const Left(
+        AuthFailure(message: 'Ocurrió un error inesperado. Intenta de nuevo.'),
+      );
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -439,7 +442,7 @@ class AuthProvider extends ChangeNotifier {
   Future<Either<AuthFailure, void>> login() async {
     if (!formKey.currentState!.validate()) {
       return const Left(
-        AuthFailure(message: 'Please fill in the required fields.'),
+        AuthFailure(message: 'Completa los campos requeridos.'),
       );
     }
     _setLoading(true);
@@ -483,7 +486,7 @@ class AuthProvider extends ChangeNotifier {
             // Default error message
             errorMessage =
                 failure.message.isNotEmpty
-                    ? failure.message
+                    ? _localizeAuthMessage(failure.message)
                     : 'Error al iniciar sesión. Por favor, intente nuevamente.';
           }
 
@@ -517,11 +520,57 @@ class AuthProvider extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('An unexpected error occurred. Please try again.');
-      return Left(AuthFailure(message: e.toString()));
+      final message = _localizeAuthMessage(e.toString());
+      _setError(message);
+      return Left(AuthFailure(message: message));
     } finally {
       _setLoading(false);
     }
+  }
+
+  String _localizeAuthMessage(String message) {
+    final normalized = message.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return 'Ocurrió un error inesperado. Intenta de nuevo.';
+    }
+    if (normalized.contains('please fill in the required fields')) {
+      return 'Completa los campos requeridos.';
+    }
+    if (normalized.contains('an unexpected error occurred')) {
+      return 'Ocurrió un error inesperado. Intenta de nuevo.';
+    }
+    if (normalized.contains('network') ||
+        normalized.contains('socketexception') ||
+        normalized.contains('failed host lookup')) {
+      return 'Error de conexión. Verifica tu internet e intenta nuevamente.';
+    }
+    if (normalized.contains('user-not-found') ||
+        normalized.contains('wrong-password') ||
+        normalized.contains('invalid-credential') ||
+        normalized.contains('invalid login credentials')) {
+      return 'Correo o contraseña incorrectos.';
+    }
+    if (normalized.contains('invalid-email') ||
+        normalized.contains('badly formatted')) {
+      return 'Ingresa un correo electrónico válido.';
+    }
+    if (normalized.contains('too-many-requests')) {
+      return 'Demasiados intentos. Espera un momento antes de volver a intentar.';
+    }
+    if (normalized.contains('email-already-in-use')) {
+      return 'Ese correo ya está registrado.';
+    }
+    if (normalized.contains('weak-password')) {
+      return 'La contraseña es demasiado débil.';
+    }
+    if (normalized.contains('verify your email') ||
+        normalized.contains('email-not-verified')) {
+      return 'Debes verificar tu correo antes de continuar.';
+    }
+    if (normalized.contains('session') && normalized.contains('expired')) {
+      return 'Tu sesión expiró. Inicia sesión nuevamente.';
+    }
+    return message;
   }
 
   bool _hasAuthorizedFirebaseSession() {

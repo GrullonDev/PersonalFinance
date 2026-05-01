@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 import 'package:personal_finance/features/alerts/presentation/providers/alerts_logic.dart';
 import 'package:personal_finance/features/alerts/presentation/widgets/add_alert_modal.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 
 class AlertsView extends StatelessWidget {
@@ -25,9 +26,26 @@ class AlertsView extends StatelessWidget {
         if (logic.isLoading)
           const Center(child: CircularProgressIndicator())
         else if (logic.error != null)
-          Center(child: Text(logic.error!))
+          EmptyState(
+            title: 'No pudimos cargar las alertas',
+            message: logic.error!,
+            icon: Icons.warning_amber_rounded,
+            action: FilledButton(
+              onPressed: logic.loadAlerts,
+              child: const Text('Reintentar'),
+            ),
+          )
         else if (!logic.hasAlerts)
-          const Center(child: Text('Sin alertas por el momento'))
+          EmptyState(
+            title: 'Sin alertas por el momento',
+            message:
+                'Crea una alerta para recibir recordatorios y seguimiento de tus finanzas.',
+            icon: Icons.notifications_none_rounded,
+            action: FilledButton(
+              onPressed: () => _showAddAlertModal(context),
+              child: const Text('Crear alerta'),
+            ),
+          )
         else
           ListView.separated(
             padding: const EdgeInsets.all(16),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:personal_finance/core/presentation/widgets/custom_text_field.dart';
 import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
 import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
+import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/auth/presentation/providers/register_provider.dart';
 import 'package:provider/provider.dart';
@@ -53,16 +54,23 @@ class RegisterLayout extends StatelessWidget {
 
     Future<void> handleSubmit() async {
       FocusScope.of(context).unfocus();
+      await HapticFeedbackService.selection();
       final RegisterResult result = await registerProvider.submit();
       if (!context.mounted) {
         return;
       }
       if (result.isSuccess) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Registro exitoso')));
+        await HapticFeedbackService.success();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Registro exitoso. Verifica tu correo antes de iniciar sesión.',
+            ),
+          ),
+        );
         Navigator.pushNamed(context, '/login');
       } else if (result.message?.isNotEmpty ?? false) {
+        await HapticFeedbackService.error();
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(result.message!)));

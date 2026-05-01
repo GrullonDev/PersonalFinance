@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_detail.dart';
 import 'package:personal_finance/features/transactions/presentation/pages/transaction_detail_page.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 
 class ExpensesPage extends StatelessWidget {
   const ExpensesPage({super.key});
@@ -133,28 +134,10 @@ class ExpensesPage extends StatelessWidget {
     ),
   );
 
-  Widget _buildEmptyState() => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[400]),
-        const SizedBox(height: 16),
-        Text(
-          'No hay gastos registrados',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Toca el botón + para agregar\ntu primer gasto',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-        ),
-      ],
-    ),
+  Widget _buildEmptyState() => const EmptyState(
+    title: 'No hay gastos registrados',
+    message: 'Toca el botón + para agregar tu primer gasto.',
+    icon: Icons.receipt_long_outlined,
   );
 
   Widget _buildMonthSection(

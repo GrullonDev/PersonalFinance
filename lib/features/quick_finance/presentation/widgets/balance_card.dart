@@ -2,14 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 
 enum _Period { today, week, month }
 
 class BalanceCard extends StatefulWidget {
   final List<TransactionEntity> transactions;
+  final bool forceHidden;
 
-  const BalanceCard({required this.transactions, super.key});
+  const BalanceCard({
+    required this.transactions,
+    super.key,
+    this.forceHidden = false,
+  });
 
   @override
   State<BalanceCard> createState() => _BalanceCardState();
@@ -22,7 +28,8 @@ class _BalanceCardState extends State<BalanceCard> {
   static final _fmt = NumberFormat.simpleCurrency(decimalDigits: 2);
 
   void _toggleVisibility() {
-    HapticFeedback.selectionClick();
+    if (widget.forceHidden) return;
+    HapticFeedbackService.selection();
     setState(() => _hidden = !_hidden);
   }
 
@@ -43,8 +50,7 @@ class _BalanceCardState extends State<BalanceCard> {
           );
           return !t.createdAt.isBefore(weekStart);
         case _Period.month:
-          return t.createdAt.year == now.year &&
-              t.createdAt.month == now.month;
+          return t.createdAt.year == now.year && t.createdAt.month == now.month;
       }
     }).toList();
   }
@@ -63,23 +69,24 @@ class _BalanceCardState extends State<BalanceCard> {
     final expenses = _expenses;
     final income = _income;
     final balance = _balance;
+    final effectiveHidden = widget.forceHidden || _hidden;
 
     switch (_period) {
       case _Period.today:
         if (expenses == 0 && income == 0) return 'Sin movimientos hoy';
         if (expenses == 0) return 'Sin gastos hoy';
-        if (_hidden) return 'Tienes gastos registrados hoy';
+        if (effectiveHidden) return 'Tienes gastos registrados hoy';
         return 'Gastaste ${_fmt.format(expenses)} hoy';
       case _Period.week:
         if (expenses == 0 && income == 0) return 'Sin movimientos esta semana';
         if (expenses == 0) return 'Sin gastos esta semana';
-        if (_hidden) return 'Tienes gastos esta semana';
+        if (effectiveHidden) return 'Tienes gastos esta semana';
         return 'Gastaste ${_fmt.format(expenses)} esta semana';
       case _Period.month:
         if (expenses == 0 && income == 0) return 'Sin movimientos este mes';
         if (balance < 0) return 'Balance negativo este mes';
         if (balance == 0) return 'Sin ganancias ni pérdidas';
-        if (_hidden) return 'Balance positivo este mes';
+        if (effectiveHidden) return 'Balance positivo este mes';
         return 'Ahorraste ${_fmt.format(balance)} este mes';
     }
   }
@@ -88,13 +95,9 @@ class _BalanceCardState extends State<BalanceCard> {
     switch (_period) {
       case _Period.today:
       case _Period.week:
-        return _expenses > 0
-            ? const Color(0xFFFF9500)
-            : Colors.grey.shade400;
+        return _expenses > 0 ? const Color(0xFFFF9500) : Colors.grey.shade400;
       case _Period.month:
-        return _balance < 0
-            ? const Color(0xFFFF3B30)
-            : Colors.grey.shade400;
+        return _balance < 0 ? const Color(0xFFFF3B30) : Colors.grey.shade400;
     }
   }
 
@@ -114,7 +117,7 @@ class _BalanceCardState extends State<BalanceCard> {
 
   // Returns the top expense category and its share (%), or null if not enough data.
   ({String label, int pct})? get _topCategory {
-    if (_hidden) return null;
+    if (widget.forceHidden || _hidden) return null;
     final expenses =
         _filtered.where((t) => t.type == TransactionType.expense).toList();
     if (expenses.length < 2) return null;
@@ -127,8 +130,7 @@ class _BalanceCardState extends State<BalanceCard> {
     final total = catAmounts.values.fold<double>(0, (s, v) => s + v);
     if (total == 0) return null;
 
-    final top =
-        catAmounts.entries.reduce((a, b) => a.value > b.value ? a : b);
+    final top = catAmounts.entries.reduce((a, b) => a.value > b.value ? a : b);
     final pct = (top.value / total * 100).round();
     if (pct < 30) return null;
 
@@ -138,13 +140,15 @@ class _BalanceCardState extends State<BalanceCard> {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveHidden = widget.forceHidden || _hidden;
     final accent = Theme.of(context).primaryColor;
     final balance = _balance;
-    final balanceColor = _hidden
-        ? Colors.grey.shade700
-        : (balance >= 0
-            ? const Color(0xFF34C759)
-            : const Color(0xFFFF3B30));
+    final balanceColor =
+        effectiveHidden
+            ? Colors.grey.shade700
+            : (balance >= 0
+                ? const Color(0xFF34C759)
+                : const Color(0xFFFF3B30));
 
     final periodLabel = switch (_period) {
       _Period.today => 'hoy',
@@ -181,7 +185,9 @@ class _BalanceCardState extends State<BalanceCard> {
               GestureDetector(
                 onTap: _toggleVisibility,
                 child: Icon(
-                  _hidden
+                  widget.forceHidden
+                      ? Icons.privacy_tip_outlined
+                      : effectiveHidden
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
                   color: Colors.grey.shade400,
@@ -206,8 +212,8 @@ class _BalanceCardState extends State<BalanceCard> {
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: Text(
-              key: ValueKey('$_hidden$_period$balance'),
-              _hidden ? '••••' : _fmt.format(balance),
+              key: ValueKey('$effectiveHidden$_period$balance'),
+              effectiveHidden ? '••••' : _fmt.format(balance),
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -230,6 +236,13 @@ class _BalanceCardState extends State<BalanceCard> {
               ),
             ],
           ),
+          if (widget.forceHidden) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Private mode activo: los montos permanecen ocultos en toda la app.',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
+          ],
 
           const SizedBox(height: 16),
           Divider(color: Colors.grey.shade100, height: 1),
@@ -245,7 +258,7 @@ class _BalanceCardState extends State<BalanceCard> {
                   iconColor: const Color(0xFF34C759),
                   label: 'Ingresos',
                   amount: _income,
-                  hidden: _hidden,
+                  hidden: effectiveHidden,
                 ),
               ),
               Expanded(
@@ -255,7 +268,7 @@ class _BalanceCardState extends State<BalanceCard> {
                   iconColor: const Color(0xFFFF3B30),
                   label: 'Gastos',
                   amount: _expenses,
-                  hidden: _hidden,
+                  hidden: effectiveHidden,
                   alignRight: true,
                 ),
               ),
@@ -277,10 +290,7 @@ class _BalanceCardState extends State<BalanceCard> {
                 const SizedBox(width: 5),
                 Text(
                   'Mayor gasto: ',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
                 Text(
                   '${top.label} (${top.pct}%)',
@@ -305,12 +315,43 @@ bool _kw(String text, List<String> kw) => kw.any(text.contains);
 
 String _inferCat(TransactionEntity t) {
   final text = '${t.note} ${t.categoryId ?? ''}'.toLowerCase();
-  if (_kw(text, ['comida', 'almuerzo', 'cena', 'café', 'cafe', 'restaurante', 'super', 'mercado'])) return 'comida';
-  if (_kw(text, ['transporte', 'taxi', 'uber', 'bus', 'metro', 'gasolina', 'coche'])) return 'transporte';
-  if (_kw(text, ['servicio', 'luz', 'agua', 'gas', 'internet', 'renta', 'alquiler'])) return 'servicios';
-  if (_kw(text, ['compra', 'tienda', 'ropa', 'amazon', 'mall', 'shopping'])) return 'compras';
-  if (_kw(text, ['salud', 'medico', 'farmacia', 'gym', 'deporte'])) return 'salud';
-  if (_kw(text, ['cine', 'netflix', 'spotify', 'streaming'])) return 'entretenimiento';
+  if (_kw(text, [
+    'comida',
+    'almuerzo',
+    'cena',
+    'café',
+    'cafe',
+    'restaurante',
+    'super',
+    'mercado',
+  ]))
+    return 'comida';
+  if (_kw(text, [
+    'transporte',
+    'taxi',
+    'uber',
+    'bus',
+    'metro',
+    'gasolina',
+    'coche',
+  ]))
+    return 'transporte';
+  if (_kw(text, [
+    'servicio',
+    'luz',
+    'agua',
+    'gas',
+    'internet',
+    'renta',
+    'alquiler',
+  ]))
+    return 'servicios';
+  if (_kw(text, ['compra', 'tienda', 'ropa', 'amazon', 'mall', 'shopping']))
+    return 'compras';
+  if (_kw(text, ['salud', 'medico', 'farmacia', 'gym', 'deporte']))
+    return 'salud';
+  if (_kw(text, ['cine', 'netflix', 'spotify', 'streaming']))
+    return 'entretenimiento';
   return t.categoryId ?? 'otros';
 }
 
@@ -329,55 +370,59 @@ class _PeriodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: _Period.values.map((p) {
-          final isSelected = p == selected;
-          final label = switch (p) {
-            _Period.today => 'Hoy',
-            _Period.week => 'Semana',
-            _Period.month => 'Mes',
-          };
-          return GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onChanged(p);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(7),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? accent : Colors.grey.shade500,
+    decoration: BoxDecoration(
+      color: Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    padding: const EdgeInsets.all(3),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children:
+          _Period.values.map((p) {
+            final isSelected = p == selected;
+            final label = switch (p) {
+              _Period.today => 'Hoy',
+              _Period.week => 'Semana',
+              _Period.month => 'Mes',
+            };
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onChanged(p);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(7),
+                  boxShadow:
+                      isSelected
+                          ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ]
+                          : [],
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? accent : Colors.grey.shade500,
+                  ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
+            );
+          }).toList(),
+    ),
+  );
 }
 
 // ── Stat row ──────────────────────────────────────────────────────────────────

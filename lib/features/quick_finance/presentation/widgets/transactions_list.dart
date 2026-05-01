@@ -7,6 +7,7 @@ import 'package:personal_finance/features/quick_finance/presentation/widgets/tra
 class TransactionsList extends StatelessWidget {
   final List<TransactionEntity> transactions;
   final void Function(String id) onDelete;
+  final bool hideAmounts;
 
   /// Called with a pre-filled text string when the user taps a quick-start
   /// chip in the empty state. The parent scrolls to and fills the entry input.
@@ -15,24 +16,27 @@ class TransactionsList extends StatelessWidget {
   const TransactionsList({
     required this.transactions,
     required this.onDelete,
+    this.hideAmounts = false,
     this.onQuickStart,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: transactions.isEmpty
+    duration: const Duration(milliseconds: 250),
+    child:
+        transactions.isEmpty
             ? _EmptyState(
-                key: const ValueKey('empty'),
-                onQuickStart: onQuickStart,
-              )
+              key: const ValueKey('empty'),
+              onQuickStart: onQuickStart,
+            )
             : _GroupedList(
-                key: const ValueKey('list'),
-                transactions: transactions,
-                onDelete: onDelete,
-              ),
-      );
+              key: const ValueKey('list'),
+              transactions: transactions,
+              onDelete: onDelete,
+              hideAmounts: hideAmounts,
+            ),
+  );
 }
 
 // ── Grouped list ──────────────────────────────────────────────────────────────
@@ -40,10 +44,12 @@ class TransactionsList extends StatelessWidget {
 class _GroupedList extends StatelessWidget {
   final List<TransactionEntity> transactions;
   final void Function(String id) onDelete;
+  final bool hideAmounts;
 
   const _GroupedList({
     required this.transactions,
     required this.onDelete,
+    required this.hideAmounts,
     super.key,
   });
 
@@ -62,16 +68,18 @@ class _GroupedList extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    final weekStart =
-        today.subtract(Duration(days: now.weekday - 1));
+    final weekStart = today.subtract(Duration(days: now.weekday - 1));
     final monthFmt = DateFormat('MMMM yyyy', 'es');
 
     String? lastLabel;
     final items = <Widget>[];
 
     for (final t in transactions) {
-      final tDay =
-          DateTime(t.createdAt.year, t.createdAt.month, t.createdAt.day);
+      final tDay = DateTime(
+        t.createdAt.year,
+        t.createdAt.month,
+        t.createdAt.day,
+      );
       final String label;
 
       if (tDay == today) {
@@ -90,11 +98,14 @@ class _GroupedList extends StatelessWidget {
         lastLabel = label;
       }
 
-      items.add(TransactionTile(
-        key: ValueKey(t.id),
-        transaction: t,
-        onDelete: () => onDelete(t.id),
-      ));
+      items.add(
+        TransactionTile(
+          key: ValueKey(t.id),
+          transaction: t,
+          hideAmounts: hideAmounts,
+          onDelete: () => onDelete(t.id),
+        ),
+      );
     }
 
     return items;
@@ -109,17 +120,17 @@ class _DateHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade500,
-            letterSpacing: 0.3,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+    child: Text(
+      label,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: Colors.grey.shade500,
+        letterSpacing: 0.3,
+      ),
+    ),
+  );
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────────

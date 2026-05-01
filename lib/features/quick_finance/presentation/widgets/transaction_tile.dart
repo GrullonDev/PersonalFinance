@@ -7,24 +7,26 @@ import 'package:personal_finance/features/quick_finance/domain/entities/transact
 class TransactionTile extends StatelessWidget {
   final TransactionEntity transaction;
   final VoidCallback onDelete;
+  final bool hideAmounts;
 
   const TransactionTile({
     required this.transaction,
     required this.onDelete,
+    this.hideAmounts = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) => Dismissible(
-        key: ValueKey(transaction.id),
-        direction: DismissDirection.endToStart,
-        onDismissed: (_) {
-          HapticFeedback.mediumImpact();
-          onDelete();
-        },
-        background: const _DeleteBackground(),
-        child: _TileBody(transaction: transaction),
-      );
+    key: ValueKey(transaction.id),
+    direction: DismissDirection.endToStart,
+    onDismissed: (_) {
+      HapticFeedback.mediumImpact();
+      onDelete();
+    },
+    background: const _DeleteBackground(),
+    child: _TileBody(transaction: transaction, hideAmounts: hideAmounts),
+  );
 }
 
 // ── Swipe background ──────────────────────────────────────────────────────────
@@ -34,40 +36,41 @@ class _DeleteBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: Colors.red.shade600,
-          borderRadius: BorderRadius.circular(16),
+    margin: const EdgeInsets.only(bottom: 10),
+    decoration: BoxDecoration(
+      color: Colors.red.shade600,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.symmetric(horizontal: 22),
+    child: const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+        SizedBox(height: 2),
+        Text(
+          'Eliminar',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 22),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
-            SizedBox(height: 2),
-            Text(
-              'Eliminar',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }
 
 // ── Tile body ─────────────────────────────────────────────────────────────────
 
 class _TileBody extends StatelessWidget {
   final TransactionEntity transaction;
+  final bool hideAmounts;
 
   static final _dateFmt = DateFormat('d MMM  HH:mm', 'es');
   static final _currFmt = NumberFormat.simpleCurrency(decimalDigits: 2);
 
-  const _TileBody({required this.transaction});
+  const _TileBody({required this.transaction, required this.hideAmounts});
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +100,10 @@ class _TileBody extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration:
-                BoxDecoration(color: cat.iconBg, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: cat.iconBg,
+              shape: BoxShape.circle,
+            ),
             child: Icon(cat.icon, color: cat.iconColor, size: 18),
           ),
           const SizedBox(width: 12),
@@ -143,7 +148,9 @@ class _TileBody extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isIncome ? '+' : '-'}${_currFmt.format(transaction.amount)}',
+                hideAmounts
+                    ? '${isIncome ? '+' : '-'}••••'
+                    : '${isIncome ? '+' : '-'}${_currFmt.format(transaction.amount)}',
                 style: TextStyle(
                   color: amountColor,
                   fontWeight: FontWeight.bold,
@@ -175,20 +182,20 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          '#$label',
-          style: TextStyle(
-            fontSize: 10,
-            color: Theme.of(context).primaryColor,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+    decoration: BoxDecoration(
+      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      '#$label',
+      style: TextStyle(
+        fontSize: 10,
+        color: Theme.of(context).primaryColor,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  );
 }
 
 // ── Category inference ────────────────────────────────────────────────────────
@@ -213,9 +220,22 @@ _CatInfo _categorize(TransactionEntity t) {
   final text = '${t.note} ${t.categoryId ?? ''}'.toLowerCase();
 
   if (_has(text, [
-    'comida', 'almuerzo', 'cena', 'desayuno', 'café', 'cafe',
-    'restaurante', 'pizza', 'burger', 'lunch', 'food', 'mercado', 'super',
-    'sushi', 'taco', 'kebab',
+    'comida',
+    'almuerzo',
+    'cena',
+    'desayuno',
+    'café',
+    'cafe',
+    'restaurante',
+    'pizza',
+    'burger',
+    'lunch',
+    'food',
+    'mercado',
+    'super',
+    'sushi',
+    'taco',
+    'kebab',
   ])) {
     return const _CatInfo(
       icon: Icons.restaurant_rounded,
@@ -226,8 +246,18 @@ _CatInfo _categorize(TransactionEntity t) {
   }
 
   if (_has(text, [
-    'transporte', 'taxi', 'uber', 'bus', 'metro', 'tren',
-    'gasolina', 'coche', 'auto', 'bici', 'moto', 'lyft',
+    'transporte',
+    'taxi',
+    'uber',
+    'bus',
+    'metro',
+    'tren',
+    'gasolina',
+    'coche',
+    'auto',
+    'bici',
+    'moto',
+    'lyft',
   ])) {
     return const _CatInfo(
       icon: Icons.directions_car_rounded,
@@ -238,8 +268,16 @@ _CatInfo _categorize(TransactionEntity t) {
   }
 
   if (_has(text, [
-    'salario', 'sueldo', 'trabajo', 'nomina', 'pago',
-    'salary', 'transferencia', 'freelance', 'cliente', 'ingreso',
+    'salario',
+    'sueldo',
+    'trabajo',
+    'nomina',
+    'pago',
+    'salary',
+    'transferencia',
+    'freelance',
+    'cliente',
+    'ingreso',
   ])) {
     return const _CatInfo(
       icon: Icons.account_balance_wallet_rounded,
@@ -250,8 +288,16 @@ _CatInfo _categorize(TransactionEntity t) {
   }
 
   if (_has(text, [
-    'servicio', 'luz', 'agua', 'gas', 'internet',
-    'telefono', 'electricidad', 'renta', 'alquiler', 'rent',
+    'servicio',
+    'luz',
+    'agua',
+    'gas',
+    'internet',
+    'telefono',
+    'electricidad',
+    'renta',
+    'alquiler',
+    'rent',
   ])) {
     return const _CatInfo(
       icon: Icons.home_rounded,
@@ -262,7 +308,13 @@ _CatInfo _categorize(TransactionEntity t) {
   }
 
   if (_has(text, [
-    'compra', 'tienda', 'ropa', 'amazon', 'shopping', 'zapatos', 'mall',
+    'compra',
+    'tienda',
+    'ropa',
+    'amazon',
+    'shopping',
+    'zapatos',
+    'mall',
   ])) {
     return const _CatInfo(
       icon: Icons.shopping_bag_rounded,
@@ -273,7 +325,13 @@ _CatInfo _categorize(TransactionEntity t) {
   }
 
   if (_has(text, [
-    'salud', 'medico', 'doctor', 'farmacia', 'gym', 'deporte', 'hospital',
+    'salud',
+    'medico',
+    'doctor',
+    'farmacia',
+    'gym',
+    'deporte',
+    'hospital',
   ])) {
     return const _CatInfo(
       icon: Icons.favorite_rounded,
@@ -284,8 +342,14 @@ _CatInfo _categorize(TransactionEntity t) {
   }
 
   if (_has(text, [
-    'cine', 'netflix', 'spotify', 'entretenimiento',
-    'pelicula', 'musica', 'streaming', 'disney',
+    'cine',
+    'netflix',
+    'spotify',
+    'entretenimiento',
+    'pelicula',
+    'musica',
+    'streaming',
+    'disney',
   ])) {
     return const _CatInfo(
       icon: Icons.movie_rounded,
@@ -297,13 +361,13 @@ _CatInfo _categorize(TransactionEntity t) {
 
   return t.type == TransactionType.income
       ? const _CatInfo(
-          icon: Icons.arrow_upward_rounded,
-          iconBg: Color(0xFFE8F9EE),
-          iconColor: Color(0xFF34C759),
-        )
+        icon: Icons.arrow_upward_rounded,
+        iconBg: Color(0xFFE8F9EE),
+        iconColor: Color(0xFF34C759),
+      )
       : const _CatInfo(
-          icon: Icons.arrow_downward_rounded,
-          iconBg: Color(0xFFFFEEED),
-          iconColor: Color(0xFFFF3B30),
-        );
+        icon: Icons.arrow_downward_rounded,
+        iconBg: Color(0xFFFFEEED),
+        iconColor: Color(0xFFFF3B30),
+      );
 }
