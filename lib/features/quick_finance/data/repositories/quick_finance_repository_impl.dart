@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_local_datasource.dart';
 import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_remote_datasource.dart';
@@ -10,24 +11,90 @@ import 'package:personal_finance/features/quick_finance/domain/repositories/quic
 /// Implementación del repositorio Quick Finance.
 ///
 /// Estrategia Local-First:
-///   - Toda mutación escribe primero en Hive (UI instantáneo).
-///   - Crea una SyncOperation para que el SyncManager la envíe después.
-///   - NO intenta push inmediato; eso lo hace el SyncManager.
+///   1. [watchTransactions] y [watchBalance] suscriben el stream de Hive
+///      inmediatamente — la UI responde sin esperar la red.
+///   2. Si no hay datos en caché para el usuario, se dispara un fetch remoto
+///      en segundo plano; el resultado se upserta en Hive y el stream lo
+///      propaga automáticamente a la UI.
+///   3. El [userId] fluye explícito por todas las capas: nunca se mezclan
+///      datos de usuarios distintos aunque compartan el mismo dispositivo.
+///   4. Toda mutación escribe primero en Hive y encola una SyncOperation para
+///      que el SyncManager la envíe a Firestore.
 class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
   final QuickFinanceLocalDataSource localDataSource;
   final QuickFinanceRemoteDataSource remoteDataSource;
+
+  /// Guarda los userId con fetch en curso para no lanzar peticiones duplicadas.
+  final _fetchingUsers = <String>{};
 
   QuickFinanceRepositoryImpl({
     required this.localDataSource,
     required this.remoteDataSource,
   });
 
+  // ---------------------------------------------------------------------------
+  // Streams — Local-First
+  // ---------------------------------------------------------------------------
+
   @override
-  Stream<List<TransactionEntity>> watchTransactions() {
-    // watchTransactions() ya filtra soft-deleted y ordena por createdAt desc
-    return localDataSource.watchTransactions().map(
-      (models) => models.cast<TransactionEntity>(),
-    );
+  Stream<List<TransactionEntity>> watchTransactions({
+    required String userId,
+  }) {
+    // 1. Dispara fetch remoto en segundo plano si Hive está vacío para este
+    //    usuario. El upsert escribe en Hive y el stream lo propaga solo.
+    _fetchIfNotCached(userId);
+
+    // 2. Devuelve el stream local inmediatamente — sin bloquear en red.
+    return localDataSource
+        .watchTransactions(userId)
+        .map((models) => models.cast<TransactionEntity>());
+  }
+
+  @override
+  Stream<BalanceSummaryEntity> watchBalance({required String userId}) {
+    return localDataSource.watchTransactions(userId).map((transactions) {
+      double income = 0;
+      double expenses = 0;
+      for (final t in transactions) {
+        // watchTransactions(userId) ya filtra soft-deleted y por userId
+        if (t.type == TransactionType.income) {
+          income += t.amount;
+        } else {
+          expenses += t.amount;
+        }
+      }
+      return BalanceSummaryEntity(
+        totalBalance: income - expenses,
+        totalIncome: income,
+        totalExpenses: expenses,
+      );
+    });
+  }
+
+  /// Fetch remoto de seguridad: solo se ejecuta si Hive no tiene datos para
+  /// [userId] y no hay ya un fetch en curso para ese usuario.
+  /// El SyncManager sigue siendo responsable del sync periódico y del push.
+  Future<void> _fetchIfNotCached(String userId) async {
+    if (_fetchingUsers.contains(userId)) return;
+
+    final hasCached = await localDataSource.hasCachedTransactions(userId);
+    if (hasCached) return;
+
+    _fetchingUsers.add(userId);
+    try {
+      final remote = await remoteDataSource.fetchTransactions(userId);
+      if (remote.isNotEmpty) {
+        await localDataSource.upsertTransactions(
+          remote
+              .map((t) => t.copyWith(syncStatus: SyncStatus.synced))
+              .toList(),
+        );
+      }
+    } catch (e) {
+      debugPrint('QuickFinanceRepository background fetch failed: $e');
+    } finally {
+      _fetchingUsers.remove(userId);
+    }
   }
 
   @override
@@ -67,29 +134,6 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
     );
     await localDataSource.saveTransaction(model);
     await _createSyncOp(model.id, SyncAction.update);
-  }
-
-  @override
-  Stream<BalanceSummaryEntity> watchBalance() {
-    return localDataSource.watchTransactions().map((transactions) {
-      double income = 0;
-      double expenses = 0;
-
-      for (var t in transactions) {
-        if (t.deletedAt != null) continue;
-        if (t.type == TransactionType.income) {
-          income += t.amount;
-        } else {
-          expenses += t.amount;
-        }
-      }
-
-      return BalanceSummaryEntity(
-        totalBalance: income - expenses,
-        totalIncome: income,
-        totalExpenses: expenses,
-      );
-    });
   }
 
   @override

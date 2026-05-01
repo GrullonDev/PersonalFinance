@@ -14,10 +14,13 @@ abstract class QuickFinanceRemoteDataSource {
     required List<TransactionModel> transactions,
   });
 
-  /// Descarga las transacciones modificadas desde [lastSyncAt] (pull).
-  /// Retorna solo las que se han actualizado después de esa fecha.
-  Future<List<TransactionModel>> pullLatestTransactions({
-    required String userId,
-    required DateTime lastSyncAt,
+  /// Descarga transacciones del usuario desde Firestore.
+  ///
+  /// - [updatedAfter] `null` → descarga completa (bootstrap / primer sync).
+  /// - [updatedAfter] fecha → solo documentos con `updatedAt > updatedAfter`
+  ///   (delta sync para sincronizaciones posteriores).
+  Future<List<TransactionModel>> fetchTransactions(
+    String userId, {
+    DateTime? updatedAfter,
   });
 }

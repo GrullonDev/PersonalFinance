@@ -6,7 +6,7 @@ class WatchBalance {
 
   WatchBalance(this.repository);
 
-  Stream<BalanceSummaryEntity> call() {
-    return repository.watchBalance();
+  Stream<BalanceSummaryEntity> call({required String userId}) {
+    return repository.watchBalance(userId: userId);
   }
 }

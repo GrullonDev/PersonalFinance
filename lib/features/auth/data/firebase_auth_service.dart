@@ -14,6 +14,17 @@ class FirebaseAuthService implements AuthDataSource {
 
   static bool _isGoogleSignInInitialized = false;
 
+  // ── Identidad ──────────────────────────────────────────────────────────────
+
+  @override
+  String? get currentUserId => _auth.currentUser?.uid;
+
+  @override
+  Stream<String?> get authStateChanges =>
+      _auth.authStateChanges().map((user) => user?.uid);
+
+  // ── Operaciones ────────────────────────────────────────────────────────────
+
   @override
   Future<User?> signInWithGoogle() async {
     try {

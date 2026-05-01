@@ -6,6 +6,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Define los métodos requeridos para autenticación con proveedores externos
 /// como Google y Apple, así como para el cierre de sesión.
 abstract class AuthDataSource {
+  // ── Identidad ──────────────────────────────────────────────────────────────
+
+  /// UID del usuario actualmente autenticado, o `null` si no hay sesión activa.
+  /// Sincrónico: usa el estado en memoria del SDK de auth.
+  String? get currentUserId;
+
+  /// Stream que emite el UID cada vez que cambia el estado de autenticación.
+  /// Emite `null` cuando el usuario cierra sesión.
+  /// Emite el UID real tan pronto como el SDK restaura la sesión persistida
+  /// (resuelve la race condition de `currentUser` en el arranque).
+  Stream<String?> get authStateChanges;
+
+  // ── Operaciones ────────────────────────────────────────────────────────────
   /// Inicia sesión usando Google Sign-In.
   Future<void> signInWithGoogle();
 

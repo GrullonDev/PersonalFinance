@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/balance_summary_entity.dart';
 import 'package:intl/intl.dart';
+import '../../domain/entities/balance_summary_entity.dart';
 
 class BalanceCard extends StatelessWidget {
   final BalanceSummaryEntity balance;
 
   const BalanceCard({super.key, required this.balance});
 
+  static final _fmt = NumberFormat.simpleCurrency(decimalDigits: 2);
+
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.simpleCurrency(decimalDigits: 2);
+    final primary = Theme.of(context).primaryColor;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withValues(alpha: 0.8),
-          ],
+          colors: [primary, primary.withValues(alpha: 0.82)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+            color: primary.withValues(alpha: 0.28),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -36,39 +35,44 @@ class BalanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Total Balance',
+            'Balance total',
             style: TextStyle(
               color: Colors.white70,
-              fontSize: 16,
+              fontSize: 13,
               fontWeight: FontWeight.w500,
+              letterSpacing: 0.4,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
-            currencyFormatter.format(balance.totalBalance),
+            _fmt.format(balance.totalBalance),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 32,
+              fontSize: 34,
               fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildBalanceItem(
-                context,
-                label: 'Income',
-                amount: balance.totalIncome,
-                icon: Icons.arrow_upward,
-                color: Colors.greenAccent,
+              Expanded(
+                child: _Stat(
+                  icon: Icons.arrow_upward_rounded,
+                  iconColor: Colors.greenAccent,
+                  label: 'Ingresos',
+                  amount: balance.totalIncome,
+                ),
               ),
-              _buildBalanceItem(
-                context,
-                label: 'Expenses',
-                amount: balance.totalExpenses,
-                icon: Icons.arrow_downward,
-                color: Colors.redAccent,
+              Container(width: 1, height: 36, color: Colors.white24),
+              Expanded(
+                child: _Stat(
+                  icon: Icons.arrow_downward_rounded,
+                  iconColor: Colors.redAccent,
+                  label: 'Gastos',
+                  amount: balance.totalExpenses,
+                  alignRight: true,
+                ),
               ),
             ],
           ),
@@ -76,48 +80,67 @@ class BalanceCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildBalanceItem(
-    BuildContext context, {
-    required String label,
-    required double amount,
-    required IconData icon,
-    required Color color,
-  }) {
-    final currencyFormatter = NumberFormat.simpleCurrency(decimalDigits: 2);
+class _Stat extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final double amount;
+  final bool alignRight;
 
-    return Row(
+  static final _fmt = NumberFormat.simpleCurrency(decimalDigits: 2);
+
+  const _Stat({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.amount,
+    this.alignRight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withValues(alpha: 0.18),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: color, size: 16),
+          child: Icon(icon, color: iconColor, size: 14),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
             ),
             Text(
-              currencyFormatter.format(amount),
+              _fmt.format(amount),
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
       ],
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: alignRight ? 16 : 0,
+        right: alignRight ? 0 : 16,
+      ),
+      child: alignRight
+          ? Align(alignment: Alignment.centerRight, child: row)
+          : row,
     );
   }
 }

@@ -6,7 +6,7 @@ class WatchTransactions {
 
   WatchTransactions(this.repository);
 
-  Stream<List<TransactionEntity>> call() {
-    return repository.watchTransactions();
+  Stream<List<TransactionEntity>> call({required String userId}) {
+    return repository.watchTransactions(userId: userId);
   }
 }

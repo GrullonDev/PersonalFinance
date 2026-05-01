@@ -42,8 +42,10 @@ class SyncManager {
   final QuickFinanceRemoteDataSource _remoteDataSource;
   final Connectivity _connectivity;
 
-  /// Key usada en SharedPreferences para guardar la última fecha de sync.
-  static const _lastSyncKey = 'quick_finance_last_sync_at';
+  /// Clave SharedPreferences por usuario. Cada UID tiene su propio cursor de
+  /// sync — evita que el delta pull de un usuario use la fecha de otro.
+  static String _lastSyncKey(String userId) =>
+      'quick_finance_last_sync_at_$userId';
 
   /// Stream controller para exponer el estado de sync a la UI.
   final _stateController = StreamController<SyncResult>.broadcast();
@@ -65,18 +67,58 @@ class SyncManager {
         _remoteDataSource = remoteDataSource,
         _connectivity = connectivity ?? Connectivity();
 
-  /// Configura el userId. Debe llamarse antes de cualquier sync.
+  /// Configura el userId en el SyncManager y en el datasource local.
+  /// Debe llamarse antes de cualquier sync (típicamente al resolver el auth).
   void setUserId(String userId) {
     _userId = userId;
+    _localDataSource.setUserId(userId);
   }
 
   // ---------------------------------------------------------------------------
   // Trigger 1: Al abrir la app
   // ---------------------------------------------------------------------------
 
-  /// Intenta sincronizar al arrancar la aplicación.
-  /// Si no hay conexión, falla silenciosamente.
-  Future<void> syncOnAppStart() async => syncNow();
+  /// Descarga todas las transacciones del usuario desde Firestore y las
+  /// persiste en Hive. Operación idempotente: si ya se ejecutó para este
+  /// usuario (flag por UID en SharedPreferences), retorna inmediatamente.
+  ///
+  /// Llamar esto al resolver el auth garantiza que Hive esté poblado antes
+  /// de que el usuario vea la pantalla principal.
+  Future<SyncResult> hydrateCurrentUserTransactions() async {
+    if (_isSyncing) return const SyncResult.idle();
+    if (_userId == null) {
+      debugPrint('SyncManager: userId no configurado, saltando hydration.');
+      return const SyncResult.idle();
+    }
+
+    _isSyncing = true;
+    _stateController.add(const SyncResult(state: SyncState.syncing));
+
+    try {
+      final count = await _hydrateIfNeeded();
+      final result = SyncResult(state: SyncState.success, pulledCount: count);
+      _stateController.add(result);
+      return result;
+    } catch (e) {
+      debugPrint('SyncManager hydration error: $e');
+      final result = SyncResult(
+        state: SyncState.error,
+        errorMessage: e.toString(),
+      );
+      _stateController.add(result);
+      return result;
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  /// Intenta sincronizar al arrancar la aplicación:
+  ///   1. Hydration — descarga todo si es la primera vez para este usuario.
+  ///   2. Sync normal — push pendientes + pull delta.
+  Future<void> syncOnAppStart() async {
+    await hydrateCurrentUserTransactions();
+    await syncNow();
+  }
 
   // ---------------------------------------------------------------------------
   // Trigger 2: Al recuperar conectividad
@@ -121,27 +163,52 @@ class SyncManager {
     _stateController.add(const SyncResult(state: SyncState.syncing));
 
     try {
-      // --- PUSH ---
-      final pushedCount = await _push();
+      // Push y pull son independientes: el fallo de uno no bloquea al otro.
+      // Si Firestore no está disponible, los datos locales siguen visibles.
 
-      // --- PULL ---
-      final pulledCount = await _pull();
+      int pushedCount = 0;
+      String? pushError;
+      try {
+        pushedCount = await _push();
+      } catch (e) {
+        pushError = e.toString();
+        debugPrint('SyncManager push error (local data unaffected): $e');
+      }
 
-      // Purgar operaciones procesadas para evitar crecimiento ilimitado del box
-      await _localDataSource.deleteProcessedSyncOperations();
+      int pulledCount = 0;
+      String? pullError;
+      try {
+        pulledCount = await _pull();
+      } catch (e) {
+        pullError = e.toString();
+        debugPrint('SyncManager pull error (local data unaffected): $e');
+      }
 
-      // Guardar timestamp del sync exitoso
-      await _saveLastSyncTimestamp();
+      // Limpieza y cursor: solo si al menos una operación tuvo éxito.
+      if (pushError == null && pushedCount > 0) {
+        await _localDataSource.deleteProcessedSyncOperations();
+      }
+      if (pullError == null) {
+        // Actualiza el cursor incluso si pulledCount == 0: significa que no
+        // había novedades, no que falló. Evita re-descargar en el próximo sync.
+        await _saveLastSyncTimestamp();
+      }
+
+      // Reportar error solo si ambas operaciones fallaron.
+      final bothFailed = pushError != null && pullError != null;
+      final errorMsg = bothFailed ? 'Push: $pushError | Pull: $pullError' : null;
 
       final result = SyncResult(
-        state: SyncState.success,
+        state: bothFailed ? SyncState.error : SyncState.success,
         pushedCount: pushedCount,
         pulledCount: pulledCount,
+        errorMessage: errorMsg,
       );
       _stateController.add(result);
       return result;
     } catch (e) {
-      debugPrint('SyncManager error: $e');
+      // Error inesperado fuera de push/pull (ej. error al acceder a Hive).
+      debugPrint('SyncManager unexpected error: $e');
       final result = SyncResult(
         state: SyncState.error,
         errorMessage: e.toString(),
@@ -191,15 +258,43 @@ class SyncManager {
   }
 
   // ---------------------------------------------------------------------------
+  // Hydration — descarga inicial completa (una sola vez por usuario)
+  // ---------------------------------------------------------------------------
+
+  static const _hydratedKeyPrefix = 'quick_finance_hydrated_';
+
+  /// Descarga todas las transacciones si aún no se ha hidratado para
+  /// [_userId]. Devuelve el número de transacciones descargadas (0 si no-op).
+  Future<int> _hydrateIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '$_hydratedKeyPrefix$_userId';
+    if (prefs.getBool(key) ?? false) return 0; // ya hidratado
+
+    final remote = await _remoteDataSource.fetchTransactions(
+      _userId!, // pull completo: sin updatedAfter
+    );
+
+    if (remote.isNotEmpty) {
+      await _localDataSource.saveTransactions(
+        remote.map((t) => t.copyWith(syncStatus: SyncStatus.synced)).toList(),
+      );
+    }
+
+    await prefs.setBool(key, true);
+    await _saveLastSyncTimestamp(); // el próximo syncNow será delta
+    return remote.length;
+  }
+
+  // ---------------------------------------------------------------------------
   // Pull — descargar novedades
   // ---------------------------------------------------------------------------
 
   Future<int> _pull() async {
     final lastSync = await _getLastSyncTimestamp();
 
-    final remoteTransactions = await _remoteDataSource.pullLatestTransactions(
-      userId: _userId!,
-      lastSyncAt: lastSync,
+    final remoteTransactions = await _remoteDataSource.fetchTransactions(
+      _userId!,
+      updatedAfter: lastSync,
     );
 
     if (remoteTransactions.isEmpty) return 0;
@@ -221,17 +316,18 @@ class SyncManager {
   // ---------------------------------------------------------------------------
 
   Future<DateTime> _getLastSyncTimestamp() async {
+    if (_userId == null) return DateTime.fromMillisecondsSinceEpoch(0);
     final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_lastSyncKey);
-    if (stored != null) {
-      return DateTime.tryParse(stored) ?? DateTime.fromMillisecondsSinceEpoch(0);
-    }
-    return DateTime.fromMillisecondsSinceEpoch(0);
+    final stored = prefs.getString(_lastSyncKey(_userId!));
+    return stored != null
+        ? (DateTime.tryParse(stored) ?? DateTime.fromMillisecondsSinceEpoch(0))
+        : DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Future<void> _saveLastSyncTimestamp() async {
+    if (_userId == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastSyncKey, DateTime.now().toIso8601String());
+    await prefs.setString(_lastSyncKey(_userId!), DateTime.now().toIso8601String());
   }
 
   // ---------------------------------------------------------------------------

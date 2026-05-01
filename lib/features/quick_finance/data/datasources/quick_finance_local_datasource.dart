@@ -12,6 +12,13 @@ import '../models/sync_operation_model.dart';
 ///   Úsalo en la fase de push del [SyncManager] para localizar cuerpos de
 ///   transacciones que aún no se han sincronizado con Firestore.
 abstract class QuickFinanceLocalDataSource {
+  // ── Identidad ─────────────────────────────────────────────────────────────
+
+  /// Configura el usuario activo. A partir de esta llamada, [watchTransactions],
+  /// [getTransactions] y [getAllTransactions] devuelven solo las transacciones
+  /// pertenecientes a [userId]. Llamar de nuevo reemplaza el filtro anterior.
+  void setUserId(String userId);
+
   // ── Transacciones ──────────────────────────────────────────────────────────
 
   /// Persiste o reemplaza una transacción por su `id`.
@@ -20,10 +27,20 @@ abstract class QuickFinanceLocalDataSource {
   /// Persiste o reemplaza un lote de transacciones.
   Future<void> saveTransactions(List<TransactionModel> transactions);
 
-  /// Stream de transacciones **activas** (deletedAt == null),
-  /// ordenadas por `createdAt` descendente.
+  /// Inserta o reemplaza un lote de transacciones (semántica upsert explícita).
+  /// Idéntico a [saveTransactions] pero el nombre deja claro que no borra
+  /// registros existentes que no estén en la lista.
+  Future<void> upsertTransactions(List<TransactionModel> transactions);
+
+  /// Stream de transacciones **activas** (deletedAt == null) del [userId]
+  /// especificado, ordenadas por `createdAt` descendente.
   /// Emite el estado actual al suscribirse y ante cada cambio en el box.
-  Stream<List<TransactionModel>> watchTransactions();
+  /// Siempre filtra por [userId]: nunca mezcla datos de usuarios distintos.
+  Stream<List<TransactionModel>> watchTransactions(String userId);
+
+  /// Devuelve `true` si existe al menos una transacción activa guardada
+  /// localmente para [userId]. Útil para decidir si hacer fetch remoto.
+  Future<bool> hasCachedTransactions(String userId);
 
   /// Snapshot de transacciones **activas** (deletedAt == null),
   /// ordenadas por `createdAt` descendente.

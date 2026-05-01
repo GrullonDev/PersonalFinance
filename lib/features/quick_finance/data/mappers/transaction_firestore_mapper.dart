@@ -155,6 +155,7 @@ class TransactionFirestoreMapper {
       type: _typeFromString(data[_fType]),
       amount: _double(data[_fAmount]),
       note: _str(data[_fNote]) ?? '',
+      categoryId: _str(data[_fCategoryId] ?? data[_legacyCategoriaId]),
       createdAt: _dateTime(data[_fCreatedAt]) ?? DateTime.now(),
       updatedAt: _dateTime(data[_fUpdatedAt]) ?? DateTime.now(),
       deletedAt: _dateTime(data[_fDeletedAt]),
@@ -182,6 +183,7 @@ class TransactionFirestoreMapper {
       type: type,
       amount: _double(data[_legacyMonto]),
       note: _str(data[_legacyDescripcion]) ?? '',
+      categoryId: _str(data[_legacyCategoriaId] ?? data[_fCategoryId]),
       createdAt: fecha ?? DateTime.now(),
       updatedAt: fecha ?? DateTime.now(),
       deletedAt: null, // el legacy no tiene soft-delete
@@ -239,10 +241,16 @@ class TransactionFirestoreMapper {
 
   static DateTime? _dateTime(dynamic v) {
     if (v == null) return null;
+    if (v is DateTime) return v;
     if (v is String) return DateTime.tryParse(v);
-    // Firestore Timestamp — evitamos importar cloud_firestore aquí; el
-    // datasource puede convertir Timestamp → String antes de llamar al mapper.
-    return null;
+    // Duck-type Firestore Timestamp sin importar cloud_firestore.
+    // Timestamp expone toDate() → DateTime; cualquier otro tipo lanzará
+    // NoSuchMethodError que capturamos y devolvemos null.
+    try {
+      return (v as dynamic).toDate() as DateTime;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Parsea fechas en formato `YYYY-MM-DD` usadas por el schema legacy.
