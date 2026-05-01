@@ -124,7 +124,7 @@ Future<void> main() async {
 
           unawaited(FirebaseAnalytics.instance.logAppOpen());
         } catch (e, st) {
-          debugPrint('[init] Firebase error (continuing offline): $e\n$st');
+          if (kDebugMode) debugPrint('[init] Firebase error (continuing offline): $e\n$st');
         }
 
         // ── Dependency Injection ───────────────────────────────────────────
@@ -133,11 +133,11 @@ Future<void> main() async {
 
         runApp(const MyApp());
       } catch (e, stackTrace) {
-        debugPrint('[init] FATAL: $e\n$stackTrace');
+        // En debug: loguear detalles para diagnosticar. En producción: silenciar.
+        if (kDebugMode) debugPrint('[init] FATAL: $e\n$stackTrace');
 
-        // UI de fallback: si algo explota antes de runApp(), evitamos que el
-        // launch screen blanco quede pegado para siempre. Imprime el error en
-        // pantalla para que sea diagnosticable en device sin debugger.
+        // UI de fallback genérica — no expone detalles internos en producción.
+        // En debug se muestra el error crudo para facilitar el diagnóstico.
         runApp(
           MaterialApp(
             debugShowCheckedModeBanner: false,
@@ -167,7 +167,9 @@ Future<void> main() async {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '$e',
+                          kDebugMode
+                              ? '$e'
+                              : 'Ocurrió un problema inesperado. Por favor reinstala la app o contacta soporte.',
                           style: const TextStyle(color: Colors.white70),
                           textAlign: TextAlign.center,
                         ),
@@ -182,7 +184,7 @@ Future<void> main() async {
       }
     },
     (Object error, StackTrace stack) {
-      debugPrint('[zoned] $error\n$stack');
+      if (kDebugMode) debugPrint('[zoned] $error\n$stack');
       // Best-effort: si Firebase ya está inicializado, reportar.
       try {
         FirebaseCrashlytics.instance
