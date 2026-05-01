@@ -16,12 +16,22 @@ class RegisterLayout extends StatelessWidget {
 
     Future<void> handleSelectBirthDate() async {
       FocusScope.of(context).unfocus();
-      final DateTime initialDate = registerProvider.birthDate ?? DateTime.now();
+      final DateTime now = DateTime.now();
+      // Última fecha válida: exactamente 15 años antes de hoy.
+      final DateTime maxDate = DateTime(now.year - 15, now.month, now.day);
+      // Fecha inicial sensata: 25 años atrás, o la que ya eligió el usuario
+      // (siempre dentro del rango válido).
+      final DateTime initialDate = switch (registerProvider.birthDate) {
+        null => DateTime(now.year - 25, now.month, now.day),
+        final d when d.isAfter(maxDate) => maxDate,
+        final d => d,
+      };
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: initialDate,
         firstDate: DateTime(1900),
-        lastDate: DateTime.now(),
+        lastDate: maxDate,
+        helpText: 'Debes tener 15 años o más',
         builder:
             (BuildContext context, Widget? child) => Theme(
               data: Theme.of(context).copyWith(

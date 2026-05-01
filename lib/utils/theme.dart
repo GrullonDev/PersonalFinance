@@ -52,6 +52,17 @@ class AppTheme {
       scaffoldBackgroundColor: scaffoldBg,
       fontFamily: 'Roboto', // Or 'Inter' if added to pubspec
 
+      // Transiciones de página estilo iOS por defecto cuando la app corre
+      // en iPhone/iPad (swipe-back, slide horizontal). En Android mantenemos
+      // el comportamiento Material estándar (zoom).
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+        },
+      ),
+
       appBarTheme: AppBarTheme(
         centerTitle: true,
         backgroundColor: Colors.transparent,

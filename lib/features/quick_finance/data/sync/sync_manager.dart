@@ -59,6 +59,9 @@ class SyncManager {
   /// Flag para evitar syncs concurrentes.
   bool _isSyncing = false;
 
+  /// Último estado de conectividad conocido. Null = desconocido (primer evento).
+  bool? _wasConnected;
+
   SyncManager({
     required QuickFinanceLocalDataSource localDataSource,
     required QuickFinanceRemoteDataSource remoteDataSource,
@@ -124,15 +127,19 @@ class SyncManager {
   // Trigger 2: Al recuperar conectividad
   // ---------------------------------------------------------------------------
 
-  /// Inicia un listener de conectividad. Cuando se detecta que el
-  /// dispositivo recupera la conexión, dispara un sync automático.
+  /// Inicia un listener de conectividad. Dispara sync únicamente cuando el
+  /// dispositivo recupera internet (transición offline → online), evitando
+  /// intentos innecesarios de sync mientras no hay conexión.
   void startConnectivityListener() {
     _connectivitySubscription?.cancel();
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-      (result) {
-        if (result != ConnectivityResult.none) {
+      (ConnectivityResult result) {
+        final isConnected = result != ConnectivityResult.none;
+        // Solo sincronizar en la transición offline → online.
+        if (isConnected && _wasConnected == false) {
           syncNow();
         }
+        _wasConnected = isConnected;
       },
     );
   }
@@ -141,6 +148,7 @@ class SyncManager {
   void stopConnectivityListener() {
     _connectivitySubscription?.cancel();
     _connectivitySubscription = null;
+    _wasConnected = null;
   }
 
   // ---------------------------------------------------------------------------

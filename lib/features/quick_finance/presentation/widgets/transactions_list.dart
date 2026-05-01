@@ -1,95 +1,227 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/transaction_entity.dart';
-import 'transaction_tile.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/features/quick_finance/presentation/widgets/transaction_tile.dart';
 
-/// Lista de transacciones con estado vacío y transiciones animadas.
-///
-/// Las transacciones ya llegan filtradas (sin soft-deleted) y ordenadas
-/// por [createdAt] descendente desde la capa de datos.
 class TransactionsList extends StatelessWidget {
   final List<TransactionEntity> transactions;
   final void Function(String id) onDelete;
 
+  /// Called with a pre-filled text string when the user taps a quick-start
+  /// chip in the empty state. The parent scrolls to and fills the entry input.
+  final void Function(String prefillText)? onQuickStart;
+
   const TransactionsList({
-    super.key,
     required this.transactions,
     required this.onDelete,
+    this.onQuickStart,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: transactions.isEmpty
+            ? _EmptyState(
+                key: const ValueKey('empty'),
+                onQuickStart: onQuickStart,
+              )
+            : _GroupedList(
+                key: const ValueKey('list'),
+                transactions: transactions,
+                onDelete: onDelete,
+              ),
+      );
+}
+
+// ── Grouped list ──────────────────────────────────────────────────────────────
+
+class _GroupedList extends StatelessWidget {
+  final List<TransactionEntity> transactions;
+  final void Function(String id) onDelete;
+
+  const _GroupedList({
+    required this.transactions,
+    required this.onDelete,
+    super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      child: transactions.isEmpty
-          ? const _EmptyState(key: ValueKey('empty'))
-          : _List(
-              key: const ValueKey('list'),
-              transactions: transactions,
-              onDelete: onDelete,
-            ),
-    );
-  }
-}
-
-// ── Lista con items ───────────────────────────────────────────────────────────
-
-class _List extends StatelessWidget {
-  final List<TransactionEntity> transactions;
-  final void Function(String id) onDelete;
-
-  const _List({super.key, required this.transactions, required this.onDelete});
-
-  @override
-  Widget build(BuildContext context) {
+    final items = _buildItems();
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: transactions.length,
-      itemBuilder: (context, index) {
-        final tx = transactions[index];
-        return TransactionTile(
-          key: ValueKey(tx.id),
-          transaction: tx,
-          onDelete: () => onDelete(tx.id),
-        );
-      },
+      itemCount: items.length,
+      itemBuilder: (_, i) => items[i],
     );
+  }
+
+  List<Widget> _buildItems() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final weekStart =
+        today.subtract(Duration(days: now.weekday - 1));
+    final monthFmt = DateFormat('MMMM yyyy', 'es');
+
+    String? lastLabel;
+    final items = <Widget>[];
+
+    for (final t in transactions) {
+      final tDay =
+          DateTime(t.createdAt.year, t.createdAt.month, t.createdAt.day);
+      final String label;
+
+      if (tDay == today) {
+        label = 'Hoy';
+      } else if (tDay == yesterday) {
+        label = 'Ayer';
+      } else if (!tDay.isBefore(weekStart)) {
+        label = 'Esta semana';
+      } else {
+        final raw = monthFmt.format(t.createdAt);
+        label = raw[0].toUpperCase() + raw.substring(1);
+      }
+
+      if (label != lastLabel) {
+        items.add(_DateHeader(label: label));
+        lastLabel = label;
+      }
+
+      items.add(TransactionTile(
+        key: ValueKey(t.id),
+        transaction: t,
+        onDelete: () => onDelete(t.id),
+      ));
+    }
+
+    return items;
   }
 }
 
-// ── Estado vacío ──────────────────────────────────────────────────────────────
+// ── Date section header ───────────────────────────────────────────────────────
+
+class _DateHeader extends StatelessWidget {
+  final String label;
+  const _DateHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade500,
+            letterSpacing: 0.3,
+          ),
+        ),
+      );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({super.key});
+  final void Function(String)? onQuickStart;
+
+  const _EmptyState({super.key, this.onQuickStart});
+
+  static const _examples = [
+    ('-5 café', '☕ Café'),
+    ('-10 transporte', '🚌 Transporte'),
+    ('+100 ingreso', '💰 Ingreso'),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
+      padding: const EdgeInsets.symmetric(vertical: 40),
       child: Column(
         children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 56,
-            color: Colors.grey.shade300,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Sin transacciones aún',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.w500,
-              fontSize: 15,
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.receipt_long_outlined,
+              size: 32,
+              color: primary.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 16),
           Text(
-            'Usa la entrada rápida para registrar un movimiento',
+            'Empieza con tu último gasto',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Registra lo que gastas para ver\ntu resumen financiero',
             style: TextStyle(
               color: Colors.grey.shade400,
               fontSize: 13,
+              height: 1.4,
             ),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+
+          // Quick-start chips
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (final (raw, label) in _examples) ...[
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onQuickStart?.call(raw);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ],
+          ),
+
+          const SizedBox(height: 14),
+          Text(
+            'Ej: -80 comida  •  +500 salario  •  15 taxi',
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
           ),
         ],
       ),

@@ -1,42 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/constants/enums.dart';
-import '../../domain/parsers/quick_entry_parser.dart';
+import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/features/quick_finance/domain/parsers/quick_entry_parser.dart';
 
-/// Widget de entrada rápida de transacciones.
-///
-/// Parsea el texto localmente para dar feedback inmediato (error inline
-/// y SnackBar de confirmación). Una vez que el parse es exitoso, delega
-/// el guardado al BLoC a través de [onSubmit] con el texto crudo, de modo
-/// que el BLoC es la fuente autoritativa para persistir la transacción.
-///
-/// Soporta:
-///   "-80 comida"           → expense, 80.0, "comida"
-///   "+500 salario"         → income,  500.0, "salario"
-///   "120 taxi #transporte" → expense, 120.0, "taxi", category:"transporte"
-///   "-35,50 almuerzo"      → expense, 35.5, "almuerzo"
-///   "$50 grocery"          → expense, 50.0, "grocery"
 class QuickEntryInput extends StatefulWidget {
-  /// Llamado con el texto crudo cuando el parse local es exitoso.
-  /// El BLoC lo re-parsea con [QuickEntryParser] para persistir.
   final void Function(String rawInput) onSubmit;
 
-  const QuickEntryInput({super.key, required this.onSubmit});
+  const QuickEntryInput({required this.onSubmit, super.key});
 
   @override
-  State<QuickEntryInput> createState() => _QuickEntryInputState();
+  State<QuickEntryInput> createState() => QuickEntryInputState();
 }
 
-class _QuickEntryInputState extends State<QuickEntryInput>
+/// State is intentionally public so a parent can call [prefill] via GlobalKey.
+class QuickEntryInputState extends State<QuickEntryInput>
     with SingleTickerProviderStateMixin {
-  final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   static const _parser = QuickEntryParser();
 
   late final AnimationController _animController;
-  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _scaleAnim;
 
   String? _errorText;
+
+  static const _categoryLabels = [
+    'Comida',
+    'Transporte',
+    'Salario',
+    'Servicios',
+    'Compras',
+    'Salud',
+  ];
 
   @override
   void initState() {
@@ -45,7 +40,7 @@ class _QuickEntryInputState extends State<QuickEntryInput>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
+    _scaleAnim = Tween<double>(begin: 1, end: 0.85).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
   }
@@ -58,14 +53,48 @@ class _QuickEntryInputState extends State<QuickEntryInput>
     super.dispose();
   }
 
+  // Called by parent via GlobalKey to pre-fill from empty-state chips.
+  void prefill(String text) {
+    setState(() => _errorText = null);
+    _controller.text = text;
+    _controller.selection = TextSelection.collapsed(offset: text.length);
+    _focusNode.requestFocus();
+  }
+
+  void _applySign(bool isExpense) {
+    HapticFeedback.selectionClick();
+    final text = _controller.text;
+    final sign = isExpense ? '-' : '+';
+    final opposite = isExpense ? '+' : '-';
+    final newText = text.startsWith(opposite)
+        ? sign + text.substring(1)
+        : text.startsWith(sign)
+            ? text
+            : sign + text;
+    _controller.text = newText;
+    _controller.selection = TextSelection.collapsed(offset: newText.length);
+    if (_errorText != null) setState(() => _errorText = null);
+    _focusNode.requestFocus();
+  }
+
+  void _applyCategory(String keyword) {
+    HapticFeedback.selectionClick();
+    final current = _controller.text.trimRight();
+    if (!current.toLowerCase().contains(keyword.toLowerCase())) {
+      final newText = current.isEmpty ? keyword : '$current $keyword';
+      _controller.text = newText;
+      _controller.selection =
+          TextSelection.collapsed(offset: newText.length);
+    }
+    if (_errorText != null) setState(() => _errorText = null);
+    _focusNode.requestFocus();
+  }
+
   void _submit() {
     final raw = _controller.text.trim();
     if (raw.isEmpty) return;
 
-    // Parse local para feedback inmediato antes de enviar al BLoC
-    final result = _parser.parse(raw);
-
-    switch (result) {
+    switch (_parser.parse(raw)) {
       case ParseFailure(:final reason):
         setState(() => _errorText = reason);
         HapticFeedback.lightImpact();
@@ -74,10 +103,7 @@ class _QuickEntryInputState extends State<QuickEntryInput>
         setState(() => _errorText = null);
         _animController.forward().then((_) => _animController.reverse());
         HapticFeedback.mediumImpact();
-
-        // El texto crudo llega al BLoC que lo persiste
         widget.onSubmit(raw);
-
         _showFeedback(entry);
         _controller.clear();
         _focusNode.unfocus();
@@ -86,57 +112,57 @@ class _QuickEntryInputState extends State<QuickEntryInput>
 
   void _showFeedback(ParsedEntry entry) {
     final isIncome = entry.type == TransactionType.income;
-    final categoryLabel =
-        entry.category != null ? '  •  #${entry.category}' : '';
-
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isIncome
-                  ? Icons.arrow_upward_rounded
-                  : Icons.arrow_downward_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '${isIncome ? '+' : '-'}\$${entry.amount.toStringAsFixed(2)}'
-                '  •  ${entry.note}$categoryLabel',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+    final cat = entry.category != null ? '  •  #${entry.category}' : '';
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                isIncome
+                    ? Icons.arrow_upward_rounded
+                    : Icons.arrow_downward_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${isIncome ? '+' : '-'}\$${entry.amount.toStringAsFixed(2)}'
+                  '  •  ${entry.note}$cat',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            const Icon(
-              Icons.check_circle_outline,
-              color: Colors.white70,
-              size: 18,
-            ),
-          ],
+              const Icon(
+                Icons.check_circle_outline,
+                color: Colors.white70,
+                size: 18,
+              ),
+            ],
+          ),
+          backgroundColor:
+              isIncome ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor:
-            isIncome ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final primary = Theme.of(context).primaryColor;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -149,68 +175,158 @@ class _QuickEntryInputState extends State<QuickEntryInput>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.send,
-                  decoration: InputDecoration(
-                    prefixIcon:
-                        const Icon(Icons.flash_on, color: Colors.amber),
-                    hintText: 'Ej: -80 comida  /  +500 salario #trabajo',
-                    errorText: _errorText,
-                    errorMaxLines: 2,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+          // ── Text field with integrated send button ──────────────────────────
+          TextField(
+            controller: _controller,
+            focusNode: _focusNode,
+            keyboardType: TextInputType.text,
+            textInputAction: TextInputAction.send,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            decoration: InputDecoration(
+              hintText: '-80 comida',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontWeight: FontWeight.w400,
+              ),
+              errorText: _errorText,
+              errorMaxLines: 2,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF2F3F5),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              suffixIcon: ScaleTransition(
+                scale: _scaleAnim,
+                child: GestureDetector(
+                  onTap: _submit,
+                  child: Container(
+                    margin: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: primary,
+                      shape: BoxShape.circle,
                     ),
-                    filled: true,
-                    fillColor:
-                        theme.secondaryHeaderColor.withValues(alpha: 0.1),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+                    child: const Icon(
+                      Icons.arrow_upward_rounded,
+                      color: Colors.white,
+                      size: 18,
                     ),
                   ),
-                  onChanged: (_) {
-                    if (_errorText != null) {
-                      setState(() => _errorText = null);
-                    }
-                  },
-                  onSubmitted: (_) => _submit(),
                 ),
               ),
-              const SizedBox(width: 12),
-              ScaleTransition(
-                scale: _scaleAnimation,
-                child: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: theme.primaryColor,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: _submit,
-                  ),
-                ),
+            ),
+            onChanged: (_) {
+              if (_errorText != null) setState(() => _errorText = null);
+            },
+            onSubmitted: (_) => _submit(),
+          ),
+
+          const SizedBox(height: 10),
+
+          // ── Type chips ──────────────────────────────────────────────────────
+          Row(
+            children: [
+              _TypeChip(
+                label: '− Gasto',
+                color: const Color(0xFFFF3B30),
+                onTap: () => _applySign(true),
+              ),
+              const SizedBox(width: 8),
+              _TypeChip(
+                label: '+ Ingreso',
+                color: const Color(0xFF34C759),
+                onTap: () => _applySign(false),
               ),
             ],
           ),
+
           const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Text(
-              '"-" gastos  •  "+" ingresos  •  sin signo = gasto  •  #categoría',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+
+          // ── Category chips (scrollable) ─────────────────────────────────────
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final label in _categoryLabels) ...[
+                  _CategoryEntryChip(
+                    label: label,
+                    onTap: () => _applyCategory(label.toLowerCase()),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+// ── Type chip ─────────────────────────────────────────────────────────────────
+
+class _TypeChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _TypeChip({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+      );
+}
+
+// ── Category entry chip ───────────────────────────────────────────────────────
+
+class _CategoryEntryChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _CategoryEntryChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ),
+      );
 }

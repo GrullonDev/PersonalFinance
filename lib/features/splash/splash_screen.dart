@@ -32,13 +32,22 @@ class _SplashScreenState extends State<SplashScreen> {
         await auth.onAppResumed();
         if (auth.isAuthenticated) {
           if (!mounted) return;
-          Navigator.of(context).pushReplacementNamed(RoutePath.dashboard);
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            RoutePath.dashboard,
+            (_) => false,
+          );
         } else {
           if (!mounted) return;
-          Navigator.of(context).pushReplacementNamed(RoutePath.login);
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            RoutePath.login,
+            (_) => false,
+          );
         }
       } else {
-        Navigator.of(context).pushReplacementNamed(RoutePath.onboarding);
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          RoutePath.onboarding,
+          (_) => false,
+        );
       }
     }
   }

@@ -159,14 +159,16 @@ class AppValidators {
     }
 
     final DateTime minDate = DateTime(1900);
-    final DateTime maxDate = DateTime.now();
+    final DateTime now = DateTime.now();
+    // Mínimo de edad: 15 años cumplidos a día de hoy.
+    final DateTime maxDate = DateTime(now.year - 15, now.month, now.day);
 
     if (date.isBefore(minDate)) {
       return '$fieldName no puede ser anterior al año 1900';
     }
 
     if (date.isAfter(maxDate)) {
-      return '$fieldName no puede ser posterior a hoy';
+      return 'Debes tener al menos 15 años para registrarte';
     }
 
     return null;

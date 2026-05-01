@@ -154,7 +154,10 @@ class AuthLayout extends StatelessWidget {
     final bool ok = await auth.signInWithGoogle();
     if (!context.mounted) return;
     if (ok) {
-      Navigator.pushReplacementNamed(context, RoutePath.dashboard);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        RoutePath.dashboard,
+        (_) => false,
+      );
     } else if (auth.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.errorMessage!)),
@@ -318,7 +321,10 @@ class AuthLayout extends StatelessWidget {
           );
         }
       },
-      (_) => Navigator.pushReplacementNamed(context, RoutePath.dashboard),
+      (_) => Navigator.of(context).pushNamedAndRemoveUntil(
+        RoutePath.dashboard,
+        (_) => false,
+      ),
     );
   }
 
@@ -405,7 +411,10 @@ class AuthLayout extends StatelessWidget {
     final bool ok = await auth.signInWithApple();
     if (!context.mounted) return;
     if (ok) {
-      Navigator.pushReplacementNamed(context, RoutePath.dashboard);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        RoutePath.dashboard,
+        (_) => false,
+      );
     } else if (auth.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.errorMessage!)),
