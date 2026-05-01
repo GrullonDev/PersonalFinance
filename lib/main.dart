@@ -1,29 +1,31 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:personal_finance/firebase_options.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
+import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/core/security/hive_encryption_service.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
-import 'package:personal_finance/utils/injection_container.dart' as old_di;
+import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
+import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
+import 'package:personal_finance/firebase_options.dart';
 import 'package:personal_finance/injection_container.dart' as mvp_di;
+import 'package:personal_finance/utils/app.dart';
+import 'package:personal_finance/utils/injection_container.dart' as old_di;
 import 'package:personal_finance/utils/offline_sync_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
-import 'package:personal_finance/core/constants/enums.dart';
-import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
-import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
-import 'package:personal_finance/features/quick_finance/presentation/pages/quick_finance_home_page.dart';
-import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_bloc.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 
 Future<void> main() async {
   runZonedGuarded<Future<void>>(
@@ -31,30 +33,53 @@ Future<void> main() async {
       try {
         WidgetsFlutterBinding.ensureInitialized();
 
-        // Manejar posibles errores con el Locale nativo en iOS
+        // ── Portrait-only (alineado con Info.plist) ─────────────────────────
+        // Hacerlo "fire-and-forget" para no bloquear el arranque si el sistema
+        // demora en responder.
+        unawaited(
+          SystemChrome.setPreferredOrientations(<DeviceOrientation>[
+            DeviceOrientation.portraitUp,
+          ]),
+        );
+
+        // ── Locale e Internacionalización ──────────────────────────────────
         try {
           final Locale deviceLocale = ui.PlatformDispatcher.instance.locale;
           Intl.defaultLocale = deviceLocale.toLanguageTag();
           await initializeDateFormatting(Intl.defaultLocale);
         } catch (locErr) {
-          debugPrint('Error al inicializar Locale: $locErr');
-          await initializeDateFormatting('en_US'); // Fallback
+          debugPrint('[init] locale error: $locErr');
+          await initializeDateFormatting('en_US');
         }
 
-        // Inicializa Hive
         await Hive.initFlutter();
-        Hive.registerAdapter(ExpenseAdapter());
-        await Hive.openBox<Expense>('expenses');
-        Hive.registerAdapter(IncomeAdapter());
-        await Hive.openBox<Income>('incomes');
-        Hive.registerAdapter(AlertItemAdapter());
-        await Hive.openBox<AlertItem>('alerts');
+
+        // Derive the AES-256 cipher once — all boxes share the same key,
+        // stored in iOS Keychain / Android EncryptedSharedPreferences.
+        final hiveCipher = await HiveEncryptionService.getCipher();
+
+        // Legacy adapters
+        if (!Hive.isAdapterRegistered(ExpenseAdapter().typeId)) {
+          Hive.registerAdapter(ExpenseAdapter());
+        }
+        await HiveEncryptionService.openBoxSafe<Expense>('expenses', hiveCipher);
+
+        if (!Hive.isAdapterRegistered(IncomeAdapter().typeId)) {
+          Hive.registerAdapter(IncomeAdapter());
+        }
+        await HiveEncryptionService.openBoxSafe<Income>('incomes', hiveCipher);
+
+        if (!Hive.isAdapterRegistered(AlertItemAdapter().typeId)) {
+          Hive.registerAdapter(AlertItemAdapter());
+        }
+        await HiveEncryptionService.openBoxSafe<AlertItem>('alerts', hiveCipher);
+
         if (!Hive.isAdapterRegistered(0)) {
           Hive.registerAdapter(PendingActionAdapter());
         }
-        await OfflineSyncService().init();
+        await OfflineSyncService().init(hiveCipher);
 
-        // Registra adapters del MVP (quick_finance feature)
+        // MVP (quick_finance) adapters
         if (!Hive.isAdapterRegistered(TransactionTypeAdapter().typeId)) {
           Hive.registerAdapter(TransactionTypeAdapter());
         }
@@ -71,44 +96,82 @@ Future<void> main() async {
           Hive.registerAdapter(SyncOperationModelAdapter());
         }
 
-        // Inicializa Firebase con las opciones generadas por FlutterFire
+        // ── Firebase + Crashlytics + Analytics ─────────────────────────────
+        // Cualquier error aquí se loggea pero NO impide arrancar la UI.
         try {
           if (Firebase.apps.isEmpty) {
             await Firebase.initializeApp(
               options: DefaultFirebaseOptions.currentPlatform,
             );
           }
-        } catch (e) {
-          if (e.toString().contains('duplicate-app')) {
-            debugPrint('Firebase ya está inicializado.');
-          } else {
-            debugPrint('Error al inicializar Firebase: $e');
-            // No hacemos rethrow para no causar pantalla blanca y permitir arrancar en modo offline
-          }
+
+          await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+            !kDebugMode,
+          );
+
+          FlutterError.onError = (FlutterErrorDetails details) {
+            FlutterError.presentError(details);
+            FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+          };
+
+          ui.PlatformDispatcher.instance.onError = (
+            Object error,
+            StackTrace stack,
+          ) {
+            FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+            return true;
+          };
+
+          unawaited(FirebaseAnalytics.instance.logAppOpen());
+        } catch (e, st) {
+          debugPrint('[init] Firebase error (continuing offline): $e\n$st');
         }
 
-        // Configura dependencias (Old Architecture)
+        // ── Dependency Injection ───────────────────────────────────────────
         await old_di.initDependencies();
-
-        // Configura dependencias (New MVP Architecture)
-        await mvp_di.init();
+        await mvp_di.init(hiveCipher);
 
         runApp(const MyApp());
       } catch (e, stackTrace) {
-        debugPrint('Error fatal durante la inicialización: $e\n$stackTrace');
+        debugPrint('[init] FATAL: $e\n$stackTrace');
 
-        // Fallback UI si ocurre una excepción y MyApp() no puede arrancar
+        // UI de fallback: si algo explota antes de runApp(), evitamos que el
+        // launch screen blanco quede pegado para siempre. Imprime el error en
+        // pantalla para que sea diagnosticable en device sin debugger.
         runApp(
           MaterialApp(
+            debugShowCheckedModeBanner: false,
             home: Scaffold(
-              body: Center(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Ha ocurrido un error al inicializar:\n\n$e',
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
+              backgroundColor: const Color(0xFF0E8F5B),
+              body: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.white,
+                          size: 64,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No pudimos iniciar la app',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '$e',
+                          style: const TextStyle(color: Colors.white70),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -118,27 +181,16 @@ Future<void> main() async {
         );
       }
     },
-    (error, stack) {
-      debugPrint('Zoned Error no capturado: $error\n$stack');
+    (Object error, StackTrace stack) {
+      debugPrint('[zoned] $error\n$stack');
+      // Best-effort: si Firebase ya está inicializado, reportar.
+      try {
+        FirebaseCrashlytics.instance
+            .recordError(error, stack, fatal: true)
+            .ignore();
+      } catch (_) {
+        /* noop */
+      }
     },
-  );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) => GetIt.instance<QuickFinanceBloc>(),
-    child: MaterialApp(
-      title: 'Personal Finance MVP',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: const Color(0xFF0E8F5B),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0E8F5B)),
-        useMaterial3: true,
-      ),
-      home: const QuickFinanceHomePage(),
-    ),
   );
 }
