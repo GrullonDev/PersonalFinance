@@ -1,8 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/services/biometric_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 
 class AppLifecycleWrapper extends StatefulWidget {
   const AppLifecycleWrapper({required this.child, super.key});
@@ -18,6 +20,8 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
   final _biometricService = BiometricService();
   bool _isLocking = false;
   bool _isAuthenticating = false;
+  // True while the app is in the background / app-switcher — hides content.
+  bool _isObscured = false;
 
   @override
   void initState() {
@@ -40,8 +44,13 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
     // ya que el diálogo nativo causa transiciones de pausa/resumen.
     if (_isAuthenticating) return;
 
-    if (state == AppLifecycleState.resumed) {
-      // Al volver a primer plano
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      // App is about to be backgrounded — obscure financial content before
+      // the OS captures the app-switcher screenshot.
+      setState(() => _isObscured = true);
+    } else if (state == AppLifecycleState.resumed) {
+      setState(() => _isObscured = false);
       final AuthProvider auth = context.read<AuthProvider>();
       auth.onAppResumed();
       _checkLock();
@@ -51,18 +60,11 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
   Future<void> _checkLock() async {
     if (_isLocking || _isAuthenticating) return;
 
-    final prefs = await SharedPreferences.getInstance();
-
-    // Solo bloqueamos si el onboarding está completo
-    final bool onboardingComplete =
-        prefs.getBool('onboarding_complete') ?? false;
-    if (!onboardingComplete) return;
-
     // Solo bloqueamos si el usuario está autenticado
     final AuthProvider auth = context.read<AuthProvider>();
     if (!auth.isAuthenticated) return;
 
-    final bool appLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
+    final bool appLockEnabled = await SecurityPreferences.getAppLockEnabled();
 
     if (appLockEnabled) {
       setState(() {
@@ -134,6 +136,30 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
         ),
       );
     }
+
+    // Obscure financial content while the app is in the background so that
+    // the OS app-switcher screenshot does not capture sensitive data.
+    // On Android, FLAG_SECURE in MainActivity blocks the screenshot at the
+    // system level; this blur is an additional defense for iOS and older Android.
+    if (_isObscured) {
+      return Stack(
+        children: [
+          widget.child,
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: ColoredBox(
+                color: Colors.black.withOpacity(0.4),
+                child: const Center(
+                  child: Icon(Icons.lock_outline, color: Colors.white, size: 64),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return widget.child;
   }
 }
