@@ -17,6 +17,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   bool _biometricEnabled = false;
   bool _appLockEnabled = false;
   bool _isHardwareSupported = false;
+  bool _emailVerified = false;
 
   @override
   void initState() {
@@ -32,10 +33,13 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
     final isSupported = await _biometricService.isBiometricAvailable();
     final biometricEnabled = await SecurityPreferences.getBiometricEnabled();
     final appLockEnabled = await SecurityPreferences.getAppLockEnabled();
+    final emailVerified =
+        FirebaseAuth.instance.currentUser?.emailVerified ?? false;
     setState(() {
       _biometricEnabled = biometricEnabled;
       _appLockEnabled = appLockEnabled;
       _isHardwareSupported = isSupported;
+      _emailVerified = emailVerified;
     });
   }
 
@@ -97,7 +101,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                     _buildProtectionToggle(
                       colorScheme: colorScheme,
                       title: 'Desbloqueo Biométrico',
-                      subtitle: 'Fingerprint o FaceID',
+                      subtitle: 'Usar biometría del dispositivo',
                       icon: Icons.fingerprint,
                       value: _biometricEnabled,
                       onChanged: _toggleBiometrics,
@@ -107,7 +111,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                   _buildProtectionToggle(
                     colorScheme: colorScheme,
                     title: 'Bloqueo de Aplicación',
-                    subtitle: 'Solicitar PIN al abrir',
+                    subtitle: 'Solicitar biometría al volver a la app',
                     icon: Icons.lock_person_outlined,
                     value: _appLockEnabled,
                     onChanged: _toggleAppLock,
@@ -124,9 +128,12 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                   const SizedBox(height: 12),
                   _buildActionTile(
                     theme: theme,
-                    title: 'Dispositivos Vinculados',
-                    icon: Icons.devices_other_rounded,
-                    onTap: () {},
+                    title: 'Estado del Correo',
+                    icon:
+                        _emailVerified
+                            ? Icons.mark_email_read_outlined
+                            : Icons.mark_email_unread_outlined,
+                    onTap: _showEmailVerificationStatus,
                   ),
                   const SizedBox(height: 48),
                   _buildEmergencyNote(theme),
@@ -185,14 +192,14 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   Widget _buildSecurityScore(ThemeData theme) => Column(
     children: [
       Text(
-        'Tu Protección es Óptima',
+        _securityHeadline,
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
         ),
       ),
       const SizedBox(height: 4),
       Text(
-        'Último análisis realizado hoy a las 09:45 AM',
+        _securitySubtitle,
         style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
@@ -294,7 +301,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'En caso de robo, puedes bloquear tu cuenta remotamente desde jorgegrullondev.com',
+            'Si pierdes el dispositivo, cambia tu contraseña y vuelve a iniciar sesión para proteger tu cuenta.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: Colors.amber[900],
               fontWeight: FontWeight.w500,
@@ -312,6 +319,69 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       backgroundColor: Colors.transparent,
       builder: (context) => _UpdatePasswordSheet(),
     );
+  }
+
+  void _showEmailVerificationStatus() {
+    final user = FirebaseAuth.instance.currentUser;
+    final verified = user?.emailVerified ?? false;
+
+    showDialog<void>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Verificación de correo'),
+            content: Text(
+              verified
+                  ? 'Tu correo ya está verificado y puede acceder a la app sin restricciones.'
+                  : 'Tu correo aún no está verificado. Debes verificarlo antes de entrar al dashboard.',
+            ),
+            actions: [
+              if (!verified && user != null)
+                TextButton(
+                  onPressed: () async {
+                    await user.sendEmailVerification();
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Te enviamos un nuevo correo de verificación.',
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Reenviar correo'),
+                ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  String get _securityHeadline {
+    final score =
+        (_biometricEnabled ? 1 : 0) +
+        (_appLockEnabled ? 1 : 0) +
+        (_emailVerified ? 1 : 0);
+
+    return switch (score) {
+      3 => 'Protección reforzada',
+      2 => 'Protección sólida',
+      1 => 'Protección básica',
+      _ => 'Protección pendiente',
+    };
+  }
+
+  String get _securitySubtitle {
+    final parts = <String>[
+      _biometricEnabled ? 'biometría activa' : 'biometría inactiva',
+      _appLockEnabled ? 'bloqueo activo' : 'bloqueo inactivo',
+      _emailVerified ? 'correo verificado' : 'correo sin verificar',
+    ];
+    return parts.join(' · ');
   }
 }
 
@@ -342,7 +412,11 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
       return;
     }
     if (newPassword.length < 8) {
-      setState(() => _errorMessage = 'La nueva contraseña debe tener al menos 8 caracteres.');
+      setState(
+        () =>
+            _errorMessage =
+                'La nueva contraseña debe tener al menos 8 caracteres.',
+      );
       return;
     }
 
@@ -370,13 +444,15 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contraseña actualizada correctamente.')),
+          const SnackBar(
+            content: Text('Contraseña actualizada correctamente.'),
+          ),
         );
       }
     } on FirebaseAuthException catch (e) {
       final msg = switch (e.code) {
-        'wrong-password' || 'invalid-credential' =>
-          'La contraseña actual es incorrecta.',
+        'wrong-password' ||
+        'invalid-credential' => 'La contraseña actual es incorrecta.',
         'weak-password' => 'La nueva contraseña es demasiado débil.',
         'requires-recent-login' =>
           'Sesión expirada. Cierra sesión y vuelve a entrar.',
@@ -458,16 +534,17 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
             height: 56,
             child: FilledButton(
               onPressed: _isLoading ? null : _changePassword,
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('Confirmar Cambio'),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text('Confirmar Cambio'),
             ),
           ),
         ],

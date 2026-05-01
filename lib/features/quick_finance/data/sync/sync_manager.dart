@@ -25,10 +25,10 @@ class SyncResult {
   });
 
   const SyncResult.idle()
-      : state = SyncState.idle,
-        pushedCount = 0,
-        pulledCount = 0,
-        errorMessage = null;
+    : state = SyncState.idle,
+      pushedCount = 0,
+      pulledCount = 0,
+      errorMessage = null;
 }
 
 /// Gestiona la sincronización bidireccional entre Hive y Firestore.
@@ -66,9 +66,9 @@ class SyncManager {
     required QuickFinanceLocalDataSource localDataSource,
     required QuickFinanceRemoteDataSource remoteDataSource,
     Connectivity? connectivity,
-  })  : _localDataSource = localDataSource,
-        _remoteDataSource = remoteDataSource,
-        _connectivity = connectivity ?? Connectivity();
+  }) : _localDataSource = localDataSource,
+       _remoteDataSource = remoteDataSource,
+       _connectivity = connectivity ?? Connectivity();
 
   /// Configura el userId en el SyncManager y en el datasource local.
   /// Debe llamarse antes de cualquier sync (típicamente al resolver el auth).
@@ -90,7 +90,9 @@ class SyncManager {
   Future<SyncResult> hydrateCurrentUserTransactions() async {
     if (_isSyncing) return const SyncResult.idle();
     if (_userId == null) {
-      debugPrint('SyncManager: userId no configurado, saltando hydration.');
+      if (kDebugMode) {
+        debugPrint('SyncManager: userId no configurado, saltando hydration.');
+      }
       return const SyncResult.idle();
     }
 
@@ -103,7 +105,7 @@ class SyncManager {
       _stateController.add(result);
       return result;
     } catch (e) {
-      debugPrint('SyncManager hydration error: $e');
+      if (kDebugMode) debugPrint('SyncManager hydration error: $e');
       final result = SyncResult(
         state: SyncState.error,
         errorMessage: e.toString(),
@@ -132,16 +134,16 @@ class SyncManager {
   /// intentos innecesarios de sync mientras no hay conexión.
   void startConnectivityListener() {
     _connectivitySubscription?.cancel();
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-      (ConnectivityResult result) {
-        final isConnected = result != ConnectivityResult.none;
-        // Solo sincronizar en la transición offline → online.
-        if (isConnected && _wasConnected == false) {
-          syncNow();
-        }
-        _wasConnected = isConnected;
-      },
-    );
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
+      ConnectivityResult result,
+    ) {
+      final isConnected = result != ConnectivityResult.none;
+      // Solo sincronizar en la transición offline → online.
+      if (isConnected && _wasConnected == false) {
+        syncNow();
+      }
+      _wasConnected = isConnected;
+    });
   }
 
   /// Detiene el listener de conectividad.
@@ -163,7 +165,9 @@ class SyncManager {
   Future<SyncResult> syncNow() async {
     if (_isSyncing) return const SyncResult.idle();
     if (_userId == null) {
-      debugPrint('SyncManager: userId no configurado, saltando sync.');
+      if (kDebugMode) {
+        debugPrint('SyncManager: userId no configurado, saltando sync.');
+      }
       return const SyncResult.idle();
     }
 
@@ -180,7 +184,9 @@ class SyncManager {
         pushedCount = await _push();
       } catch (e) {
         pushError = e.toString();
-        debugPrint('SyncManager push error (local data unaffected): $e');
+        if (kDebugMode) {
+          debugPrint('SyncManager push error (local data unaffected): $e');
+        }
       }
 
       int pulledCount = 0;
@@ -189,7 +195,9 @@ class SyncManager {
         pulledCount = await _pull();
       } catch (e) {
         pullError = e.toString();
-        debugPrint('SyncManager pull error (local data unaffected): $e');
+        if (kDebugMode) {
+          debugPrint('SyncManager pull error (local data unaffected): $e');
+        }
       }
 
       // Limpieza y cursor: solo si al menos una operación tuvo éxito.
@@ -204,7 +212,8 @@ class SyncManager {
 
       // Reportar error solo si ambas operaciones fallaron.
       final bothFailed = pushError != null && pullError != null;
-      final errorMsg = bothFailed ? 'Push: $pushError | Pull: $pullError' : null;
+      final errorMsg =
+          bothFailed ? 'Push: $pushError | Pull: $pullError' : null;
 
       final result = SyncResult(
         state: bothFailed ? SyncState.error : SyncState.success,
@@ -216,7 +225,7 @@ class SyncManager {
       return result;
     } catch (e) {
       // Error inesperado fuera de push/pull (ej. error al acceder a Hive).
-      debugPrint('SyncManager unexpected error: $e');
+      if (kDebugMode) debugPrint('SyncManager unexpected error: $e');
       final result = SyncResult(
         state: SyncState.error,
         errorMessage: e.toString(),
@@ -252,9 +261,7 @@ class SyncManager {
 
       // Actualizar syncStatus de la transacción a synced
       try {
-        final tx = allTransactions.firstWhere(
-          (t) => t.id == op.transactionId,
-        );
+        final tx = allTransactions.firstWhere((t) => t.id == op.transactionId);
         final syncedTx = tx.copyWith(syncStatus: SyncStatus.synced);
         await _localDataSource.saveTransaction(syncedTx);
       } catch (_) {
@@ -335,7 +342,10 @@ class SyncManager {
   Future<void> _saveLastSyncTimestamp() async {
     if (_userId == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastSyncKey(_userId!), DateTime.now().toIso8601String());
+    await prefs.setString(
+      _lastSyncKey(_userId!),
+      DateTime.now().toIso8601String(),
+    );
   }
 
   // ---------------------------------------------------------------------------

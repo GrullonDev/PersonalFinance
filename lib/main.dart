@@ -48,7 +48,7 @@ Future<void> main() async {
           Intl.defaultLocale = deviceLocale.toLanguageTag();
           await initializeDateFormatting(Intl.defaultLocale);
         } catch (locErr) {
-          debugPrint('[init] locale error: $locErr');
+          if (kDebugMode) debugPrint('[init] locale error: $locErr');
           await initializeDateFormatting('en_US');
         }
 
@@ -62,7 +62,10 @@ Future<void> main() async {
         if (!Hive.isAdapterRegistered(ExpenseAdapter().typeId)) {
           Hive.registerAdapter(ExpenseAdapter());
         }
-        await HiveEncryptionService.openBoxSafe<Expense>('expenses', hiveCipher);
+        await HiveEncryptionService.openBoxSafe<Expense>(
+          'expenses',
+          hiveCipher,
+        );
 
         if (!Hive.isAdapterRegistered(IncomeAdapter().typeId)) {
           Hive.registerAdapter(IncomeAdapter());
@@ -72,7 +75,10 @@ Future<void> main() async {
         if (!Hive.isAdapterRegistered(AlertItemAdapter().typeId)) {
           Hive.registerAdapter(AlertItemAdapter());
         }
-        await HiveEncryptionService.openBoxSafe<AlertItem>('alerts', hiveCipher);
+        await HiveEncryptionService.openBoxSafe<AlertItem>(
+          'alerts',
+          hiveCipher,
+        );
 
         if (!Hive.isAdapterRegistered(0)) {
           Hive.registerAdapter(PendingActionAdapter());
@@ -124,7 +130,8 @@ Future<void> main() async {
 
           unawaited(FirebaseAnalytics.instance.logAppOpen());
         } catch (e, st) {
-          if (kDebugMode) debugPrint('[init] Firebase error (continuing offline): $e\n$st');
+          if (kDebugMode)
+            debugPrint('[init] Firebase error (continuing offline): $e\n$st');
         }
 
         // ── Dependency Injection ───────────────────────────────────────────

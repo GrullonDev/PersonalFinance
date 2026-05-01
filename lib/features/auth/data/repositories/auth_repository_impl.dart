@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:personal_finance/core/services/app_data_cleanup_service.dart';
 import 'package:personal_finance/features/auth/data/models/request/login_user_request.dart';
 import 'package:personal_finance/features/auth/data/models/response/login_user_response.dart';
 import 'package:personal_finance/features/auth/data/models/request/register_user_request.dart';
@@ -166,19 +167,17 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final uid = user.uid;
 
-      // 1. Borrar subcolección de transacciones (best-effort — continúa aunque falle)
-      try {
-        final txSnap = await _firestore
-            .collection('users')
-            .doc(uid)
-            .collection('transactions')
-            .get();
-        final batch = _firestore.batch();
-        for (final doc in txSnap.docs) {
-          batch.delete(doc.reference);
-        }
-        if (txSnap.docs.isNotEmpty) await batch.commit();
-      } catch (_) {}
+      for (final collectionName in <String>[
+        'accounts',
+        'budgets',
+        'categories',
+        'goals',
+        'transactions',
+      ]) {
+        await _deleteCollectionInChunks(
+          _firestore.collection('users').doc(uid).collection(collectionName),
+        );
+      }
 
       // 2. Borrar documento del usuario en Firestore
       await _firestore.collection('users').doc(uid).delete();
@@ -192,12 +191,17 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // 4. Eliminar cuenta de Firebase Auth (requiere sesión reciente)
       await _firebaseDataSource.deleteAccount();
+      await AppDataCleanupService.clearUserScopedData(userId: uid);
 
       return right(unit);
     } on firebase_auth.FirebaseAuthException catch (e) {
-      return left(AuthFailure(message: e.message ?? 'Error al eliminar cuenta.'));
+      return left(
+        AuthFailure(message: e.message ?? 'Error al eliminar cuenta.'),
+      );
     } catch (e) {
-      return left(AuthFailure(message: 'Error inesperado al eliminar cuenta: $e'));
+      return left(
+        AuthFailure(message: 'Error inesperado al eliminar cuenta: $e'),
+      );
     }
   }
 
@@ -300,64 +304,46 @@ class AuthRepositoryImpl implements AuthRepository {
     LoginUserRequest request,
   ) async {
     try {
-      final String firebaseUid = await _firebaseDataSource
-          .signInWithEmailAndPassword(
-            email: request.email,
-            password: request.password,
-          );
+      await _firebaseDataSource.signInWithEmailAndPassword(
+        email: request.email,
+        password: request.password,
+      );
 
-      // Fetch user data from Firestore
-      final DocumentSnapshot doc =
-          await _firestore.collection('users').doc(firebaseUid).get();
-
-      if (!doc.exists) {
-        // Create basic doc if missing (migrated user or error)
+      final firebase_auth.User? firebaseUser =
+          firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
         return Left(
-          AuthFailure(message: 'El usuario no tiene un perfil asociado.'),
+          AuthFailure(
+            message:
+                'No se pudo restaurar la sesión de Firebase después del login.',
+          ),
         );
       }
 
-      final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-      // Helper to safely get int
-      int safeId = 0;
-      final dynamic idRaw = data['id'];
-      if (idRaw is int) {
-        safeId = idRaw;
-      } else if (idRaw is String) {
-        safeId = int.tryParse(idRaw) ?? 0;
+      await firebaseUser.reload();
+      final refreshedUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (refreshedUser == null) {
+        return Left(
+          AuthFailure(
+            message:
+                'La sesión de Firebase no está disponible después del login.',
+          ),
+        );
       }
 
-      // Construct User object for legacy response
-      final user = User(
-        id: safeId,
-        firebaseUid: firebaseUid,
-        email: (data['email'] as String?) ?? request.email,
-        username: (data['username'] as String?) ?? '',
-        nombres: (data['nombres'] as String?) ?? '',
-        apellidos: (data['apellidos'] as String?) ?? '',
-        nombreCompleto: (data['nombre_completo'] as String?) ?? '',
-        fechaNacimiento:
-            (data['fecha_nacimiento'] as String?) ??
-            DateTime.now().toIso8601String(),
-        fechaCreacion:
-            (data['fecha_creacion'] as String?) ??
-            DateTime.now().toIso8601String(),
-        fechaActualizacion:
-            (data['fecha_actualizacion'] as String?) ??
-            DateTime.now().toIso8601String(),
-      );
+      if (!refreshedUser.emailVerified) {
+        await _firebaseDataSource.logout();
+        return const Left(
+          AuthFailure(
+            message:
+                'Debes verificar tu correo electrónico antes de acceder al dashboard.',
+            statusCode: 403,
+          ),
+        );
+      }
 
-      // Construct LoginUserResponse
-      final response = LoginUserResponse(
-        accessToken:
-            "firebase-token-placeholder", // Not needed really but req by model
-        tokenType: "bearer",
-        user: user,
-        refreshToken: "firebase-refresh-token-placeholder",
-      );
-
-      return Right(response);
+      await _ensureUserDocumentExists(refreshedUser);
+      return _createLoginResponse(refreshedUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
       return Left(
         AuthFailure(
@@ -368,6 +354,21 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(
         AuthFailure(message: 'Error inesperado al iniciar sesión: $e'),
       );
+    }
+  }
+
+  Future<void> _deleteCollectionInChunks(
+    CollectionReference<Map<String, dynamic>> collection,
+  ) async {
+    while (true) {
+      final snapshot = await collection.limit(400).get();
+      if (snapshot.docs.isEmpty) return;
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
     }
   }
 

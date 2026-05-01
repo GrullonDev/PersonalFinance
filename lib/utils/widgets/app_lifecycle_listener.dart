@@ -60,8 +60,8 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
   Future<void> _checkLock() async {
     if (_isLocking || _isAuthenticating) return;
 
-    // Solo bloqueamos si el usuario está autenticado
     final AuthProvider auth = context.read<AuthProvider>();
+    await auth.syncSessionFromFirebase(notify: false);
     if (!auth.isAuthenticated) return;
 
     final bool appLockEnabled = await SecurityPreferences.getAppLockEnabled();
@@ -151,7 +151,11 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
               child: ColoredBox(
                 color: Colors.black.withOpacity(0.4),
                 child: const Center(
-                  child: Icon(Icons.lock_outline, color: Colors.white, size: 64),
+                  child: Icon(
+                    Icons.lock_outline,
+                    color: Colors.white,
+                    size: 64,
+                  ),
                 ),
               ),
             ),

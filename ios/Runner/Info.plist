@@ -62,12 +62,8 @@
 	<!-- ───────────────────────── Permisos / Privacy Strings ───────────────── -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Se usa Face ID / Touch ID para desbloquear la app y proteger tu información financiera.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Se utiliza la cámara para capturar recibos y guardarlos junto a tus movimientos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Se accede a la galería para adjuntar recibos o tu foto de perfil.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Se guardan reportes o comprobantes exportados en tu galería cuando lo solicitas.</string>
+	<string>Se accede a tu galería para adjuntar imágenes de recibos a tus movimientos.</string>
 
 	<!-- ───────────────────────── Plataforma iOS ───────────────────────────── -->
 	<key>LSRequiresIPhoneOS</key>

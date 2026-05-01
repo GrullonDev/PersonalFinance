@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 
 import 'package:personal_finance/core/security/security_preferences.dart';
@@ -26,27 +27,25 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (mounted) {
       if (onboardingComplete) {
-        // Intentar restaurar sesión mediante refresh si es posible
         final AuthProvider auth = context.read<AuthProvider>();
-        await auth.onAppResumed();
+        await firebase_auth.FirebaseAuth.instance.authStateChanges().first;
+        await auth.syncSessionFromFirebase(notify: false);
         if (auth.isAuthenticated) {
+          await auth.loadCurrentUser();
           if (!mounted) return;
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            RoutePath.dashboard,
-            (_) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(RoutePath.dashboard, (_) => false);
         } else {
           if (!mounted) return;
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            RoutePath.login,
-            (_) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(RoutePath.login, (_) => false);
         }
       } else {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          RoutePath.onboarding,
-          (_) => false,
-        );
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(RoutePath.onboarding, (_) => false);
       }
     }
   }
@@ -75,17 +74,16 @@ class _SplashScreenState extends State<SplashScreen> {
           Text(
             'Personal Finance',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Tu compañero financiero',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: Colors.white70),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
           ),
           const SizedBox(height: 32),
           const CircularProgressIndicator(

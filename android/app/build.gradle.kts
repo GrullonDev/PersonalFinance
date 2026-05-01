@@ -70,7 +70,6 @@ android {
 }
 
 dependencies {
-    implementation("com.facebook.android:facebook-android-sdk:18.0.3")
     implementation("com.google.android.gms:play-services-auth:21.0.0")
     implementation("androidx.multidex:multidex:2.0.1")
 }

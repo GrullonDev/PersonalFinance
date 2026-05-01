@@ -37,9 +37,7 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Stream<List<TransactionEntity>> watchTransactions({
-    required String userId,
-  }) {
+  Stream<List<TransactionEntity>> watchTransactions({required String userId}) {
     // 1. Dispara fetch remoto en segundo plano si Hive está vacío para este
     //    usuario. El upsert escribe en Hive y el stream lo propaga solo.
     _fetchIfNotCached(userId);
@@ -85,13 +83,13 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
       final remote = await remoteDataSource.fetchTransactions(userId);
       if (remote.isNotEmpty) {
         await localDataSource.upsertTransactions(
-          remote
-              .map((t) => t.copyWith(syncStatus: SyncStatus.synced))
-              .toList(),
+          remote.map((t) => t.copyWith(syncStatus: SyncStatus.synced)).toList(),
         );
       }
     } catch (e) {
-      debugPrint('QuickFinanceRepository background fetch failed: $e');
+      if (kDebugMode) {
+        debugPrint('QuickFinanceRepository background fetch failed: $e');
+      }
     } finally {
       _fetchingUsers.remove(userId);
     }
@@ -128,10 +126,9 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
 
   @override
   Future<void> updateTransaction(TransactionEntity transaction) async {
-    final model = TransactionModel.fromEntity(transaction).copyWith(
-      syncStatus: SyncStatus.pending,
-      updatedAt: DateTime.now(),
-    );
+    final model = TransactionModel.fromEntity(
+      transaction,
+    ).copyWith(syncStatus: SyncStatus.pending, updatedAt: DateTime.now());
     await localDataSource.saveTransaction(model);
     await _createSyncOp(model.id, SyncAction.update);
   }

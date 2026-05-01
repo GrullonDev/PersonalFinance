@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 /// Clase para manejar errores de Firebase de manera centralizada
 class FirebaseErrorHandler {
@@ -12,7 +12,7 @@ class FirebaseErrorHandler {
     try {
       return await operation();
     } catch (e) {
-      if (showDebugLog) {
+      if (showDebugLog && kDebugMode) {
         debugPrint('$errorMessage: $e');
       }
       return defaultValue;
@@ -29,7 +29,7 @@ class FirebaseErrorHandler {
       await operation();
       return true;
     } catch (e) {
-      if (showDebugLog) {
+      if (showDebugLog && kDebugMode) {
         debugPrint('$errorMessage: $e');
       }
       return false;

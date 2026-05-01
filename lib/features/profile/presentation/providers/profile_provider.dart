@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:personal_finance/features/profile/domain/profile_repository.dart';
 import 'package:personal_finance/features/profile/domain/entities/user_profile.dart';
@@ -24,7 +24,7 @@ class ProfileProvider extends ChangeNotifier {
     try {
       _profile = await repository.getProfile(user.uid);
     } catch (e) {
-      debugPrint('Error al cargar perfil: $e');
+      if (kDebugMode) debugPrint('Error al cargar perfil: $e');
       // Crear un perfil por defecto si hay error de permisos
       _profile = UserProfile(
         id: user.uid,
@@ -50,12 +50,12 @@ class ProfileProvider extends ChangeNotifier {
         try {
           await repository.saveProfile(_profile!);
         } catch (e) {
-          debugPrint('Error al guardar perfil: $e');
+          if (kDebugMode) debugPrint('Error al guardar perfil: $e');
           // Continuar sin guardar en Firestore
         }
       }
     } catch (e) {
-      debugPrint('Error al subir foto: $e');
+      if (kDebugMode) debugPrint('Error al subir foto: $e');
       // Mostrar mensaje de error si es necesario
     }
     _setLoading(false);
