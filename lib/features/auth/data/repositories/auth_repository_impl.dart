@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:personal_finance/features/auth/data/models/request/login_user_request.dart';
 import 'package:personal_finance/features/auth/data/models/response/login_user_response.dart';
 import 'package:personal_finance/features/auth/data/models/request/register_user_request.dart';
@@ -154,6 +155,51 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() => _firebaseDataSource.logout();
+
+  @override
+  Future<Either<AuthFailure, Unit>> deleteAccount() async {
+    try {
+      final user = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return left(const AuthFailure(message: 'No hay usuario autenticado.'));
+      }
+
+      final uid = user.uid;
+
+      // 1. Borrar subcolección de transacciones (best-effort — continúa aunque falle)
+      try {
+        final txSnap = await _firestore
+            .collection('users')
+            .doc(uid)
+            .collection('transactions')
+            .get();
+        final batch = _firestore.batch();
+        for (final doc in txSnap.docs) {
+          batch.delete(doc.reference);
+        }
+        if (txSnap.docs.isNotEmpty) await batch.commit();
+      } catch (_) {}
+
+      // 2. Borrar documento del usuario en Firestore
+      await _firestore.collection('users').doc(uid).delete();
+
+      // 3. Borrar foto de perfil en Storage (best-effort)
+      try {
+        await FirebaseStorage.instance
+            .ref('profile_pictures/$uid.jpg')
+            .delete();
+      } catch (_) {}
+
+      // 4. Eliminar cuenta de Firebase Auth (requiere sesión reciente)
+      await _firebaseDataSource.deleteAccount();
+
+      return right(unit);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      return left(AuthFailure(message: e.message ?? 'Error al eliminar cuenta.'));
+    } catch (e) {
+      return left(AuthFailure(message: 'Error inesperado al eliminar cuenta: $e'));
+    }
+  }
 
   @override
   Future<Either<AuthFailure, Unit>> recoverPassword(String email) async {

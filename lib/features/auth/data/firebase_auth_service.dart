@@ -107,6 +107,18 @@ class FirebaseAuthService implements AuthDataSource {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No hay usuario autenticado para eliminar.',
+      );
+    }
+    await user.delete();
+  }
+
+  @override
   Future<void> logout() async {
     try {
       if (!_isGoogleSignInInitialized) {

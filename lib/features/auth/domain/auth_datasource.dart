@@ -44,6 +44,15 @@ abstract class AuthDataSource {
     required String email,
     required String password,
   });
+
+  /// Permanently deletes the Firebase Auth account of the current user.
+  ///
+  /// Requires recent authentication — callers must reauthenticate before
+  /// invoking this if the session is older than a few minutes (Firebase
+  /// will throw `requires-recent-login`).
+  ///
+  /// Throws [FirebaseAuthException] on failure.
+  Future<void> deleteAccount();
 }
 
 /// Implementación local de almacenamiento de datos de autenticación.
