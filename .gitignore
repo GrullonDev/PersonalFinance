@@ -152,3 +152,6 @@ dist/
 lib/firebase_options.dart
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+
+# Diagnostic / debug entry points — never ship to production
+lib/main_diagnostic.dart
