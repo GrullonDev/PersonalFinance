@@ -29,34 +29,32 @@ TransactionModel _tx({
   SyncStatus syncStatus = SyncStatus.pending,
   DateTime? deletedAt,
   DateTime? createdAt,
-}) =>
-    TransactionModel(
-      id: id,
-      userId: 'user1',
-      type: TransactionType.expense,
-      amount: 50.0,
-      note: 'test',
-      createdAt: createdAt ?? DateTime(2026, 1, 1),
-      updatedAt: DateTime(2026, 1, 1),
-      deletedAt: deletedAt,
-      syncStatus: syncStatus,
-      version: 1,
-      deviceId: 'device1',
-    );
+}) => TransactionModel(
+  id: id,
+  userId: 'user1',
+  type: TransactionType.expense,
+  amount: 50.0,
+  note: 'test',
+  createdAt: createdAt ?? DateTime(2026, 1, 1),
+  updatedAt: DateTime(2026, 1, 1),
+  deletedAt: deletedAt,
+  syncStatus: syncStatus,
+  version: 1,
+  deviceId: 'device1',
+);
 
 SyncOperationModel _op({
   String id = 'op1',
   String transactionId = 'tx1',
   SyncAction action = SyncAction.create,
   bool processed = false,
-}) =>
-    SyncOperationModel(
-      id: id,
-      transactionId: transactionId,
-      action: action,
-      createdAt: DateTime(2026, 1, 1),
-      processed: processed,
-    );
+}) => SyncOperationModel(
+  id: id,
+  transactionId: transactionId,
+  action: action,
+  createdAt: DateTime(2026, 1, 1),
+  processed: processed,
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tests
@@ -79,6 +77,7 @@ void main() {
       transactionBox: txBox,
       syncOperationBox: opBox,
     );
+    ds.setUserId('user1');
   });
 
   // ── saveTransaction ───────────────────────────────────────────────────────
@@ -212,7 +211,7 @@ void main() {
       when(() => txBox.values).thenReturn([t]);
       when(() => txBox.watch()).thenAnswer((_) => ctrl.stream);
 
-      final first = await ds.watchTransactions().first;
+      final first = await ds.watchTransactions('user1').first;
 
       expect(first, [t]);
       await ctrl.close();
@@ -225,7 +224,7 @@ void main() {
       when(() => txBox.values).thenReturn([active, deleted]);
       when(() => txBox.watch()).thenAnswer((_) => ctrl.stream);
 
-      final first = await ds.watchTransactions().first;
+      final first = await ds.watchTransactions('user1').first;
 
       expect(first.length, 1);
       expect(first.first.id, 'tx1');
@@ -245,10 +244,12 @@ void main() {
       when(() => txBox.watch()).thenAnswer((_) => ctrl.stream);
 
       final future = expectLater(
-        ds.watchTransactions(),
+        ds.watchTransactions('user1'),
         emitsInOrder([
-          [t1],       // emisión inicial (t2 más reciente iría primero, pero aún no existe)
-          [t2, t1],   // después del evento: ordenado por createdAt desc
+          [
+            t1,
+          ], // emisión inicial (t2 más reciente iría primero, pero aún no existe)
+          [t2, t1], // después del evento: ordenado por createdAt desc
         ]),
       );
 
@@ -272,7 +273,7 @@ void main() {
       when(() => txBox.watch()).thenAnswer((_) => ctrl.stream);
 
       final future = expectLater(
-        ds.watchTransactions(),
+        ds.watchTransactions('user1'),
         emitsInOrder([
           [active],
           [active], // soft-deleted filtrado; solo activo permanece
@@ -353,9 +354,9 @@ void main() {
 
       await ds.markSyncOperationAsProcessed('op1');
 
-      final saved = verify(
-        () => opBox.put('op1', captureAny()),
-      ).captured.first as SyncOperationModel;
+      final saved =
+          verify(() => opBox.put('op1', captureAny())).captured.first
+              as SyncOperationModel;
 
       expect(saved.processed, isTrue);
       expect(saved.id, op.id);
@@ -384,9 +385,8 @@ void main() {
 
       await ds.deleteProcessedSyncOperations();
 
-      final deletedKeys = verify(
-        () => opBox.deleteAll(captureAny()),
-      ).captured.first as List;
+      final deletedKeys =
+          verify(() => opBox.deleteAll(captureAny())).captured.first as List;
 
       expect(deletedKeys, containsAll(['op2', 'op3']));
       expect(deletedKeys, isNot(contains('op1')));
@@ -398,9 +398,8 @@ void main() {
 
       await ds.deleteProcessedSyncOperations();
 
-      final captured = verify(
-        () => opBox.deleteAll(captureAny()),
-      ).captured.first as List;
+      final captured =
+          verify(() => opBox.deleteAll(captureAny())).captured.first as List;
 
       expect(captured, isEmpty);
     });
