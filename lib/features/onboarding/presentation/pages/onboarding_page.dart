@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
 import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
 import 'package:personal_finance/utils/app_localization.dart';
@@ -125,8 +125,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ElevatedButton(
                   onPressed: () async {
                     if (_index == _steps.length - 1) {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('onboarding_complete', true);
+                      await SecurityPreferences.setOnboardingComplete();
                       if (mounted) {
                         Navigator.pushReplacementNamed(
                           context,

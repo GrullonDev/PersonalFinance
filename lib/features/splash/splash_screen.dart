@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:provider/provider.dart';
 
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
@@ -21,9 +21,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
     final bool onboardingComplete =
-        prefs.getBool('onboarding_complete') ?? false;
+        await SecurityPreferences.getOnboardingComplete();
 
     if (mounted) {
       if (onboardingComplete) {
