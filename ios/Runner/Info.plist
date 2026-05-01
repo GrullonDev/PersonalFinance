@@ -2,8 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
+	<!-- ───────────────────────── Bundle / Identidad ───────────────────────── -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -22,59 +21,81 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+
+	<!-- Idiomas soportados (ES/EN). Mejora presentación en App Store. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>es</string>
+	</array>
+
+	<!-- ───────────────────────── Google Sign-In ─────────────────────────────
+	     CLIENT_ID y REVERSED_CLIENT_ID del proyecto `personalfinancedev-e972f`,
+	     bundle `com.grullondev.personalFinance`. Sincronizados con
+	     ios/Runner/GoogleService-Info.plist. Si regeneras GoogleService-Info.plist
+	     actualiza también GIDClientID y CFBundleURLSchemes de este archivo. -->
+	<key>GIDClientID</key>
+	<string>116411792004-ockrenvueh05dn5l54rvdjphh4hjj7el.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>GoogleSignIn</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com</string>
+				<string>com.googleusercontent.apps.116411792004-ockrenvueh05dn5l54rvdjphh4hjj7el</string>
 			</array>
 		</dict>
 	</array>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>GIDClientID</key>
-	<string>tu-client-id-de-google.apps.googleusercontent.com</string>
+
+	<!-- Required for Flutter wireless debugging (Dart VM Service discovery via mDNS) -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Se requiere acceso a la red local para la depuración de desarrollo.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dart._tcp</string>
+		<string>_dartobservatory._tcp</string>
+	</array>
+
+	<!-- ───────────────────────── Export Compliance ─────────────────────────
+	     La app sólo usa HTTPS estándar (sin algoritmos criptográficos
+	     propietarios). Declararlo aquí evita tener que responder a la pregunta
+	     de exportación en cada submit. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- ───────────────────────── Permisos / Privacy Strings ───────────────── -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Se usa Face ID / Touch ID para desbloquear la app y proteger tu información financiera.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Se utiliza la cámara para capturar recibos y guardarlos junto a tus movimientos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se accede a la galería para adjuntar recibos o tu foto de perfil.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Se guardan reportes o comprobantes exportados en tu galería cuando lo solicitas.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>El acceso al micrófono es solo para grabaciones opcionales adjuntas a una transacción.</string>
+
+	<!-- ───────────────────────── Plataforma iOS ───────────────────────────── -->
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSFaceIDUsageDescription</key>
-	<string>¿Deseas usar FaceID para proteger el acceso a tus finanzas personalizadas?</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Esta app necesita acceso a la red local para depuración y comunicación con servicios locales.</string>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
-		<dict>
-			<key>UIWindowSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneClassName</key>
-					<string>UIWindowScene</string>
-					<key>UISceneConfigurationName</key>
-					<string>flutter</string>
-					<key>UISceneDelegateClassName</key>
-					<string>FlutterSceneDelegate</string>
-					<key>UISceneStoryboardFile</key>
-					<string>Main</string>
-				</dict>
-			</array>
-		</dict>
-	</dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+
+	<!-- Portrait-only para una experiencia móvil consistente de finanzas. -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -83,7 +104,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>google</key>
-	<string>689951838905-ulcfvqci5ajv1id4kaloqqqm1ghtelio.apps.googleusercontent.com</string>
+
+	<!--
+	NOTA: NO declaramos `UIApplicationSceneManifest`. El template estándar de
+	Flutter usa `UIMainStoryboardFile = Main` (App lifecycle clásico) y deja que
+	`FlutterAppDelegate` cree el `FlutterViewController` desde Main.storyboard.
+	`FlutterSceneDelegate` solo existe en versiones muy recientes del framework
+	y declararlo cuando no está disponible deja a iOS sin escena para presentar:
+	resultado = launch screen blanco indefinido y ningún log de Flutter.
+	-->
 </dict>
 </plist>

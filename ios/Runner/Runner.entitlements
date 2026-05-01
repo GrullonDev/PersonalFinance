@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	Para activar "Sign in with Apple":
+	1. Ve a https://developer.apple.com/account/resources/identifiers/list
+	2. Selecciona el App ID `com.grullondev.personalFinance`.
+	3. Marca el checkbox "Sign in with Apple" → Save.
+	4. En Xcode, abre Signing & Capabilities del target Runner y deja que
+	   regenere el provisioning profile (o haz `Try Again`).
+	5. Descomenta las dos líneas de abajo y haz un Clean Build.
+
+	Si el entitlement está activo PERO la capability no está habilitada en el
+	App ID, la app sale antes de Flutter (launch screen blanco eterno) — ese
+	mismo síntoma que estás viendo ahora.
+	-->
+
+	
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	
+</dict>
+</plist>
