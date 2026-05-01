@@ -52,15 +52,6 @@
 		</dict>
 	</array>
 
-	<!-- Required for Flutter wireless debugging (Dart VM Service discovery via mDNS) -->
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Se requiere acceso a la red local para la depuración de desarrollo.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_dart._tcp</string>
-		<string>_dartobservatory._tcp</string>
-	</array>
-
 	<!-- ───────────────────────── Export Compliance ─────────────────────────
 	     La app sólo usa HTTPS estándar (sin algoritmos criptográficos
 	     propietarios). Declararlo aquí evita tener que responder a la pregunta
@@ -77,8 +68,6 @@
 	<string>Se accede a la galería para adjuntar recibos o tu foto de perfil.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Se guardan reportes o comprobantes exportados en tu galería cuando lo solicitas.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>El acceso al micrófono es solo para grabaciones opcionales adjuntas a una transacción.</string>
 
 	<!-- ───────────────────────── Plataforma iOS ───────────────────────────── -->
 	<key>LSRequiresIPhoneOS</key>
