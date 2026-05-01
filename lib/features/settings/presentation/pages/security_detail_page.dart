@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/services/biometric_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SecurityDetailPage extends StatefulWidget {
   const SecurityDetailPage({super.key});
@@ -28,11 +29,12 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   }
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
     final isSupported = await _biometricService.isBiometricAvailable();
+    final biometricEnabled = await SecurityPreferences.getBiometricEnabled();
+    final appLockEnabled = await SecurityPreferences.getAppLockEnabled();
     setState(() {
-      _biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
-      _appLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
+      _biometricEnabled = biometricEnabled;
+      _appLockEnabled = appLockEnabled;
       _isHardwareSupported = isSupported;
     });
   }
@@ -44,20 +46,17 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
             'Confirma tu identidad para habilitar el desbloqueo biométrico',
       );
       if (authenticated) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('biometric_enabled', true);
+        await SecurityPreferences.setBiometricEnabled(true);
         setState(() => _biometricEnabled = true);
       }
     } else {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('biometric_enabled', false);
+      await SecurityPreferences.setBiometricEnabled(false);
       setState(() => _biometricEnabled = false);
     }
   }
 
   Future<void> _toggleAppLock(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('app_lock_enabled', value);
+    await SecurityPreferences.setAppLockEnabled(value);
     setState(() => _appLockEnabled = value);
   }
 
@@ -324,6 +323,72 @@ class _UpdatePasswordSheet extends StatefulWidget {
 class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _changePassword() async {
+    final currentPassword = _currentController.text.trim();
+    final newPassword = _newController.text.trim();
+
+    if (currentPassword.isEmpty || newPassword.isEmpty) {
+      setState(() => _errorMessage = 'Completa ambos campos.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setState(() => _errorMessage = 'La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || user.email == null) {
+        setState(() => _errorMessage = 'No hay sesión activa.');
+        return;
+      }
+
+      // Reauthenticate — Firebase exige sesión reciente para cambiar contraseña
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      await user.updatePassword(newPassword);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Contraseña actualizada correctamente.')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      final msg = switch (e.code) {
+        'wrong-password' || 'invalid-credential' =>
+          'La contraseña actual es incorrecta.',
+        'weak-password' => 'La nueva contraseña es demasiado débil.',
+        'requires-recent-login' =>
+          'Sesión expirada. Cierra sesión y vuelve a entrar.',
+        _ => e.message ?? 'Error al cambiar contraseña.',
+      };
+      setState(() => _errorMessage = msg);
+    } catch (e) {
+      setState(() => _errorMessage = 'Error inesperado. Intenta de nuevo.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -364,6 +429,7 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
           TextField(
             controller: _currentController,
             obscureText: true,
+            enabled: !_isLoading,
             decoration: const InputDecoration(
               labelText: 'Contraseña Actual',
               prefixIcon: Icon(Icons.lock_outline),
@@ -373,18 +439,35 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
           TextField(
             controller: _newController,
             obscureText: true,
+            enabled: !_isLoading,
             decoration: const InputDecoration(
               labelText: 'Nueva Contraseña',
               prefixIcon: Icon(Icons.vpn_key_outlined),
             ),
           ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage!,
+              style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             height: 56,
             child: FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Confirmar Cambio'),
+              onPressed: _isLoading ? null : _changePassword,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Confirmar Cambio'),
             ),
           ),
         ],
