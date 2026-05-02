@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'package:intl/intl.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 
@@ -25,10 +24,8 @@ class CustomDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = headerColor ?? Theme.of(context).primaryColor;
-    final NumberFormat currencyFormat = NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    );
+    final NumberFormat currencyFormat =
+        AppLocalizations.of(context)!.currencyFormatter;
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.85,
