@@ -28,7 +28,7 @@ dependencies:
   flutter_bloc: ^9.0.0
   firebase_auth: ^5.7.0
   sign_in_with_apple: ^7.0.1
-  google_sign_in: ^7.1.0
+  google_sign_in: ^6.2.0
   firebase_core: ^3.15.2
   connectivity_plus: ^5.0.2
   cloud_firestore: ^5.6.11
@@ -70,9 +70,17 @@ flutter:
 
 # Launcher icons configuration
 flutter_launcher_icons:
-  android: true
+  android: "launcher_icon"
   ios: true
   image_path: assets/logo.png
+  # Android adaptive icon (API 26+ / Android 8.0+)
+  # Background blanco para que coincida con el fondo del logo
   adaptive_icon_foreground: assets/logo.png
-  adaptive_icon_background: "#0E8F5B"
+  adaptive_icon_background: "#FFFFFF"
+  # Android legacy icon (API < 26) — ícono cuadrado sin adaptive layer
+  image_path_android: assets/logo.png
   min_sdk_android: 21
+  # iOS — sin canal alfa, fondo sólido exigido por App Store
+  remove_alpha_ios: true
+  web:
+    generate: false
