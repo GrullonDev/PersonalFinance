@@ -1,9 +1,5 @@
 package com.grullondev.personal_finance
 
-import android.app.Application
+import androidx.multidex.MultiDexApplication
 
-class MyApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-    }
-}
+class MyApplication : MultiDexApplication()

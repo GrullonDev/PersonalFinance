@@ -1,14 +1,14 @@
 package com.grullondev.personal_finance
 
 import android.os.Bundle
-import android.view.WindowManager
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.flutter.embedding.android.FlutterFragmentActivity
 
 class MainActivity : FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Handle the splash screen transition.
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
-        // Prevent the OS from capturing financial content in the app switcher
-        // screenshot and from appearing in screen recordings / screenshots.
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 }
