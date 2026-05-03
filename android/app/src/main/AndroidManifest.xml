@@ -9,8 +9,10 @@
     <application
         android:name=".MyApplication"
         android:label="@string/app_name"
-        android:icon="@mipmap/logo"
-        android:enableOnBackInvokedCallback="true">
+        android:icon="@mipmap/launcher_icon"
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
 
         <!-- Indica que usas el Android embedding v2 -->
         <meta-data
@@ -32,6 +34,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Redirect URI para Firebase Auth signInWithProvider (OAuth web flow) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="com.grullondev.personal_finance"/>
             </intent-filter>
         </activity>
     </application>

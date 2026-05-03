@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/services/biometric_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 
 class SecurityDetailPage extends StatefulWidget {
   const SecurityDetailPage({super.key});
@@ -16,6 +18,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   bool _biometricEnabled = false;
   bool _appLockEnabled = false;
   bool _isHardwareSupported = false;
+  bool _emailVerified = false;
 
   @override
   void initState() {
@@ -28,67 +31,46 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   }
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
     final isSupported = await _biometricService.isBiometricAvailable();
+    final biometricEnabled = await SecurityPreferences.getBiometricEnabled();
+    final appLockEnabled = await SecurityPreferences.getAppLockEnabled();
+    final emailVerified =
+        FirebaseAuth.instance.currentUser?.emailVerified ?? false;
     setState(() {
-      _biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
-      _appLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
+      _biometricEnabled = biometricEnabled;
+      _appLockEnabled = appLockEnabled;
       _isHardwareSupported = isSupported;
+      _emailVerified = emailVerified;
     });
   }
 
   Future<void> _toggleBiometrics(bool value) async {
     if (value) {
-      // Check if any biometrics are enrolled first
-      final hasEnrolled = await _biometricService.hasEnrolledBiometrics();
-
-      if (!hasEnrolled) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No tienes biometría configurada en tu dispositivo. Por favor, configúrala en los ajustes del sistema.',
-            ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        setState(() => _biometricEnabled = false);
-        return;
-      }
-
-      try {
-        final authenticated = await _biometricService.authenticate(
-          localizedReason:
-              'Confirma tu identidad para habilitar el desbloqueo biométrico',
-        );
-
-        if (authenticated) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('biometric_enabled', true);
-          setState(() => _biometricEnabled = true);
-        } else {
-          setState(() => _biometricEnabled = false);
-        }
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al autenticar: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        setState(() => _biometricEnabled = false);
+      final authenticated = await _biometricService.authenticate(
+        localizedReason:
+            'Confirma tu identidad para habilitar el desbloqueo biométrico',
+      );
+      if (authenticated) {
+        await SecurityPreferences.setBiometricEnabled(true);
+        await HapticFeedbackService.success();
+        setState(() => _biometricEnabled = true);
+      } else {
+        await HapticFeedbackService.error();
       }
     } else {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('biometric_enabled', false);
+      await SecurityPreferences.setBiometricEnabled(false);
+      await HapticFeedbackService.selection();
       setState(() => _biometricEnabled = false);
     }
   }
 
   Future<void> _toggleAppLock(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('app_lock_enabled', value);
+    await SecurityPreferences.setAppLockEnabled(value);
+    if (value) {
+      await HapticFeedbackService.success();
+    } else {
+      await HapticFeedbackService.selection();
+    }
     setState(() => _appLockEnabled = value);
   }
 
@@ -129,7 +111,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                     _buildProtectionToggle(
                       colorScheme: colorScheme,
                       title: 'Desbloqueo Biométrico',
-                      subtitle: 'Fingerprint o FaceID',
+                      subtitle: 'Usar biometría del dispositivo',
                       icon: Icons.fingerprint,
                       value: _biometricEnabled,
                       onChanged: _toggleBiometrics,
@@ -139,7 +121,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                   _buildProtectionToggle(
                     colorScheme: colorScheme,
                     title: 'Bloqueo de Aplicación',
-                    subtitle: 'Solicitar PIN al abrir',
+                    subtitle: 'Solicitar biometría al volver a la app',
                     icon: Icons.lock_person_outlined,
                     value: _appLockEnabled,
                     onChanged: _toggleAppLock,
@@ -156,26 +138,12 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                   const SizedBox(height: 12),
                   _buildActionTile(
                     theme: theme,
-                    title: 'Dispositivos Vinculados',
-                    icon: Icons.devices_other_rounded,
-                    onTap: () {
-                      showDialog<void>(
-                        context: context,
-                        builder:
-                            (context) => AlertDialog(
-                              title: const Text('Dispositivos Vinculados'),
-                              content: const Text(
-                                'Actualmente solo este dispositivo está vinculado a tu cuenta.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Cerrar'),
-                                ),
-                              ],
-                            ),
-                      );
-                    },
+                    title: 'Estado del Correo',
+                    icon:
+                        _emailVerified
+                            ? Icons.mark_email_read_outlined
+                            : Icons.mark_email_unread_outlined,
+                    onTap: _showEmailVerificationStatus,
                   ),
                   const SizedBox(height: 48),
                   _buildEmergencyNote(theme),
@@ -196,12 +164,12 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: colorScheme.primary.withValues(
-              alpha: 0.05 + (0.05 * _pulseController.value),
+            color: colorScheme.primary.withOpacity(
+              0.05 + (0.05 * _pulseController.value),
             ),
             border: Border.all(
-              color: colorScheme.primary.withValues(
-                alpha: 0.1 + (0.2 * _pulseController.value),
+              color: colorScheme.primary.withOpacity(
+                0.1 + (0.2 * _pulseController.value),
               ),
               width: 2,
             ),
@@ -215,7 +183,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                 color: colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.3),
+                    color: colorScheme.primary.withOpacity(0.3),
                     blurRadius: 15 * _pulseController.value,
                     spreadRadius: 2,
                   ),
@@ -231,23 +199,203 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
         ),
   );
 
-  Widget _buildSecurityScore(ThemeData theme) => Column(
-    children: [
-      Text(
-        'Tu Protección es Óptima',
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.bold,
+  Widget _buildSecurityScore(ThemeData theme) {
+    final score = _securityScore;
+    final progress = score / 100;
+    final checks = _securityChecks;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.35),
         ),
       ),
-      const SizedBox(height: 4),
-      Text(
-        'Último análisis realizado hoy a las 09:45 AM',
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 128,
+            height: 128,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 128,
+                  height: 128,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 10,
+                    backgroundColor: theme.colorScheme.primary.withOpacity(
+                      0.08,
+                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _scoreColor(theme),
+                    ),
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$score',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: _scoreColor(theme),
+                      ),
+                    ),
+                    Text(
+                      'de 100',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            _securityHeadline,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _securitySubtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 18),
+          ...checks.map((check) => _buildScoreRow(theme, check)),
+        ],
       ),
-    ],
+    );
+  }
+
+  Widget _buildScoreRow(
+    ThemeData theme,
+    ({String title, String subtitle, bool enabled, IconData icon, int weight})
+    check,
+  ) => Padding(
+    padding: const EdgeInsets.only(top: 10),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color:
+                check.enabled
+                    ? Colors.green.withOpacity(0.12)
+                    : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            check.icon,
+            size: 18,
+            color:
+                check.enabled
+                    ? Colors.green.shade700
+                    : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                check.title,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                check.subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          check.enabled ? '+${check.weight}' : '0',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color:
+                check.enabled
+                    ? Colors.green.shade700
+                    : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    ),
   );
+
+  Color _scoreColor(ThemeData theme) {
+    final score = _securityScore;
+    if (score >= 85) {
+      return Colors.green.shade700;
+    }
+    if (score >= 60) {
+      return Colors.orange.shade700;
+    }
+    return theme.colorScheme.error;
+  }
+
+  List<
+    ({String title, String subtitle, bool enabled, IconData icon, int weight})
+  >
+  get _securityChecks => [
+    (
+      title: 'Correo verificado',
+      subtitle:
+          _emailVerified
+              ? 'Tu identidad por correo ya fue validada.'
+              : 'Verifica tu correo para reforzar el acceso.',
+      enabled: _emailVerified,
+      icon: Icons.mark_email_read_outlined,
+      weight: 35,
+    ),
+    (
+      title: 'Bloqueo de aplicación',
+      subtitle:
+          _appLockEnabled
+              ? 'La app solicita autenticación al volver al frente.'
+              : 'Actívalo para proteger sesiones persistidas.',
+      enabled: _appLockEnabled,
+      icon: Icons.lock_person_outlined,
+      weight: 35,
+    ),
+    (
+      title: 'Biometría',
+      subtitle:
+          _isHardwareSupported
+              ? _biometricEnabled
+                  ? 'Usas Face ID o Touch ID para validar acceso.'
+                  : 'Activa biometría para reducir acceso no autorizado.'
+              : 'Este dispositivo no expone biometría compatible.',
+      enabled: !_isHardwareSupported || _biometricEnabled,
+      icon: Icons.fingerprint,
+      weight: 30,
+    ),
+  ];
+
+  int get _securityScore {
+    final checks = _securityChecks;
+    final totalWeight = checks.fold<int>(0, (sum, check) => sum + check.weight);
+    final earnedWeight = checks.fold<int>(
+      0,
+      (sum, check) => sum + (check.enabled ? check.weight : 0),
+    );
+    return ((earnedWeight / totalWeight) * 100).round();
+  }
 
   Widget _buildSectionHeader(ThemeData theme, String title) => Align(
     alignment: Alignment.centerLeft,
@@ -272,16 +420,14 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
     decoration: BoxDecoration(
       color: colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(
-        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-      ),
+      border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
     ),
     child: ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: colorScheme.primary.withValues(alpha: 0.1),
+          color: colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: colorScheme.primary, size: 24),
@@ -291,7 +437,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       trailing: Switch.adaptive(
         value: value,
         onChanged: onChanged,
-        activeThumbColor: colorScheme.primary,
+        activeColor: colorScheme.primary,
       ),
     ),
   );
@@ -309,7 +455,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
         ),
       ),
       child: Row(
@@ -335,9 +481,9 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   Widget _buildEmergencyNote(ThemeData theme) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.amber.withValues(alpha: 0.1),
+      color: Colors.amber.withOpacity(0.1),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+      border: Border.all(color: Colors.amber.withOpacity(0.3)),
     ),
     child: Row(
       children: [
@@ -345,7 +491,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'En caso de robo, puedes bloquear tu cuenta remotamente desde jorgegrullondev.com',
+            'Si pierdes el dispositivo, cambia tu contraseña y vuelve a iniciar sesión para proteger tu cuenta.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: Colors.amber[900],
               fontWeight: FontWeight.w500,
@@ -364,6 +510,65 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       builder: (context) => _UpdatePasswordSheet(),
     );
   }
+
+  void _showEmailVerificationStatus() {
+    final user = FirebaseAuth.instance.currentUser;
+    final verified = user?.emailVerified ?? false;
+
+    showDialog<void>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Verificación de correo'),
+            content: Text(
+              verified
+                  ? 'Tu correo ya está verificado y puede acceder a la app sin restricciones.'
+                  : 'Tu correo aún no está verificado. Debes verificarlo antes de entrar al dashboard.',
+            ),
+            actions: [
+              if (!verified && user != null)
+                TextButton(
+                  onPressed: () async {
+                    await user.sendEmailVerification();
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Te enviamos un nuevo correo de verificación.',
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Reenviar correo'),
+                ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  String get _securityHeadline {
+    final score = _securityScore;
+    return switch (score) {
+      >= 85 => 'Protección reforzada',
+      >= 60 => 'Protección sólida',
+      >= 35 => 'Protección básica',
+      _ => 'Protección pendiente',
+    };
+  }
+
+  String get _securitySubtitle {
+    final parts = <String>[
+      _biometricEnabled ? 'biometría activa' : 'biometría inactiva',
+      _appLockEnabled ? 'bloqueo activo' : 'bloqueo inactivo',
+      _emailVerified ? 'correo verificado' : 'correo sin verificar',
+    ];
+    return parts.join(' · ');
+  }
 }
 
 class _UpdatePasswordSheet extends StatefulWidget {
@@ -374,6 +579,78 @@ class _UpdatePasswordSheet extends StatefulWidget {
 class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _changePassword() async {
+    final currentPassword = _currentController.text.trim();
+    final newPassword = _newController.text.trim();
+
+    if (currentPassword.isEmpty || newPassword.isEmpty) {
+      setState(() => _errorMessage = 'Completa ambos campos.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setState(
+        () =>
+            _errorMessage =
+                'La nueva contraseña debe tener al menos 8 caracteres.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || user.email == null) {
+        setState(() => _errorMessage = 'No hay sesión activa.');
+        return;
+      }
+
+      // Reauthenticate — Firebase exige sesión reciente para cambiar contraseña
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      await user.updatePassword(newPassword);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contraseña actualizada correctamente.'),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      final msg = switch (e.code) {
+        'wrong-password' ||
+        'invalid-credential' => 'La contraseña actual es incorrecta.',
+        'weak-password' => 'La nueva contraseña es demasiado débil.',
+        'requires-recent-login' =>
+          'Sesión expirada. Cierra sesión y vuelve a entrar.',
+        _ => e.message ?? 'Error al cambiar contraseña.',
+      };
+      setState(() => _errorMessage = msg);
+    } catch (e) {
+      setState(() => _errorMessage = 'Error inesperado. Intenta de nuevo.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -414,6 +691,7 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
           TextField(
             controller: _currentController,
             obscureText: true,
+            enabled: !_isLoading,
             decoration: const InputDecoration(
               labelText: 'Contraseña Actual',
               prefixIcon: Icon(Icons.lock_outline),
@@ -423,18 +701,36 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
           TextField(
             controller: _newController,
             obscureText: true,
+            enabled: !_isLoading,
             decoration: const InputDecoration(
               labelText: 'Nueva Contraseña',
               prefixIcon: Icon(Icons.vpn_key_outlined),
             ),
           ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage!,
+              style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             height: 56,
             child: FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Confirmar Cambio'),
+              onPressed: _isLoading ? null : _changePassword,
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text('Confirmar Cambio'),
             ),
           ),
         ],

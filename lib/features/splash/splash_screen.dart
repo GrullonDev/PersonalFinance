@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:provider/provider.dart';
 
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
@@ -21,42 +22,30 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    try {
-      // Damos un tiempo mínimo para que la animación del Splash se vea y la UI respire
-      await Future<void>.delayed(const Duration(seconds: 2));
+    final bool onboardingComplete =
+        await SecurityPreferences.getOnboardingComplete();
 
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final bool onboardingComplete =
-          prefs.getBool('onboarding_complete') ?? false;
-
-      if (!mounted) return;
-
+    if (mounted) {
       if (onboardingComplete) {
         final AuthProvider auth = context.read<AuthProvider>();
-
-        // Esperamos a que los servicios de fondo se inicialicen con un timeout razonable
-        try {
-          await auth.onAppResumed().timeout(const Duration(seconds: 15));
-        } catch (e) {
-          debugPrint('Session restore timeout or error (continuing...): $e');
-        }
-
-        if (!mounted) return;
-
+        await firebase_auth.FirebaseAuth.instance.authStateChanges().first;
+        await auth.syncSessionFromFirebase(notify: false);
         if (auth.isAuthenticated) {
-          Navigator.of(context).pushReplacementNamed(RoutePath.dashboard);
+          await auth.loadCurrentUser();
+          if (!mounted) return;
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(RoutePath.dashboard, (_) => false);
         } else {
-          // Si no está autenticado, vamos al login
-          Navigator.of(context).pushReplacementNamed(RoutePath.login);
+          if (!mounted) return;
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(RoutePath.login, (_) => false);
         }
       } else {
-        Navigator.of(context).pushReplacementNamed(RoutePath.onboarding);
-      }
-    } catch (e) {
-      debugPrint('Error in _bootstrap: $e');
-      if (mounted) {
-        // En caso de error crítico, ir al login por seguridad
-        Navigator.of(context).pushReplacementNamed(RoutePath.login);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(RoutePath.onboarding, (_) => false);
       }
     }
   }

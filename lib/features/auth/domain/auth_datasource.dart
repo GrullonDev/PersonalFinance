@@ -1,11 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/core/security/security_preferences.dart';
 
 /// Interfaz abstracta para servicios de autenticación.
 ///
 /// Define los métodos requeridos para autenticación con proveedores externos
 /// como Google y Apple, así como para el cierre de sesión.
 abstract class AuthDataSource {
+  // ── Identidad ──────────────────────────────────────────────────────────────
+
+  /// UID del usuario actualmente autenticado, o `null` si no hay sesión activa.
+  /// Sincrónico: usa el estado en memoria del SDK de auth.
+  String? get currentUserId;
+
+  /// Stream que emite el UID cada vez que cambia el estado de autenticación.
+  /// Emite `null` cuando el usuario cierra sesión.
+  /// Emite el UID real tan pronto como el SDK restaura la sesión persistida
+  /// (resuelve la race condition de `currentUser` en el arranque).
+  Stream<String?> get authStateChanges;
+
+  // ── Operaciones ────────────────────────────────────────────────────────────
   /// Inicia sesión usando Google Sign-In.
   Future<void> signInWithGoogle();
 
@@ -31,50 +44,30 @@ abstract class AuthDataSource {
     required String email,
     required String password,
   });
+
+  /// Permanently deletes the Firebase Auth account of the current user.
+  ///
+  /// Requires recent authentication — callers must reauthenticate before
+  /// invoking this if the session is older than a few minutes (Firebase
+  /// will throw `requires-recent-login`).
+  ///
+  /// Throws [FirebaseAuthException] on failure.
+  Future<void> deleteAccount();
 }
 
-/// Implementación local de almacenamiento de datos de autenticación.
+/// Local storage for auth session routing state.
 ///
-/// Gestiona el estado de autenticación y onboarding usando SharedPreferences
-/// para almacenamiento local en el dispositivo.
+/// Backed by [SecurityPreferences] (platform secure enclave). Not a
+/// replacement for FirebaseAuth — used only for routing decisions.
 class AuthLocalDataSource {
-  /// Verifica si es la primera vez que el usuario abre la aplicación.
-  ///
-  /// Returns `true` si es la primera vez, `false` si ya completó el onboarding.
-  Future<bool> getIsFirstTime() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isFirstTime') ?? true;
-  }
+  Future<bool> getIsFirstTime() async =>
+      !(await SecurityPreferences.getOnboardingComplete());
 
-  /// Marca el onboarding como completado.
-  ///
-  /// Actualiza el estado local para indicar que el usuario ya no es nuevo.
-  Future<void> setNotFirstTime() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isFirstTime', false);
-  }
+  Future<void> setNotFirstTime() => SecurityPreferences.setOnboardingComplete();
 
-  /// Verifica si el usuario está autenticado.
-  ///
-  /// Returns `true` si el usuario está logueado, `false` en caso contrario.
-  Future<bool> getIsLoggedIn() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isLoggedIn') ?? false;
-  }
+  Future<bool> getIsLoggedIn() => SecurityPreferences.getIsLoggedIn();
 
-  /// Marca al usuario como autenticado.
-  ///
-  /// Actualiza el estado local para indicar que el usuario ha iniciado sesión.
-  Future<void> setLogin() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-  }
+  Future<void> setLogin() => SecurityPreferences.setLoggedIn(true);
 
-  /// Marca al usuario como no autenticado.
-  ///
-  /// Actualiza el estado local para indicar que el usuario ha cerrado sesión.
-  Future<void> setLogout() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false);
-  }
+  Future<void> setLogout() => SecurityPreferences.setLoggedIn(false);
 }

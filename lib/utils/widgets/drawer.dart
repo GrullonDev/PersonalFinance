@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'package:intl/intl.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 
@@ -24,23 +23,19 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final Color primaryColor = headerColor ?? Theme.of(context).primaryColor;
-    final NumberFormat currencyFormat = NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    );
+    final NumberFormat currencyFormat =
+        AppLocalizations.of(context)!.currencyFormatter;
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.85,
       child: Container(
-        decoration: BoxDecoration(
-          color:
-              isIOS ? CupertinoColors.extraLightBackgroundGray : Colors.white,
+        decoration: const BoxDecoration(
+          color: CupertinoColors.extraLightBackgroundGray,
         ),
         child: Column(
           children: <Widget>[
-            _buildHeader(context, primaryColor, currencyFormat, isIOS),
+            _buildHeader(context, primaryColor, currencyFormat),
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -52,14 +47,12 @@ class CustomDrawer extends StatelessWidget {
                     title: 'Dashboard',
                     icon: Icons.dashboard,
                     isSelected: true,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/dashboard'),
                   ),
                   _buildTile(
                     context,
                     title: 'Balance Actual',
                     icon: Icons.account_balance_wallet,
-                    isIOS: isIOS,
                     trailingText: currencyFormat.format(currentBalance),
                     onTap: () => _navigateTo(context, '/balance'),
                   ),
@@ -69,7 +62,6 @@ class CustomDrawer extends StatelessWidget {
                     context,
                     title: 'Ingresos',
                     icon: Icons.trending_up,
-                    isIOS: isIOS,
                     color: Colors.green,
                     onTap: () => _navigateTo(context, '/incomes'),
                   ),
@@ -77,7 +69,6 @@ class CustomDrawer extends StatelessWidget {
                     context,
                     title: 'Gastos',
                     icon: Icons.trending_down,
-                    isIOS: isIOS,
                     color: Colors.red,
                     onTap: () => _navigateTo(context, '/expenses'),
                   ),
@@ -85,14 +76,12 @@ class CustomDrawer extends StatelessWidget {
                     context,
                     title: 'Historial',
                     icon: Icons.history,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/transactions-crud'),
                   ),
                   _buildTile(
                     context,
                     title: 'Categorías',
                     icon: Icons.category,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/categories'),
                   ),
 
@@ -101,21 +90,18 @@ class CustomDrawer extends StatelessWidget {
                     context,
                     title: 'Presupuestos',
                     icon: Icons.pie_chart,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/budgets-crud'),
                   ),
                   _buildTile(
                     context,
                     title: 'Metas',
                     icon: Icons.flag,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/goals-crud'),
                   ),
                   _buildTile(
                     context,
                     title: 'Inversiones',
                     icon: Icons.timeline,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/investments'),
                   ),
 
@@ -124,7 +110,6 @@ class CustomDrawer extends StatelessWidget {
                     context,
                     title: 'Perfil',
                     icon: Icons.person,
-                    isIOS: isIOS,
                     onTap:
                         onProfileTap ?? () => _navigateTo(context, '/profile'),
                   ),
@@ -132,7 +117,6 @@ class CustomDrawer extends StatelessWidget {
                     context,
                     title: 'Cuentas Bancarias',
                     icon: Icons.account_balance,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/accounts'),
                   ),
                   _buildTile(
@@ -140,7 +124,6 @@ class CustomDrawer extends StatelessWidget {
                     title: 'Notificaciones',
                     icon: Icons.notifications,
                     badgeCount: 3,
-                    isIOS: isIOS,
                     onTap: () => _navigateTo(context, '/notifications'),
                   ),
                   const Divider(height: 1),
@@ -148,14 +131,13 @@ class CustomDrawer extends StatelessWidget {
                     context,
                     title: 'Cerrar sesión',
                     icon: Icons.logout,
-                    isIOS: isIOS,
                     color: Colors.red,
                     onTap: onLogoutTap,
                   ),
                 ],
               ),
             ),
-            _buildFooter(context, isIOS),
+            _buildFooter(context),
           ],
         ),
       ),
@@ -177,11 +159,10 @@ class CustomDrawer extends StatelessWidget {
     BuildContext context,
     Color primaryColor,
     NumberFormat currencyFormat,
-    bool isIOS,
   ) => Container(
     height: 220,
     decoration: BoxDecoration(
-      color: isIOS ? primaryColor.withValues() : primaryColor,
+      color: primaryColor,
     ),
     padding: EdgeInsets.only(
       top:
@@ -262,13 +243,11 @@ class CustomDrawer extends StatelessWidget {
     ),
   );
 
-  // _buildTile y _buildFooter similares al ejemplo anterior, pero con soporte para trailingText
   Widget _buildTile(
     BuildContext context, {
     required String title,
     required IconData icon,
     bool isSelected = false,
-    bool isIOS = false,
     Color? color,
     String? trailingText,
     int badgeCount = 0,
@@ -281,18 +260,14 @@ class CustomDrawer extends StatelessWidget {
       decoration: BoxDecoration(
         color:
             isSelected
-                ? (isIOS
-                    ? CupertinoColors.activeBlue.withValues(alpha: 0.1)
-                    : theme.colorScheme.primary.withValues(alpha: 0.8))
+                ? CupertinoColors.activeBlue.withValues(alpha: 0.1)
                 : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
         leading: Icon(
           icon,
-          color:
-              color ??
-              (isIOS ? CupertinoColors.activeBlue : theme.colorScheme.primary),
+          color: color ?? CupertinoColors.activeBlue,
         ),
         title: Text(
           title,
@@ -300,9 +275,7 @@ class CustomDrawer extends StatelessWidget {
             color:
                 color ??
                 (isSelected
-                    ? (isIOS
-                        ? CupertinoColors.activeBlue
-                        : theme.colorScheme.primary)
+                    ? CupertinoColors.activeBlue
                     : theme.textTheme.bodyLarge?.color),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -337,7 +310,7 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context, bool isIOS) => Padding(
+  Widget _buildFooter(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
     child: Text(
       '${AppLocalizations.of(context)!.appTitle} v1.0',

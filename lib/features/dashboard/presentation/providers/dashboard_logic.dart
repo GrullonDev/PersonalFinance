@@ -1,71 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
-import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/features/domain/usecases/add_transaction_usecase.dart';
 import 'package:personal_finance/features/domain/usecases/get_dashboard_data_usecase.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/usecases/get_active_goals_usecase.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/usecases/get_active_budgets_usecase.dart';
-import 'package:personal_finance/utils/injection_container.dart';
-import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
-    as tx_backend;
-import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
-import 'package:personal_finance/utils/dashboard_budget_prefs.dart';
-import 'package:personal_finance/utils/budget_category_prefs.dart';
-import 'package:dartz/dartz.dart';
-import 'package:personal_finance/core/error/failures.dart';
-import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
 
+/// Lógica del dashboard mejorada siguiendo Clean Architecture
 class DashboardLogic extends ChangeNotifier {
   final GetDashboardDataUseCase _getDashboardDataUseCase;
   final AddTransactionUseCase _addTransactionUseCase;
   final GetActiveGoalsUseCase _getActiveGoalsUseCase;
   final GetActiveBudgetsUseCase _getActiveBudgetsUseCase;
-  final TrendAnalyzerService _trendAnalyzerService;
 
   DashboardLogic({
     required GetDashboardDataUseCase getDashboardDataUseCase,
     required AddTransactionUseCase addTransactionUseCase,
     required GetActiveGoalsUseCase getActiveGoalsUseCase,
     required GetActiveBudgetsUseCase getActiveBudgetsUseCase,
-    required TrendAnalyzerService trendAnalyzerService,
   }) : _getDashboardDataUseCase = getDashboardDataUseCase,
        _addTransactionUseCase = addTransactionUseCase,
        _getActiveGoalsUseCase = getActiveGoalsUseCase,
-       _getActiveBudgetsUseCase = getActiveBudgetsUseCase,
-       _trendAnalyzerService = trendAnalyzerService;
+       _getActiveBudgetsUseCase = getActiveBudgetsUseCase;
 
   // Estado privado
   PeriodFilter _selectedPeriod = PeriodFilter.mes;
-  DateTimeRange? _customPeriod;
-  String? _categoryFilter;
   List<ExpenseEntity> _expenses = <ExpenseEntity>[];
   List<IncomeEntity> _incomes = <IncomeEntity>[];
   List<Goal> _goals = <Goal>[];
   Budget? _activeBudget;
   bool _isLoading = false;
   String? _error;
-  String? _profileType; // 'personal' or 'negocio'
-  List<RecommendationItem> _trendRecommendations = [];
 
   // Getters públicos
   PeriodFilter get selectedPeriod => _selectedPeriod;
-  DateTimeRange? get customPeriod => _customPeriod;
-  String? get selectedCategory => _categoryFilter;
   List<ExpenseEntity> get expenses => _expenses;
   List<IncomeEntity> get incomes => _incomes;
   List<Goal> get goals => _goals;
   Budget? get activeBudget => _activeBudget;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  String? get profileType => _profileType;
-
-  double _weeklyBudgetSpent = 0;
-  double get weeklyBudgetSpent => _weeklyBudgetSpent;
 
   // Getters computados
   bool get hasData =>
@@ -91,29 +71,6 @@ class DashboardLogic extends ChangeNotifier {
   );
   double get balance => totalIncomes - totalExpenses;
 
-  String? get insightMessage {
-    if (!hasData) return null;
-    if (_activeBudget != null) {
-      final double remaining = _activeBudget!.montoAsDouble - totalExpenses;
-      if (remaining > 0) {
-        return 'Te quedan ${CurrencyHelper.format(remaining)} libres para gastar en este periodo.';
-      } else {
-        return 'Has excedido tu presupuesto en ${CurrencyHelper.format(remaining.abs())}.';
-      }
-    }
-
-    if (totalIncomes > 0) {
-      final percentage = (totalExpenses / totalIncomes) * 100;
-      if (percentage > 80) {
-        return 'Cuidado: Has gastado el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
-      } else {
-        return 'Buen trabajo manteniendo tus gastos bajo el ${percentage.toStringAsFixed(0)}% de tus ingresos.';
-      }
-    }
-
-    return null;
-  }
-
   List<ExpenseEntity> get sortedExpenses {
     final List<ExpenseEntity> sorted = List<ExpenseEntity>.from(_expenses);
     sorted.sort((ExpenseEntity a, ExpenseEntity b) => b.date.compareTo(a.date));
@@ -134,12 +91,6 @@ class DashboardLogic extends ChangeNotifier {
     }
     return categoryMap;
   }
-
-  List<String> get availableCategories =>
-      <String>{
-        'Todas',
-        ..._expenses.map((ExpenseEntity e) => e.category),
-      }.toList();
 
   List<ChartData> get chartData {
     final Map<String, double> categoryMap = expensesByCategory;
@@ -183,21 +134,18 @@ class DashboardLogic extends ChangeNotifier {
           )
           .toList();
 
-  List<TransactionItem> getExpenseTransactions({int limit = 5}) {
-    final list = sortedExpenses;
-    final items =
-        (limit == -1 ? list : list.take(limit))
-            .map(
-              (ExpenseEntity expense) => TransactionItem(
-                title: expense.title,
-                amount: expense.amount,
-                date: expense.date,
-                isIncome: false,
-              ),
-            )
-            .toList();
-    return items;
-  }
+  List<TransactionItem> getExpenseTransactions({int limit = 5}) =>
+      sortedExpenses
+          .take(limit)
+          .map(
+            (ExpenseEntity expense) => TransactionItem(
+              title: expense.title,
+              amount: expense.amount,
+              date: expense.date,
+              isIncome: false,
+            ),
+          )
+          .toList();
 
   /// Genera recomendaciones dinámicas basadas en los datos del usuario
   List<RecommendationItem> get recommendations {
@@ -206,12 +154,14 @@ class DashboardLogic extends ChangeNotifier {
     // Si no hay datos, recomendar empezar
     if (!hasData) {
       items.add(
-        const RecommendationItem(
+        RecommendationItem(
           icon: '📊',
           title: 'Comienza tu viaje',
           description:
               'Registra tus primeras transacciones para obtener recomendaciones personalizadas.',
           actionLabel: 'Agregar transacción',
+          accentColor: Colors.blue,
+          actionType: RecommendationActionType.none,
         ),
       );
       return items;
@@ -235,7 +185,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Crear meta de ahorro (si hay balance positivo pero no hay metas)
     if (balance > 0 && _goals.isEmpty) {
       items.add(
-        const RecommendationItem(
+        RecommendationItem(
           icon: '💰',
           title: 'Ahorro',
           description:
@@ -250,7 +200,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Invertir (si el balance es muy alto)
     if (balance > totalIncomes * 2) {
       items.add(
-        const RecommendationItem(
+        RecommendationItem(
           icon: '📈',
           title: 'Invierte',
           description:
@@ -277,19 +227,17 @@ class DashboardLogic extends ChangeNotifier {
       );
     }
 
-    // Recomendaciones de tendencias
-    items.addAll(_trendRecommendations);
-
     // Si no hay recomendaciones específicas, mostrar una genérica positiva
     if (items.isEmpty) {
       items.add(
-        const RecommendationItem(
+        RecommendationItem(
           icon: '✨',
           title: '¡Buen trabajo!',
           description:
               'Tus finanzas están en buen estado. Sigue registrando tus transacciones.',
           actionLabel: 'Continuar',
           accentColor: Colors.green,
+          actionType: RecommendationActionType.none,
         ),
       );
     }
@@ -324,114 +272,47 @@ class DashboardLogic extends ChangeNotifier {
   }
 
   // Métodos públicos
-  void setProfileType(String? profileType) {
-    _profileType = profileType;
-  }
-
   Future<void> loadDashboardData() async {
     _setLoading(true);
     _clearError();
 
-    final DateTimeRange dateRange = _getDateRangeForPeriod(_selectedPeriod);
-    final DashboardParams params = DashboardParams(
-      startDate: dateRange.start,
-      endDate: dateRange.end,
-      profileType: _profileType,
-    );
+    try {
+      final DateTimeRange dateRange = _getDateRangeForPeriod(_selectedPeriod);
+      final DashboardParams params = DashboardParams(
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+      );
 
-    final result = await _getDashboardDataUseCase.execute(params);
+      final DashboardResult result = await _getDashboardDataUseCase.execute(
+        params,
+      );
 
-    await result.fold(
-      (failure) async {
-        _setError('Error al cargar datos: ${failure.message}');
-      },
-      (dashboardResult) async {
-        _expenses = dashboardResult.expenses;
-        _incomes = dashboardResult.incomes;
+      // Fetch goals and budgets in parallel could be better, but sequential for simplicity first
+      // or better yet, move this to the use case if they were part of "Dashboard Data".
+      // Since they are separate features, we fetch them here.
 
-        // Si tenemos filtro de categoría, aplicarlo
-        if (_categoryFilter != null) {
-          _expenses =
-              _expenses.where((e) => e.category == _categoryFilter).toList();
+      final goalsResult = await _getActiveGoalsUseCase.execute();
+      goalsResult.fold((failure) => _goals = [], (goals) => _goals = goals);
+
+      final budgetsResult = await _getActiveBudgetsUseCase.execute();
+      budgetsResult.fold((failure) => _activeBudget = null, (budgets) {
+        // For now take the first one or logic to find active
+        if (budgets.isNotEmpty) {
+          _activeBudget = budgets.first;
+        } else {
+          _activeBudget = null;
         }
+      });
 
-        // Fetch goals and budgets in parallel
-        final goalsResult = await _getActiveGoalsUseCase.execute();
-        goalsResult.fold((failure) => _goals = [], (goals) => _goals = goals);
+      _expenses = result.expenses;
+      _incomes = result.incomes;
 
-        final budgetsResult = await _getActiveBudgetsUseCase.execute();
-        await budgetsResult.fold(
-          (failure) async {
-            _activeBudget = null;
-            _weeklyBudgetSpent = 0.0;
-          },
-          (budgets) async {
-            if (budgets.isNotEmpty) {
-              final String? customId =
-                  await DashboardBudgetPrefs.getWeeklyBudgetId();
-              _activeBudget =
-                  budgets.cast<Budget?>().firstWhere(
-                    (b) => b?.id == customId,
-                    orElse: () => null,
-                  ) ??
-                  budgets.first;
-
-              // Generate weekly start/end explicitly for the weekly dashboard budget card
-              final now = DateTime.now();
-              final startOfWeek = DateTime(
-                now.year,
-                now.month,
-                now.day,
-              ).subtract(Duration(days: now.weekday - 1));
-              final endOfWeek = startOfWeek.add(
-                const Duration(days: 7, milliseconds: -1),
-              );
-
-              final tx_backend.TransactionBackendRepository repo =
-                  getIt<tx_backend.TransactionBackendRepository>();
-              final Either<Failure, List<TransactionBackend>> res = await repo
-                  .list(
-                    fechaDesde: startOfWeek,
-                    fechaHasta: endOfWeek,
-                    tipo: 'gasto',
-                    profileType: _profileType,
-                  );
-
-              final List<String> budgetCatIds = await BudgetCategoryPrefs.load(
-                _activeBudget!.id,
-              );
-
-              _weeklyBudgetSpent = res.fold<double>((_) => 0.0, (
-                List<TransactionBackend> r,
-              ) {
-                final filtered =
-                    budgetCatIds.isEmpty
-                        ? r
-                        : r
-                            .where((t) => budgetCatIds.contains(t.categoriaId))
-                            .toList();
-                return filtered.fold<double>(
-                  0,
-                  (sum, t) => sum + t.montoAsDouble,
-                );
-              });
-            } else {
-              _activeBudget = null;
-              _weeklyBudgetSpent = 0.0;
-            }
-          },
-        );
-
-        // Cargar recomendaciones de tendencias
-        _trendRecommendations = await _trendAnalyzerService.analyzeTrends(
-          profileType: _profileType,
-        );
-
-        notifyListeners();
-      },
-    );
-
-    _setLoading(false);
+      notifyListeners();
+    } catch (e) {
+      _setError('Error al cargar datos: $e');
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> addExpense({
@@ -442,31 +323,26 @@ class DashboardLogic extends ChangeNotifier {
     String? description,
     String? notes,
   }) async {
-    final double parsedAmount = double.tryParse(amount) ?? 0.0;
-    if (parsedAmount <= 0) {
-      _setError('El monto debe ser mayor a 0');
-      return;
+    try {
+      final double parsedAmount = double.tryParse(amount) ?? 0.0;
+      if (parsedAmount <= 0) {
+        throw Exception('El monto debe ser mayor a 0');
+      }
+
+      final AddExpenseParams params = AddExpenseParams(
+        title: title,
+        amount: parsedAmount,
+        date: date,
+        category: category,
+        description: description,
+        notes: notes,
+      );
+
+      await _addTransactionUseCase.addExpense(params);
+      await loadDashboardData(); // Recargar datos
+    } catch (e) {
+      _setError('Error al agregar gasto: $e');
     }
-
-    final AddExpenseParams params = AddExpenseParams(
-      title: title,
-      amount: parsedAmount,
-      date: date,
-      category: category,
-      description: description,
-      notes: notes,
-      profileType: _profileType,
-    );
-
-    final result = await _addTransactionUseCase.addExpense(params);
-    await result.fold(
-      (failure) async {
-        _setError('Error al agregar gasto: ${failure.message}');
-      },
-      (_) async {
-        await loadDashboardData(); // Recargar datos
-      },
-    );
   }
 
   Future<void> addIncome({
@@ -477,50 +353,41 @@ class DashboardLogic extends ChangeNotifier {
     String? description,
     String? notes,
   }) async {
-    final double parsedAmount = double.tryParse(amount) ?? 0.0;
-    if (parsedAmount <= 0) {
-      _setError('El monto debe ser mayor a 0');
-      return;
+    try {
+      final double parsedAmount = double.tryParse(amount) ?? 0.0;
+      if (parsedAmount <= 0) {
+        throw Exception('El monto debe ser mayor a 0');
+      }
+
+      final AddIncomeParams params = AddIncomeParams(
+        title: title,
+        amount: parsedAmount,
+        date: date,
+        source: source,
+        description: description,
+        notes: notes,
+      );
+
+      await _addTransactionUseCase.addIncome(params);
+      await loadDashboardData(); // Recargar datos
+    } catch (e) {
+      _setError('Error al agregar ingreso: $e');
     }
-
-    final AddIncomeParams params = AddIncomeParams(
-      title: title,
-      amount: parsedAmount,
-      date: date,
-      source: source,
-      description: description,
-      notes: notes,
-      profileType: _profileType,
-    );
-
-    final result = await _addTransactionUseCase.addIncome(params);
-    await result.fold(
-      (failure) async {
-        _setError('Error al agregar ingreso: ${failure.message}');
-      },
-      (_) async {
-        await loadDashboardData(); // Recargar datos
-      },
-    );
   }
 
-  void changePeriod(PeriodFilter period, {DateTimeRange? range}) {
-    if (_selectedPeriod != period || range != null) {
+  void changePeriod(PeriodFilter period) {
+    if (_selectedPeriod != period) {
       _selectedPeriod = period;
-      if (range != null) {
-        _customPeriod = range;
-      }
       loadDashboardData();
     }
   }
 
-  void changeCategory(String? category) {
-    _categoryFilter = category == 'Todas' ? null : category;
-    loadDashboardData();
-  }
-
   // Métodos de utilidad
-  String formatCurrency(double amount) => CurrencyHelper.format(amount);
+  String formatCurrency(double amount) {
+    // Usa el locale del dispositivo para formatear la moneda correctamente
+    final formatter = NumberFormat.currency(locale: 'en_US', symbol: 'Q');
+    return formatter.format(amount);
+  }
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';
@@ -601,13 +468,6 @@ class DashboardLogic extends ChangeNotifier {
           start: startOfYear,
           end: endOfYear.add(const Duration(days: 1)),
         );
-      case PeriodFilter.personalizado:
-        return _customPeriod ??
-            DateTimeRange(
-              start: startOfDay,
-              end: startOfDay.add(const Duration(days: 1)),
-            );
-
       case PeriodFilter.historico:
         return DateTimeRange(
           start: DateTime(2000), // Fecha muy antigua

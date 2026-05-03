@@ -33,4 +33,11 @@ abstract class AuthRepository {
   );
 
   Future<Either<AuthFailure, CurrentUserResponse>> getCurrentUser();
+
+  /// Permanently deletes the current user's Firebase Auth account, their
+  /// Firestore document (`users/{uid}`), and their Storage profile picture.
+  ///
+  /// Compliant with Apple guideline 5.1.1(v): apps must provide in-app
+  /// account deletion. Call this after re-authenticating the user.
+  Future<Either<AuthFailure, Unit>> deleteAccount();
 }

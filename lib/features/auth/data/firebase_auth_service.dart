@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:personal_finance/core/config/auth_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -12,56 +13,82 @@ import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 class FirebaseAuthService implements AuthDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  static bool _isGoogleSignInInitialized = false;
+  // Usado únicamente en iOS: abre el selector nativo de cuenta Google.
+  // Sin clientId explícito — lee CLIENT_ID de GoogleService-Info.plist,
+  // cuyo REVERSED_CLIENT_ID ya está registrado como URL scheme en Info.plist.
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
+
+  // ── Identidad ──────────────────────────────────────────────────────────────
+
+  @override
+  String? get currentUserId => _auth.currentUser?.uid;
+
+  @override
+  Stream<String?> get authStateChanges =>
+      _auth.authStateChanges().map((user) => user?.uid);
+
+  // ── Operaciones ────────────────────────────────────────────────────────────
 
   @override
   Future<User?> signInWithGoogle() async {
     try {
-      if (!_isGoogleSignInInitialized) {
-        if (Platform.isAndroid) {
-          await GoogleSignIn.instance.initialize(
-            serverClientId: AuthConfig.googleWebClientId,
-          );
-        } else {
-          await GoogleSignIn.instance.initialize();
-        }
-        _isGoogleSignInInitialized = true;
+      if (Platform.isAndroid) {
+        return await _signInWithGoogleAndroid();
+      } else {
+        return await _signInWithGoogleIOS();
       }
-
-      final GoogleSignInAccount googleUser;
-      try {
-        googleUser = await GoogleSignIn.instance.authenticate();
-      } on GoogleSignInException catch (e) {
-        if (e.code == GoogleSignInExceptionCode.canceled) {
-          return null;
-        }
-        rethrow;
-      } catch (e) {
-        // Handle other potential errors during authentication
-        rethrow;
-      }
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-
-      // Create a new credential
-      // Note: accessToken is not available in google_sign_in 7.x authentication object
-      // and typically not required for Firebase Auth with OIDC.
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
+    } on FirebaseAuthException {
+      rethrow;
+    } on PlatformException catch (e) {
+      throw FirebaseAuthException(
+        code: 'google-sign-in-failed',
+        message: 'Google Sign-In error [${e.code}]: ${e.message}',
       );
-
-      // Once signed in, return the UserCredential
-      final UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
-      return userCredential.user;
     } catch (e) {
       throw FirebaseAuthException(
         code: 'google-sign-in-failed',
         message: 'Error en Google Sign-In: $e',
       );
     }
+  }
+
+  // Android: flujo web via Chrome Custom Tab.
+  // No requiere SHA-1 registrado — usa el Web OAuth client (client_type 3).
+  Future<User?> _signInWithGoogleAndroid() async {
+    final GoogleAuthProvider googleProvider = GoogleAuthProvider()
+      ..addScope('email')
+      ..addScope('profile');
+    final UserCredential userCredential =
+        await _auth.signInWithProvider(googleProvider);
+    return userCredential.user;
+  }
+
+  // iOS: flujo nativo con selector de cuenta de Google.
+  Future<User?> _signInWithGoogleIOS() async {
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) return null;
+
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+    final String? idToken = googleAuth.idToken;
+    final String? accessToken = googleAuth.accessToken;
+
+    if (idToken == null && accessToken == null) {
+      throw FirebaseAuthException(
+        code: 'google-sign-in-failed',
+        message: 'Google no devolvió un token de autenticación.',
+      );
+    }
+
+    final AuthCredential credential = GoogleAuthProvider.credential(
+      idToken: idToken,
+      accessToken: accessToken,
+    );
+    final UserCredential userCredential =
+        await _auth.signInWithCredential(credential);
+    return userCredential.user;
   }
 
   @override
@@ -96,22 +123,22 @@ class FirebaseAuthService implements AuthDataSource {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No hay usuario autenticado para eliminar.',
+      );
+    }
+    await user.delete();
+  }
+
+  @override
   Future<void> logout() async {
     try {
-      if (!_isGoogleSignInInitialized) {
-        if (Platform.isAndroid) {
-          await GoogleSignIn.instance.initialize(
-            serverClientId: AuthConfig.googleWebClientId,
-          );
-        } else {
-          await GoogleSignIn.instance.initialize();
-        }
-        _isGoogleSignInInitialized = true;
-      }
-      await GoogleSignIn.instance.signOut();
-    } catch (_) {
-      // Ignore if google sign in fails to sign out (e.g. not initialized)
-    }
+      await _googleSignIn.signOut();
+    } catch (_) {}
     await _auth.signOut();
   }
 
@@ -123,7 +150,6 @@ class FirebaseAuthService implements AuthDataSource {
     final UserCredential userCredential = await _auth
         .createUserWithEmailAndPassword(email: email, password: password);
 
-    // Enviar correo de verificación
     if (userCredential.user != null && !userCredential.user!.emailVerified) {
       await userCredential.user!.sendEmailVerification();
     }

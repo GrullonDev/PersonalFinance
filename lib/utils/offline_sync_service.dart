@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hive/hive.dart';
-
+import 'package:personal_finance/core/security/hive_encryption_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
 
 class OfflineSyncService {
@@ -13,8 +13,11 @@ class OfflineSyncService {
   late Box<PendingAction> _actionBox;
   late StreamSubscription<List<ConnectivityResult>> _connectivitySub;
 
-  Future<void> init() async {
-    _actionBox = await Hive.openBox<PendingAction>('pending_actions');
+  Future<void> init(HiveAesCipher cipher) async {
+    _actionBox = await HiveEncryptionService.openBoxSafe<PendingAction>(
+      'pending_actions',
+      cipher,
+    );
     _connectivitySub = Connectivity().onConnectivityChanged.listen(
       _onConnectivityChanged,
     );

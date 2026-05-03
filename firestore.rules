@@ -1,0 +1,182 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Deny everything by default ──────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ── User data ────────────────────────────────────────────────────────────
+    // Each user owns their sub-tree. No other authenticated user can cross it.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /accounts/{accountId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+                              && isValidAccount(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /budgets/{budgetId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+                              && isValidBudget(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /categories/{categoryId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+                              && isValidCategory(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /goals/{goalId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+                              && isValidGoal(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      // ── Transactions ──────────────────────────────────────────────────────
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+                      && isValidTransaction(request.resource.data, userId);
+
+        allow update: if isOwner(userId)
+                      && isValidTransaction(request.resource.data, userId)
+                      && keepsTransactionOwner(resource.data, request.resource.data, userId);
+
+        // Legacy CRUD screens still issue hard deletes.
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // ── Helper functions ─────────────────────────────────────────────────────
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidTransaction(data, userId) {
+      return isValidMvpTransaction(data, userId)
+          || isValidLegacyTransaction(data);
+    }
+
+    function isValidMvpTransaction(data, userId) {
+      return data.keys().hasAll([
+            'userId',
+            'amount',
+            'type',
+            'note',
+            'createdAt',
+            'updatedAt',
+            'syncStatus',
+            'version',
+            'deviceId'
+          ])
+          && data.userId is string
+          && data.userId == userId
+          && data.amount is number
+          && data.amount > 0
+          && data.type in ['income', 'expense']
+          && data.note is string
+          && data.note.size() <= 500
+          && data.syncStatus in ['pending', 'synced', 'failed']
+          && data.version is int
+          && data.deviceId is string
+          && data.deviceId.size() > 0
+          && isDateLike(data.createdAt)
+          && isDateLike(data.updatedAt)
+          && (!data.keys().hasAny(['deletedAt']) || data.deletedAt == null || isDateLike(data.deletedAt));
+    }
+
+    function isValidLegacyTransaction(data) {
+      return data.keys().hasAll([
+            'tipo',
+            'monto',
+            'descripcion',
+            'fecha',
+            'categoria_id',
+            'es_recurrente'
+          ])
+          && data.tipo in ['ingreso', 'gasto']
+          && data.monto is number
+          && data.monto > 0
+          && data.descripcion is string
+          && data.descripcion.size() <= 500
+          && data.categoria_id is string
+          && data.es_recurrente is bool
+          && isDateLike(data.fecha);
+    }
+
+    function keepsTransactionOwner(existing, incoming, userId) {
+      return (
+              !existing.keys().hasAny(['userId'])
+              && !incoming.keys().hasAny(['userId'])
+            )
+            || (
+              existing.keys().hasAny(['userId'])
+              && incoming.keys().hasAny(['userId'])
+              && existing.userId == incoming.userId
+              && incoming.userId == userId
+            );
+    }
+
+    function isValidAccount(data) {
+      return data.keys().hasAll(['name', 'balance', 'type'])
+          && data.name is string
+          && data.name.size() > 0
+          && data.name.size() <= 120
+          && data.balance is number
+          && data.type is string
+          && data.type.size() > 0
+          && (!data.keys().hasAny(['icon']) || data.icon == null || data.icon is string)
+          && (!data.keys().hasAny(['color']) || data.color == null || data.color is string);
+    }
+
+    function isValidBudget(data) {
+      return data.keys().hasAll(['nombre', 'monto_total', 'fecha_inicio', 'fecha_fin'])
+          && data.nombre is string
+          && data.nombre.size() > 0
+          && data.nombre.size() <= 120
+          && data.monto_total is number
+          && data.monto_total >= 0
+          && isDateLike(data.fecha_inicio)
+          && isDateLike(data.fecha_fin)
+          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is string);
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['nombre', 'tipo'])
+          && data.nombre is string
+          && data.nombre.size() > 0
+          && data.nombre.size() <= 120
+          && data.tipo in ['ingreso', 'egreso']
+          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is int);
+    }
+
+    function isValidGoal(data) {
+      return data.keys().hasAll(['nombre', 'monto_objetivo', 'monto_actual', 'fecha_limite'])
+          && data.nombre is string
+          && data.nombre.size() > 0
+          && data.nombre.size() <= 120
+          && data.monto_objetivo is number
+          && data.monto_objetivo >= 0
+          && data.monto_actual is number
+          && data.monto_actual >= 0
+          && isDateLike(data.fecha_limite)
+          && (!data.keys().hasAny(['icono']) || data.icono == null || data.icono is string)
+          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is string);
+    }
+
+    function isDateLike(value) {
+      return value is timestamp || value is string;
+    }
+  }
+}

@@ -1,11 +1,12 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 
 import 'package:dartz/dartz.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:personal_finance/features/auth/data/models/response/refresh_token_response.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/core/services/app_data_cleanup_service.dart';
+import 'package:personal_finance/core/security/auth_session_storage.dart';
 
 import 'package:personal_finance/features/auth/data/local_auth_service.dart';
 import 'package:personal_finance/features/auth/data/models/request/login_user_request.dart';
@@ -25,24 +26,15 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     await _loadAuthData();
-    // Al iniciar la app, si hay sesión válida, refrescar si está por expirar.
-    if (isAuthenticated) {
-      await _refreshTokenIfNeeded();
+    final bool restored = await syncSessionFromFirebase(notify: false);
+    if (restored) {
       await loadCurrentUser();
-      return;
     }
-    // Si el token ya expiró pero tenemos refresh_token, intenta renovar sesión.
-    if (_refreshToken != null && _refreshToken!.isNotEmpty) {
-      final bool refreshed = await _tryRefreshSession();
-      if (refreshed) {
-        await loadCurrentUser();
-      }
-    }
+    notifyListeners();
   }
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -57,10 +49,7 @@ class AuthProvider extends ChangeNotifier {
   bool get obscurePassword => _obscurePassword;
   CurrentUserResponse? get currentUser => _currentUser;
   String? get accessToken => _accessToken;
-  bool get isAuthenticated =>
-      _accessToken != null &&
-      _tokenExpiration != null &&
-      _tokenExpiration!.isAfter(DateTime.now());
+  bool get isAuthenticated => _hasAuthorizedFirebaseSession();
 
   ThemeMode _themeMode = ThemeMode.system;
 
@@ -83,11 +72,19 @@ class AuthProvider extends ChangeNotifier {
       return await result.fold(
         (failure) {
           _setLoading(false);
-          _setError(failure.message);
+          _setError(_localizeAuthMessage(failure.message));
           return false;
         },
         (response) async {
           await _handleSuccessfulLogin(response);
+          final bool restored = await syncSessionFromFirebase(
+            forceRefresh: true,
+          );
+          if (!restored) {
+            _setLoading(false);
+            return false;
+          }
+          await loadCurrentUser();
           await LocalAuthService().login();
           _setLoading(false);
           _setError(null);
@@ -96,7 +93,7 @@ class AuthProvider extends ChangeNotifier {
       );
     } catch (e) {
       _setLoading(false);
-      _setError(e.toString());
+      _setError(_localizeAuthMessage(e.toString()));
       return false;
     }
   }
@@ -108,11 +105,19 @@ class AuthProvider extends ChangeNotifier {
       return await result.fold(
         (failure) {
           _setLoading(false);
-          _setError(failure.message);
+          _setError(_localizeAuthMessage(failure.message));
           return false;
         },
         (response) async {
           await _handleSuccessfulLogin(response);
+          final bool restored = await syncSessionFromFirebase(
+            forceRefresh: true,
+          );
+          if (!restored) {
+            _setLoading(false);
+            return false;
+          }
+          await loadCurrentUser();
           await LocalAuthService().login();
           _setLoading(false);
           _setError(null);
@@ -121,7 +126,7 @@ class AuthProvider extends ChangeNotifier {
       );
     } catch (e) {
       _setLoading(false);
-      _setError(e.toString());
+      _setError(_localizeAuthMessage(e.toString()));
       return false;
     }
   }
@@ -149,74 +154,77 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await LocalAuthService().logout();
-    await authRepository.logout();
-    _clearAuthData();
-    notifyListeners();
-  }
-
-  Future<bool> _refreshTokenIfNeeded() async {
-    if (_refreshToken == null || _tokenExpiration == null) {
-      return false;
-    }
-
-    // Refresh token if it's about to expire (within 5 minutes)
-    if (_tokenExpiration!.difference(DateTime.now()).inMinutes < 5) {
-      return _tryRefreshSession();
-    }
-    return true;
-  }
-
-  Future<bool> _tryRefreshSession() async {
+    final String? userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
     try {
-      _isLoading = true;
-      notifyListeners();
-
-      final Either<AuthFailure, RefreshTokenResponse> result =
-          await authRepository.refreshToken(_refreshToken!);
-
-      return await result.fold(
-        (AuthFailure failure) async {
-          // Si falla el refresh, limpiar datos de sesión
-          await _clearAuthData();
-          _errorMessage = failure.message;
-          return false;
-        },
-        (RefreshTokenResponse response) async {
-          _accessToken = response.accessToken;
-          _refreshToken = response.refreshToken;
-          if (_accessToken != null) {
-            await _updateTokenExpiration(_accessToken!);
-            await _saveAuthData();
-            return true;
-          }
-          return false;
-        },
-      );
-    } catch (e) {
-      _errorMessage = 'Failed to refresh session. Please log in again.';
-      await _clearAuthData();
-      return false;
+      await LocalAuthService().logout();
+      await authRepository.logout();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      await _clearAuthData();
+      await AppDataCleanupService.clearUserScopedData(userId: userId);
     }
+    notifyListeners();
   }
 
   // Expone un manejador para eventos de reanudación de la app (foreground)
   Future<void> onAppResumed() async {
-    // Intentar refrescar si está por expirar
-    final bool ok = await _refreshTokenIfNeeded();
-    if (!ok && (_refreshToken != null && _refreshToken!.isNotEmpty)) {
-      // Si ya expiró, intenta renovarla igualmente
-      final bool refreshed = await _tryRefreshSession();
-      if (refreshed) {
-        await loadCurrentUser();
-      }
-    } else if (isAuthenticated) {
-      // Sesión válida: actualizar datos del usuario para mantener UI al día
+    final bool ok = await syncSessionFromFirebase();
+    if (ok) {
       await loadCurrentUser();
     }
+  }
+
+  Future<bool> syncSessionFromFirebase({
+    bool forceRefresh = false,
+    bool notify = true,
+  }) async {
+    final firebase_auth.User? initialUser =
+        firebase_auth.FirebaseAuth.instance.currentUser;
+    if (initialUser == null) {
+      await _clearAuthData(notify: notify);
+      return false;
+    }
+
+    try {
+      await initialUser.reload();
+    } catch (_) {
+      // Si no hay red, seguimos con el usuario en caché del SDK.
+    }
+
+    final firebase_auth.User? user =
+        firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      await _clearAuthData(notify: notify);
+      return false;
+    }
+
+    if (_requiresVerifiedEmail(user) && !user.emailVerified) {
+      _errorMessage =
+          'Debes verificar tu correo antes de acceder al dashboard.';
+      await LocalAuthService().logout();
+      await authRepository.logout();
+      await _clearAuthData(notify: false);
+      await AppDataCleanupService.clearUserScopedData(userId: user.uid);
+      if (notify) {
+        notifyListeners();
+      }
+      return false;
+    }
+
+    final String? token = await user.getIdToken(forceRefresh);
+    if (token == null || token.isEmpty) {
+      await _clearAuthData(notify: notify);
+      return false;
+    }
+
+    _accessToken = token;
+    _refreshToken = user.refreshToken;
+    await _updateTokenExpiration(token);
+    await _saveAuthData();
+
+    if (notify) {
+      notifyListeners();
+    }
+    return true;
   }
 
   Future<void> _updateTokenExpiration(String token) async {
@@ -245,36 +253,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _saveAuthData() async {
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      if (_accessToken != null) {
-        await prefs.setString('access_token', _accessToken!);
-      } else {
-        await prefs.remove('access_token');
-      }
-
-      if (_refreshToken != null) {
-        await prefs.setString('refresh_token', _refreshToken!);
-      } else {
-        await prefs.remove('refresh_token');
-      }
-
-      if (_tokenExpiration != null) {
-        await prefs.setString(
-          'token_expiry',
-          _tokenExpiration!.toIso8601String(),
-        );
-      } else {
-        await prefs.remove('token_expiry');
-      }
-
-      if (_currentUser != null) {
-        await prefs.setString(
-          'current_user',
-          jsonEncode(_currentUser!.toJson()),
-        );
-      } else {
-        await prefs.remove('current_user');
-      }
+      await AuthSessionStorage.save(
+        accessToken: _accessToken,
+        refreshToken: _refreshToken,
+        tokenExpiry: _tokenExpiration?.toIso8601String(),
+        currentUserJson:
+            _currentUser != null ? jsonEncode(_currentUser!.toJson()) : null,
+      );
     } catch (e) {
       // If there's an error saving auth data, clear everything
       await _clearAuthData();
@@ -283,16 +268,16 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _loadAuthData() async {
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      _accessToken = prefs.getString('access_token');
-      _refreshToken = prefs.getString('refresh_token');
+      final snapshot = await AuthSessionStorage.read();
+      _accessToken = snapshot.accessToken;
+      _refreshToken = snapshot.refreshToken;
 
-      final String? expiryString = prefs.getString('token_expiry');
+      final String? expiryString = snapshot.tokenExpiry;
       if (expiryString != null) {
         _tokenExpiration = DateTime.parse(expiryString);
       }
 
-      final String? userJson = prefs.getString('current_user');
+      final String? userJson = snapshot.currentUserJson;
       if (userJson != null) {
         _currentUser = CurrentUserResponse.fromJson(
           jsonDecode(userJson) as Map<String, dynamic>,
@@ -304,20 +289,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _clearAuthData() async {
+  Future<void> _clearAuthData({bool notify = true}) async {
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.remove('access_token');
-      await prefs.remove('refresh_token');
-      await prefs.remove('token_expiry');
-      await prefs.remove('current_user');
+      await AuthSessionStorage.clear();
 
       _accessToken = null;
       _refreshToken = null;
       _tokenExpiration = null;
       _currentUser = null;
 
-      notifyListeners();
+      if (notify) {
+        notifyListeners();
+      }
     } catch (e) {
       // Ignore errors during cleanup
     }
@@ -381,7 +364,8 @@ class AuthProvider extends ChangeNotifier {
       final Either<AuthFailure, RegisterUserResponse> result =
           await authRepository.registerUser(request);
       result.fold(
-        (AuthFailure failure) => _setError(failure.message),
+        (AuthFailure failure) =>
+            _setError(_localizeAuthMessage(failure.message)),
         (_) => _setError(null),
       );
       return result;
@@ -410,29 +394,29 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Ensure we have a valid token
-      if (!isAuthenticated) {
-        final bool refreshed = await _refreshTokenIfNeeded();
-        if (!refreshed) {
-          _errorMessage = 'Session expired. Please log in again.';
-          notifyListeners();
-          return const Left(
-            AuthFailure(message: 'Session expired. Please log in again.'),
-          );
-        }
+      final bool restored = await syncSessionFromFirebase();
+      if (!restored) {
+        _errorMessage =
+            'Tu sesión no está disponible. Inicia sesión nuevamente.';
+        notifyListeners();
+        return const Left(
+          AuthFailure(
+            message: 'Tu sesión no está disponible. Inicia sesión nuevamente.',
+          ),
+        );
       }
 
       final Either<AuthFailure, CurrentUserResponse> result =
           await authRepository.getCurrentUser();
       return result.fold(
         (AuthFailure failure) {
-          _errorMessage = failure.message;
+          _errorMessage = _localizeAuthMessage(failure.message);
           if (failure.message.toLowerCase().contains('expired') ||
               failure.message.toLowerCase().contains('invalid')) {
             _clearAuthData();
           }
           notifyListeners();
-          return Left(failure);
+          return Left(AuthFailure(message: _errorMessage!));
         },
         (CurrentUserResponse user) {
           _currentUser = user;
@@ -442,10 +426,12 @@ class AuthProvider extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _errorMessage = 'An unexpected error occurred';
+      _errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
       await _clearAuthData();
       notifyListeners();
-      return const Left(AuthFailure(message: 'An unexpected error occurred'));
+      return const Left(
+        AuthFailure(message: 'Ocurrió un error inesperado. Intenta de nuevo.'),
+      );
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -453,11 +439,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<Either<AuthFailure, void>> login() async {
-    if (!formKey.currentState!.validate()) {
-      return const Left(
-        AuthFailure(message: 'Please fill in the required fields.'),
-      );
-    }
     _setLoading(true);
     try {
       final LoginUserRequest loginRequest = LoginUserRequest(
@@ -499,7 +480,7 @@ class AuthProvider extends ChangeNotifier {
             // Default error message
             errorMessage =
                 failure.message.isNotEmpty
-                    ? failure.message
+                    ? _localizeAuthMessage(failure.message)
                     : 'Error al iniciar sesión. Por favor, intente nuevamente.';
           }
 
@@ -514,23 +495,90 @@ class AuthProvider extends ChangeNotifier {
         },
         (LoginUserResponse response) async {
           _setError(null);
-          _accessToken = response.accessToken;
-          if (response.refreshToken != null &&
-              response.refreshToken!.isNotEmpty) {
-            _refreshToken = response.refreshToken;
+          await _handleSuccessfulLogin(response);
+          final bool restored = await syncSessionFromFirebase(
+            forceRefresh: true,
+          );
+          if (!restored) {
+            return Left(
+              AuthFailure(
+                message:
+                    _errorMessage ??
+                    'No se pudo restaurar la sesión autenticada.',
+              ),
+            );
           }
-
-          await _updateTokenExpiration(response.accessToken);
-          await _saveAuthData();
+          await LocalAuthService().login();
           await loadCurrentUser();
           return const Right(null);
         },
       );
     } catch (e) {
-      _setError('An unexpected error occurred. Please try again.');
-      return Left(AuthFailure(message: e.toString()));
+      final message = _localizeAuthMessage(e.toString());
+      _setError(message);
+      return Left(AuthFailure(message: message));
     } finally {
       _setLoading(false);
     }
+  }
+
+  String _localizeAuthMessage(String message) {
+    final normalized = message.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return 'Ocurrió un error inesperado. Intenta de nuevo.';
+    }
+    if (normalized.contains('please fill in the required fields')) {
+      return 'Completa los campos requeridos.';
+    }
+    if (normalized.contains('an unexpected error occurred')) {
+      return 'Ocurrió un error inesperado. Intenta de nuevo.';
+    }
+    if (normalized.contains('network') ||
+        normalized.contains('socketexception') ||
+        normalized.contains('failed host lookup')) {
+      return 'Error de conexión. Verifica tu internet e intenta nuevamente.';
+    }
+    if (normalized.contains('user-not-found') ||
+        normalized.contains('wrong-password') ||
+        normalized.contains('invalid-credential') ||
+        normalized.contains('invalid login credentials')) {
+      return 'Correo o contraseña incorrectos.';
+    }
+    if (normalized.contains('invalid-email') ||
+        normalized.contains('badly formatted')) {
+      return 'Ingresa un correo electrónico válido.';
+    }
+    if (normalized.contains('too-many-requests')) {
+      return 'Demasiados intentos. Espera un momento antes de volver a intentar.';
+    }
+    if (normalized.contains('email-already-in-use')) {
+      return 'Ese correo ya está registrado.';
+    }
+    if (normalized.contains('weak-password')) {
+      return 'La contraseña es demasiado débil.';
+    }
+    if (normalized.contains('verify your email') ||
+        normalized.contains('email-not-verified')) {
+      return 'Debes verificar tu correo antes de continuar.';
+    }
+    if (normalized.contains('session') && normalized.contains('expired')) {
+      return 'Tu sesión expiró. Inicia sesión nuevamente.';
+    }
+    return message;
+  }
+
+  bool _hasAuthorizedFirebaseSession() {
+    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    if (_requiresVerifiedEmail(user) && !user.emailVerified) {
+      return false;
+    }
+    return true;
+  }
+
+  bool _requiresVerifiedEmail(firebase_auth.User user) {
+    final providerIds =
+        user.providerData.map((info) => info.providerId).toSet();
+    return providerIds.contains(firebase_auth.EmailAuthProvider.PROVIDER_ID);
   }
 }

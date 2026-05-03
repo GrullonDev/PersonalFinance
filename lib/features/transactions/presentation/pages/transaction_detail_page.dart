@@ -32,7 +32,8 @@ class _TransactionDetailView extends StatelessWidget {
     final DateFormat dateFormatter = DateFormat("dd 'de' MMMM, yyyy", 'es');
     final DateFormat timeFormatter = DateFormat('hh:mm a', 'es');
     final NumberFormat currencyFormatter = NumberFormat.currency(
-      symbol: '\$',
+      locale: 'en_US',
+      symbol: 'Q',
       decimalDigits: 2,
     );
 

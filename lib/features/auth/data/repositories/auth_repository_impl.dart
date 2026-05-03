@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:personal_finance/core/services/app_data_cleanup_service.dart';
 import 'package:personal_finance/features/auth/data/models/request/login_user_request.dart';
 import 'package:personal_finance/features/auth/data/models/response/login_user_response.dart';
 import 'package:personal_finance/features/auth/data/models/request/register_user_request.dart';
@@ -24,7 +26,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebase_auth.User? user =
           firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return const Left(AuthFailure(message: 'Google Sign-In failed'));
+        return Left(AuthFailure(message: 'Google Sign-In failed'));
       }
 
       await _ensureUserDocumentExists(user);
@@ -42,7 +44,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebase_auth.User? user =
           firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return const Left(AuthFailure(message: 'Apple Sign-In failed'));
+        return Left(AuthFailure(message: 'Apple Sign-In failed'));
       }
 
       await _ensureUserDocumentExists(user);
@@ -58,7 +60,7 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     final String? token = await user.getIdToken();
     if (token == null) {
-      return const Left(AuthFailure(message: 'Failed to retrieve auth token'));
+      return Left(AuthFailure(message: 'Failed to retrieve auth token'));
     }
 
     final DocumentSnapshot doc =
@@ -156,6 +158,54 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() => _firebaseDataSource.logout();
 
   @override
+  Future<Either<AuthFailure, Unit>> deleteAccount() async {
+    try {
+      final user = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return left(const AuthFailure(message: 'No hay usuario autenticado.'));
+      }
+
+      final uid = user.uid;
+
+      for (final collectionName in <String>[
+        'accounts',
+        'budgets',
+        'categories',
+        'goals',
+        'transactions',
+      ]) {
+        await _deleteCollectionInChunks(
+          _firestore.collection('users').doc(uid).collection(collectionName),
+        );
+      }
+
+      // 2. Borrar documento del usuario en Firestore
+      await _firestore.collection('users').doc(uid).delete();
+
+      // 3. Borrar foto de perfil en Storage (best-effort)
+      try {
+        await FirebaseStorage.instance
+            .ref('profile_pictures/$uid.jpg')
+            .delete();
+      } catch (_) {}
+
+      // 4. Eliminar cuenta de Firebase Auth (requiere sesión reciente)
+      await _firebaseDataSource.deleteAccount();
+      await AppDataCleanupService.clearUserScopedData(userId: uid);
+
+      return right(unit);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      return left(
+        AuthFailure(message: e.message ?? 'Error al eliminar cuenta.'),
+      );
+    } catch (e) {
+      return left(
+        AuthFailure(message: 'Error inesperado al eliminar cuenta: $e'),
+      );
+    }
+  }
+
+  @override
   Future<Either<AuthFailure, Unit>> recoverPassword(String email) async {
     try {
       await firebase_auth.FirebaseAuth.instance.sendPasswordResetEmail(
@@ -182,7 +232,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required String token,
     required String newPassword,
     required String confirmPassword,
-  }) async => right(unit);
+  }) async {
+    // Note: Firebase handles password reset via the link sent to email.
+    // ConfimPassword reset via API is not directly supported by client SDK in the same way as backend tokens.
+    // However, if the user is logged in, we can update password.
+    // If this is a flow where the user receives a code, Firebase dynamic links manage it.
+    // For now, returning success as this flow might need UI adjustment for Firebase.
+    return right(unit);
+  }
 
   @override
   Future<Either<AuthFailure, RegisterUserResponse>> registerUser(
@@ -247,64 +304,46 @@ class AuthRepositoryImpl implements AuthRepository {
     LoginUserRequest request,
   ) async {
     try {
-      final String firebaseUid = await _firebaseDataSource
-          .signInWithEmailAndPassword(
-            email: request.email,
-            password: request.password,
-          );
+      await _firebaseDataSource.signInWithEmailAndPassword(
+        email: request.email,
+        password: request.password,
+      );
 
-      // Fetch user data from Firestore
-      final DocumentSnapshot doc =
-          await _firestore.collection('users').doc(firebaseUid).get();
-
-      if (!doc.exists) {
-        // Create basic doc if missing (migrated user or error)
-        return const Left(
-          AuthFailure(message: 'El usuario no tiene un perfil asociado.'),
+      final firebase_auth.User? firebaseUser =
+          firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
+        return Left(
+          AuthFailure(
+            message:
+                'No se pudo restaurar la sesión de Firebase después del login.',
+          ),
         );
       }
 
-      final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-      // Helper to safely get int
-      int safeId = 0;
-      final dynamic idRaw = data['id'];
-      if (idRaw is int) {
-        safeId = idRaw;
-      } else if (idRaw is String) {
-        safeId = int.tryParse(idRaw) ?? 0;
+      await firebaseUser.reload();
+      final refreshedUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (refreshedUser == null) {
+        return Left(
+          AuthFailure(
+            message:
+                'La sesión de Firebase no está disponible después del login.',
+          ),
+        );
       }
 
-      // Construct User object for legacy response
-      final user = User(
-        id: safeId,
-        firebaseUid: firebaseUid,
-        email: (data['email'] as String?) ?? request.email,
-        username: (data['username'] as String?) ?? '',
-        nombres: (data['nombres'] as String?) ?? '',
-        apellidos: (data['apellidos'] as String?) ?? '',
-        nombreCompleto: (data['nombre_completo'] as String?) ?? '',
-        fechaNacimiento:
-            (data['fecha_nacimiento'] as String?) ??
-            DateTime.now().toIso8601String(),
-        fechaCreacion:
-            (data['fecha_creacion'] as String?) ??
-            DateTime.now().toIso8601String(),
-        fechaActualizacion:
-            (data['fecha_actualizacion'] as String?) ??
-            DateTime.now().toIso8601String(),
-      );
+      if (!refreshedUser.emailVerified) {
+        await _firebaseDataSource.logout();
+        return const Left(
+          AuthFailure(
+            message:
+                'Debes verificar tu correo electrónico antes de acceder al dashboard.',
+            statusCode: 403,
+          ),
+        );
+      }
 
-      // Construct LoginUserResponse
-      final response = LoginUserResponse(
-        accessToken:
-            'firebase-token-placeholder', // Not needed really but req by model
-        tokenType: 'bearer',
-        user: user,
-        refreshToken: 'firebase-refresh-token-placeholder',
-      );
-
-      return Right(response);
+      await _ensureUserDocumentExists(refreshedUser);
+      return _createLoginResponse(refreshedUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
       return Left(
         AuthFailure(
@@ -318,25 +357,41 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  Future<void> _deleteCollectionInChunks(
+    CollectionReference<Map<String, dynamic>> collection,
+  ) async {
+    while (true) {
+      final snapshot = await collection.limit(400).get();
+      if (snapshot.docs.isEmpty) return;
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
+
   @override
   Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(
     String refreshToken,
-  ) async => const Left(
-    AuthFailure(message: 'Refresh token no necesario en Firebase'),
-  );
+  ) async {
+    // Firebase handles token refresh automatically.
+    return Left(AuthFailure(message: "Refresh token no necesario en Firebase"));
+  }
 
   @override
   Future<Either<AuthFailure, CurrentUserResponse>> getCurrentUser() async {
     try {
       final user = firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return const Left(AuthFailure(message: 'No hay usuario autenticado'));
+        return Left(AuthFailure(message: "No hay usuario autenticado"));
       }
 
       final DocumentSnapshot doc =
           await _firestore.collection('users').doc(user.uid).get();
       if (!doc.exists) {
-        return const Left(
+        return Left(
           AuthFailure(message: 'Perfil no encontrado en base de datos.'),
         );
       }

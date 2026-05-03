@@ -87,8 +87,9 @@ class RegisterProvider extends ChangeNotifier {
         .registerUser(request);
 
     return result.fold<Future<RegisterResult>>(
-      (AuthFailure failure) =>
-          Future<RegisterResult>.value(RegisterResult.failure(failure.message)),
+      (AuthFailure failure) => Future<RegisterResult>.value(
+        RegisterResult.failure(_localizeRegisterError(failure.message)),
+      ),
       (RegisterUserResponse response) =>
           _handleSuccessfulRegistration(response),
     );
@@ -164,6 +165,36 @@ class RegisterProvider extends ChangeNotifier {
       passwordError,
       confirmPasswordError,
     ];
+  }
+
+  String _localizeRegisterError(String message) {
+    final normalized = message.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return 'No pudimos completar el registro. Intenta de nuevo.';
+    }
+    if (normalized.contains('email-already-in-use') ||
+        normalized.contains('already exists')) {
+      return 'Ese correo ya está registrado.';
+    }
+    if (normalized.contains('username') && normalized.contains('exists')) {
+      return 'Ese nombre de usuario ya está en uso.';
+    }
+    if (normalized.contains('invalid-email') ||
+        normalized.contains('badly formatted')) {
+      return 'Ingresa un correo electrónico válido.';
+    }
+    if (normalized.contains('weak-password')) {
+      return 'La contraseña debe ser más segura.';
+    }
+    if (normalized.contains('network') ||
+        normalized.contains('socketexception') ||
+        normalized.contains('failed host lookup')) {
+      return 'Error de conexión. Verifica tu internet e intenta nuevamente.';
+    }
+    if (normalized.contains('an unexpected error occurred')) {
+      return 'Ocurrió un error inesperado al registrarte.';
+    }
+    return message;
   }
 
   String _formatDate(DateTime date) => date.toLocal().toString().split(' ')[0];

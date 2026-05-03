@@ -145,3 +145,13 @@ dist/
 *.dSYM
 *.mobileprovision
 *.xcarchive
+
+# Firebase config — public keys but useless without Firestore Security Rules.
+# Regenerate locally with: flutterfire configure
+# See: https://firebase.google.com/docs/projects/api-keys
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Diagnostic / debug entry points — never ship to production
+lib/main_diagnostic.dart

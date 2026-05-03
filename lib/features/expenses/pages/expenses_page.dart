@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_detail.dart';
 import 'package:personal_finance/features/transactions/presentation/pages/transaction_detail_page.dart';
-import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/widgets/empty_state.dart';
 
 class ExpensesPage extends StatelessWidget {
   const ExpensesPage({super.key});
@@ -83,7 +83,7 @@ class ExpensesPage extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${CurrencyHelper.symbol}${_calculateTotal(expenses).toStringAsFixed(2)}',
+                                '\$${_calculateTotal(expenses).toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -134,28 +134,10 @@ class ExpensesPage extends StatelessWidget {
     ),
   );
 
-  Widget _buildEmptyState() => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[400]),
-        const SizedBox(height: 16),
-        Text(
-          'No hay gastos registrados',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Toca el botón + para agregar\ntu primer gasto',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-        ),
-      ],
-    ),
+  Widget _buildEmptyState() => const EmptyState(
+    title: 'No hay gastos registrados',
+    message: 'Toca el botón + para agregar tu primer gasto.',
+    icon: Icons.receipt_long_outlined,
   );
 
   Widget _buildMonthSection(
@@ -191,7 +173,7 @@ class ExpensesPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '-${CurrencyHelper.symbol}${monthTotal.toStringAsFixed(2)}',
+                  '-\$${monthTotal.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -296,7 +278,7 @@ class ExpensesPage extends StatelessWidget {
               Row(
                 children: <Widget>[
                   Text(
-                    '-${CurrencyHelper.symbol}${expense.amount.toStringAsFixed(2)}',
+                    '-\$${expense.amount.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

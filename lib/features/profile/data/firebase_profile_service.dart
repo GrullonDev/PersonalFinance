@@ -37,12 +37,34 @@ class FirebaseProfileService implements ProfileDataSource {
     );
   }
 
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+  static const Set<String> _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
+
   @override
   Future<String> uploadProfilePicture(String uid, File image) async {
+    // Validate file size
+    final int fileSize = await image.length();
+    if (fileSize > _maxFileSizeBytes) {
+      throw Exception(
+        'La imagen supera el límite de 5 MB (${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB).',
+      );
+    }
+
+    // Validate extension — image_picker returns the original file extension
+    final String ext = image.path.split('.').last.toLowerCase();
+    if (!_allowedExtensions.contains(ext)) {
+      throw Exception(
+        'Tipo de archivo no permitido: .$ext. Usa JPG, PNG o WebP.',
+      );
+    }
+
     final String? result = await FirebaseErrorHandler.handleOperation<String>(
       operation: () async {
         final Reference ref = _storage.ref().child('profile_pictures/$uid.jpg');
-        await ref.putFile(image);
+        final SettableMetadata metadata = SettableMetadata(
+          contentType: 'image/jpeg',
+        );
+        await ref.putFile(image, metadata);
         return await ref.getDownloadURL();
       },
       errorMessage: 'Error al subir foto de perfil',

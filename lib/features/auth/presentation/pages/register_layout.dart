@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:personal_finance/core/presentation/widgets/custom_text_field.dart';
 import 'package:personal_finance/core/presentation/widgets/glass_container.dart';
 import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
+import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/auth/presentation/providers/register_provider.dart';
 import 'package:provider/provider.dart';
@@ -17,19 +18,21 @@ class RegisterLayout extends StatelessWidget {
     Future<void> handleSelectBirthDate() async {
       FocusScope.of(context).unfocus();
       final DateTime now = DateTime.now();
-      final DateTime maxDate = DateTime(now.year - 16, now.month, now.day);
-
-      // Si la fecha actual es menor a 16 años (o null), usar la fecha máxima permitida
-      DateTime initialDate = registerProvider.birthDate ?? maxDate;
-      if (initialDate.isAfter(maxDate)) {
-        initialDate = maxDate;
-      }
-
+      // Última fecha válida: exactamente 15 años antes de hoy.
+      final DateTime maxDate = DateTime(now.year - 15, now.month, now.day);
+      // Fecha inicial sensata: 25 años atrás, o la que ya eligió el usuario
+      // (siempre dentro del rango válido).
+      final DateTime initialDate = switch (registerProvider.birthDate) {
+        null => DateTime(now.year - 25, now.month, now.day),
+        final d when d.isAfter(maxDate) => maxDate,
+        final d => d,
+      };
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: initialDate,
         firstDate: DateTime(1900),
         lastDate: maxDate,
+        helpText: 'Debes tener 15 años o más',
         builder:
             (BuildContext context, Widget? child) => Theme(
               data: Theme.of(context).copyWith(
@@ -37,10 +40,9 @@ class RegisterLayout extends StatelessWidget {
                   primary: Colors.blue.shade400,
                   onPrimary: Colors.white,
                   surface: const Color(0xFF1E293B),
+                  onSurface: Colors.white,
                 ),
-                dialogTheme: const DialogThemeData(
-                  backgroundColor: Color(0xFF0F172A),
-                ),
+                dialogBackgroundColor: const Color(0xFF0F172A),
               ),
               child: child!,
             ),
@@ -52,16 +54,23 @@ class RegisterLayout extends StatelessWidget {
 
     Future<void> handleSubmit() async {
       FocusScope.of(context).unfocus();
+      await HapticFeedbackService.selection();
       final RegisterResult result = await registerProvider.submit();
       if (!context.mounted) {
         return;
       }
       if (result.isSuccess) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Registro exitoso')));
+        await HapticFeedbackService.success();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Registro exitoso. Verifica tu correo antes de iniciar sesión.',
+            ),
+          ),
+        );
         Navigator.pushNamed(context, '/login');
       } else if (result.message?.isNotEmpty ?? false) {
+        await HapticFeedbackService.error();
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(result.message!)));
@@ -88,116 +97,111 @@ class RegisterLayout extends StatelessWidget {
         body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: <Widget>[
-                      const Text(
-                        'Tu información está segura con nosotros',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      CustomTextField(
-                        controller: registerProvider.firstNameController,
-                        label: 'Nombre',
-                        prefixIcon: Icons.person_outline,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: registerProvider.lastNameController,
-                        label: 'Apellido',
-                        prefixIcon: Icons.person_outline,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: registerProvider.birthDateController,
-                        label: 'Fecha de Nacimiento',
-                        readOnly: true,
-                        prefixIcon: Icons.calendar_today_outlined,
-                        onTap: handleSelectBirthDate,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: registerProvider.usernameController,
-                        label: 'Nombre de Usuario',
-                        prefixIcon: Icons.alternate_email,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: registerProvider.emailController,
-                        label: 'Correo Electrónico',
-                        prefixIcon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: registerProvider.confirmEmailController,
-                        label: 'Confirmar Correo',
-                        prefixIcon: Icons.mark_email_read_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: registerProvider.passwordController,
-                        label: 'Contraseña',
-                        obscureText: true,
-                        prefixIcon: Icons.lock_outline,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: registerProvider.confirmPasswordController,
-                        label: 'Confirmar Contraseña',
-                        obscureText: true,
-                        prefixIcon: Icons.lock_outline,
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : handleSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade600,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            elevation: 0,
-                            shadowColor: Colors.blue.withValues(alpha: 0.5),
-                          ),
-                          child:
-                              isLoading
-                                  ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                  : const Text(
-                                    'Registrarse',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                        ),
-                      ),
-                    ],
+            child: GlassContainer(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: <Widget>[
+                  const Text(
+                    'Tu información está segura con nosotros',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white70,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  CustomTextField(
+                    controller: registerProvider.firstNameController,
+                    label: 'Nombre',
+                    prefixIcon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.lastNameController,
+                    label: 'Apellido',
+                    prefixIcon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.birthDateController,
+                    label: 'Fecha de Nacimiento',
+                    readOnly: true,
+                    prefixIcon: Icons.calendar_today_outlined,
+                    onTap: handleSelectBirthDate,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.usernameController,
+                    label: 'Nombre de Usuario',
+                    prefixIcon: Icons.alternate_email,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.emailController,
+                    label: 'Correo Electrónico',
+                    prefixIcon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.confirmEmailController,
+                    label: 'Confirmar Correo',
+                    prefixIcon: Icons.mark_email_read_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.passwordController,
+                    label: 'Contraseña',
+                    obscureText: true,
+                    prefixIcon: Icons.lock_outline,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: registerProvider.confirmPasswordController,
+                    label: 'Confirmar Contraseña',
+                    obscureText: true,
+                    prefixIcon: Icons.lock_outline,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : handleSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 0,
+                        shadowColor: Colors.blue.withOpacity(0.5),
+                      ),
+                      child:
+                          isLoading
+                              ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                              : const Text(
+                                'Registrarse',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
