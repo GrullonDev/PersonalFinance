@@ -14,10 +14,10 @@ class FirebaseAuthService implements AuthDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Usado únicamente en iOS: abre el selector nativo de cuenta Google.
-  // En iOS no requiere SHA-1 — usa el reversed-client-id del plist.
+  // Sin clientId explícito — lee CLIENT_ID de GoogleService-Info.plist,
+  // cuyo REVERSED_CLIENT_ID ya está registrado como URL scheme en Info.plist.
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
-    clientId: AuthConfig.googleWebClientId,
   );
 
   // ── Identidad ──────────────────────────────────────────────────────────────

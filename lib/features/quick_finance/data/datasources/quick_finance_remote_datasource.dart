@@ -8,7 +8,10 @@ import '../models/sync_operation_model.dart';
 abstract class QuickFinanceRemoteDataSource {
   /// Envía las transacciones pendientes al servidor (push).
   /// Aplica las [operations] sobre los [transactions] correspondientes.
-  Future<void> pushPendingOperations({
+  /// Devuelve el conjunto de IDs de operaciones que se subieron con éxito.
+  /// Las operaciones que fallen individualmente se registran pero no bloquean
+  /// el resto del batch.
+  Future<Set<String>> pushPendingOperations({
     required String userId,
     required List<SyncOperationModel> operations,
     required List<TransactionModel> transactions,

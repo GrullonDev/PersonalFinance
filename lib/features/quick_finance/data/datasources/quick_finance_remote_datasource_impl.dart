@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:personal_finance/core/constants/enums.dart';
+import 'package:flutter/foundation.dart';
 import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
 import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
 import 'package:personal_finance/features/quick_finance/data/mappers/legacy_transaction_mapper.dart';
@@ -28,28 +28,35 @@ class QuickFinanceRemoteDataSourceImpl implements QuickFinanceRemoteDataSource {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<void> pushPendingOperations({
+  Future<Set<String>> pushPendingOperations({
     required String userId,
     required List<SyncOperationModel> operations,
     required List<TransactionModel> transactions,
   }) async {
-    if (operations.isEmpty) return;
+    if (operations.isEmpty) return {};
 
     // Construir un mapa transactionId → model para acceso O(1)
     final txMap = {for (final t in transactions) t.id: t};
 
-    final batch = firestore.batch();
+    final pushed = <String>{};
 
     for (final op in operations) {
       final model = txMap[op.transactionId];
       if (model == null) continue; // operación huérfana, skip
 
-      final docRef = _txCollection(userId).doc(model.id);
+      // Omitir transacciones cuyo userId no coincida con el path — evita
+      // permission-denied que bloquearía las operaciones restantes.
+      if (model.userId != userId) {
+        if (kDebugMode) {
+          debugPrint(
+            'SyncManager: skipping op ${op.id} — '
+            'userId mismatch (${model.userId} != $userId)',
+          );
+        }
+        continue;
+      }
 
-      // Serializar con el schema canónico MVP (campos en camelCase, fechas en
-      // ISO8601, syncStatus/type como strings).  Se usa en los tres casos
-      // (create, update, delete) porque el soft-delete también escribe el
-      // documento completo con deletedAt != null.
+      final docRef = _txCollection(userId).doc(model.id);
       final payload = {
         ...TransactionFirestoreMapper.toFirestore(
           model,
@@ -58,17 +65,29 @@ class QuickFinanceRemoteDataSourceImpl implements QuickFinanceRemoteDataSource {
         'serverTimestamp': FieldValue.serverTimestamp(),
       };
 
-      switch (op.action) {
-        case SyncAction.create:
-        case SyncAction.update:
-        case SyncAction.delete:
-          // merge: true preserva campos escritos por otros clientes/backend
-          batch.set(docRef, payload, SetOptions(merge: true));
-          break;
+      try {
+        // Escritura individual: un fallo no bloquea las demás operaciones.
+        await docRef.set(payload, SetOptions(merge: true));
+        pushed.add(op.id);
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('SyncManager: push failed for op ${op.id}: $e');
+          debugPrint('  userId (path): $userId');
+          debugPrint('  transactionId: ${model.id}');
+          debugPrint('  model.userId:  ${model.userId}');
+          debugPrint('  amount:        ${model.amount} (${model.amount.runtimeType})');
+          debugPrint('  type:          ${model.type}');
+          debugPrint('  syncStatus:    ${model.syncStatus}');
+          debugPrint('  version:       ${model.version} (${model.version.runtimeType})');
+          debugPrint('  deviceId:      "${model.deviceId}" (len=${model.deviceId.length})');
+          debugPrint('  note len:      ${model.note.length}');
+          debugPrint('  deletedAt:     ${model.deletedAt}');
+        }
+        // No relanzar — continuar con la siguiente operación.
       }
     }
 
-    await batch.commit();
+    return pushed;
   }
 
   // ---------------------------------------------------------------------------

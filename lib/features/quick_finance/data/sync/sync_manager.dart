@@ -249,27 +249,35 @@ class SyncManager {
     // actualizar el syncStatus antes de que la transacción sea purgada
     final allTransactions = await _localDataSource.getAllTransactions();
 
-    await _remoteDataSource.pushPendingOperations(
+    // Retorna sólo los IDs de operaciones que se subieron con éxito.
+    // Las que fallaron permanecen como pending y se reintentarán en el
+    // próximo sync — sin bloquear a las demás.
+    final pushedIds = await _remoteDataSource.pushPendingOperations(
       userId: _userId!,
       operations: pendingOps,
       transactions: allTransactions,
     );
 
-    // Marcar operaciones como procesadas y transacciones como synced
+    if (pushedIds.isEmpty) return 0;
+
+    final txMap = {for (final t in allTransactions) t.id: t};
+
+    // Marcar como procesadas sólo las operaciones que subieron con éxito
     for (final op in pendingOps) {
+      if (!pushedIds.contains(op.id)) continue;
+
       await _localDataSource.markSyncOperationAsProcessed(op.id);
 
       // Actualizar syncStatus de la transacción a synced
-      try {
-        final tx = allTransactions.firstWhere((t) => t.id == op.transactionId);
-        final syncedTx = tx.copyWith(syncStatus: SyncStatus.synced);
-        await _localDataSource.saveTransaction(syncedTx);
-      } catch (_) {
-        // Transacción no encontrada localmente (posible delete físico)
+      final tx = txMap[op.transactionId];
+      if (tx != null) {
+        await _localDataSource.saveTransaction(
+          tx.copyWith(syncStatus: SyncStatus.synced),
+        );
       }
     }
 
-    return pendingOps.length;
+    return pushedIds.length;
   }
 
   // ---------------------------------------------------------------------------

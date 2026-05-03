@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:dartz/dartz.dart';
+import 'package:dartz/dartz.dart' hide State;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
@@ -14,8 +14,15 @@ import 'package:personal_finance/utils/routes/route_path.dart';
 // Color verde de la app — alineado con el seedColor en main.dart
 const _kGreen = Color(0xFF0E8F5B);
 
-class AuthLayout extends StatelessWidget {
+class AuthLayout extends StatefulWidget {
   const AuthLayout({super.key});
+
+  @override
+  State<AuthLayout> createState() => _AuthLayoutState();
+}
+
+class _AuthLayoutState extends State<AuthLayout> {
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) => Consumer<AuthProvider>(
@@ -189,7 +196,7 @@ class AuthLayout extends StatelessWidget {
   // ── Formulario email / contraseña ─────────────────────────────────────────
 
   Widget _buildEmailForm(BuildContext context, AuthProvider auth) => Form(
-    key: auth.formKey,
+    key: _formKey,
     child: Column(
       children: [
         CustomTextField(
@@ -291,6 +298,7 @@ class AuthLayout extends StatelessWidget {
   );
 
   Future<void> _handleLogin(BuildContext context, AuthProvider auth) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     await HapticFeedbackService.selection();
     final Either<AuthFailure, void> result = await auth.login();
     if (!context.mounted) return;

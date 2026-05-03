@@ -25,7 +25,7 @@ class _BalanceCardState extends State<BalanceCard> {
   bool _hidden = false;
   _Period _period = _Period.today;
 
-  static final _fmt = NumberFormat.simpleCurrency(decimalDigits: 2);
+  static final _fmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
 
   void _toggleVisibility() {
     if (widget.forceHidden) return;
@@ -436,7 +436,7 @@ class _StatRow extends StatelessWidget {
   final bool hidden;
   final bool alignRight;
 
-  static final _fmt = NumberFormat.simpleCurrency(decimalDigits: 2);
+  static final _fmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
 
   const _StatRow({
     required this.icon,

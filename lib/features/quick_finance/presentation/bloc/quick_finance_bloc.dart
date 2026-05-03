@@ -181,9 +181,18 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     AddTransactionRequested event,
     Emitter<QuickFinanceState> emit,
   ) async {
+    final uid = authDataSource.currentUserId;
+    if (uid == null) {
+      emit(state.copyWith(
+        status: QuickFinanceStatus.failure,
+        errorMessage: 'Sesión no disponible. Inicia sesión de nuevo.',
+      ));
+      return;
+    }
+
     final transaction = TransactionEntity(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: authDataSource.currentUserId ?? 'unknown',
+      userId: uid,
       type: event.type,
       amount: event.amount,
       note: event.note,

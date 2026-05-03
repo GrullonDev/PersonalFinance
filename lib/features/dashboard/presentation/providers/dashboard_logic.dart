@@ -385,9 +385,7 @@ class DashboardLogic extends ChangeNotifier {
   // Métodos de utilidad
   String formatCurrency(double amount) {
     // Usa el locale del dispositivo para formatear la moneda correctamente
-    final formatter = NumberFormat.simpleCurrency(
-      locale: Intl.getCurrentLocale(),
-    );
+    final formatter = NumberFormat.currency(locale: 'en_US', symbol: 'Q');
     return formatter.format(amount);
   }
 

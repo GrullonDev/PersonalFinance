@@ -68,7 +68,7 @@ class _TileBody extends StatelessWidget {
   final bool hideAmounts;
 
   static final _dateFmt = DateFormat('d MMM  HH:mm', 'es');
-  static final _currFmt = NumberFormat.simpleCurrency(decimalDigits: 2);
+  static final _currFmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
 
   const _TileBody({required this.transaction, required this.hideAmounts});
 
@@ -134,7 +134,7 @@ class _TileBody extends StatelessWidget {
                     ),
                     if (displayCategory != null) ...[
                       const SizedBox(width: 6),
-                      _CategoryChip(label: displayCategory),
+                      Flexible(child: _CategoryChip(label: displayCategory)),
                     ],
                   ],
                 ),
@@ -194,6 +194,7 @@ class _CategoryChip extends StatelessWidget {
         color: Theme.of(context).primaryColor,
         fontWeight: FontWeight.w500,
       ),
+      overflow: TextOverflow.ellipsis,
     ),
   );
 }
