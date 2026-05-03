@@ -1,8 +1,9 @@
 package com.grullondev.personal_finance
-import io.flutter.app.FlutterApplication
 
-class MyApplication : FlutterApplication() {
+import android.app.Application
+
+class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
     }
-} 
+}
