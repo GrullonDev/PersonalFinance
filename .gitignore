@@ -146,12 +146,10 @@ dist/
 *.mobileprovision
 *.xcarchive
 
-# Firebase config — public keys but useless without Firestore Security Rules.
-# Regenerate locally with: flutterfire configure
-# See: https://firebase.google.com/docs/projects/api-keys
-lib/firebase_options.dart
-android/app/google-services.json
-ios/Runner/GoogleService-Info.plist
+# Firebase config files are tracked intentionally.
+# Mobile Firebase API keys are public client identifiers embedded in the
+# app binary — they are NOT secrets. Gitignoring them breaks CI/CD.
+# See: https://firebase.google.com/docs/projects/api-keys#api-keys-for-firebase
 
 # Diagnostic / debug entry points — never ship to production
 lib/main_diagnostic.dart
