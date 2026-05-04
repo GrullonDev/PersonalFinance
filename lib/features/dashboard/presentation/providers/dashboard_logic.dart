@@ -63,6 +63,26 @@ class DashboardLogic extends ChangeNotifier {
   // ignore: avoid_unused_parameters
   void setProfileType(String profileType) {}
 
+  // Category filter — used by CategorySelector widget.
+  String? _selectedCategory;
+  String? get selectedCategory => _selectedCategory;
+  List<String> get availableCategories =>
+      ['Todas', ...expensesByCategory.keys.toList()];
+  void changeCategory(String category) {
+    _selectedCategory = category == 'Todas' ? null : category;
+    notifyListeners();
+  }
+
+  // Weekly budget spent — sum of expenses in current week vs active budget.
+  double get weeklyBudgetSpent {
+    final now = DateTime.now();
+    final startOfWeek = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    return _expenses
+        .where((e) => !e.date.isBefore(startOfWeek))
+        .fold(0.0, (sum, e) => sum + e.amount);
+  }
+
   /// Mensaje de insight basado en el balance actual. Null si no hay datos.
   String? get insightMessage {
     if (!hasData) return null;
@@ -299,8 +319,11 @@ class DashboardLogic extends ChangeNotifier {
         endDate: dateRange.end,
       );
 
-      final DashboardResult result = await _getDashboardDataUseCase.execute(
-        params,
+      final either = await _getDashboardDataUseCase.execute(params);
+      late final DashboardResult result;
+      either.fold(
+        (failure) => throw Exception(failure.toString()),
+        (data) => result = data,
       );
 
       // Fetch goals and budgets in parallel could be better, but sequential for simplicity first
@@ -486,8 +509,16 @@ class DashboardLogic extends ChangeNotifier {
         );
       case PeriodFilter.historico:
         return DateTimeRange(
-          start: DateTime(2000), // Fecha muy antigua
-          end: DateTime(3000), // Fecha muy futura
+          start: DateTime(2000),
+          end: DateTime(3000),
+        );
+      case PeriodFilter.personalizado:
+        // Custom range not implemented in this view — fall back to current month.
+        final DateTime startOfMonth = DateTime(now.year, now.month);
+        final DateTime endOfMonth = DateTime(now.year, now.month + 1, 0);
+        return DateTimeRange(
+          start: startOfMonth,
+          end: endOfMonth.add(const Duration(days: 1)),
         );
     }
   }

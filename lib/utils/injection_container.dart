@@ -307,7 +307,6 @@ Future<void> initDependencies() async {
         addTransactionUseCase: getIt<AddTransactionUseCase>(),
         getActiveGoalsUseCase: getIt<GetActiveGoalsUseCase>(),
         getActiveBudgetsUseCase: getIt<GetActiveBudgetsUseCase>(),
-        trendAnalyzerService: getIt<TrendAnalyzerService>(),
       ),
     );
   }
