@@ -10,6 +10,11 @@ class SettingsProvider extends ChangeNotifier {
   bool get hideAmounts => _hideAmounts;
   ThemeMode get themeMode => _darkMode ? ThemeMode.dark : ThemeMode.light;
 
+  // Business mode — feature not active in current release.
+  bool get isBusinessMode => false;
+  bool get canToggleMode => false;
+  Future<void> toggleBusinessMode({required bool value}) async {}
+
   SettingsProvider() {
     _loadSettings();
   }

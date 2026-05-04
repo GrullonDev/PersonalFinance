@@ -24,8 +24,6 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) => ChangeNotifierProvider<DashboardLogic>(
     create: (context) {
       final logic = getIt<DashboardLogic>();
-      final isBusiness = context.read<SettingsProvider>().isBusinessMode;
-      logic.setProfileType(isBusiness ? 'negocio' : 'personal');
       logic.loadDashboardData();
       return logic;
     },

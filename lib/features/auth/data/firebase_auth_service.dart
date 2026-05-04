@@ -13,12 +13,9 @@ import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 class FirebaseAuthService implements AuthDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Usado únicamente en iOS: abre el selector nativo de cuenta Google.
-  // Sin clientId explícito — lee CLIENT_ID de GoogleService-Info.plist,
-  // cuyo REVERSED_CLIENT_ID ya está registrado como URL scheme en Info.plist.
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
+  // Singleton de google_sign_in v7.x — ya no se instancia manualmente.
+  // Lee CLIENT_ID de GoogleService-Info.plist automáticamente en iOS.
+  static final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   // ── Identidad ──────────────────────────────────────────────────────────────
 
@@ -65,17 +62,15 @@ class FirebaseAuthService implements AuthDataSource {
     return userCredential.user;
   }
 
-  // iOS: flujo nativo con selector de cuenta de Google.
+  // iOS: flujo nativo con selector de cuenta de Google (google_sign_in v7.x).
+  // authenticate() abre el selector nativo; authentication es getter síncrono.
   Future<User?> _signInWithGoogleIOS() async {
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) return null;
+    final GoogleSignInAccount googleUser =
+        await _googleSignIn.authenticate();
 
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-    final String? idToken = googleAuth.idToken;
-    final String? accessToken = googleAuth.accessToken;
+    final String? idToken = googleUser.authentication.idToken;
 
-    if (idToken == null && accessToken == null) {
+    if (idToken == null) {
       throw FirebaseAuthException(
         code: 'google-sign-in-failed',
         message: 'Google no devolvió un token de autenticación.',
@@ -84,7 +79,6 @@ class FirebaseAuthService implements AuthDataSource {
 
     final AuthCredential credential = GoogleAuthProvider.credential(
       idToken: idToken,
-      accessToken: accessToken,
     );
     final UserCredential userCredential =
         await _auth.signInWithCredential(credential);

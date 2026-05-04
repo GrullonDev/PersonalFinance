@@ -58,6 +58,22 @@ class DashboardLogic extends ChangeNotifier {
   bool get shouldShowIncomesList => _incomes.isNotEmpty;
   bool get shouldShowTransactions =>
       _expenses.isNotEmpty || _incomes.isNotEmpty;
+
+  // Profile type — no-op stub; feature not active in current release.
+  // ignore: avoid_unused_parameters
+  void setProfileType(String profileType) {}
+
+  /// Mensaje de insight basado en el balance actual. Null si no hay datos.
+  String? get insightMessage {
+    if (!hasData) return null;
+    final double bal = balance;
+    if (bal > 0) {
+      return 'Tu balance es positivo (${NumberFormat.simpleCurrency().format(bal)}). ¡Buen trabajo manteniendo tus gastos bajo control!';
+    } else if (bal < 0) {
+      return 'Tus gastos superan tus ingresos en ${NumberFormat.simpleCurrency().format(bal.abs())}. Considera revisar tu presupuesto.';
+    }
+    return 'Tu balance está equilibrado. Registra más transacciones para obtener insights personalizados.';
+  }
   List<IncomeEntity> get filteredIncomes => sortedIncomes;
   List<ChartData> getChartData() => chartData;
 
