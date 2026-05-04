@@ -19,7 +19,7 @@ migrate_working_dir/
 .idea/
 
 # Flutter
-pubspec.lock
+# pubspec.lock is intentionally tracked for CI reproducibility (Xcode Cloud)
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
