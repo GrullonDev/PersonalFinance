@@ -143,7 +143,7 @@ class _TileBody extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
-          // Amount + sync indicator
+          // Amount + sync badge
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -157,21 +157,72 @@ class _TileBody extends StatelessWidget {
                   fontSize: 15,
                 ),
               ),
-              if (transaction.syncStatus == SyncStatus.pending)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Icon(
-                    Icons.cloud_upload_outlined,
-                    size: 12,
-                    color: Colors.blueAccent.shade100,
-                  ),
-                ),
+              const SizedBox(height: 3),
+              _SyncBadge(status: transaction.syncStatus),
             ],
           ),
         ],
       ),
     );
   }
+}
+
+// ── Sync badge ────────────────────────────────────────────────────────────────
+
+class _SyncBadge extends StatelessWidget {
+  final SyncStatus status;
+  const _SyncBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    switch (status) {
+      case SyncStatus.pending:
+        return _badge(
+          icon: Icons.cloud_upload_outlined,
+          label: 'Pendiente',
+          color: const Color(0xFFFF9500),
+        );
+      case SyncStatus.failed:
+        return _badge(
+          icon: Icons.error_outline_rounded,
+          label: 'Error',
+          color: const Color(0xFFFF3B30),
+        );
+      case SyncStatus.synced:
+        return _badge(
+          icon: Icons.cloud_done_outlined,
+          label: 'Sync',
+          color: const Color(0xFF34C759),
+        );
+    }
+  }
+
+  Widget _badge({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 10, color: color),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ── Category chip ─────────────────────────────────────────────────────────────

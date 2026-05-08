@@ -199,7 +199,7 @@ class AuthProvider extends ChangeNotifier {
 
     if (_requiresVerifiedEmail(user) && !user.emailVerified) {
       _errorMessage =
-          'Debes verificar tu correo antes de acceder al dashboard.';
+          'Debes verificar tu correo antes de continuar. Revisa tu bandeja de entrada y la carpeta de spam/correo no deseado.';
       await LocalAuthService().logout();
       await authRepository.logout();
       await _clearAuthData(notify: false);
@@ -465,9 +465,9 @@ class AuthProvider extends ChangeNotifier {
             errorMessage =
                 'Error en el servidor. Por favor, intente más tarde.';
           } else if (failure.statusCode == 403) {
-            // Account not verified
+            // Account not verified — se reenvió el correo automáticamente
             errorMessage =
-                'Su cuenta no ha sido verificada. Por favor, revise su correo.';
+                'Su cuenta no ha sido verificada. Hemos reenviado el correo de verificación. Por favor, revise su bandeja de entrada y la carpeta de spam/correo no deseado.';
           } else if (failure.statusCode == 429) {
             // Too many requests
             errorMessage =
@@ -559,7 +559,7 @@ class AuthProvider extends ChangeNotifier {
     }
     if (normalized.contains('verify your email') ||
         normalized.contains('email-not-verified')) {
-      return 'Debes verificar tu correo antes de continuar.';
+      return 'Debes verificar tu correo antes de continuar. Revisa tu bandeja de entrada y la carpeta de spam/correo no deseado.';
     }
     if (normalized.contains('session') && normalized.contains('expired')) {
       return 'Tu sesión expiró. Inicia sesión nuevamente.';

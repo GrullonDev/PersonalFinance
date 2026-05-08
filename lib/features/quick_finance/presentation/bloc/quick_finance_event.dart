@@ -107,3 +107,13 @@ class SyncStateChanged extends QuickFinanceEvent {
   @override
   List<Object?> get props => [isSyncing, errorMessage];
 }
+
+/// Emitido cuando cambia el estado de conectividad.
+class ConnectivityChanged extends QuickFinanceEvent {
+  final bool isOnline;
+
+  const ConnectivityChanged(this.isOnline);
+
+  @override
+  List<Object?> get props => [isOnline];
+}

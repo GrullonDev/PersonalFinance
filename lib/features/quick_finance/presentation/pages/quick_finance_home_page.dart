@@ -11,6 +11,7 @@ import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_bloc.dart';
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_event.dart';
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_state.dart';
+import 'package:personal_finance/features/quick_finance/presentation/pages/sync_status_page.dart';
 import 'package:personal_finance/features/quick_finance/presentation/widgets/balance_card.dart';
 import 'package:personal_finance/features/quick_finance/presentation/widgets/quick_entry_input.dart';
 import 'package:personal_finance/features/quick_finance/presentation/widgets/transactions_list.dart';
@@ -319,13 +320,15 @@ class _BodyState extends State<_Body> {
               ),
             ),
           ),
-          // Sync status — always visible, discrete
+          // Sync status — always visible, tappable
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
             sliver: SliverToBoxAdapter(
               child: _SyncStatusRow(
                 isSyncing: widget.state.isSyncing,
                 pendingCount: pendingCount,
+                isOffline: widget.state.isOffline,
+                hasSyncError: widget.state.syncError != null,
               ),
             ),
           ),
@@ -409,42 +412,130 @@ class _BodyState extends State<_Body> {
 class _SyncStatusRow extends StatelessWidget {
   final bool isSyncing;
   final int pendingCount;
+  final bool isOffline;
+  final bool hasSyncError;
 
-  const _SyncStatusRow({required this.isSyncing, required this.pendingCount});
+  const _SyncStatusRow({
+    required this.isSyncing,
+    required this.pendingCount,
+    required this.isOffline,
+    required this.hasSyncError,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final (IconData icon, String text, Color color) =
-        isSyncing
-            ? (Icons.sync_rounded, 'Sincronizando...', const Color(0xFF007AFF))
-            : pendingCount > 0
-            ? (
-              Icons.cloud_upload_outlined,
-              pendingCount == 1
-                  ? '1 movimiento pendiente'
-                  : '$pendingCount movimientos pendientes',
-              const Color(0xFFFF9500),
-            )
-            : (
-              Icons.check_circle_outline_rounded,
-              'Sincronizado',
-              const Color(0xFF34C759),
-            );
+    final (IconData icon, String text, Color color) = _resolve();
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: color),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            color: color,
-            fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: () {
+        final bloc = context.read<QuickFinanceBloc>();
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder:
+                (_) => BlocProvider<QuickFinanceBloc>.value(
+                  value: bloc,
+                  child: const SyncStatusPage(),
+                ),
           ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.20)),
         ),
-      ],
+        child: Row(
+          children: [
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            // Botón "Sincronizar ahora" inline cuando hay pendientes o error
+            if (!isSyncing && !isOffline && (pendingCount > 0 || hasSyncError))
+              BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
+                buildWhen: (p, c) => p.isSyncing != c.isSyncing,
+                builder:
+                    (context, state) => GestureDetector(
+                      onTap:
+                          () => context.read<QuickFinanceBloc>().add(
+                            const SyncTransactionsRequested(),
+                          ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.sync_rounded, size: 11, color: color),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Sincronizar',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: color,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+              ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 16,
+              color: color.withValues(alpha: 0.6),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  (IconData, String, Color) _resolve() {
+    if (isSyncing) {
+      return (Icons.sync_rounded, 'Sincronizando…', const Color(0xFF007AFF));
+    }
+    if (isOffline) {
+      return (Icons.wifi_off_rounded, 'Sin conexión', const Color(0xFF8E8E93));
+    }
+    if (hasSyncError) {
+      return (
+        Icons.cloud_off_rounded,
+        'Error al sincronizar',
+        const Color(0xFFFF3B30),
+      );
+    }
+    if (pendingCount > 0) {
+      return (
+        Icons.cloud_upload_outlined,
+        pendingCount == 1
+            ? '1 movimiento pendiente de sincronizar'
+            : '$pendingCount movimientos pendientes de sincronizar',
+        const Color(0xFFFF9500),
+      );
+    }
+    return (
+      Icons.check_circle_outline_rounded,
+      'Sincronizado',
+      const Color(0xFF34C759),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 
 import 'package:dartz/dartz.dart' hide State;
@@ -305,7 +306,10 @@ class _AuthLayoutState extends State<AuthLayout> {
     await result.fold<Future<void>>(
       (failure) async {
         await HapticFeedbackService.error();
-        if (failure.shouldNavigateToRegister) {
+        if (failure.statusCode == 403) {
+          // Cuenta no verificada — mostrar bottom sheet informativo
+          _showVerificationSheet(context);
+        } else if (failure.shouldNavigateToRegister) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(failure.message),
@@ -333,6 +337,18 @@ class _AuthLayoutState extends State<AuthLayout> {
           context,
         ).pushNamedAndRemoveUntil(RoutePath.dashboard, (_) => false);
       },
+    );
+  }
+
+  void _showVerificationSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (_) => _VerificationBottomSheet(
+            email: context.read<AuthProvider>().emailController.text,
+          ),
     );
   }
 
@@ -424,4 +440,229 @@ class _AuthLayoutState extends State<AuthLayout> {
       ).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
     }
   }
+}
+
+// ── Bottom Sheet para verificación de email ──────────────────────────────────
+
+class _VerificationBottomSheet extends StatefulWidget {
+  const _VerificationBottomSheet({required this.email});
+  final String email;
+
+  @override
+  State<_VerificationBottomSheet> createState() =>
+      _VerificationBottomSheetState();
+}
+
+class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
+  bool _resending = false;
+  bool _resent = false;
+
+  Future<void> _resendEmail() async {
+    setState(() {
+      _resending = true;
+    });
+    try {
+      // Iniciar sesión temporalmente para reenviar el correo
+      final auth = firebase_auth.FirebaseAuth.instance;
+      // Si el usuario ya está autenticado en el SDK (no verificado), reenviar
+      final user = auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+      }
+      if (mounted) {
+        setState(() {
+          _resent = true;
+          _resending = false;
+        });
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (mounted) {
+        setState(() {
+          _resending = false;
+        });
+        final String msg =
+            e.code == 'too-many-requests'
+                ? 'Demasiados intentos. Espera unos minutos antes de reenviar.'
+                : 'No se pudo reenviar el correo. Intenta de nuevo más tarde.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _resending = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo reenviar el correo. Intenta de nuevo más tarde.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0xFF1A1F2E),
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: Colors.white.withOpacity(0.08)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Icono de email
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.mark_email_unread_outlined,
+              color: Colors.amber,
+              size: 30,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Verifica tu correo electrónico',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.65),
+                fontSize: 14,
+                height: 1.5,
+              ),
+              children: [
+                const TextSpan(
+                  text: 'Hemos enviado un correo de verificación a:\n',
+                ),
+                TextSpan(
+                  text: widget.email,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Aviso de spam
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.amber.withOpacity(0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.amber,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Si no ves el correo en tu bandeja de entrada, '
+                    'revisa la carpeta de Spam o Correo no deseado.',
+                    style: TextStyle(
+                      color: Colors.amber.shade200,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Botón reenviar
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: (_resending || _resent) ? null : _resendEmail,
+              icon:
+                  _resending
+                      ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white54,
+                          ),
+                        ),
+                      )
+                      : Icon(
+                        _resent
+                            ? Icons.check_circle_outline
+                            : Icons.send_outlined,
+                        size: 18,
+                      ),
+              label: Text(
+                _resent
+                    ? 'Correo reenviado ✓'
+                    : _resending
+                    ? 'Reenviando…'
+                    : 'Reenviar correo de verificación',
+                style: const TextStyle(fontSize: 14),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor:
+                    _resent ? _kGreen : Colors.white.withOpacity(0.85),
+                side: BorderSide(
+                  color:
+                      _resent
+                          ? _kGreen.withOpacity(0.4)
+                          : Colors.white.withOpacity(0.15),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Botón cerrar
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white.withOpacity(0.5),
+              ),
+              child: const Text('Entendido'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

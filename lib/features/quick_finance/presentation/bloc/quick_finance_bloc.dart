@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
@@ -28,6 +29,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   StreamSubscription<dynamic>? _balanceSubscription;
   StreamSubscription<SyncResult>? _syncSubscription;
   StreamSubscription<String?>? _authSubscription;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   static const _parser = QuickEntryParser();
 
@@ -50,6 +52,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     on<UpdateTransactionRequested>(_onUpdateTransactionRequested);
     on<SyncTransactionsRequested>(_onSyncTransactionsRequested);
     on<SyncStateChanged>(_onSyncStateChanged);
+    on<ConnectivityChanged>(_onConnectivityChanged);
   }
 
   // ---------------------------------------------------------------------------
@@ -72,6 +75,16 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
               result.state == SyncState.error ? result.errorMessage : null,
         ),
       );
+    });
+
+    // Escuchar cambios de conectividad
+    await _connectivitySubscription?.cancel();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
+      final isOnline = results.isNotEmpty &&
+          results.any((r) => r != ConnectivityResult.none);
+      add(ConnectivityChanged(isOnline));
     });
 
     // Los streams de datos se crean DESPUÉS de que el auth resuelva para
@@ -138,12 +151,23 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     SyncStateChanged event,
     Emitter<QuickFinanceState> emit,
   ) {
+    final syncSucceeded = !event.isSyncing && event.errorMessage == null;
     emit(
       state.copyWith(
         isSyncing: event.isSyncing,
         errorMessage: event.errorMessage,
+        syncError: event.errorMessage,
+        clearSyncError: event.errorMessage == null && !event.isSyncing,
+        lastSyncAt: syncSucceeded ? DateTime.now() : state.lastSyncAt,
       ),
     );
+  }
+
+  void _onConnectivityChanged(
+    ConnectivityChanged event,
+    Emitter<QuickFinanceState> emit,
+  ) {
+    emit(state.copyWith(isOffline: !event.isOnline));
   }
 
   // ---------------------------------------------------------------------------
@@ -267,6 +291,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _balanceSubscription?.cancel();
     _syncSubscription?.cancel();
     _authSubscription?.cancel();
+    _connectivitySubscription?.cancel();
     syncManager.stopConnectivityListener();
     return super.close();
   }
