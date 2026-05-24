@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/services/biometric_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 
 class AppLifecycleWrapper extends StatefulWidget {
@@ -62,7 +63,8 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
 
     final AuthProvider auth = context.read<AuthProvider>();
     await auth.syncSessionFromFirebase(notify: false);
-    if (!auth.isAuthenticated) return;
+    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null || !user.emailVerified) return;
 
     final bool appLockEnabled = await SecurityPreferences.getAppLockEnabled();
 

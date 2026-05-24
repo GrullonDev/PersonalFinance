@@ -49,7 +49,10 @@ class AuthProvider extends ChangeNotifier {
   bool get obscurePassword => _obscurePassword;
   CurrentUserResponse? get currentUser => _currentUser;
   String? get accessToken => _accessToken;
-  bool get isAuthenticated => _hasAuthorizedFirebaseSession();
+  bool get isAuthenticated {
+    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    return user != null && user.emailVerified;
+  }
 
   ThemeMode _themeMode = ThemeMode.system;
 
@@ -565,15 +568,6 @@ class AuthProvider extends ChangeNotifier {
       return 'Tu sesión expiró. Inicia sesión nuevamente.';
     }
     return message;
-  }
-
-  bool _hasAuthorizedFirebaseSession() {
-    final user = firebase_auth.FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
-    if (_requiresVerifiedEmail(user) && !user.emailVerified) {
-      return false;
-    }
-    return true;
   }
 
   bool _requiresVerifiedEmail(firebase_auth.User user) {

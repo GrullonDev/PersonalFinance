@@ -347,9 +347,19 @@ class AuthRepositoryImpl implements AuthRepository {
       await _ensureUserDocumentExists(refreshedUser);
       return _createLoginResponse(refreshedUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
+      final String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          errorMessage = 'Email o contraseña incorrectos';
+          break;
+        default:
+          errorMessage = e.message ?? 'Error al iniciar sesión con Firebase.';
+      }
       return Left(
         AuthFailure(
-          message: e.message ?? 'Error al iniciar sesión con Firebase.',
+          message: errorMessage,
         ),
       );
     } catch (e) {
