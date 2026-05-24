@@ -60,7 +60,9 @@ service cloud.firestore {
     // ── Helper functions ─────────────────────────────────────────────────────
 
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return request.auth != null
+          && request.auth.uid == userId
+          && request.auth.token.email_verified == true;
     }
 
     function isValidTransaction(data, userId) {
@@ -176,7 +178,8 @@ service cloud.firestore {
     }
 
     function isDateLike(value) {
-      return value is timestamp || value is string;
+      return value is timestamp
+          || (value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})?)?$'));
     }
   }
 }

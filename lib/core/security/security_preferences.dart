@@ -21,6 +21,8 @@ class SecurityPreferences {
   static const _keyAppLock = 'app_lock_enabled';
   static const _keyLoggedIn = 'auth_is_logged_in';
   static const _keyOnboarding = 'auth_onboarding_complete';
+  static const _keyBiometricFails = 'biometric_fail_count';
+  static const _keyBiometricLockTime = 'biometric_lock_time';
 
   // ── Biometrics ────────────────────────────────────────────────────────────
 
@@ -64,4 +66,28 @@ class SecurityPreferences {
 
   static Future<void> setOnboardingComplete() =>
       _storage.write(key: _keyOnboarding, value: 'true');
+
+  // ── Biometrics Lockout ───────────────────────────────────────────────────
+
+  static Future<void> saveBiometricLockout(int count, DateTime? lockTime) async {
+    await _storage.write(key: _keyBiometricFails, value: count.toString());
+    if (lockTime != null) {
+      await _storage.write(
+        key: _keyBiometricLockTime,
+        value: lockTime.millisecondsSinceEpoch.toString(),
+      );
+    } else {
+      await _storage.delete(key: _keyBiometricLockTime);
+    }
+  }
+
+  static Future<(int, DateTime?)> getBiometricLockout() async {
+    final countStr = await _storage.read(key: _keyBiometricFails);
+    final timeStr = await _storage.read(key: _keyBiometricLockTime);
+    final count = int.tryParse(countStr ?? '0') ?? 0;
+    final time = timeStr != null
+        ? DateTime.fromMillisecondsSinceEpoch(int.parse(timeStr))
+        : null;
+    return (count, time);
+  }
 }
