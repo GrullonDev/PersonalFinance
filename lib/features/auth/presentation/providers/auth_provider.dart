@@ -7,6 +7,7 @@ import 'package:dartz/dartz.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:personal_finance/core/services/app_data_cleanup_service.dart';
 import 'package:personal_finance/core/security/auth_session_storage.dart';
+import 'package:personal_finance/core/services/security_logger.dart';
 
 import 'package:personal_finance/features/auth/data/local_auth_service.dart';
 import 'package:personal_finance/features/auth/data/models/request/login_user_request.dart';
@@ -454,6 +455,13 @@ class AuthProvider extends ChangeNotifier {
 
       return result.fold(
         (AuthFailure failure) {
+          SecurityLogger().logAuthFailure(
+            failure.statusCode != null
+                ? 'status_code_${failure.statusCode}'
+                : (failure.message.toLowerCase().contains('incorrect')
+                    ? 'wrong_password_or_email'
+                    : 'auth_failure'),
+          );
           // Handle different types of authentication failures
           final String errorMessage;
           bool shouldNavigateToRegister = false;

@@ -136,8 +136,8 @@ service cloud.firestore {
           && data.balance is number
           && data.type is string
           && data.type.size() > 0
-          && (!data.keys().hasAny(['icon']) || data.icon == null || data.icon is string)
-          && (!data.keys().hasAny(['color']) || data.color == null || data.color is string);
+          && (!data.keys().hasAny(['icon']) || data.icon == null || (data.icon is string && data.icon.size() <= 50 && data.icon.matches('^[a-zA-Z0-9_\\-\\.]+$')))
+          && (!data.keys().hasAny(['color']) || data.color == null || (data.color is string && data.color.matches('^#[0-9A-Fa-f]{6}$')));
     }
 
     function isValidBudget(data) {
@@ -158,7 +158,7 @@ service cloud.firestore {
           && data.nombre.size() > 0
           && data.nombre.size() <= 120
           && data.tipo in ['ingreso', 'egreso']
-          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is int);
+          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || (data.profile_id is string && data.profile_id.size() > 0));
     }
 
     function isValidGoal(data) {
@@ -171,7 +171,7 @@ service cloud.firestore {
           && data.monto_actual is number
           && data.monto_actual >= 0
           && isDateLike(data.fecha_limite)
-          && (!data.keys().hasAny(['icono']) || data.icono == null || data.icono is string)
+          && (!data.keys().hasAny(['icono']) || data.icono == null || (data.icono is string && data.icono.size() <= 50 && data.icono.matches('^[a-zA-Z0-9_\\-\\.]+$')))
           && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is string);
     }
 

@@ -15,6 +15,9 @@ import 'package:intl/intl.dart';
 
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/core/security/hive_encryption_service.dart';
+import 'package:personal_finance/core/security/device_integrity_service.dart';
+import 'package:personal_finance/core/security/device_compromised_screen.dart';
+import 'package:personal_finance/core/services/security_logger.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
@@ -137,6 +140,14 @@ Future<void> main() async {
         // ── Dependency Injection ───────────────────────────────────────────
         await old_di.initDependencies();
         await mvp_di.init(hiveCipher);
+
+        // ── Device Integrity Check ────────────────────────────────────────
+        final isSafe = await DeviceIntegrityService().isDeviceSafe();
+        if (!isSafe) {
+          await SecurityLogger().logSuspiciousActivity('rooted_device');
+          runApp(const DeviceCompromisedScreen());
+          return;
+        }
 
         runApp(const MyApp());
       } catch (e, stackTrace) {

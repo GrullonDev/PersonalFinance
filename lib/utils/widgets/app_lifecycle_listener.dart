@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/services/biometric_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:personal_finance/core/services/security_logger.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 
 class AppLifecycleWrapper extends StatefulWidget {
@@ -23,6 +24,9 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
   bool _isAuthenticating = false;
   // True while the app is in the background / app-switcher — hides content.
   bool _isObscured = false;
+  int _biometricFailCount = 0;
+  DateTime? _lastFailTime;
+  bool _isLockedOut = false;
 
   @override
   void initState() {
@@ -58,7 +62,28 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
     }
   }
 
+  int get _remainingMinutes {
+    if (_lastFailTime == null) return 0;
+    final diff = DateTime.now().difference(_lastFailTime!);
+    final remaining = 15 - diff.inMinutes;
+    return remaining > 0 ? remaining : 0;
+  }
+
   Future<void> _checkLock() async {
+    if (_isLockedOut) {
+      if (_lastFailTime != null) {
+        final diff = DateTime.now().difference(_lastFailTime!);
+        if (diff.inMinutes < 15) {
+          return;
+        } else {
+          setState(() {
+            _biometricFailCount = 0;
+            _isLockedOut = false;
+          });
+        }
+      }
+    }
+
     if (_isLocking || _isAuthenticating) return;
 
     final AuthProvider auth = context.read<AuthProvider>();
@@ -81,7 +106,20 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
         );
 
         if (authenticated) {
-          setState(() => _isLocking = false);
+          setState(() {
+            _isLocking = false;
+            _biometricFailCount = 0;
+            _isLockedOut = false;
+          });
+        } else {
+          setState(() {
+            _biometricFailCount++;
+            _lastFailTime = DateTime.now();
+            if (_biometricFailCount >= 3) {
+              _isLockedOut = true;
+              SecurityLogger().logSuspiciousActivity('too_many_biometric_fails');
+            }
+          });
         }
       } finally {
         // Siempre quitar el flag de autenticación después de la llamada nativa
@@ -109,30 +147,71 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_outline, size: 80, color: Colors.white),
+              Icon(
+                _isLockedOut ? Icons.gpp_bad_outlined : Icons.lock_outline,
+                size: 80,
+                color: _isLockedOut ? Colors.redAccent : Colors.white,
+              ),
               const SizedBox(height: 24),
-              const Text(
-                'Aplicación Bloqueada',
-                style: TextStyle(
+              Text(
+                _isLockedOut ? 'Bloqueo de Seguridad' : 'Aplicación Bloqueada',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _checkLock,
-                icon: const Icon(Icons.fingerprint),
-                label: const Text('Desbloquear ahora'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
+              const SizedBox(height: 24),
+              if (_isLockedOut) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  child: Text(
+                    'Demasiados intentos fallidos.\nPor seguridad, la app está bloqueada temporalmente.\nIntenta de nuevo en $_remainingMinutes minutos.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      height: 1.4,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      if (_lastFailTime != null && DateTime.now().difference(_lastFailTime!).inMinutes >= 15) {
+                        _biometricFailCount = 0;
+                        _isLockedOut = false;
+                      }
+                    });
+                    _checkLock();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Verificar estado'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                ElevatedButton.icon(
+                  onPressed: _checkLock,
+                  icon: const Icon(Icons.fingerprint),
+                  label: const Text('Desbloquear ahora'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
