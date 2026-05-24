@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:confetti/confetti.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
@@ -475,11 +477,11 @@ class _GoalsViewState extends State<_GoalsView> {
                     TextFormField(
                       controller: nameCtrl,
                       decoration: const InputDecoration(labelText: 'Nombre'),
-                      validator:
-                          (String? v) =>
-                              v == null || v.trim().isEmpty
-                                  ? 'Ingresa un nombre'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                        LengthLimitingTextInputFormatter(120),
+                      ],
+                      validator: (String? v) => InputSanitizer.validateName(v ?? ''),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -490,11 +492,11 @@ class _GoalsViewState extends State<_GoalsView> {
                       decoration: const InputDecoration(
                         labelText: 'Monto objetivo',
                       ),
-                      validator:
-                          (String? v) =>
-                              (double.tryParse(v ?? '') ?? -1) <= 0
-                                  ? 'Ingresa un monto válido'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                        LengthLimitingTextInputFormatter(15),
+                      ],
+                      validator: (String? v) => InputSanitizer.validateAmount(v ?? ''),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -505,11 +507,17 @@ class _GoalsViewState extends State<_GoalsView> {
                       decoration: const InputDecoration(
                         labelText: 'Monto actual',
                       ),
-                      validator:
-                          (String? v) =>
-                              (double.tryParse(v ?? '') ?? -1) < 0
-                                  ? 'Monto inválido'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                        LengthLimitingTextInputFormatter(15),
+                      ],
+                      validator: (String? v) {
+                        if (v == null || v.isEmpty) return 'Requerido';
+                        final val = double.tryParse(v);
+                        if (val == null || val < 0) return 'Monto inválido';
+                        if (val > 999999999) return 'Monto demasiado grande';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 12),
                     _DateTile(
@@ -526,6 +534,17 @@ class _GoalsViewState extends State<_GoalsView> {
                             decoration: const InputDecoration(
                               labelText: 'Icono (nombre Material)',
                             ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_\-\.]')),
+                              LengthLimitingTextInputFormatter(50),
+                            ],
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Requerido';
+                              if (!RegExp(r'^[a-zA-Z0-9_\-\.]+$').hasMatch(v.trim())) {
+                                return 'Icono inválido';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 8),

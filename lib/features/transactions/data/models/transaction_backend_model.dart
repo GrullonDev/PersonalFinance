@@ -1,4 +1,5 @@
 import 'package:personal_finance/core/data/models/syncable_model.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 
 class TransactionBackendModel extends SyncableModel {
@@ -59,7 +60,7 @@ class TransactionBackendModel extends SyncableModel {
     ...super.toFirestore(),
     'tipo': tipo,
     'monto': monto,
-    'descripcion': descripcion,
+    'descripcion': InputSanitizer.sanitizeText(descripcion),
     'fecha': fecha.toIso8601String(),
     'categoria_id': categoriaId,
     'es_recurrente': esRecurrente,

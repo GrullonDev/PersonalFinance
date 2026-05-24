@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/utils/responsive.dart';
 
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
@@ -322,11 +324,12 @@ class CategoriesPage extends StatelessWidget {
                                 borderSide: BorderSide.none,
                               ),
                             ),
-                            validator:
-                                (String? v) =>
-                                    v == null || v.trim().isEmpty
-                                        ? 'Ingrese un nombre'
-                                        : null,
+                            maxLength: 120,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                              LengthLimitingTextInputFormatter(120),
+                            ],
+                            validator: (String? v) => InputSanitizer.validateName(v ?? ''),
                           ),
                           const SizedBox(height: 24),
                           Row(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
@@ -130,11 +131,11 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                         labelText: 'Título del gasto',
                         border: OutlineInputBorder(),
                       ),
-                      validator:
-                          (String? value) =>
-                              (value == null || value.isEmpty)
-                                  ? 'Requerido'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                        LengthLimitingTextInputFormatter(120),
+                      ],
+                      validator: (String? value) => InputSanitizer.validateName(value ?? ''),
                     ),
               ),
               const SizedBox(height: 16),
@@ -143,18 +144,14 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 keyboardType: TextInputType.number,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  LengthLimitingTextInputFormatter(15),
                 ],
                 decoration: const InputDecoration(
                   labelText: 'Monto',
                   border: OutlineInputBorder(),
                   prefixText: 'Q ',
                 ),
-                validator: (String? value) {
-                  if (value == null || value.isEmpty) return 'Monto requerido';
-                  final double? amount = double.tryParse(value);
-                  if (amount == null || amount <= 0) return 'Monto inválido';
-                  return null;
-                },
+                validator: (String? value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -211,8 +208,8 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     if (_formKey.currentState!.validate()) {
                       // Agregar el gasto
                       await dashboardLogic.addExpense(
-                        title: _titleController.text,
-                        amount: _amountController.text,
+                        title: InputSanitizer.sanitizeText(_titleController.text.trim()),
+                        amount: _amountController.text.trim(),
                         date: _selectedDate,
                         category: _selectedCategory,
                       );

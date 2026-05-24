@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/core/error/failures.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
@@ -319,11 +321,11 @@ class BudgetsCrudPage extends StatelessWidget {
                                     .surfaceContainerHighest
                                     .withValues(alpha: 0.3),
                               ),
-                              validator:
-                                  (String? v) =>
-                                      v == null || v.trim().isEmpty
-                                          ? 'Ingresa un nombre'
-                                          : null,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                                LengthLimitingTextInputFormatter(120),
+                              ],
+                              validator: (String? v) => InputSanitizer.validateName(v ?? ''),
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -344,11 +346,11 @@ class BudgetsCrudPage extends StatelessWidget {
                                     .surfaceContainerHighest
                                     .withValues(alpha: 0.3),
                               ),
-                              validator:
-                                  (String? v) =>
-                                      (double.tryParse(v ?? '') ?? -1) <= 0
-                                          ? 'Ingresa un monto válido'
-                                          : null,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                                LengthLimitingTextInputFormatter(15),
+                              ],
+                              validator: (String? v) => InputSanitizer.validateAmount(v ?? ''),
                             ),
                             const SizedBox(height: 16),
                             Row(

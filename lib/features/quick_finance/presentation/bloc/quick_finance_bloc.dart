@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:personal_finance/features/quick_finance/data/sync/sync_manager.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 import 'package:personal_finance/features/quick_finance/domain/parsers/quick_entry_parser.dart';
 import 'package:personal_finance/features/quick_finance/domain/usecases/add_transaction.dart';
@@ -187,8 +188,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
           AddTransactionRequested(
             amount: entry.amount,
             type: entry.type,
-            note: entry.note,
-            category: entry.category,
+            note: InputSanitizer.sanitizeText(entry.note),
+            category: entry.category != null ? InputSanitizer.sanitizeText(entry.category!, maxLength: 50) : null,
           ),
         );
       case ParseFailure(:final reason):
@@ -219,7 +220,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       userId: uid,
       type: event.type,
       amount: event.amount,
-      note: event.note,
+      note: InputSanitizer.sanitizeText(event.note),
+      categoryId: event.category != null ? InputSanitizer.sanitizeText(event.category!, maxLength: 50) : null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       syncStatus: SyncStatus.pending,

@@ -39,5 +39,32 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    target.build_configurations.each do |config|
+      # iOS deployment target consistente con Runner (16.0).
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+
+      # PARCHE PARA RECURSOS / BUNDLES DE PRIVACIDAD
+      # Algunos pods (Firebase, GoogleSignIn, MLKit) generan sub-bundles de
+      # recursos (.bundle) que Xcode intenta firmar individualmente y falla
+      # con "code signing requires development team". Esto los exime.
+      if target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.bundle'
+        config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+      end
+    end
   end
+
+  # NOTA: previamente había un segundo bloque que iteraba
+  # `installer.aggregate_targets` y llamaba `config_obj.attributes[...]`.
+  # Eso funcionaba en CocoaPods <= 1.15 porque `user_build_configurations`
+  # devolvía objetos. Desde CocoaPods 1.16 devuelve un Hash
+  # `{ "Release" => :release, ... }` (los valores son Symbols), por lo que
+  # llamar `.attributes` lanza "undefined method 'attributes' for an
+  # instance of Symbol" y rompe `pod install`.
+  #
+  # El propósito original era forzar CODE_SIGNING_REQUIRED/ALLOWED = YES en
+  # Release/Profile para los aggregate targets de Pods, pero eso ya es el
+  # default de Xcode y Automatic Signing lo respeta. Eliminar el parche
+  # devuelve `pod install` a un estado funcional sin efectos colaterales.
 end

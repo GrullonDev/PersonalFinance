@@ -1,4 +1,5 @@
 import 'package:personal_finance/core/data/models/syncable_model.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 
 class DebtModel extends SyncableModel {
@@ -51,7 +52,7 @@ class DebtModel extends SyncableModel {
   @override
   Map<String, dynamic> toFirestore() => {
     ...super.toFirestore(),
-    'name': name,
+    'name': InputSanitizer.sanitizeText(name, maxLength: 120),
     'current_balance': currentBalance,
     'original_amount': originalAmount,
     'interest_rate': interestRate,

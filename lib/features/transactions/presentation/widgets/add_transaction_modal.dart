@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
@@ -326,6 +327,15 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                       prefixIcon: Icon(Icons.notes),
                     ),
                     maxLines: 2,
+                    maxLength: 500,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                      LengthLimitingTextInputFormatter(500),
+                    ],
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return null;
+                      return InputSanitizer.validateName(value, max: 500);
+                    },
                   ),
                   const SizedBox(height: 24),
 

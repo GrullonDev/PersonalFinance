@@ -182,6 +182,10 @@ class QuickEntryInputState extends State<QuickEntryInput>
             keyboardType: TextInputType.text,
             textInputAction: TextInputAction.send,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            inputFormatters: [
+              FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+              LengthLimitingTextInputFormatter(100),
+            ],
             decoration: InputDecoration(
               hintText: '-80 comida',
               hintStyle: TextStyle(

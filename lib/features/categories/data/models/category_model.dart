@@ -1,4 +1,5 @@
 import 'package:personal_finance/core/data/models/syncable_model.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
 
 class CategoryModel extends SyncableModel {
@@ -38,7 +39,11 @@ class CategoryModel extends SyncableModel {
   @override
   Map<String, dynamic> toFirestore() {
     final map = super.toFirestore();
-    map.addAll({'nombre': nombre, 'tipo': tipo, 'profileId': profileId});
+    map.addAll({
+      'nombre': InputSanitizer.sanitizeText(nombre, maxLength: 120),
+      'tipo': tipo,
+      'profileId': profileId,
+    });
     return map;
   }
 

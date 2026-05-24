@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 import 'package:personal_finance/features/alerts/presentation/providers/alerts_provider.dart';
 import 'package:provider/provider.dart';
@@ -47,9 +49,11 @@ class _AddAlertModalState extends State<AddAlertModal> {
                   labelText: 'Título',
                   border: OutlineInputBorder(),
                 ),
-                validator:
-                    (String? value) =>
-                        (value == null || value.isEmpty) ? 'Requerido' : null,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                  LengthLimitingTextInputFormatter(120),
+                ],
+                validator: (String? value) => InputSanitizer.validateName(value ?? ''),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -58,6 +62,16 @@ class _AddAlertModalState extends State<AddAlertModal> {
                   labelText: 'Descripción',
                   border: OutlineInputBorder(),
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                  LengthLimitingTextInputFormatter(500),
+                ],
+                validator: (value) {
+                  if (value != null && value.trim().length > 500) {
+                    return 'Máximo 500 caracteres';
+                  }
+                  return null;
+                },
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -91,9 +105,9 @@ class _AddAlertModalState extends State<AddAlertModal> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      final AlertItem alert = AlertItem(
-                        title: _titleController.text,
-                        description: _descriptionController.text,
+                       final AlertItem alert = AlertItem(
+                        title: _titleController.text.trim(),
+                        description: InputSanitizer.sanitizeText(_descriptionController.text),
                         date: _selectedDate,
                       );
                       await provider.addAlert(alert);

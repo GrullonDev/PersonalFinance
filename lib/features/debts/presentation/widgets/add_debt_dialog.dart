@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
@@ -83,9 +85,11 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   labelText: 'Nombre de Deuda (ej. Tarjeta de Crédito)',
                   border: OutlineInputBorder(),
                 ),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Requerido' : null,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                  LengthLimitingTextInputFormatter(120),
+                ],
+                validator: (value) => InputSanitizer.validateName(value ?? ''),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -95,11 +99,11 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   labelText: 'Monto Original (Deuda Inicial)',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Requerido';
-                  if (double.tryParse(value) == null) return 'Monto inválido';
-                  return null;
-                },
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  LengthLimitingTextInputFormatter(15),
+                ],
+                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -109,11 +113,11 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   labelText: 'Saldo Pendiente (Actual)',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Requerido';
-                  if (double.tryParse(value) == null) return 'Monto inválido';
-                  return null;
-                },
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  LengthLimitingTextInputFormatter(15),
+                ],
+                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -123,9 +127,14 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   labelText: 'Tasa de Interés Anual (%)',
                   border: OutlineInputBorder(),
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  LengthLimitingTextInputFormatter(5),
+                ],
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Requerido';
-                  if (double.tryParse(value) == null) return 'Monto inválido';
+                  final val = double.tryParse(value);
+                  if (val == null || val < 0 || val > 100) return 'Tasa inválida (0-100)';
                   return null;
                 },
               ),
@@ -137,11 +146,11 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   labelText: 'Pago Mínimo Requerido',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Requerido';
-                  if (double.tryParse(value) == null) return 'Monto inválido';
-                  return null;
-                },
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  LengthLimitingTextInputFormatter(15),
+                ],
+                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
