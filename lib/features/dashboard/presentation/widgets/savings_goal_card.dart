@@ -157,7 +157,7 @@ class SavingsGoalCard extends StatelessWidget {
                           color:
                               isCompleted
                                   ? Colors.green.withValues(alpha: 0.2)
-                                  : Colors.white.withValues(alpha: 0.9),
+                                  : Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -193,10 +193,10 @@ class SavingsGoalCard extends StatelessWidget {
                   // Título
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -210,7 +210,7 @@ class SavingsGoalCard extends StatelessWidget {
                         Icon(
                           Icons.schedule,
                           size: 12,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -218,7 +218,7 @@ class SavingsGoalCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -231,7 +231,7 @@ class SavingsGoalCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -248,7 +248,7 @@ class SavingsGoalCard extends StatelessWidget {
                               child: LinearProgressIndicator(
                                 value: value,
                                 minHeight: 6,
-                                backgroundColor: Colors.grey.shade200,
+                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   isCompleted
                                       ? Colors.green

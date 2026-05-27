@@ -133,8 +133,9 @@ Future<void> main() async {
 
           unawaited(FirebaseAnalytics.instance.logAppOpen());
         } catch (e, st) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint('[init] Firebase error (continuing offline): $e\n$st');
+          }
         }
 
         // ── Dependency Injection ───────────────────────────────────────────

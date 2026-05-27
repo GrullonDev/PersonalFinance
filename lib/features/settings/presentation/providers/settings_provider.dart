@@ -8,7 +8,15 @@ class SettingsProvider extends ChangeNotifier {
 
   bool get darkMode => _darkMode;
   bool get hideAmounts => _hideAmounts;
-  ThemeMode get themeMode => _darkMode ? ThemeMode.dark : ThemeMode.light;
+  ThemeMode get themeMode {
+    if (_themeModeString == 'Oscuro') {
+      return ThemeMode.dark;
+    } else if (_themeModeString == 'Claro') {
+      return ThemeMode.light;
+    } else {
+      return ThemeMode.system;
+    }
+  }
 
   // Business mode — feature not active in current release.
   bool get isBusinessMode => false;

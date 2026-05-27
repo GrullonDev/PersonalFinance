@@ -46,8 +46,12 @@ class BudgetCard extends StatelessWidget {
               hasNoBudget
                   ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4)
                   : isOverBudget
-                      ? Colors.red.shade50
-                      : Colors.green.shade50,
+                      ? (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.red.withValues(alpha: 0.15)
+                          : Colors.red.shade50)
+                      : (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.green.withValues(alpha: 0.15)
+                          : Colors.green.shade50),
               Theme.of(context).colorScheme.surface,
             ],
             begin: Alignment.topLeft,
