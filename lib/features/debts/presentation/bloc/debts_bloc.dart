@@ -48,8 +48,25 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
     final Either<Failure, List<Debt>> res = await _repo.getDebts();
     res.fold(
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
-      (List<Debt> r) => emit(state.copyWith(loading: false, items: r)),
+      (List<Debt> r) {
+        emit(state.copyWith(loading: false, items: r));
+        _scheduleUpcomingPaymentReminders(r);
+      },
     );
+  }
+
+  void _scheduleUpcomingPaymentReminders(List<Debt> debts) {
+    try {
+      final notif = GetIt.instance<NotificationService>();
+      for (final Debt d in debts) {
+        notif.scheduleDebtPaymentReminder(
+          debtId: d.id,
+          debtName: d.name,
+          paymentDate: d.nextPaymentDate,
+          minimumPayment: d.minimumPayment,
+        );
+      }
+    } catch (_) {}
   }
 
   Future<void> _onCreate(DebtCreate event, Emitter<DebtsState> emit) async {
@@ -71,6 +88,12 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
             title: '📉 ¡Deuda Registrada!',
             body:
                 'Has registrado la deuda "${r.name}" con un saldo de ${CurrencyHelper.symbol}${r.currentBalance.toStringAsFixed(0)}. Sigue tu plan de pagos.',
+          );
+          notif.scheduleDebtPaymentReminder(
+            debtId: r.id,
+            debtName: r.name,
+            paymentDate: r.nextPaymentDate,
+            minimumPayment: r.minimumPayment,
           );
         } catch (_) {}
       },
