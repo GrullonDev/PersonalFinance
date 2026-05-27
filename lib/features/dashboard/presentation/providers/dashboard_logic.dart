@@ -11,7 +11,8 @@ import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/usecases/get_active_goals_usecase.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/usecases/get_active_budgets_usecase.dart';
-import 'package:personal_finance/core/services/vertex_ai_service.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart'
+    show FinancialHealthScore, VertexAiService;
 import 'package:personal_finance/core/services/notifications/notification_service.dart';
 import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
@@ -43,6 +44,10 @@ class DashboardLogic extends ChangeNotifier {
   String? _error;
   String? _personalizedTip;
   bool _isLoadingTip = false;
+  String? _spendingPrediction;
+  bool _isLoadingPrediction = false;
+  FinancialHealthScore? _healthScore;
+  bool _isLoadingHealthScore = false;
 
   // Getters públicos
   PeriodFilter get selectedPeriod => _selectedPeriod;
@@ -54,6 +59,10 @@ class DashboardLogic extends ChangeNotifier {
   String? get error => _error;
   String? get personalizedTip => _personalizedTip;
   bool get isLoadingTip => _isLoadingTip;
+  String? get spendingPrediction => _spendingPrediction;
+  bool get isLoadingPrediction => _isLoadingPrediction;
+  FinancialHealthScore? get healthScore => _healthScore;
+  bool get isLoadingHealthScore => _isLoadingHealthScore;
 
   // Getters computados
   bool get hasData =>
@@ -356,8 +365,10 @@ class DashboardLogic extends ChangeNotifier {
 
       notifyListeners();
 
-      // Iniciar carga asíncrona de consejo personalizado de Gemini y reprogramar notificaciones
+      // Iniciar cargas asíncronas de IA y reprogramar notificaciones
       fetchPersonalizedTip();
+      fetchSpendingPrediction();
+      fetchHealthScore();
       _rescheduleLocalNotifications();
     } catch (e) {
       _setError('Error al cargar datos: $e');
@@ -434,6 +445,70 @@ class DashboardLogic extends ChangeNotifier {
       debugPrint('Error al obtener consejo personalizado de Gemini: $e');
     } finally {
       _isLoadingTip = false;
+      notifyListeners();
+    }
+  }
+
+  /// Genera predicción de gasto para la próxima semana usando Gemini.
+  Future<void> fetchSpendingPrediction() async {
+    if (_expenses.isEmpty) return;
+    _isLoadingPrediction = true;
+    notifyListeners();
+    try {
+      final aiService = GetIt.instance<VertexAiService>();
+      _spendingPrediction = await aiService.getSpendingPrediction(
+        _expenses,
+        _incomes,
+      );
+    } catch (e) {
+      debugPrint('Error al obtener predicción de gastos: $e');
+    } finally {
+      _isLoadingPrediction = false;
+      notifyListeners();
+    }
+  }
+
+  /// Calcula el score de salud financiera 0–100 usando Gemini.
+  Future<void> fetchHealthScore() async {
+    if (totalIncomes == 0 && totalExpenses == 0) return;
+    _isLoadingHealthScore = true;
+    notifyListeners();
+    try {
+      final aiService = GetIt.instance<VertexAiService>();
+
+      double goalsProgress = 0;
+      if (_goals.isNotEmpty) {
+        goalsProgress = _goals.fold<double>(0, (sum, g) {
+              final pct = g.objetivoAsDouble > 0
+                  ? (g.actualAsDouble / g.objetivoAsDouble * 100).clamp(0, 100)
+                  : 0.0;
+              return sum + pct;
+            }) /
+            _goals.length;
+      }
+
+      List<Debt> debts = [];
+      try {
+        final debtRepository = GetIt.instance<DebtRepository>();
+        final result = await debtRepository.getDebts();
+        result.fold((_) {}, (d) => debts = d);
+      } catch (_) {}
+
+      final totalDebtBalance =
+          debts.fold<double>(0, (s, d) => s + d.currentBalance);
+
+      _healthScore = await aiService.getFinancialHealthScore(
+        totalIncomes: totalIncomes,
+        totalExpenses: totalExpenses,
+        activeGoals: _goals.length,
+        activeDebts: debts.length,
+        goalsProgress: goalsProgress,
+        totalDebtBalance: totalDebtBalance,
+      );
+    } catch (e) {
+      debugPrint('Error al calcular health score: $e');
+    } finally {
+      _isLoadingHealthScore = false;
       notifyListeners();
     }
   }
