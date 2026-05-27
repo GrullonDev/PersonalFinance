@@ -15,6 +15,8 @@ import 'package:personal_finance/features/transactions/presentation/bloc/transac
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart'
+    show FinancialHealthScore;
 import 'package:personal_finance/utils/routes/route_path.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -85,6 +87,11 @@ class _DashboardContent extends StatelessWidget {
                                   _buildInsightsCard(context, logic),
                                   const SizedBox(height: 24),
                                 ],
+                                if (logic.healthScore != null ||
+                                    logic.isLoadingHealthScore) ...[
+                                  _buildHealthScoreCard(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
                                 GestureDetector(
                                   onTap:
                                       () => Navigator.pushNamed(
@@ -117,6 +124,11 @@ class _DashboardContent extends StatelessWidget {
                                 ],
                                 if (logic.shouldShowIncomesList) ...<Widget>[
                                   _buildIncomeList(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                if (logic.spendingPrediction != null ||
+                                    logic.isLoadingPrediction) ...[
+                                  _buildSpendingPredictionCard(context, logic),
                                   const SizedBox(height: 24),
                                 ],
                                 _buildRecommendationsSection(context, logic),
@@ -172,6 +184,11 @@ class _DashboardContent extends StatelessWidget {
                                       _buildInsightsCard(context, logic),
                                       const SizedBox(height: 32),
                                     ],
+                                    if (logic.healthScore != null ||
+                                        logic.isLoadingHealthScore) ...[
+                                      _buildHealthScoreCard(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
                                     GestureDetector(
                                       onTap: () async {
                                         await Navigator.pushNamed(
@@ -223,6 +240,14 @@ class _DashboardContent extends StatelessWidget {
                                     if (logic
                                         .shouldShowIncomesList) ...<Widget>[
                                       _buildIncomeList(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    if (logic.spendingPrediction != null ||
+                                        logic.isLoadingPrediction) ...[
+                                      _buildSpendingPredictionCard(
+                                        context,
+                                        logic,
+                                      ),
                                       const SizedBox(height: 32),
                                     ],
                                     _buildRecommendationsSection(
@@ -1134,6 +1159,202 @@ class _DashboardContent extends StatelessWidget {
     }
 
     return 'Compras';
+  }
+
+  Widget _buildHealthScoreCard(BuildContext context, DashboardLogic logic) {
+    final FinancialHealthScore? score = logic.healthScore;
+
+    Color scoreColor(int s) {
+      if (s >= 75) return Colors.green;
+      if (s >= 60) return Colors.orange;
+      return Colors.red;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: logic.isLoadingHealthScore
+          ? const Row(
+              children: [
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: CircularProgressIndicator(strokeWidth: 4),
+                ),
+                SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Salud Financiera',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Calculando tu puntaje...',
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: (score?.score ?? 0) / 100,
+                        strokeWidth: 6,
+                        backgroundColor: Colors.grey.withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          scoreColor(score?.score ?? 0),
+                        ),
+                      ),
+                      Text(
+                        score?.grade ?? '-',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: scoreColor(score?.score ?? 0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Salud Financiera',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${score?.score ?? 0}/100',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: scoreColor(score?.score ?? 0),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        score?.summary ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildSpendingPredictionCard(
+    BuildContext context,
+    DashboardLogic logic,
+  ) {
+    const color = Colors.indigo;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.trending_up, color: color, size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Predicción Próxima Semana',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    if (logic.isLoadingPrediction) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  logic.isLoadingPrediction
+                      ? 'Analizando tus patrones de gasto...'
+                      : logic.spendingPrediction ?? '',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.4,
+                    fontStyle: logic.isLoadingPrediction
+                        ? FontStyle.italic
+                        : FontStyle.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildRecommendationsSection(
