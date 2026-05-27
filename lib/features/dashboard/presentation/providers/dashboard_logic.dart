@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:get_it/get_it.dart';
 
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
@@ -11,6 +12,8 @@ import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/usecases/get_active_goals_usecase.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/usecases/get_active_budgets_usecase.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
 
 /// Lógica del dashboard mejorada siguiendo Clean Architecture
 class DashboardLogic extends ChangeNotifier {
@@ -37,6 +40,8 @@ class DashboardLogic extends ChangeNotifier {
   Budget? _activeBudget;
   bool _isLoading = false;
   String? _error;
+  String? _personalizedTip;
+  bool _isLoadingTip = false;
 
   // Getters públicos
   PeriodFilter get selectedPeriod => _selectedPeriod;
@@ -46,6 +51,8 @@ class DashboardLogic extends ChangeNotifier {
   Budget? get activeBudget => _activeBudget;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get personalizedTip => _personalizedTip;
+  bool get isLoadingTip => _isLoadingTip;
 
   // Getters computados
   bool get hasData =>
@@ -347,10 +354,76 @@ class DashboardLogic extends ChangeNotifier {
       _incomes = result.incomes;
 
       notifyListeners();
+
+      // Iniciar carga asíncrona de consejo personalizado de Gemini y reprogramar notificaciones
+      fetchPersonalizedTip();
+      _rescheduleLocalNotifications();
     } catch (e) {
       _setError('Error al cargar datos: $e');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Calcula la racha actual de ahorro (días consecutivos registrando transacciones)
+  int get savingsStreak {
+    final List<DateTime> dates = <DateTime>[
+      ..._expenses.map((e) => e.date),
+      ..._incomes.map((i) => i.date),
+    ];
+    if (dates.isEmpty) return 0;
+
+    final uniqueDates = dates
+        .map((d) => DateTime(d.year, d.month, d.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (uniqueDates.isEmpty || (uniqueDates.first != today && uniqueDates.first != yesterday)) {
+      return 0;
+    }
+
+    int streak = 0;
+    DateTime currentDay = uniqueDates.first;
+
+    for (final date in uniqueDates) {
+      if (date == currentDay) {
+        streak++;
+        currentDay = currentDay.subtract(const Duration(days: 1));
+      } else if (date.isBefore(currentDay)) {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  /// Obtiene un consejo financiero personalizado desde Vertex AI in Firebase (Gemini)
+  Future<void> fetchPersonalizedTip() async {
+    if (!hasData) return;
+    _isLoadingTip = true;
+    notifyListeners();
+    try {
+      final aiService = GetIt.instance<VertexAiService>();
+      _personalizedTip = await aiService.getPersonalizedTip(_expenses, _incomes);
+    } catch (e) {
+      debugPrint('Error al obtener consejo personalizado de Gemini: $e');
+    } finally {
+      _isLoadingTip = false;
+      notifyListeners();
+    }
+  }
+
+  /// Reprograma las notificaciones locales con los datos actualizados
+  Future<void> _rescheduleLocalNotifications() async {
+    try {
+      final notifService = GetIt.instance<NotificationService>();
+      await notifService.local.scheduleStreakReminder(savingsStreak);
+      await notifService.local.scheduleWeeklySummary();
+    } catch (e) {
+      debugPrint('Error reprogramando notificaciones locales: $e');
     }
   }
 

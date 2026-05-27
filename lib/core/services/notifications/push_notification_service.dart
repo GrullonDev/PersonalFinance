@@ -1,4 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:personal_finance/features/notifications/domain/entities/notification_item.dart';
 import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart';
 import 'package:personal_finance/core/services/navigation_service.dart';
@@ -27,14 +29,31 @@ class PushNotificationService {
       developer.log('User declined or has not accepted permission');
     }
 
-    // Get the token
+    // Get the token and save if already logged in
     final String? token = await _fcm.getToken();
     developer.log('FCM Token: $token');
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null && token != null) {
+      await _saveTokenToFirestore(currentUser.uid, token);
+    }
+
+    // Escuchar cambios de autenticación para sincronizar el token con Firestore
+    FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+      if (user != null) {
+        final String? currentToken = await _fcm.getToken();
+        if (currentToken != null) {
+          await _saveTokenToFirestore(user.uid, currentToken);
+        }
+      }
+    });
 
     // Any time the token refreshes, store it
-    _fcm.onTokenRefresh.listen((String newToken) {
+    _fcm.onTokenRefresh.listen((String newToken) async {
       developer.log('FCM Token Refreshed: $newToken');
-      // TODO: Send token to your backend
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await _saveTokenToFirestore(user.uid, newToken);
+      }
     });
 
     // Handle background messages
@@ -86,6 +105,18 @@ class PushNotificationService {
   }
 
   Future<String?> getToken() async => await _fcm.getToken();
+
+  Future<void> _saveTokenToFirestore(String userId, String token) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .set({'fcm_token': token}, SetOptions(merge: true));
+      developer.log('FCM Token guardado en Firestore para el usuario: $userId');
+    } catch (e) {
+      developer.log('Error al guardar FCM Token en Firestore: $e', error: e);
+    }
+  }
 }
 
 // Global function for background messages

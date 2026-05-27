@@ -68,6 +68,7 @@ import 'package:personal_finance/features/notifications/domain/entities/notifica
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
 import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -296,6 +297,13 @@ Future<void> initDependencies() async {
   if (!getIt.isRegistered<ReceiptScannerService>()) {
     getIt.registerLazySingleton<ReceiptScannerService>(
       () => ReceiptScannerService(),
+    );
+  }
+
+  // Vertex AI Service
+  if (!getIt.isRegistered<VertexAiService>()) {
+    getIt.registerLazySingleton<VertexAiService>(
+      () => VertexAiService(),
     );
   }
 

@@ -79,7 +79,7 @@ class _DashboardContent extends StatelessWidget {
                             : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                if (logic.insightMessage != null) ...[
+                                if (logic.insightMessage != null || logic.personalizedTip != null || logic.isLoadingTip) ...[
                                   _buildInsightsCard(context, logic),
                                   const SizedBox(height: 24),
                                 ],
@@ -164,7 +164,7 @@ class _DashboardContent extends StatelessWidget {
                                 flex: 5,
                                 child: Column(
                                   children: <Widget>[
-                                    if (logic.insightMessage != null) ...[
+                                    if (logic.insightMessage != null || logic.personalizedTip != null || logic.isLoadingTip) ...[
                                       _buildInsightsCard(context, logic),
                                       const SizedBox(height: 32),
                                     ],
@@ -239,53 +239,72 @@ class _DashboardContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) =>
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) {
+    final String tipText = logic.personalizedTip ?? logic.insightMessage ?? '';
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.auto_awesome,
+            color: Theme.of(context).colorScheme.primary,
+            size: 28,
           ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.tips_and_updates,
-              color: Theme.of(context).colorScheme.primary,
-              size: 28,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Insight',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                      letterSpacing: 0.5,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Asesor Financiero IA ✨',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                        letterSpacing: 0.5,
+                      ),
                     ),
+                    if (logic.isLoadingTip) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  logic.isLoadingTip ? 'Generando consejos financieros a tu medida...' : tipText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.4,
+                    fontStyle: logic.isLoadingTip ? FontStyle.italic : FontStyle.normal,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    logic.insightMessage!,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildHeader(BuildContext context, DashboardLogic logic) {
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -445,12 +464,41 @@ class _DashboardContent extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'Así van tus finanzas hoy',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
+                          Row(
+                            children: [
+                              const Text(
+                                'Así van tus finanzas hoy',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              if (logic.savingsStreak > 0) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.local_fire_department, color: Colors.orange, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Racha: ${logic.savingsStreak} d',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),

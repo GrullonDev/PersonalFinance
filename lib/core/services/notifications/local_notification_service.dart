@@ -158,6 +158,40 @@ class LocalNotificationService {
     // In a real app, you might want a worker that saves it when it fires.
   }
 
+  Future<void> scheduleStreakReminder(int streak) async {
+    await cancelNotification(9999);
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1, 20, 0);
+
+    String body = streak > 0
+        ? 'Llevas una racha de $streak días. ¡Añade una transacción hoy para mantenerla viva! 🔥'
+        : '¡Empieza una racha de ahorro! Registra tus movimientos hoy para mantener el control. 💰';
+
+    await scheduleNotification(
+      id: 9999,
+      title: '¡Mantén tu racha de ahorro! ⚡',
+      body: body,
+      scheduledDate: tomorrow,
+    );
+  }
+
+  Future<void> scheduleWeeklySummary() async {
+    await cancelNotification(9998);
+    final now = DateTime.now();
+    int daysUntilSunday = DateTime.sunday - now.weekday;
+    if (daysUntilSunday <= 0) {
+      daysUntilSunday += 7;
+    }
+    final nextSunday = DateTime(now.year, now.month, now.day + daysUntilSunday, 20, 0);
+
+    await scheduleNotification(
+      id: 9998,
+      title: 'Resumen Semanal de Finanzas 📊',
+      body: 'Tu resumen semanal ya está listo. Abre la app para ver tus balances y consejos de ahorro personalizados.',
+      scheduledDate: nextSunday,
+    );
+  }
+
   Future<void> cancelAll() async {
     await _notificationsPlugin.cancelAll();
   }
