@@ -207,7 +207,7 @@ class AboutPage extends StatelessWidget {
       ),
       const SizedBox(height: 24),
       Text(
-        '© 2025 Personal Finance. Todos los derechos reservados.',
+        '© ${DateTime.now().year} Personal Finance. Todos los derechos reservados.',
         style: theme.textTheme.labelSmall?.copyWith(
           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
         ),
