@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:get_it/get_it.dart';
 
@@ -14,6 +13,8 @@ import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/usecases/get_active_budgets_usecase.dart';
 import 'package:personal_finance/core/services/vertex_ai_service.dart';
 import 'package:personal_finance/core/services/notifications/notification_service.dart';
+import 'package:personal_finance/features/debts/domain/entities/debt.dart';
+import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
 
 /// Lógica del dashboard mejorada siguiendo Clean Architecture
 class DashboardLogic extends ChangeNotifier {
@@ -73,8 +74,7 @@ class DashboardLogic extends ChangeNotifier {
   // Category filter — used by CategorySelector widget.
   String? _selectedCategory;
   String? get selectedCategory => _selectedCategory;
-  List<String> get availableCategories =>
-      ['Todas', ...expensesByCategory.keys.toList()];
+  List<String> get availableCategories => ['Todas', ...expensesByCategory.keys];
   void changeCategory(String category) {
     _selectedCategory = category == 'Todas' ? null : category;
     notifyListeners();
@@ -83,11 +83,14 @@ class DashboardLogic extends ChangeNotifier {
   // Weekly budget spent — sum of expenses in current week vs active budget.
   double get weeklyBudgetSpent {
     final now = DateTime.now();
-    final startOfWeek = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
     return _expenses
         .where((e) => !e.date.isBefore(startOfWeek))
-        .fold(0.0, (sum, e) => sum + e.amount);
+        .fold(0, (sum, e) => sum + e.amount);
   }
 
   /// Mensaje de insight basado en el balance actual. Null si no hay datos.
@@ -101,6 +104,7 @@ class DashboardLogic extends ChangeNotifier {
     }
     return 'Tu balance está equilibrado. Registra más transacciones para obtener insights personalizados.';
   }
+
   List<IncomeEntity> get filteredIncomes => sortedIncomes;
   List<ChartData> getChartData() => chartData;
 
@@ -197,14 +201,12 @@ class DashboardLogic extends ChangeNotifier {
     // Si no hay datos, recomendar empezar
     if (!hasData) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '📊',
           title: 'Comienza tu viaje',
           description:
               'Registra tus primeras transacciones para obtener recomendaciones personalizadas.',
           actionLabel: 'Agregar transacción',
-          accentColor: Colors.blue,
-          actionType: RecommendationActionType.none,
         ),
       );
       return items;
@@ -228,7 +230,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Crear meta de ahorro (si hay balance positivo pero no hay metas)
     if (balance > 0 && _goals.isEmpty) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '💰',
           title: 'Ahorro',
           description:
@@ -243,7 +245,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Invertir (si el balance es muy alto)
     if (balance > totalIncomes * 2) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '📈',
           title: 'Invierte',
           description:
@@ -273,14 +275,13 @@ class DashboardLogic extends ChangeNotifier {
     // Si no hay recomendaciones específicas, mostrar una genérica positiva
     if (items.isEmpty) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '✨',
           title: '¡Buen trabajo!',
           description:
               'Tus finanzas están en buen estado. Sigue registrando tus transacciones.',
           actionLabel: 'Continuar',
           accentColor: Colors.green,
-          actionType: RecommendationActionType.none,
         ),
       );
     }
@@ -373,16 +374,19 @@ class DashboardLogic extends ChangeNotifier {
     ];
     if (dates.isEmpty) return 0;
 
-    final uniqueDates = dates
-        .map((d) => DateTime(d.year, d.month, d.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
+    final uniqueDates =
+        dates.map((d) => DateTime(d.year, d.month, d.day)).toSet().toList()
+          ..sort((a, b) => b.compareTo(a));
 
-    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     final yesterday = today.subtract(const Duration(days: 1));
 
-    if (uniqueDates.isEmpty || (uniqueDates.first != today && uniqueDates.first != yesterday)) {
+    if (uniqueDates.isEmpty ||
+        (uniqueDates.first != today && uniqueDates.first != yesterday)) {
       return 0;
     }
 
@@ -407,7 +411,25 @@ class DashboardLogic extends ChangeNotifier {
     notifyListeners();
     try {
       final aiService = GetIt.instance<VertexAiService>();
-      _personalizedTip = await aiService.getPersonalizedTip(_expenses, _incomes);
+      
+      List<Debt> activeDebts = [];
+      try {
+        final debtRepository = GetIt.instance<DebtRepository>();
+        final debtsResult = await debtRepository.getDebts();
+        debtsResult.fold(
+          (failure) => debugPrint('Error al cargar deudas para Gemini: $failure'),
+          (debts) => activeDebts = debts,
+        );
+      } catch (e) {
+        debugPrint('Error al instanciar o usar DebtRepository: $e');
+      }
+
+      _personalizedTip = await aiService.getPersonalizedTip(
+        _expenses,
+        _incomes,
+        goals: _goals,
+        debts: activeDebts,
+      );
     } catch (e) {
       debugPrint('Error al obtener consejo personalizado de Gemini: $e');
     } finally {
@@ -581,10 +603,7 @@ class DashboardLogic extends ChangeNotifier {
           end: endOfYear.add(const Duration(days: 1)),
         );
       case PeriodFilter.historico:
-        return DateTimeRange(
-          start: DateTime(2000),
-          end: DateTime(3000),
-        );
+        return DateTimeRange(start: DateTime(2000), end: DateTime(3000));
       case PeriodFilter.personalizado:
         // Custom range not implemented in this view — fall back to current month.
         final DateTime startOfMonth = DateTime(now.year, now.month);

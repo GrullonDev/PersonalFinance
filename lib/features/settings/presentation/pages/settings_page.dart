@@ -12,6 +12,8 @@ import 'package:personal_finance/features/notifications/domain/repositories/noti
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
+import 'package:personal_finance/features/goals/presentation/pages/goals_crud_page.dart';
+import 'package:personal_finance/features/debts/presentation/pages/debts_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -78,14 +80,45 @@ class SettingsPage extends StatelessWidget {
                           create:
                               (_) => NotificationPrefsProvider(
                                 getIt<notif_repo.NotificationRepository>(),
-                              )..load(),
-                          child: const NotificationsDetailPage(),
-                        ),
-              ),
-            );
-          },
-        ),
-        _buildSectionTitle(context, 'AYUDA Y LEGAL'),
+                                  )..load(),
+                              child: const NotificationsDetailPage(),
+                            ),
+                  ),
+                );
+              },
+            ),
+            _buildSectionTitle(context, 'FINANZAS'),
+            _buildSettingItem(
+              context,
+              icon: Icons.track_changes,
+              iconColor: Colors.teal,
+              title: 'Metas de Ahorro',
+              subtitle: 'Configura y administra tus metas de ahorro',
+              onTap: () {
+                Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => const GoalsCrudPage(),
+                  ),
+                );
+              },
+            ),
+            _buildSettingItem(
+              context,
+              icon: Icons.money_off,
+              iconColor: Colors.red,
+              title: 'Control de Deudas',
+              subtitle: 'Registra y gestiona tus deudas y pagos',
+              onTap: () {
+                Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => const DebtsPage(),
+                  ),
+                );
+              },
+            ),
+            _buildSectionTitle(context, 'AYUDA Y LEGAL'),
         _buildSettingItem(
           context,
           icon: Icons.help_outline,

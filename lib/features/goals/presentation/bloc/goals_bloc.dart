@@ -1,10 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:personal_finance/core/error/failures.dart';
-
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 abstract class GoalsEvent extends Equatable {
   @override
@@ -73,12 +75,25 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     final Either<Failure, Goal> r = await _repo.createGoal(event.payload);
     r.fold(
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
-      (Goal g) => emit(
-        state.copyWith(
-          loading: false,
-          items: List<Goal>.from(state.items)..add(g),
-        ),
-      ),
+      (Goal g) {
+        emit(
+          state.copyWith(
+            loading: false,
+            items: List<Goal>.from(state.items)..add(g),
+          ),
+        );
+        try {
+          final notif = GetIt.instance<NotificationService>();
+          final double targetAmount = double.tryParse(g.montoObjetivo) ?? 0.0;
+          notif.local.showNotification(
+            id: g.id.hashCode,
+            title: '🎯 ¡Meta de Ahorro Creada!',
+            body: 'Has creado la meta "${g.nombre}" con un objetivo de ${CurrencyHelper.symbol}${targetAmount.toStringAsFixed(0)}. ¡Mucho éxito!',
+          );
+        } catch (e) {
+          // ignore or log
+        }
+      },
     );
   }
 
@@ -87,12 +102,26 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     final Either<Failure, Goal> r = await _repo.updateGoal(event.payload);
     r.fold(
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
-      (Goal g) => emit(
-        state.copyWith(
-          loading: false,
-          items: state.items.map((Goal e) => e.id == g.id ? g : e).toList(),
-        ),
-      ),
+      (Goal g) {
+        emit(
+          state.copyWith(
+            loading: false,
+            items: state.items.map((Goal e) => e.id == g.id ? g : e).toList(),
+          ),
+        );
+        try {
+          final notif = GetIt.instance<NotificationService>();
+          final double currentAmount = double.tryParse(g.montoActual) ?? 0.0;
+          final double targetAmount = double.tryParse(g.montoObjetivo) ?? 0.0;
+          notif.local.showNotification(
+            id: g.id.hashCode,
+            title: '✨ Meta de Ahorro Actualizada',
+            body: 'Tu meta "${g.nombre}" ahora tiene un acumulado de ${CurrencyHelper.symbol}${currentAmount.toStringAsFixed(0)} de ${CurrencyHelper.symbol}${targetAmount.toStringAsFixed(0)}.',
+          );
+        } catch (e) {
+          // ignore or log
+        }
+      },
     );
   }
 
