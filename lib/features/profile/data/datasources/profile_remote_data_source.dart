@@ -36,10 +36,16 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         return ProfileMeModel(
           fullName: user.displayName ?? '',
           email: user.email ?? '',
+          photoUrl: user.photoURL,
         );
       }
     } catch (e) {
-      throw ApiException(message: e.toString(), statusCode: 500);
+      // Fallback to local Auth data if Firestore fails (e.g. offline, security rules, network)
+      return ProfileMeModel(
+        fullName: user.displayName ?? '',
+        email: user.email ?? '',
+        photoUrl: user.photoURL,
+      );
     }
   }
 
