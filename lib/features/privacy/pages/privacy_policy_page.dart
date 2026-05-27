@@ -236,26 +236,29 @@ class PrivacyPolicyPage extends StatelessWidget {
                               : BorderSide.none,
                     ),
                   ),
-                  child: Theme(
-                    data: theme.copyWith(dividerColor: Colors.transparent),
-                    child: ExpansionTile(
-                      title: Text(
-                        section['title']!,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          section['content']!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            height: 1.6,
-                            color: colorScheme.onSurface.withValues(alpha: 0.8),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Theme(
+                      data: theme.copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        title: Text(
+                          section['title']!,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
+                        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            section['content']!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              height: 1.6,
+                              color: colorScheme.onSurface.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
