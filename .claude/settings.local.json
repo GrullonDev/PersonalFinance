@@ -5,7 +5,9 @@
       "Bash(firebase deploy *)",
       "Bash(.fvm/flutter_sdk/bin/flutter.bat analyze *)",
       "Bash(grep -v \"^$\")",
-      "Bash(dir \"c:/Users/jgrullon/Documents/MISARCHIVOS/AppsFlutter/PersonalFinance/android/\")"
+      "Bash(dir \"c:/Users/jgrullon/Documents/MISARCHIVOS/AppsFlutter/PersonalFinance/android/\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
