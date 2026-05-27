@@ -8,7 +8,7 @@ part of 'notification_item.dart';
 
 class NotificationItemAdapter extends TypeAdapter<NotificationItem> {
   @override
-  final int typeId = 4;
+  final int typeId = 8;
 
   @override
   NotificationItem read(BinaryReader reader) {
