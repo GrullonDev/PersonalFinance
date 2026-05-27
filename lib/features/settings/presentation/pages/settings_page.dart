@@ -27,8 +27,8 @@ class SettingsPage extends StatelessWidget {
     ),
     body: ListView(
       children: <Widget>[
-        _buildSectionTitle(context, 'APARIENCIA'),
-        _buildDarkModeOption(context),
+        // _buildSectionTitle(context, 'APARIENCIA'),
+        // _buildDarkModeOption(context),
         _buildSectionTitle(context, 'CUENTA'),
         _buildSettingItem(
           context,
@@ -147,6 +147,7 @@ class SettingsPage extends StatelessWidget {
     ),
   );
 
+  /*
   Widget _buildDarkModeOption(BuildContext context) =>
       Consumer<SettingsProvider>(
         builder:
@@ -205,6 +206,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
       );
+  */
 
   Widget _buildHideAmountsOption(BuildContext context) =>
       Consumer<SettingsProvider>(
