@@ -1,12 +1,15 @@
-import 'dart:math';
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
 
-/// Simple provider to deliver daily financial tips.
 class TipProvider extends ChangeNotifier {
-  TipProvider();
+  TipProvider() {
+    _loadTip();
+  }
 
-  final List<String> _tips = <String>[
+  static const List<String> _fallbacks = [
     'Ahorra al menos el 10% de cada ingreso que recibas.',
     'Registra tus gastos diariamente para detectar hábitos.',
     'Establece metas de ahorro mensuales realistas.',
@@ -14,8 +17,28 @@ class TipProvider extends ChangeNotifier {
     'Revisa tus suscripciones y cancela las que no uses.',
   ];
 
-  late final String _todayTip =
-      _tips[Random(DateTime.now().day).nextInt(_tips.length)];
+  String _tip = '';
+  bool _isLoading = false;
 
-  String get todayTip => _todayTip;
+  String get todayTip =>
+      _tip.isNotEmpty ? _tip : _fallbacks[DateTime.now().day % _fallbacks.length];
+  bool get isLoading => _isLoading;
+
+  Future<void> _loadTip() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final service = GetIt.instance<VertexAiService>();
+      // Sin contexto de transacciones devuelve un consejo general personalizado
+      _tip = await service.getPersonalizedTip([], []);
+    } catch (e) {
+      developer.log('TipProvider: error cargando consejo Gemini: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Fuerza recargar un nuevo consejo desde Gemini.
+  Future<void> refresh() => _loadTip();
 }
