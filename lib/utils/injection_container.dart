@@ -311,7 +311,9 @@ Future<void> initDependencies() async {
     );
   }
   if (!getIt.isRegistered<VersionService>()) {
-    getIt.registerLazySingleton<VersionService>(() => VersionService());
+    final VersionService versionService = VersionService();
+    await versionService.init();
+    getIt.registerLazySingleton<VersionService>(() => versionService);
   }
 
   // Device Service
