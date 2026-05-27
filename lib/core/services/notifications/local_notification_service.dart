@@ -161,11 +161,12 @@ class LocalNotificationService {
   Future<void> scheduleStreakReminder(int streak) async {
     await cancelNotification(9999);
     final now = DateTime.now();
-    final tomorrow = DateTime(now.year, now.month, now.day + 1, 20, 0);
+    final tomorrow = DateTime(now.year, now.month, now.day + 1, 20);
 
-    String body = streak > 0
-        ? 'Llevas una racha de $streak días. ¡Añade una transacción hoy para mantenerla viva! 🔥'
-        : '¡Empieza una racha de ahorro! Registra tus movimientos hoy para mantener el control. 💰';
+    final String body =
+        streak > 0
+            ? 'Llevas una racha de $streak días. ¡Añade una transacción hoy para mantenerla viva! 🔥'
+            : '¡Empieza una racha de ahorro! Registra tus movimientos hoy para mantener el control. 💰';
 
     await scheduleNotification(
       id: 9999,
@@ -182,12 +183,18 @@ class LocalNotificationService {
     if (daysUntilSunday <= 0) {
       daysUntilSunday += 7;
     }
-    final nextSunday = DateTime(now.year, now.month, now.day + daysUntilSunday, 20, 0);
+    final nextSunday = DateTime(
+      now.year,
+      now.month,
+      now.day + daysUntilSunday,
+      20,
+    );
 
     await scheduleNotification(
       id: 9998,
       title: 'Resumen Semanal de Finanzas 📊',
-      body: 'Tu resumen semanal ya está listo. Abre la app para ver tus balances y consejos de ahorro personalizados.',
+      body:
+          'Tu resumen semanal ya está listo. Abre la app para ver tus balances y consejos de ahorro personalizados.',
       scheduledDate: nextSunday,
     );
   }

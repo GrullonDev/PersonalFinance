@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 class SavingsGoalCard extends StatelessWidget {
   final String title;
@@ -227,7 +228,7 @@ class SavingsGoalCard extends StatelessWidget {
 
                   // Progreso con moneda
                   Text(
-                    '${currentAmount.toStringAsFixed(0)} / ${targetAmount.toStringAsFixed(0)}',
+                    '${CurrencyHelper.symbol}${currentAmount.toStringAsFixed(0)} / ${CurrencyHelper.symbol}${targetAmount.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

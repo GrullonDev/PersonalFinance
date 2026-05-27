@@ -302,9 +302,7 @@ Future<void> initDependencies() async {
 
   // Vertex AI Service
   if (!getIt.isRegistered<VertexAiService>()) {
-    getIt.registerLazySingleton<VertexAiService>(
-      () => VertexAiService(),
-    );
+    getIt.registerLazySingleton<VertexAiService>(() => VertexAiService());
   }
 
   // Dashboard Logic

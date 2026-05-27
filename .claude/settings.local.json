@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.fvm/flutter_sdk/bin/flutter.bat test *)",
+      "Bash(firebase deploy *)",
+      "Bash(.fvm/flutter_sdk/bin/flutter.bat analyze *)",
+      "Bash(grep -v \"^$\")"
+    ]
+  }
+}

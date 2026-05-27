@@ -11,7 +11,9 @@ import 'package:personal_finance/utils/injection_container.dart';
 import 'package:uuid/uuid.dart';
 
 class AddDebtDialog extends StatefulWidget {
-  const AddDebtDialog({super.key});
+  const AddDebtDialog({super.key, this.initialDebt});
+
+  final Debt? initialDebt;
 
   @override
   State<AddDebtDialog> createState() => _AddDebtDialogState();
@@ -27,6 +29,22 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
 
   DateTime? _nextPaymentDate;
 
+  bool get _isEditing => widget.initialDebt != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.initialDebt;
+    if (d != null) {
+      _nameController.text = d.name;
+      _amountController.text = d.originalAmount.toStringAsFixed(2);
+      _balanceController.text = d.currentBalance.toStringAsFixed(2);
+      _interestController.text = d.interestRate.toStringAsFixed(2);
+      _minimumController.text = d.minimumPayment.toStringAsFixed(2);
+      _nextPaymentDate = d.nextPaymentDate;
+    }
+  }
+
   void _submit() {
     if (_formKey.currentState!.validate() && _nextPaymentDate != null) {
       final name = _nameController.text.trim();
@@ -35,21 +53,34 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
       final interest = double.parse(_interestController.text.trim());
       final minimum = double.parse(_minimumController.text.trim());
 
-      final newDebt = Debt(
-        id: const Uuid().v4(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        deviceId: getIt<DeviceService>().deviceId,
-        version: 1,
-        name: name,
-        originalAmount: amount,
-        currentBalance: balance,
-        interestRate: interest,
-        minimumPayment: minimum,
-        nextPaymentDate: _nextPaymentDate!,
-      );
-
-      context.read<DebtsBloc>().add(DebtCreate(newDebt));
+      if (_isEditing) {
+        final updated = widget.initialDebt!.copyWith(
+          name: name,
+          originalAmount: amount,
+          currentBalance: balance,
+          interestRate: interest,
+          minimumPayment: minimum,
+          nextPaymentDate: _nextPaymentDate!,
+          updatedAt: DateTime.now(),
+          version: widget.initialDebt!.version + 1,
+        );
+        context.read<DebtsBloc>().add(DebtUpdate(updated));
+      } else {
+        final newDebt = Debt(
+          id: const Uuid().v4(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          deviceId: getIt<DeviceService>().deviceId,
+          version: 1,
+          name: name,
+          originalAmount: amount,
+          currentBalance: balance,
+          interestRate: interest,
+          minimumPayment: minimum,
+          nextPaymentDate: _nextPaymentDate!,
+        );
+        context.read<DebtsBloc>().add(DebtCreate(newDebt));
+      }
       Navigator.of(context).pop();
     } else if (_nextPaymentDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -58,6 +89,16 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    _balanceController.dispose();
+    _interestController.dispose();
+    _minimumController.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,7 +114,7 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Agregar Nueva Deuda',
+                _isEditing ? 'Editar Deuda' : 'Agregar Nueva Deuda',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -187,7 +228,7 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   const SizedBox(width: 16),
                   FilledButton(
                     onPressed: _submit,
-                    child: const Text('Guardar'),
+                    child: Text(_isEditing ? 'Guardar Cambios' : 'Guardar'),
                   ),
                 ],
               ),

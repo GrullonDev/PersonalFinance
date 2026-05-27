@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_state.dart';
 import 'package:personal_finance/features/debts/presentation/widgets/add_debt_dialog.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
@@ -448,8 +449,37 @@ class _DebtsPageState extends State<DebtsPage> {
     ),
   );
 
+  Future<void> _confirmDelete(BuildContext context, Debt debt) async {
+    final bloc = context.read<DebtsBloc>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Eliminar deuda'),
+        content: Text(
+          '¿Seguro que deseas eliminar "${debt.name}"? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      bloc.add(DebtDelete(debt.id));
+    }
+  }
+
   Widget _buildDebtItem(BuildContext context, Debt debt, FinanceColors colors) {
     final progress = 1 - (debt.currentBalance / debt.originalAmount);
+    final isCompleted = debt.currentBalance <= 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -457,7 +487,11 @@ class _DebtsPageState extends State<DebtsPage> {
       decoration: BoxDecoration(
         color: colors.glassBackground,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.glassBorder),
+        border: Border.all(
+          color: isCompleted
+              ? Colors.green.withValues(alpha: 0.4)
+              : colors.glassBorder,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,12 +501,16 @@ class _DebtsPageState extends State<DebtsPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.1),
+                  color: isCompleted
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.redAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(
-                  Icons.credit_card_rounded,
-                  color: Colors.redAccent,
+                child: Icon(
+                  isCompleted
+                      ? Icons.check_circle_rounded
+                      : Icons.credit_card_rounded,
+                  color: isCompleted ? Colors.green : Colors.redAccent,
                 ),
               ),
               const SizedBox(width: 16),
@@ -489,12 +527,20 @@ class _DebtsPageState extends State<DebtsPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Tasa: ${debt.interestRate}% anual',
+                      isCompleted
+                          ? '¡Deuda completada! 🎉'
+                          : 'Tasa: ${debt.interestRate}% anual',
                       style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: isCompleted
+                            ? Colors.green
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
                         fontSize: 12,
+                        fontWeight: isCompleted
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -505,9 +551,10 @@ class _DebtsPageState extends State<DebtsPage> {
                 children: [
                   Text(
                     '${CurrencyHelper.symbol}${debt.currentBalance.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
+                      color: isCompleted ? Colors.green : null,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -518,6 +565,51 @@ class _DebtsPageState extends State<DebtsPage> {
                         context,
                       ).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    showDialog<void>(
+                      context: context,
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<DebtsBloc>(),
+                        child: AddDebtDialog(initialDebt: debt),
+                      ),
+                    );
+                  } else if (value == 'delete') {
+                    _confirmDelete(context, debt);
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 18),
+                        SizedBox(width: 12),
+                        Text('Editar'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline,
+                            size: 18, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text(
+                          'Eliminar',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ],
                     ),
                   ),
                 ],

@@ -1,17 +1,9 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 class CurrencyHelper {
-  /// Devuelve el símbolo de la moneda basado en la ubicación local del dispositivo.
-  static String get symbol {
-    final String localeName = kIsWeb ? 'en_US' : Platform.localeName;
-    return NumberFormat.simpleCurrency(locale: localeName).currencySymbol;
-  }
+  static const String symbol = 'Q';
 
-  /// Formatea el monto dado usando la moneda local del dispositivo.
-  static String format(double amount) {
-    final String localeName = kIsWeb ? 'en_US' : Platform.localeName;
-    return NumberFormat.simpleCurrency(locale: localeName).format(amount);
-  }
+  /// Formatea el monto con el símbolo de Quetzal guatemalteco.
+  static String format(double amount) =>
+      NumberFormat.currency(symbol: 'Q', decimalDigits: 2).format(amount);
 }

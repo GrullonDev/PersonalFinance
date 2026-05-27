@@ -16,9 +16,7 @@ class PushNotificationService {
 
   Future<void> init() async {
     // Request permission (mostly for iOS)
-    final NotificationSettings settings = await _fcm.requestPermission(
-      
-    );
+    final NotificationSettings settings = await _fcm.requestPermission();
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       developer.log('User granted permission');
@@ -108,10 +106,9 @@ class PushNotificationService {
 
   Future<void> _saveTokenToFirestore(String userId, String token) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .set({'fcm_token': token}, SetOptions(merge: true));
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'fcm_token': token,
+      }, SetOptions(merge: true));
       developer.log('FCM Token guardado en Firestore para el usuario: $userId');
     } catch (e) {
       developer.log('Error al guardar FCM Token en Firestore: $e', error: e);

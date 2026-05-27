@@ -82,8 +82,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
       final result = await scanner.scanReceipt();
       if (result != null) {
         if (result.title != null) _titleController.text = result.title!;
-        if (result.amount != null)
+        if (result.amount != null) {
           _amountController.text = result.amount!.toStringAsFixed(2);
+        }
         if (result.category != null &&
             _categorySuggestions.contains(result.category)) {
           setState(() => _selectedCategory = result.category!);
@@ -176,7 +177,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                         FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
                         LengthLimitingTextInputFormatter(120),
                       ],
-                      validator: (String? value) => InputSanitizer.validateName(value ?? ''),
+                      validator:
+                          (String? value) =>
+                              InputSanitizer.validateName(value ?? ''),
                     ),
               ),
               const SizedBox(height: 16),
@@ -192,11 +195,13 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   border: OutlineInputBorder(),
                   prefixText: 'Q ',
                 ),
-                validator: (String? value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (String? value) =>
+                        InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items:
                     _categorySuggestions
                         .map(
@@ -209,9 +214,12 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 decoration: InputDecoration(
                   labelText: 'Categoría',
                   border: const OutlineInputBorder(),
-                  helperText: _isCategorizing
-                      ? '✨ Gemini está clasificando el gasto...'
-                      : (_hasBeenAutoCategorized ? 'Categorizado por Gemini IA ✨' : null),
+                  helperText:
+                      _isCategorizing
+                          ? '✨ Gemini está clasificando el gasto...'
+                          : (_hasBeenAutoCategorized
+                              ? 'Categorizado por Gemini IA ✨'
+                              : null),
                   helperStyle: TextStyle(
                     color: _isCategorizing ? Colors.blue : Colors.purple,
                     fontWeight: FontWeight.bold,
@@ -259,7 +267,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     if (_formKey.currentState!.validate()) {
                       // Agregar el gasto
                       await dashboardLogic.addExpense(
-                        title: InputSanitizer.sanitizeText(_titleController.text.trim()),
+                        title: InputSanitizer.sanitizeText(
+                          _titleController.text.trim(),
+                        ),
                         amount: _amountController.text.trim(),
                         date: _selectedDate,
                         category: _selectedCategory,

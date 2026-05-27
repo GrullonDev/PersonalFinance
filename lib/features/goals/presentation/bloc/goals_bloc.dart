@@ -8,6 +8,46 @@ import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
 
+// ── Milestone helpers ────────────────────────────────────────────────────────
+
+/// Returns the highest milestone (50, 60, 70, 80, 90, 100) just crossed,
+/// or null if no milestone boundary was passed.
+int? _crossedGoalMilestone(double oldPct, double newPct) {
+  int? highest;
+  for (final int m in const <int>[50, 60, 70, 80, 90, 100]) {
+    if (oldPct < m && newPct >= m) highest = m;
+  }
+  return highest;
+}
+
+String _goalMilestoneTitle(int pct) {
+  if (pct == 100) return '🏆 ¡Meta Completada!';
+  if (pct >= 80) return '🔥 ¡Casi lo logras!';
+  if (pct >= 60) return '💪 ¡Muy buen progreso!';
+  return '🚀 ¡Vas a la mitad!';
+}
+
+String _goalMilestoneBody(int pct, String nombre, double current, double target) {
+  final String curr = '${CurrencyHelper.symbol}${current.toStringAsFixed(0)}';
+  final String tgt = '${CurrencyHelper.symbol}${target.toStringAsFixed(0)}';
+  switch (pct) {
+    case 100:
+      return '¡Felicidades! Completaste tu meta "$nombre" ($curr). ¡Lo lograste! 🎉';
+    case 90:
+      return '¡Ya llevas el 90% de "$nombre"! ($curr / $tgt). Un último esfuerzo. ✨';
+    case 80:
+      return '¡Increíble! Tienes el 80% de "$nombre" ($curr / $tgt). ¡La recta final! 💪';
+    case 70:
+      return '¡70% completado de "$nombre"! ($curr / $tgt). Vas muy bien. 💚';
+    case 60:
+      return '¡Llevas el 60% de "$nombre"! ($curr / $tgt). Más de la mitad. 🌟';
+    default:
+      return '¡Ya llevas el 50% de "$nombre"! ($curr / $tgt). La mitad del camino. 🚀';
+  }
+}
+
+// ── Events ───────────────────────────────────────────────────────────────────
+
 abstract class GoalsEvent extends Equatable {
   @override
   List<Object?> get props => <Object?>[];
@@ -30,6 +70,8 @@ class GoalDelete extends GoalsEvent {
   final String id;
 }
 
+// ── State ────────────────────────────────────────────────────────────────────
+
 class GoalsState extends Equatable {
   const GoalsState({
     this.loading = false,
@@ -50,6 +92,8 @@ class GoalsState extends Equatable {
   @override
   List<Object?> get props => <Object?>[loading, error, items];
 }
+
+// ── BLoC ─────────────────────────────────────────────────────────────────────
 
 class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
   GoalsBloc(this._repo) : super(const GoalsState()) {
@@ -84,20 +128,24 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
         );
         try {
           final notif = GetIt.instance<NotificationService>();
-          final double targetAmount = double.tryParse(g.montoObjetivo) ?? 0.0;
+          final double target = double.tryParse(g.montoObjetivo) ?? 0.0;
           notif.local.showNotification(
             id: g.id.hashCode,
             title: '🎯 ¡Meta de Ahorro Creada!',
-            body: 'Has creado la meta "${g.nombre}" con un objetivo de ${CurrencyHelper.symbol}${targetAmount.toStringAsFixed(0)}. ¡Mucho éxito!',
+            body: 'Has creado la meta "${g.nombre}" con un objetivo de ${CurrencyHelper.symbol}${target.toStringAsFixed(0)}. ¡Mucho éxito!',
           );
-        } catch (e) {
-          // ignore or log
-        }
+        } catch (_) {}
       },
     );
   }
 
   Future<void> _onUpdate(GoalUpdate event, Emitter<GoalsState> emit) async {
+    // Capture old value before any state change so we can detect milestone crossings.
+    Goal? oldGoal;
+    try {
+      oldGoal = state.items.firstWhere((Goal e) => e.id == event.payload.id);
+    } catch (_) {}
+
     emit(state.copyWith(loading: true));
     final Either<Failure, Goal> r = await _repo.updateGoal(event.payload);
     r.fold(
@@ -111,16 +159,32 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
         );
         try {
           final notif = GetIt.instance<NotificationService>();
-          final double currentAmount = double.tryParse(g.montoActual) ?? 0.0;
-          final double targetAmount = double.tryParse(g.montoObjetivo) ?? 0.0;
-          notif.local.showNotification(
-            id: g.id.hashCode,
-            title: '✨ Meta de Ahorro Actualizada',
-            body: 'Tu meta "${g.nombre}" ahora tiene un acumulado de ${CurrencyHelper.symbol}${currentAmount.toStringAsFixed(0)} de ${CurrencyHelper.symbol}${targetAmount.toStringAsFixed(0)}.',
-          );
-        } catch (e) {
-          // ignore or log
-        }
+          final double newAmount = double.tryParse(g.montoActual) ?? 0.0;
+          final double target = double.tryParse(g.montoObjetivo) ?? 0.0;
+
+          final double oldPct = (target > 0 && oldGoal != null)
+              ? (oldGoal.actualAsDouble / target) * 100
+              : 0;
+          final double newPct =
+              target > 0 ? (newAmount / target) * 100 : 0;
+
+          final int? milestone = _crossedGoalMilestone(oldPct, newPct);
+
+          if (milestone != null) {
+            notif.local.showNotification(
+              id: g.id.hashCode,
+              title: _goalMilestoneTitle(milestone),
+              body: _goalMilestoneBody(milestone, g.nombre, newAmount, target),
+            );
+          } else {
+            notif.local.showNotification(
+              id: g.id.hashCode,
+              title: '✨ Meta de Ahorro Actualizada',
+              body:
+                  'Tu meta "${g.nombre}" ahora tiene ${CurrencyHelper.symbol}${newAmount.toStringAsFixed(0)} de ${CurrencyHelper.symbol}${target.toStringAsFixed(0)}.',
+            );
+          }
+        } catch (_) {}
       },
     );
   }

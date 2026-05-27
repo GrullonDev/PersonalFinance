@@ -34,3 +34,14 @@
 -keep class io.flutter.plugins.sharedpreferences.** { *; }
 
 # Hive is pure Dart, so it does not need Android-side keep rules beyond its path plugins.
+
+# ML Kit text recognition: suppress missing optional language-script classes.
+# The app only uses Latin script, so Chinese/Devanagari/Japanese/Korean packs are not included.
+-dontwarn com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions

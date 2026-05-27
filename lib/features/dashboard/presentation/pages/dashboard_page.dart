@@ -79,7 +79,9 @@ class _DashboardContent extends StatelessWidget {
                             : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                if (logic.insightMessage != null || logic.personalizedTip != null || logic.isLoadingTip) ...[
+                                if (logic.insightMessage != null ||
+                                    logic.personalizedTip != null ||
+                                    logic.isLoadingTip) ...[
                                   _buildInsightsCard(context, logic),
                                   const SizedBox(height: 24),
                                 ],
@@ -164,7 +166,9 @@ class _DashboardContent extends StatelessWidget {
                                 flex: 5,
                                 child: Column(
                                   children: <Widget>[
-                                    if (logic.insightMessage != null || logic.personalizedTip != null || logic.isLoadingTip) ...[
+                                    if (logic.insightMessage != null ||
+                                        logic.personalizedTip != null ||
+                                        logic.isLoadingTip) ...[
                                       _buildInsightsCard(context, logic),
                                       const SizedBox(height: 32),
                                     ],
@@ -241,7 +245,7 @@ class _DashboardContent extends StatelessWidget {
 
   Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) {
     final String tipText = logic.personalizedTip ?? logic.insightMessage ?? '';
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -282,7 +286,9 @@ class _DashboardContent extends StatelessWidget {
                         height: 12,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.green,
+                          ),
                         ),
                       ),
                     ],
@@ -290,12 +296,17 @@ class _DashboardContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  logic.isLoadingTip ? 'Generando consejos financieros a tu medida...' : tipText,
+                  logic.isLoadingTip
+                      ? 'Generando consejos financieros a tu medida...'
+                      : tipText,
                   style: TextStyle(
                     fontSize: 15,
                     color: Theme.of(context).colorScheme.onSurface,
                     height: 1.4,
-                    fontStyle: logic.isLoadingTip ? FontStyle.italic : FontStyle.normal,
+                    fontStyle:
+                        logic.isLoadingTip
+                            ? FontStyle.italic
+                            : FontStyle.normal,
                   ),
                 ),
               ],
@@ -476,7 +487,10 @@ class _DashboardContent extends StatelessWidget {
                               if (logic.savingsStreak > 0) ...[
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
@@ -484,7 +498,11 @@ class _DashboardContent extends StatelessWidget {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.local_fire_department, color: Colors.orange, size: 14),
+                                      const Icon(
+                                        Icons.local_fire_department,
+                                        color: Colors.orange,
+                                        size: 14,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Racha: ${logic.savingsStreak} d',
