@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
+import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/core/services/notifications/notification_service.dart';
 import 'package:personal_finance/core/services/notifications/local_notification_service.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
@@ -21,7 +23,9 @@ import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 
-class MockLocalNotificationService extends Mock implements LocalNotificationService {}
+class MockLocalNotificationService extends Mock
+    implements LocalNotificationService {}
+
 class MockNotificationService extends Mock implements NotificationService {}
 
 class MockAddTransaction extends Mock implements AddTransaction {}
@@ -45,17 +49,48 @@ class MockGoalRepository extends Mock implements GoalRepository {}
 
 class MockDebtRepository extends Mock implements DebtRepository {}
 
-class FakeTransactionEntity extends Fake implements TransactionEntity {}
-
-class FakeGoal extends Fake implements Goal {}
-
-class FakeDebt extends Fake implements Debt {}
+class MockDeviceService extends Mock implements DeviceService {}
 
 void main() {
   setUpAll(() {
-    registerFallbackValue(FakeTransactionEntity());
-    registerFallbackValue(FakeGoal());
-    registerFallbackValue(FakeDebt());
+    registerFallbackValue(
+      TransactionEntity(
+        id: '',
+        userId: '',
+        type: TransactionType.expense,
+        amount: 0,
+        note: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        syncStatus: SyncStatus.pending,
+        version: 1,
+        deviceId: '',
+      ),
+    );
+    registerFallbackValue(
+      Goal(
+        id: '',
+        nombre: '',
+        montoObjetivo: '',
+        montoActual: '',
+        fechaLimite: DateTime.now(),
+      ),
+    );
+    registerFallbackValue(
+      Debt(
+        id: '',
+        name: '',
+        currentBalance: 0,
+        originalAmount: 0,
+        interestRate: 0,
+        nextPaymentDate: DateTime.now(),
+        minimumPayment: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        deviceId: '',
+        version: 1,
+      ),
+    );
   });
 
   group('QuickFinanceBloc Goals & Debts Integration Tests', () {
@@ -70,6 +105,7 @@ void main() {
     late MockAuthDataSource mockAuthDataSource;
     late MockGoalRepository mockGoalRepository;
     late MockDebtRepository mockDebtRepository;
+    late MockDeviceService mockDeviceService;
 
     setUp(() {
       mockAddTransaction = MockAddTransaction();
@@ -82,6 +118,7 @@ void main() {
       mockAuthDataSource = MockAuthDataSource();
       mockGoalRepository = MockGoalRepository();
       mockDebtRepository = MockDebtRepository();
+      mockDeviceService = MockDeviceService();
 
       bloc = QuickFinanceBloc(
         addTransaction: mockAddTransaction,
@@ -94,21 +131,28 @@ void main() {
         authDataSource: mockAuthDataSource,
         goalRepository: mockGoalRepository,
         debtRepository: mockDebtRepository,
+        deviceService: mockDeviceService,
       );
 
       final mockNotificationService = MockNotificationService();
       final mockLocalNotificationService = MockLocalNotificationService();
-      when(() => mockNotificationService.local).thenReturn(mockLocalNotificationService);
-      when(() => mockLocalNotificationService.showNotification(
-            id: any(named: 'id'),
-            title: any(named: 'title'),
-            body: any(named: 'body'),
-          )).thenAnswer((_) async {});
+      when(
+        () => mockNotificationService.local,
+      ).thenReturn(mockLocalNotificationService);
+      when(
+        () => mockLocalNotificationService.showNotification(
+          id: any(named: 'id'),
+          title: any(named: 'title'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer((_) async {});
 
       if (GetIt.instance.isRegistered<NotificationService>()) {
         GetIt.instance.unregister<NotificationService>();
       }
-      GetIt.instance.registerSingleton<NotificationService>(mockNotificationService);
+      GetIt.instance.registerSingleton<NotificationService>(
+        mockNotificationService,
+      );
 
       when(() => mockAuthDataSource.currentUserId).thenReturn('test-user');
       when(() => mockAddTransaction.call(any())).thenAnswer((_) async {});
@@ -482,12 +526,14 @@ void main() {
 
         // Assert
         final notif = GetIt.instance<NotificationService>();
-        verify(() => notif.local.showNotification(
-              id: goal.id.hashCode,
-              title: '🏆 ¡Meta Completada!',
-              body: any(named: 'body'),
-              payload: RoutePath.goalsCrud,
-            )).called(1);
+        verify(
+          () => notif.local.showNotification(
+            id: goal.id.hashCode,
+            title: '🏆 ¡Meta Completada!',
+            body: any(named: 'body'),
+            payload: RoutePath.goalsCrud,
+          ),
+        ).called(1);
       },
     );
 
@@ -524,12 +570,14 @@ void main() {
 
         // Assert
         final notif = GetIt.instance<NotificationService>();
-        verify(() => notif.local.showNotification(
-              id: debt.id.hashCode,
-              title: '🎉 ¡Deuda Liquidada!',
-              body: any(named: 'body'),
-              payload: RoutePath.debts,
-            )).called(1);
+        verify(
+          () => notif.local.showNotification(
+            id: debt.id.hashCode,
+            title: '🎉 ¡Deuda Liquidada!',
+            body: any(named: 'body'),
+            payload: RoutePath.debts,
+          ),
+        ).called(1);
       },
     );
 
@@ -565,9 +613,10 @@ void main() {
 
         // Assert
         final capturedDebt =
-            verify(() => mockDebtRepository.updateDebt(captureAny()))
-                .captured
-                .single as Debt;
+            verify(
+                  () => mockDebtRepository.updateDebt(captureAny()),
+                ).captured.single
+                as Debt;
         expect(capturedDebt.currentBalance, 400.0);
       },
     );
@@ -604,9 +653,10 @@ void main() {
 
         // Assert
         final capturedDebt =
-            verify(() => mockDebtRepository.updateDebt(captureAny()))
-                .captured
-                .single as Debt;
+            verify(
+                  () => mockDebtRepository.updateDebt(captureAny()),
+                ).captured.single
+                as Debt;
         expect(capturedDebt.currentBalance, 200.0);
       },
     );
@@ -636,10 +686,14 @@ void main() {
             deviceId: 'device-1',
             version: 1,
           );
-          
+
           final localMockDebtRepository = MockDebtRepository();
-          when(() => localMockDebtRepository.getDebts()).thenAnswer((_) async => Right([debt]));
-          when(() => localMockDebtRepository.updateDebt(any())).thenAnswer((_) async => Right(debt));
+          when(
+            () => localMockDebtRepository.getDebts(),
+          ).thenAnswer((_) async => Right([debt]));
+          when(
+            () => localMockDebtRepository.updateDebt(any()),
+          ).thenAnswer((_) async => Right(debt));
 
           final localBloc = QuickFinanceBloc(
             addTransaction: mockAddTransaction,
@@ -652,6 +706,7 @@ void main() {
             authDataSource: mockAuthDataSource,
             goalRepository: mockGoalRepository,
             debtRepository: localMockDebtRepository,
+            deviceService: mockDeviceService,
           );
 
           // Act
@@ -662,9 +717,10 @@ void main() {
 
           // Assert
           final capturedDebt =
-              verify(() => localMockDebtRepository.updateDebt(captureAny()))
-                  .captured
-                  .single as Debt;
+              verify(
+                    () => localMockDebtRepository.updateDebt(captureAny()),
+                  ).captured.single
+                  as Debt;
           expect(capturedDebt.currentBalance, 200.0);
 
           localBloc.close();
@@ -698,9 +754,10 @@ void main() {
 
         // Assert
         final capturedGoal =
-            verify(() => mockGoalRepository.updateGoal(captureAny()))
-                .captured
-                .single as Goal;
+            verify(
+                  () => mockGoalRepository.updateGoal(captureAny()),
+                ).captured.single
+                as Goal;
         expect(capturedGoal.montoActual, '300.0');
       },
     );

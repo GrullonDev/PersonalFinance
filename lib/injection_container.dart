@@ -20,6 +20,7 @@ import 'package:personal_finance/features/quick_finance/domain/usecases/watch_tr
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_bloc.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
+import 'package:personal_finance/core/services/device_service.dart';
 
 final sl = GetIt.instance;
 
@@ -107,6 +108,7 @@ Future<void> init(HiveAesCipher hiveCipher) async {
       authDataSource: sl(),
       goalRepository: sl<GoalRepository>(),
       debtRepository: sl<DebtRepository>(),
+      deviceService: sl<DeviceService>(),
     ),
   );
 }

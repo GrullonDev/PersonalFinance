@@ -88,18 +88,17 @@ class TransactionFirestoreMapper {
   /// [docId] es el ID del documento en Firestore; se usa como `id` de la
   /// entidad si el campo `id` no está en el mapa.
   ///
-  /// [extras] recibe los campos del legacy que no existen en [TransactionEntity]
+  /// El parámetro extras recibe los campos del legacy que no existen en [TransactionEntity]
   /// (categoryId, isRecurring, profileId). Permite que el repositorio los
   /// persista o los ignore según la capa de negocio.
-  static ({
-    TransactionEntity entity,
-    TransactionFirestoreExtras extras,
-  }) fromFirestore(Map<String, dynamic> data, {required String docId}) {
+  static ({TransactionEntity entity, TransactionFirestoreExtras extras})
+  fromFirestore(Map<String, dynamic> data, {required String docId}) {
     final isLegacy = !data.containsKey(_fType) && data.containsKey(_legacyTipo);
 
-    final entity = isLegacy
-        ? _fromLegacy(data, docId: docId)
-        : _fromMvp(data, docId: docId);
+    final entity =
+        isLegacy
+            ? _fromLegacy(data, docId: docId)
+            : _fromMvp(data, docId: docId);
 
     final extras = TransactionFirestoreExtras(
       categoryId: _str(data[_fCategoryId] ?? data[_legacyCategoriaId]),
@@ -123,56 +122,53 @@ class TransactionFirestoreMapper {
   static Map<String, dynamic> toFirestore(
     TransactionEntity entity, {
     TransactionFirestoreExtras extras = const TransactionFirestoreExtras(),
-  }) {
-    return {
-      _fId: entity.id,
-      _fUserId: entity.userId,
-      _fType: _typeToString(entity.type),
-      _fAmount: entity.amount,
-      _fNote: entity.note,
-      _fCreatedAt: entity.createdAt.toIso8601String(),
-      _fUpdatedAt: entity.updatedAt.toIso8601String(),
-      _fDeletedAt: entity.deletedAt?.toIso8601String(),
-      _fSyncStatus: _syncStatusToString(entity.syncStatus),
-      _fVersion: entity.version,
-      _fDeviceId: entity.deviceId,
-      // Extensiones opcionales — null se omite si no hay valor
-      if (extras.categoryId != null) _fCategoryId: extras.categoryId,
-      if (extras.isRecurring != null) _fIsRecurring: extras.isRecurring,
-      if (extras.profileId != null) _fProfileId: extras.profileId,
-    };
-  }
+  }) => {
+    _fId: entity.id,
+    _fUserId: entity.userId,
+    _fType: _typeToString(entity.type),
+    _fAmount: entity.amount,
+    _fNote: entity.note,
+    _fCreatedAt: entity.createdAt.toIso8601String(),
+    _fUpdatedAt: entity.updatedAt.toIso8601String(),
+    _fDeletedAt: entity.deletedAt?.toIso8601String(),
+    _fSyncStatus: _syncStatusToString(entity.syncStatus),
+    _fVersion: entity.version,
+    _fDeviceId: entity.deviceId,
+    // Extensiones opcionales — null se omite si no hay valor
+    if (extras.categoryId != null) _fCategoryId: extras.categoryId,
+    if (extras.isRecurring != null) _fIsRecurring: extras.isRecurring,
+    if (extras.profileId != null) _fProfileId: extras.profileId,
+  };
 
   // ── Parsers internos ──────────────────────────────────────────────────────
 
   static TransactionEntity _fromMvp(
     Map<String, dynamic> data, {
     required String docId,
-  }) {
-    return TransactionEntity(
-      id: _str(data[_fId]) ?? docId,
-      userId: _str(data[_fUserId]) ?? '',
-      type: _typeFromString(data[_fType]),
-      amount: _double(data[_fAmount]),
-      note: _str(data[_fNote]) ?? '',
-      categoryId: _str(data[_fCategoryId] ?? data[_legacyCategoriaId]),
-      createdAt: _dateTime(data[_fCreatedAt]) ?? DateTime.now(),
-      updatedAt: _dateTime(data[_fUpdatedAt]) ?? DateTime.now(),
-      deletedAt: _dateTime(data[_fDeletedAt]),
-      syncStatus: _syncStatusFromString(data[_fSyncStatus]),
-      version: _int(data[_fVersion]),
-      deviceId: _str(data[_fDeviceId]) ?? '',
-    );
-  }
+  }) => TransactionEntity(
+    id: _str(data[_fId]) ?? docId,
+    userId: _str(data[_fUserId]) ?? '',
+    type: _typeFromString(data[_fType]),
+    amount: _double(data[_fAmount]),
+    note: _str(data[_fNote]) ?? '',
+    categoryId: _str(data[_fCategoryId] ?? data[_legacyCategoriaId]),
+    createdAt: _dateTime(data[_fCreatedAt]) ?? DateTime.now(),
+    updatedAt: _dateTime(data[_fUpdatedAt]) ?? DateTime.now(),
+    deletedAt: _dateTime(data[_fDeletedAt]),
+    syncStatus: _syncStatusFromString(data[_fSyncStatus]),
+    version: _int(data[_fVersion]),
+    deviceId: _str(data[_fDeviceId]) ?? '',
+  );
 
   static TransactionEntity _fromLegacy(
     Map<String, dynamic> data, {
     required String docId,
   }) {
     // "ingreso" → income, cualquier otra cosa → expense
-    final type = (data[_legacyTipo] as String? ?? '').toLowerCase() == 'ingreso'
-        ? TransactionType.income
-        : TransactionType.expense;
+    final type =
+        (data[_legacyTipo] as String? ?? '').toLowerCase() == 'ingreso'
+            ? TransactionType.income
+            : TransactionType.expense;
 
     // El legacy guarda la fecha como "YYYY-MM-DD"; createdAt se usa para ello
     final fecha = _dateFromDateString(data[_legacyFecha] as String?);
@@ -186,8 +182,8 @@ class TransactionFirestoreMapper {
       categoryId: _str(data[_legacyCategoriaId] ?? data[_fCategoryId]),
       createdAt: fecha ?? DateTime.now(),
       updatedAt: fecha ?? DateTime.now(),
-      deletedAt: null, // el legacy no tiene soft-delete
-      syncStatus: SyncStatus.synced, // si viene del server, ya está sincronizado
+      syncStatus:
+          SyncStatus.synced, // si viene del server, ya está sincronizado
       version: 1,
       deviceId: '', // el legacy no registra deviceId
     );
@@ -205,18 +201,17 @@ class TransactionFirestoreMapper {
         : TransactionType.expense;
   }
 
-  static String _syncStatusToString(SyncStatus status) =>
-      switch (status) {
-        SyncStatus.pending => 'pending',
-        SyncStatus.synced  => 'synced',
-        SyncStatus.failed  => 'failed',
-      };
+  static String _syncStatusToString(SyncStatus status) => switch (status) {
+    SyncStatus.pending => 'pending',
+    SyncStatus.synced => 'synced',
+    SyncStatus.failed => 'failed',
+  };
 
   static SyncStatus _syncStatusFromString(dynamic raw) =>
       switch ((raw as String? ?? '').toLowerCase()) {
-        'synced'  => SyncStatus.synced,
-        'failed'  => SyncStatus.failed,
-        _         => SyncStatus.pending,
+        'synced' => SyncStatus.synced,
+        'failed' => SyncStatus.failed,
+        _ => SyncStatus.pending,
       };
 
   static String? _str(dynamic v) => v is String ? v : null;
@@ -225,7 +220,7 @@ class TransactionFirestoreMapper {
     if (v is double) return v;
     if (v is int) return v.toDouble();
     if (v is String) return double.tryParse(v) ?? 0.0;
-    return 0.0;
+    return 0;
   }
 
   static int _int(dynamic v) {
@@ -265,7 +260,7 @@ class TransactionFirestoreMapper {
 // ── Datos extendidos ──────────────────────────────────────────────────────────
 
 /// Campos presentes en Firestore que no tienen campo equivalente en
-/// [TransactionEntity]. Se devuelven por separado desde [fromFirestore]
+/// [TransactionEntity]. Se devuelven por separado desde el mapper
 /// para que el repositorio decida cómo usarlos.
 ///
 /// - [categoryId]: referencia a `users/{uid}/categories/{catId}`

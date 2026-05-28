@@ -319,13 +319,7 @@ _CatInfo _categorize(TransactionEntity t) {
     );
   }
 
-  if (_has(text, [
-    'venta',
-    'ventas',
-    'negocio',
-    'comercio',
-    'producto',
-  ])) {
+  if (_has(text, ['venta', 'ventas', 'negocio', 'comercio', 'producto'])) {
     return const _CatInfo(
       icon: Icons.storefront_rounded,
       iconBg: Color(0xFFE8F5E9),

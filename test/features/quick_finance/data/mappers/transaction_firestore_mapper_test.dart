@@ -39,10 +39,10 @@ void main() {
     id: 'tx_new',
     userId: 'user_uid',
     type: TransactionType.income,
-    amount: 500.0,
+    amount: 500,
     note: 'bono',
-    createdAt: DateTime(2026, 4, 11, 10, 0),
-    updatedAt: DateTime(2026, 4, 11, 10, 0),
+    createdAt: DateTime(2026, 4, 11, 10),
+    updatedAt: DateTime(2026, 4, 11, 10),
     syncStatus: SyncStatus.pending,
     version: 1,
     deviceId: 'pixel_7',
@@ -81,7 +81,7 @@ void main() {
     });
 
     test('createdAt parseada desde ISO8601', () {
-      expect(result.createdAt, DateTime(2026, 4, 11, 20, 0));
+      expect(result.createdAt, DateTime(2026, 4, 11, 20));
     });
 
     test('deletedAt null', () {
@@ -113,10 +113,10 @@ void main() {
 
   group('fromFirestore — type income', () {
     test('"income" → TransactionType.income', () {
-      final r = TransactionFirestoreMapper.fromFirestore(
-        {...mvpDoc, 'type': 'income'},
-        docId: docId,
-      );
+      final r = TransactionFirestoreMapper.fromFirestore({
+        ...mvpDoc,
+        'type': 'income',
+      }, docId: docId);
       expect(r.entity.type, TransactionType.income);
     });
   });
@@ -179,10 +179,10 @@ void main() {
     });
 
     test('"gasto" → TransactionType.expense', () {
-      final r = TransactionFirestoreMapper.fromFirestore(
-        {...legacyDoc, 'tipo': 'gasto'},
-        docId: docId,
-      );
+      final r = TransactionFirestoreMapper.fromFirestore({
+        ...legacyDoc,
+        'tipo': 'gasto',
+      }, docId: docId);
       expect(r.entity.type, TransactionType.expense);
     });
   });
@@ -192,7 +192,10 @@ void main() {
   group('fromFirestore — fallback de id', () {
     test('usa docId cuando el campo "id" no existe en el mapa', () {
       final data = {...mvpDoc}..remove('id');
-      final r = TransactionFirestoreMapper.fromFirestore(data, docId: 'fallback_id');
+      final r = TransactionFirestoreMapper.fromFirestore(
+        data,
+        docId: 'fallback_id',
+      );
       expect(r.entity.id, 'fallback_id');
     });
   });
@@ -200,18 +203,19 @@ void main() {
   // ── fromFirestore — syncStatus values ─────────────────────────────────────
 
   group('fromFirestore — syncStatus', () {
-    for (final entry in {
-      'pending': SyncStatus.pending,
-      'synced': SyncStatus.synced,
-      'failed': SyncStatus.failed,
-      'unknown': SyncStatus.pending, // valor desconocido → pending
-      null: SyncStatus.pending,
-    }.entries) {
+    for (final entry
+        in {
+          'pending': SyncStatus.pending,
+          'synced': SyncStatus.synced,
+          'failed': SyncStatus.failed,
+          'unknown': SyncStatus.pending, // valor desconocido → pending
+          null: SyncStatus.pending,
+        }.entries) {
       test('syncStatus "${entry.key}" → ${entry.value}', () {
-        final r = TransactionFirestoreMapper.fromFirestore(
-          {...mvpDoc, 'syncStatus': entry.key},
-          docId: docId,
-        );
+        final r = TransactionFirestoreMapper.fromFirestore({
+          ...mvpDoc,
+          'syncStatus': entry.key,
+        }, docId: docId);
         expect(r.entity.syncStatus, entry.value);
       });
     }
@@ -272,17 +276,18 @@ void main() {
   // ── toFirestore — syncStatus strings ──────────────────────────────────────
 
   group('toFirestore — syncStatus serialization', () {
-    for (final entry in {
-      SyncStatus.pending: 'pending',
-      SyncStatus.synced: 'synced',
-      SyncStatus.failed: 'failed',
-    }.entries) {
+    for (final entry
+        in {
+          SyncStatus.pending: 'pending',
+          SyncStatus.synced: 'synced',
+          SyncStatus.failed: 'failed',
+        }.entries) {
       test('${entry.key} → "${entry.value}"', () {
         final e = TransactionEntity(
           id: 'x',
           userId: 'u',
           type: TransactionType.expense,
-          amount: 1.0,
+          amount: 1,
           note: '',
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),

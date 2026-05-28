@@ -128,9 +128,10 @@ class QuickEntryParser {
     var type = TransactionType.expense; // gasto por defecto sin signo
     final signMatch = _signPattern.firstMatch(working);
     if (signMatch != null) {
-      type = signMatch.group(1) == '+'
-          ? TransactionType.income
-          : TransactionType.expense;
+      type =
+          signMatch.group(1) == '+'
+              ? TransactionType.income
+              : TransactionType.expense;
       working = working.substring(1).trim();
     }
 
@@ -157,11 +158,13 @@ class QuickEntryParser {
     final noteRaw = working.substring(amountMatch.end).trim();
     final note = noteRaw.isEmpty ? _defaultNote : noteRaw;
 
-    return ParseSuccess(ParsedEntry(
-      type: type,
-      amount: amount,
-      note: note,
-      category: tags.isNotEmpty ? tags.first : null,
-    ));
+    return ParseSuccess(
+      ParsedEntry(
+        type: type,
+        amount: amount,
+        note: note,
+        category: tags.isNotEmpty ? tags.first : null,
+      ),
+    );
   }
 }

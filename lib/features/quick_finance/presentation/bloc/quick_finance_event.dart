@@ -1,7 +1,9 @@
 import 'package:equatable/equatable.dart';
-import '../../../../core/constants/enums.dart';
-import '../../domain/entities/transaction_entity.dart';
-import '../../domain/entities/balance_summary_entity.dart';
+import 'package:personal_finance/features/quick_finance/domain/parsers/quick_entry_parser.dart'
+    show QuickEntryParser;
+import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/features/quick_finance/domain/entities/balance_summary_entity.dart';
 
 abstract class QuickFinanceEvent extends Equatable {
   const QuickFinanceEvent();
@@ -114,6 +116,7 @@ class SyncStateChanged extends QuickFinanceEvent {
 class ConnectivityChanged extends QuickFinanceEvent {
   final bool isOnline;
 
+  // ignore: avoid_positional_boolean_parameters
   const ConnectivityChanged(this.isOnline);
 
   @override

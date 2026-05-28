@@ -459,24 +459,27 @@ class _DebtsPageState extends State<DebtsPage> {
     final bloc = context.read<DebtsBloc>();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Eliminar deuda'),
-        content: Text(
-          '¿Seguro que deseas eliminar "${debt.name}"? Esta acción no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text('Eliminar deuda'),
+            content: Text(
+              '¿Seguro que deseas eliminar "${debt.name}"? Esta acción no se puede deshacer.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Eliminar'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
     );
     if (confirmed == true) {
       bloc.add(DebtDelete(debt.id));
@@ -494,9 +497,10 @@ class _DebtsPageState extends State<DebtsPage> {
         color: colors.glassBackground,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isCompleted
-              ? Colors.green.withValues(alpha: 0.4)
-              : colors.glassBorder,
+          color:
+              isCompleted
+                  ? Colors.green.withValues(alpha: 0.4)
+                  : colors.glassBorder,
         ),
       ),
       child: Column(
@@ -507,9 +511,10 @@ class _DebtsPageState extends State<DebtsPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isCompleted
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.redAccent.withValues(alpha: 0.1),
+                  color:
+                      isCompleted
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.redAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
@@ -537,16 +542,15 @@ class _DebtsPageState extends State<DebtsPage> {
                           ? '¡Deuda completada! 🎉'
                           : 'Tasa: ${debt.interestRate}% anual',
                       style: TextStyle(
-                        color: isCompleted
-                            ? Colors.green
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.6),
+                        color:
+                            isCompleted
+                                ? Colors.green
+                                : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
-                        fontWeight: isCompleted
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                        fontWeight:
+                            isCompleted ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -584,41 +588,46 @@ class _DebtsPageState extends State<DebtsPage> {
                   if (value == 'edit') {
                     showDialog<void>(
                       context: context,
-                      builder: (_) => BlocProvider.value(
-                        value: context.read<DebtsBloc>(),
-                        child: AddDebtDialog(initialDebt: debt),
-                      ),
+                      builder:
+                          (_) => BlocProvider.value(
+                            value: context.read<DebtsBloc>(),
+                            child: AddDebtDialog(initialDebt: debt),
+                          ),
                     );
                   } else if (value == 'delete') {
                     _confirmDelete(context, debt);
                   }
                 },
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined, size: 18),
-                        SizedBox(width: 12),
-                        Text('Editar'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline,
-                            size: 18, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text(
-                          'Eliminar',
-                          style: TextStyle(color: Colors.red),
+                itemBuilder:
+                    (_) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 18),
+                            SizedBox(width: 12),
+                            Text('Editar'),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: Colors.red,
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'Eliminar',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
             ],
           ),

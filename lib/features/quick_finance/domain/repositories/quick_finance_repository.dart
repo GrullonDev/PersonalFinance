@@ -1,5 +1,5 @@
-import '../../domain/entities/transaction_entity.dart';
-import '../../domain/entities/balance_summary_entity.dart';
+import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/features/quick_finance/domain/entities/balance_summary_entity.dart';
 
 abstract class QuickFinanceRepository {
   /// Stream local-first: emite inmediatamente desde Hive y dispara un fetch

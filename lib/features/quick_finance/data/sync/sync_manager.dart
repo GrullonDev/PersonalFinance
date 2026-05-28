@@ -137,7 +137,8 @@ class SyncManager {
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
       List<ConnectivityResult> results,
     ) {
-      final isConnected = results.isNotEmpty &&
+      final isConnected =
+          results.isNotEmpty &&
           results.any((r) => r != ConnectivityResult.none);
       // Solo sincronizar en la transición offline → online.
       if (isConnected && _wasConnected == false) {

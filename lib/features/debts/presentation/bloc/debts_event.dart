@@ -36,3 +36,14 @@ class DebtDelete extends DebtsEvent {
   @override
   List<Object> get props => [debtId];
 }
+
+/// Updates local BLoC state only — no Firestore write. Used after an external
+/// write (e.g. QuickFinanceBloc) so the UI reflects the change immediately.
+class DebtStateUpdated extends DebtsEvent {
+  final Debt debt;
+
+  const DebtStateUpdated(this.debt);
+
+  @override
+  List<Object> get props => [debt];
+}
