@@ -8,6 +8,7 @@ import 'package:personal_finance/features/debts/domain/repositories/debt_reposit
 import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_state.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 
 // ── Milestone helpers ────────────────────────────────────────────────────────
 
@@ -24,7 +25,7 @@ String _debtMilestoneTitle(int pct) =>
     pct == 100 ? '🎉 ¡Deuda Liquidada!' : '💪 ¡80% de la deuda pagado!';
 
 String _debtMilestoneBody(int pct, String nombre, double balance, double original) {
-  const String sym = CurrencyHelper.symbol;
+  final String sym = CurrencyHelper.symbol;
   if (pct == 100) {
     return '¡Felicidades! Liquidaste completamente la deuda "$nombre" ($sym${original.toStringAsFixed(0)}). ¡Eres libre! 🎊';
   }
@@ -50,23 +51,8 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
       (List<Debt> r) {
         emit(state.copyWith(loading: false, items: r));
-        _scheduleUpcomingPaymentReminders(r);
       },
     );
-  }
-
-  void _scheduleUpcomingPaymentReminders(List<Debt> debts) {
-    try {
-      final notif = GetIt.instance<NotificationService>();
-      for (final Debt d in debts) {
-        notif.scheduleDebtPaymentReminder(
-          debtId: d.id,
-          debtName: d.name,
-          paymentDate: d.nextPaymentDate,
-          minimumPayment: d.minimumPayment,
-        );
-      }
-    } catch (_) {}
   }
 
   Future<void> _onCreate(DebtCreate event, Emitter<DebtsState> emit) async {
@@ -81,21 +67,6 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
             items: List<Debt>.from(state.items)..add(r),
           ),
         );
-        try {
-          final notif = GetIt.instance<NotificationService>();
-          notif.local.showNotification(
-            id: r.id.hashCode,
-            title: '📉 ¡Deuda Registrada!',
-            body:
-                'Has registrado la deuda "${r.name}" con un saldo de ${CurrencyHelper.symbol}${r.currentBalance.toStringAsFixed(0)}. Sigue tu plan de pagos.',
-          );
-          notif.scheduleDebtPaymentReminder(
-            debtId: r.id,
-            debtName: r.name,
-            paymentDate: r.nextPaymentDate,
-            minimumPayment: r.minimumPayment,
-          );
-        } catch (_) {}
       },
     );
   }
@@ -128,21 +99,12 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
               ? (1 - r.currentBalance / r.originalAmount) * 100
               : 0;
 
-          final int? milestone = _crossedDebtMilestone(oldPaidPct, newPaidPct);
-
-          if (milestone != null) {
+          if (oldPaidPct < 100 && newPaidPct >= 100) {
             notif.local.showNotification(
               id: r.id.hashCode,
-              title: _debtMilestoneTitle(milestone),
-              body: _debtMilestoneBody(
-                  milestone, r.name, r.currentBalance, r.originalAmount),
-            );
-          } else {
-            notif.local.showNotification(
-              id: r.id.hashCode,
-              title: '🔄 Deuda Actualizada',
-              body:
-                  'Tu deuda "${r.name}" ha sido actualizada. Saldo actual: ${CurrencyHelper.symbol}${r.currentBalance.toStringAsFixed(0)}.',
+              title: '🎉 ¡Deuda Liquidada!',
+              body: '¡Felicidades! Liquidaste completamente la deuda "${r.name}" (${CurrencyHelper.symbol}${r.originalAmount.toStringAsFixed(0)}). ¡Eres libre! 🎊',
+              payload: RoutePath.debts,
             );
           }
         } catch (_) {}

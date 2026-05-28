@@ -7,6 +7,7 @@ import 'package:personal_finance/core/services/notifications/notification_servic
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 
 // ── Milestone helpers ────────────────────────────────────────────────────────
 
@@ -133,6 +134,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
             id: g.id.hashCode,
             title: '🎯 ¡Meta de Ahorro Creada!',
             body: 'Has creado la meta "${g.nombre}" con un objetivo de ${CurrencyHelper.symbol}${target.toStringAsFixed(0)}. ¡Mucho éxito!',
+            payload: RoutePath.goalsCrud,
           );
         } catch (_) {}
       },
@@ -168,20 +170,12 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
           final double newPct =
               target > 0 ? (newAmount / target) * 100 : 0;
 
-          final int? milestone = _crossedGoalMilestone(oldPct, newPct);
-
-          if (milestone != null) {
+          if (oldPct < 100 && newPct >= 100) {
             notif.local.showNotification(
               id: g.id.hashCode,
-              title: _goalMilestoneTitle(milestone),
-              body: _goalMilestoneBody(milestone, g.nombre, newAmount, target),
-            );
-          } else {
-            notif.local.showNotification(
-              id: g.id.hashCode,
-              title: '✨ Meta de Ahorro Actualizada',
-              body:
-                  'Tu meta "${g.nombre}" ahora tiene ${CurrencyHelper.symbol}${newAmount.toStringAsFixed(0)} de ${CurrencyHelper.symbol}${target.toStringAsFixed(0)}.',
+              title: '🏆 ¡Meta Completada!',
+              body: '¡Felicidades! Completaste tu meta "${g.nombre}" (${CurrencyHelper.symbol}${newAmount.toStringAsFixed(0)}). ¡Lo lograste! 🎉',
+              payload: RoutePath.goalsCrud,
             );
           }
         } catch (_) {}

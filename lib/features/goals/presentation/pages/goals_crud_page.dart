@@ -147,8 +147,8 @@ class GoalsCrudPage extends StatelessWidget {
   const GoalsCrudPage({super.key, this.showAppBar = true});
 
   @override
-  Widget build(BuildContext context) => BlocProvider<GoalsBloc>(
-    create: (_) => GoalsBloc(getIt<GoalRepository>())..add(GoalsLoad()),
+  Widget build(BuildContext context) => BlocProvider<GoalsBloc>.value(
+    value: getIt<GoalsBloc>()..add(GoalsLoad()),
     child: _GoalsView(showAppBar: showAppBar),
   );
 }

@@ -81,7 +81,7 @@ class MyApp extends StatelessWidget {
       ),
       BlocProvider<DebtsBloc>(
         create:
-            (_) => DebtsBloc(getIt<DebtRepository>())..add(DebtsLoad()),
+            (_) => getIt<DebtsBloc>()..add(DebtsLoad()),
       ),
       ChangeNotifierProvider<NotificationInboxProvider>(
         create:

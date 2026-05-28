@@ -21,6 +21,12 @@ class _DebtsPageState extends State<DebtsPage> {
   bool _isSnowballMethod = true;
 
   @override
+  void initState() {
+    super.initState();
+    context.read<DebtsBloc>().add(DebtsLoad());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<FinanceColors>()!;
 

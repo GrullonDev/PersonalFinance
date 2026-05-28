@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 enum _Period { today, week, month }
 
@@ -24,8 +24,6 @@ class BalanceCard extends StatefulWidget {
 class _BalanceCardState extends State<BalanceCard> {
   bool _hidden = false;
   _Period _period = _Period.today;
-
-  static final _fmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
 
   void _toggleVisibility() {
     if (widget.forceHidden) return;
@@ -76,18 +74,18 @@ class _BalanceCardState extends State<BalanceCard> {
         if (expenses == 0 && income == 0) return 'Sin movimientos hoy';
         if (expenses == 0) return 'Sin gastos hoy';
         if (effectiveHidden) return 'Tienes gastos registrados hoy';
-        return 'Gastaste ${_fmt.format(expenses)} hoy';
+        return 'Gastaste ${CurrencyHelper.format(expenses)} hoy';
       case _Period.week:
         if (expenses == 0 && income == 0) return 'Sin movimientos esta semana';
         if (expenses == 0) return 'Sin gastos esta semana';
         if (effectiveHidden) return 'Tienes gastos esta semana';
-        return 'Gastaste ${_fmt.format(expenses)} esta semana';
+        return 'Gastaste ${CurrencyHelper.format(expenses)} esta semana';
       case _Period.month:
         if (expenses == 0 && income == 0) return 'Sin movimientos este mes';
         if (balance < 0) return 'Balance negativo este mes';
         if (balance == 0) return 'Sin ganancias ni pérdidas';
         if (effectiveHidden) return 'Balance positivo este mes';
-        return 'Ahorraste ${_fmt.format(balance)} este mes';
+        return 'Ahorraste ${CurrencyHelper.format(balance)} este mes';
     }
   }
 
@@ -213,7 +211,7 @@ class _BalanceCardState extends State<BalanceCard> {
             duration: const Duration(milliseconds: 200),
             child: Text(
               key: ValueKey('$effectiveHidden$_period$balance'),
-              effectiveHidden ? '••••' : _fmt.format(balance),
+              effectiveHidden ? '••••' : CurrencyHelper.format(balance),
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -324,8 +322,9 @@ String _inferCat(TransactionEntity t) {
     'restaurante',
     'super',
     'mercado',
-  ]))
+  ])) {
     return 'comida';
+  }
   if (_kw(text, [
     'transporte',
     'taxi',
@@ -334,8 +333,19 @@ String _inferCat(TransactionEntity t) {
     'metro',
     'gasolina',
     'coche',
-  ]))
+  ])) {
     return 'transporte';
+  }
+  if (_kw(text, [
+    'venta',
+    'ventas',
+    'negocio',
+    'comercio',
+    'producto',
+  ])) {
+    return 'negocio';
+  }
+
   if (_kw(text, [
     'servicio',
     'luz',
@@ -344,14 +354,18 @@ String _inferCat(TransactionEntity t) {
     'internet',
     'renta',
     'alquiler',
-  ]))
+  ])) {
     return 'servicios';
-  if (_kw(text, ['compra', 'tienda', 'ropa', 'amazon', 'mall', 'shopping']))
+  }
+  if (_kw(text, ['compra', 'tienda', 'ropa', 'amazon', 'mall', 'shopping'])) {
     return 'compras';
-  if (_kw(text, ['salud', 'medico', 'farmacia', 'gym', 'deporte']))
+  }
+  if (_kw(text, ['salud', 'medico', 'farmacia', 'gym', 'deporte'])) {
     return 'salud';
-  if (_kw(text, ['cine', 'netflix', 'spotify', 'streaming']))
+  }
+  if (_kw(text, ['cine', 'netflix', 'spotify', 'streaming'])) {
     return 'entretenimiento';
+  }
   return t.categoryId ?? 'otros';
 }
 
@@ -436,8 +450,6 @@ class _StatRow extends StatelessWidget {
   final bool hidden;
   final bool alignRight;
 
-  static final _fmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
-
   const _StatRow({
     required this.icon,
     required this.iconBg,
@@ -467,7 +479,7 @@ class _StatRow extends StatelessWidget {
               style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
             ),
             Text(
-              hidden ? '••' : _fmt.format(amount),
+              hidden ? '••' : CurrencyHelper.format(amount),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
