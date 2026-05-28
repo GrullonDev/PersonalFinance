@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -55,7 +56,7 @@ class LocalNotificationService {
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse details) {
-        if (details.payload != null) {
+        if (details.payload != null && details.payload!.isNotEmpty) {
           _navigationService.navigateTo(details.payload!);
         } else {
           _navigationService.navigateTo(RoutePath.notificationsInbox);
@@ -134,24 +135,56 @@ class LocalNotificationService {
     required DateTime scheduledDate,
     String? payload,
   }) async {
-    await _notificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'personal_finance_scheduled',
-          'Recordatorios Programados',
-          channelDescription: 'Recordatorios de pagos y vencimientos',
-          importance: Importance.max,
-          priority: Priority.high,
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'personal_finance_scheduled',
+            'Recordatorios Programados',
+            channelDescription: 'Recordatorios de pagos y vencimientos',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: payload,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
+      );
+    } on PlatformException catch (e) {
+      if (e.code == 'exact_alarms_not_permitted') {
+        debugPrint('Exact alarms not permitted, scheduling inexactly instead: ${e.message}');
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            id: id,
+            title: title,
+            body: body,
+            scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+            notificationDetails: const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'personal_finance_scheduled',
+                'Recordatorios Programados',
+                channelDescription: 'Recordatorios de pagos y vencimientos',
+                importance: Importance.max,
+                priority: Priority.high,
+              ),
+              iOS: DarwinNotificationDetails(),
+            ),
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            payload: payload,
+          );
+        } catch (e2) {
+          debugPrint('Failed to schedule inexact notification: $e2');
+        }
+      } else {
+        rethrow;
+      }
+    } catch (e) {
+      debugPrint('Unexpected error scheduling notification: $e');
+    }
 
     // For scheduled notifications, we don't save to inbox yet
     // because it hasn't "happened" for the user.

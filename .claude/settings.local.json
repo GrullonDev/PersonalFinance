@@ -7,7 +7,9 @@
       "Bash(grep -v \"^$\")",
       "Bash(dir \"c:/Users/jgrullon/Documents/MISARCHIVOS/AppsFlutter/PersonalFinance/android/\")",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && ls {} 2>/dev/null | head -5')",
+      "Bash(grep -v \":0$\")"
     ]
   }
 }

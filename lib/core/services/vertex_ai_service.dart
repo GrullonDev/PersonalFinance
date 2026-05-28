@@ -103,6 +103,7 @@ Dada la descripción o título de un gasto, debes clasificarlo en EXACTAMENTE un
 - Compras
 - Salud
 - Créditos
+- Negocio
 - Otros
 
 Gasto a clasificar: "$title"
@@ -122,6 +123,7 @@ Responde únicamente con el nombre de la categoría elegida, exactamente como ap
         'Compras',
         'Salud',
         'Créditos',
+        'Negocio',
         'Otros',
       ];
 
@@ -191,7 +193,9 @@ $goalsSummary
 Deudas del usuario:
 $debtsSummary
 
-Por favor, responde directamente con el consejo corto de 1 o 2 frases. Si el usuario tiene deudas con altas tasas de interés, prioriza sugerir atacarlas (ej. método avalancha o bola de nieve). Si tiene metas de ahorro rezagadas, aconséjale cómo ajustar sus gastos. No agregues saludos, introducciones ni explicaciones de tu análisis.
+Por favor, responde directamente con el consejo corto de 1 o 2 frases.
+IMPORTANTE: Si detectas que el usuario tiene movimientos (ingresos o gastos) relacionados con un negocio, ventas o emprendimiento (por ejemplo, transacciones que mencionen 'ventas', 'venta', 'negocio', 'cliente', 'mercadería', etc.), debes reconocer y hacer mención de que realiza actividades comerciales. Ofrécele un consejo financiero estratégico para optimizar el flujo de caja de su negocio, reinvertir utilidades o separar sus finanzas personales de las comerciales.
+Si el usuario tiene deudas con altas tasas de interés, prioriza sugerir atacarlas (ej. método avalancha o bola de nieve). Si tiene metas de ahorro rezagadas, aconséjale cómo ajustar sus gastos. No agregues saludos, introducciones ni explicaciones de tu análisis.
 ''';
 
     try {
@@ -223,7 +227,8 @@ $ocrText
 Responde ÚNICAMENTE con JSON válido, sin texto adicional ni bloques de código:
 {"amount": 125.50, "merchant": "Supermercado La Torre", "date": "2024-01-15", "category": "Alimentación", "description": "Compras supermercado"}
 
-Categorías válidas: Alimentación, Transporte, Hogar, Entretenimiento, Compras, Salud, Créditos, Otros
+Categorías válidas: Alimentación, Transporte, Hogar, Entretenimiento, Compras, Salud, Créditos, Negocio, Otros
+Si el documento tiene relación con ventas, clientes o inventario de un negocio, clasifícalo en la categoría "Negocio".
 Si no puedes extraer un campo, usa null. El monto debe ser el total del documento.
 ''';
 
@@ -263,7 +268,9 @@ Ingresos recientes totales: Q${totalIncomes.toStringAsFixed(0)}
 Gastos recientes:
 $expensesSummary
 
-Responde en máximo 2 frases, en español. Sé específico: menciona el monto estimado total y las categorías principales. No agregues saludos ni explicaciones.
+Responde en máximo 2 frases, en español.
+Si detectas gastos o ingresos relacionados con ventas o con su negocio, tenlo en cuenta para estimar el flujo de caja operativo y hazle una breve mención sobre el comportamiento financiero de su negocio o emprendimiento.
+Sé específico: menciona el monto estimado total y las categorías principales. No agregues saludos ni explicaciones.
 ''';
 
     try {
@@ -314,7 +321,7 @@ Escala de grades: A (90–100), B (75–89), C (60–74), D (45–59), F (0–44
 Responde ÚNICAMENTE con JSON válido, sin texto adicional:
 {"score": 72, "grade": "B", "summary": "Tu balance es positivo y tienes metas activas, pero tus deudas representan el 45% de tu ingreso. Enfócate en reducirlas."}
 
-El summary debe ser 1 frase concreta y motivadora en español.
+El summary debe ser 1 frase concreta y motivadora en español. Si el usuario cuenta con ingresos o egresos por concepto de ventas o negocio, adapta tu frase/resumen para valorar positivamente su emprendimiento y dale un tip rápido para su control financiero comercial.
 ''';
 
     try {

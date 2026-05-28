@@ -59,6 +59,8 @@ import 'package:personal_finance/core/services/notifications/local_notification_
 import 'package:personal_finance/core/services/notifications/push_notification_service.dart';
 import 'package:personal_finance/core/services/notifications/notification_service.dart';
 import 'package:personal_finance/core/services/notifications/notification_permission_service.dart';
+import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
 import 'package:personal_finance/core/services/notifications/push_token_manager.dart';
 import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart'
     as notif_inbox_repo;
@@ -314,6 +316,16 @@ Future<void> initDependencies() async {
         getActiveGoalsUseCase: getIt<GetActiveGoalsUseCase>(),
         getActiveBudgetsUseCase: getIt<GetActiveBudgetsUseCase>(),
       ),
+    );
+  }
+  if (!getIt.isRegistered<GoalsBloc>()) {
+    getIt.registerLazySingleton<GoalsBloc>(
+      () => GoalsBloc(getIt<GoalRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<DebtsBloc>()) {
+    getIt.registerLazySingleton<DebtsBloc>(
+      () => DebtsBloc(getIt<DebtRepository>()),
     );
   }
   if (!getIt.isRegistered<VersionService>()) {

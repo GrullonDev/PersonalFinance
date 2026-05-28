@@ -1,5 +1,6 @@
 import 'package:personal_finance/core/services/notifications/local_notification_service.dart';
 import 'package:personal_finance/core/services/notifications/push_notification_service.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
 
 class NotificationService {
   final LocalNotificationService local;
@@ -28,6 +29,7 @@ class NotificationService {
       title: 'Recordatorio de Pago',
       body: 'Tu pago de $name vence pronto.',
       scheduledDate: date,
+      payload: RoutePath.debts,
     );
   }
 
@@ -36,6 +38,7 @@ class NotificationService {
       id: category.hashCode,
       title: 'Alerta de Presupuesto',
       body: 'Has consumido el $percentage% de tu presupuesto en $category.',
+      payload: RoutePath.budgetsCrud,
     );
   }
 
@@ -68,6 +71,7 @@ class NotificationService {
       body:
           '"$debtName": pago mínimo de Q${minimumPayment.toStringAsFixed(0)} vence $dayLabel. ¡No lo olvides!',
       scheduledDate: scheduledDate,
+      payload: RoutePath.debts,
     );
   }
 }
