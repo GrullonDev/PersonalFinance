@@ -1,6 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
+import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_model.dart';
+import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart';
 
 class TransactionLogic extends ChangeNotifier {
   TransactionModel? _currentTransaction;
@@ -88,9 +93,36 @@ class TransactionLogic extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implement actual saving logic with your backend service
-      await Future<void>.delayed(const Duration(seconds: 1)); // Simulated delay
+      final String? uid = FirebaseAuth.instance.currentUser?.uid;
+      final String deviceId = GetIt.instance<DeviceService>().deviceId;
+      final DateTime now = DateTime.now();
+      final TransactionModel tx = _currentTransaction!;
+
+      final TransactionBackend entity = TransactionBackend(
+        id: now.millisecondsSinceEpoch.toString(),
+        tipo: tx.type == TransactionType.expense ? 'gasto' : 'ingreso',
+        monto: tx.amount.toString(),
+        descripcion: tx.description ?? '',
+        fecha: tx.date,
+        categoriaId: tx.category,
+        esRecurrente: tx.isRecurring,
+        createdAt: now,
+        updatedAt: now,
+        deviceId: deviceId,
+        version: 1,
+        profileType: uid,
+      );
+
+      final repo = GetIt.instance<TransactionBackendRepository>();
+      final result = await repo.create(entity);
+      result.fold(
+        (failure) => throw Exception(failure.message),
+        (_) => null,
+      );
+
       _currentTransaction = null;
+    } catch (e) {
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

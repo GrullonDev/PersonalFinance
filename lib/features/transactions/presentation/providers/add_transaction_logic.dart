@@ -1,4 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+
+import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
+import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart';
 
 class TransactionType {
   static const String expense = 'expense';
@@ -6,7 +12,6 @@ class TransactionType {
 }
 
 class AddTransactionLogic extends ChangeNotifier {
-  // Exponer método público para limpiar errores
   void clearError() => _clearError();
   bool _loading = false;
   String? _error;
@@ -34,8 +39,40 @@ class AddTransactionLogic extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Implementar guardado de transacción
-      await Future<void>.delayed(const Duration(seconds: 1)); // Simulación
+      final String? uid = FirebaseAuth.instance.currentUser?.uid;
+      final String deviceId = GetIt.instance<DeviceService>().deviceId;
+      final DateTime now = DateTime.now();
+
+      final double amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+      final String category = (data['category'] as String?) ?? '';
+      final DateTime fecha = data['date'] is DateTime
+          ? data['date'] as DateTime
+          : DateTime.now();
+      final String descripcion = (data['description'] as String?) ?? '';
+      final bool esRecurrente = (data['isRecurring'] as bool?) ?? false;
+
+      final TransactionBackend entity = TransactionBackend(
+        id: now.millisecondsSinceEpoch.toString(),
+        tipo: type == TransactionType.expense ? 'gasto' : 'ingreso',
+        monto: amount.toString(),
+        descripcion: descripcion,
+        fecha: fecha,
+        categoriaId: category,
+        esRecurrente: esRecurrente,
+        createdAt: now,
+        updatedAt: now,
+        deviceId: deviceId,
+        version: 1,
+        profileType: uid,
+      );
+
+      final repo = GetIt.instance<TransactionBackendRepository>();
+      final result = await repo.create(entity);
+      result.fold(
+        (failure) => throw Exception(failure.message),
+        (_) => null,
+      );
+
       notifyListeners();
     } catch (e) {
       _setError(

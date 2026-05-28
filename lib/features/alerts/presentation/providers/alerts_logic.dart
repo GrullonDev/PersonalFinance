@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 
@@ -12,6 +13,8 @@ class AlertsLogic extends ChangeNotifier {
   bool get isLoading => _loading;
   String? get error => _error;
   bool get hasAlerts => _alerts.isNotEmpty;
+
+  Box<AlertItem> get _alertBox => Hive.box<AlertItem>('alerts');
 
   // Private methods
   void _setLoading(bool loading) {
@@ -32,8 +35,7 @@ class AlertsLogic extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Implementar carga de alertas desde la base de datos
-      _alerts = <AlertItem>[];
+      _alerts = _alertBox.values.toList();
       notifyListeners();
     } catch (e) {
       _setError('Error al cargar alertas: $e');
@@ -44,8 +46,8 @@ class AlertsLogic extends ChangeNotifier {
 
   Future<void> addAlert(AlertItem alert) async {
     try {
-      // TODO: Implementar guardado de alerta en la base de datos
-      _alerts.add(alert);
+      await _alertBox.add(alert);
+      _alerts = _alertBox.values.toList();
       notifyListeners();
     } catch (e) {
       _setError('Error al agregar alerta: $e');
@@ -54,8 +56,14 @@ class AlertsLogic extends ChangeNotifier {
 
   Future<void> removeAlert(AlertItem alert) async {
     try {
-      // TODO: Implementar eliminación de alerta de la base de datos
-      _alerts.remove(alert);
+      final int? key = _alertBox.keys.cast<int?>().firstWhere(
+        (k) => _alertBox.get(k) == alert,
+        orElse: () => null,
+      );
+      if (key != null) {
+        await _alertBox.delete(key);
+      }
+      _alerts = _alertBox.values.toList();
       notifyListeners();
     } catch (e) {
       _setError('Error al eliminar alerta: $e');
