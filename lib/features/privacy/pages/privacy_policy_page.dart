@@ -247,14 +247,21 @@ class PrivacyPolicyPage extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        childrenPadding: const EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          16,
+                        ),
                         expandedCrossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             section['content']!,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               height: 1.6,
-                              color: colorScheme.onSurface.withValues(alpha: 0.8),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.8,
+                              ),
                             ),
                           ),
                         ],

@@ -449,7 +449,10 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                         fecha: _fecha,
                         categoriaId: _categoriaId ?? '',
                         esRecurrente: _recurrente,
-                        profileType: context.read<SettingsProvider>().isBusinessMode ? 'negocio' : 'personal',
+                        profileType:
+                            context.read<SettingsProvider>().isBusinessMode
+                                ? 'negocio'
+                                : 'personal',
                       );
                       bloc.add(TransactionCreate(payload));
 

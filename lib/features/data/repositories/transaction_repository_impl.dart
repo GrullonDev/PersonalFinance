@@ -14,7 +14,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   TransactionRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<Either<Failure, List<ExpenseEntity>>> getExpenses({String? profileType}) async {
+  Future<Either<Failure, List<ExpenseEntity>>> getExpenses({
+    String? profileType,
+  }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
           .list(tipo: 'gasto', profileType: profileType);
@@ -29,7 +31,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<Either<Failure, List<IncomeEntity>>> getIncomes({String? profileType}) async {
+  Future<Either<Failure, List<IncomeEntity>>> getIncomes({
+    String? profileType,
+  }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
           .list(tipo: 'ingreso', profileType: profileType);
@@ -177,7 +181,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'gasto', fechaDesde: start, fechaHasta: end, profileType: profileType);
+          .list(
+            tipo: 'gasto',
+            fechaDesde: start,
+            fechaHasta: end,
+            profileType: profileType,
+          );
       return Right(
         transactions
             .map((TransactionBackendModel tx) => _mapModelToExpense(tx))
@@ -198,7 +207,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }) async {
     try {
       final List<TransactionBackendModel> transactions = await _remoteDataSource
-          .list(tipo: 'ingreso', fechaDesde: start, fechaHasta: end, profileType: profileType);
+          .list(
+            tipo: 'ingreso',
+            fechaDesde: start,
+            fechaHasta: end,
+            profileType: profileType,
+          );
       return Right(
         transactions
             .map((TransactionBackendModel tx) => _mapModelToIncome(tx))
@@ -314,8 +328,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
     String? profileType,
   }) async {
     try {
-      final resultIncomes = await getTotalIncomes(start, end, profileType: profileType);
-      final resultExpenses = await getTotalExpenses(start, end, profileType: profileType);
+      final resultIncomes = await getTotalIncomes(
+        start,
+        end,
+        profileType: profileType,
+      );
+      final resultExpenses = await getTotalExpenses(
+        start,
+        end,
+        profileType: profileType,
+      );
 
       return resultIncomes.fold(
         (Failure l) => Left(l),

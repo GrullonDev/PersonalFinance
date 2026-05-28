@@ -13,7 +13,7 @@ import 'package:personal_finance/utils/routes/route_path.dart';
 
 /// Returns the highest milestone (50, 60, 70, 80, 90, 100) just crossed,
 /// or null if no milestone boundary was passed.
-int? _crossedGoalMilestone(double oldPct, double newPct) {
+/* int? _crossedGoalMilestone(double oldPct, double newPct) {
   int? highest;
   for (final int m in const <int>[50, 60, 70, 80, 90, 100]) {
     if (oldPct < m && newPct >= m) highest = m;
@@ -28,7 +28,12 @@ String _goalMilestoneTitle(int pct) {
   return '🚀 ¡Vas a la mitad!';
 }
 
-String _goalMilestoneBody(int pct, String nombre, double current, double target) {
+String _goalMilestoneBody(
+  int pct,
+  String nombre,
+  double current,
+  double target,
+) {
   final String curr = '${CurrencyHelper.symbol}${current.toStringAsFixed(0)}';
   final String tgt = '${CurrencyHelper.symbol}${target.toStringAsFixed(0)}';
   switch (pct) {
@@ -45,7 +50,7 @@ String _goalMilestoneBody(int pct, String nombre, double current, double target)
     default:
       return '¡Ya llevas el 50% de "$nombre"! ($curr / $tgt). La mitad del camino. 🚀';
   }
-}
+} */
 
 // ── Events ───────────────────────────────────────────────────────────────────
 
@@ -133,7 +138,8 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
           notif.local.showNotification(
             id: g.id.hashCode,
             title: '🎯 ¡Meta de Ahorro Creada!',
-            body: 'Has creado la meta "${g.nombre}" con un objetivo de ${CurrencyHelper.symbol}${target.toStringAsFixed(0)}. ¡Mucho éxito!',
+            body:
+                'Has creado la meta "${g.nombre}" con un objetivo de ${CurrencyHelper.symbol}${target.toStringAsFixed(0)}. ¡Mucho éxito!',
             payload: RoutePath.goalsCrud,
           );
         } catch (_) {}
@@ -164,17 +170,18 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
           final double newAmount = double.tryParse(g.montoActual) ?? 0.0;
           final double target = double.tryParse(g.montoObjetivo) ?? 0.0;
 
-          final double oldPct = (target > 0 && oldGoal != null)
-              ? (oldGoal.actualAsDouble / target) * 100
-              : 0;
-          final double newPct =
-              target > 0 ? (newAmount / target) * 100 : 0;
+          final double oldPct =
+              (target > 0 && oldGoal != null)
+                  ? (oldGoal.actualAsDouble / target) * 100
+                  : 0;
+          final double newPct = target > 0 ? (newAmount / target) * 100 : 0;
 
           if (oldPct < 100 && newPct >= 100) {
             notif.local.showNotification(
               id: g.id.hashCode,
               title: '🏆 ¡Meta Completada!',
-              body: '¡Felicidades! Completaste tu meta "${g.nombre}" (${CurrencyHelper.symbol}${newAmount.toStringAsFixed(0)}). ¡Lo lograste! 🎉',
+              body:
+                  '¡Felicidades! Completaste tu meta "${g.nombre}" (${CurrencyHelper.symbol}${newAmount.toStringAsFixed(0)}). ¡Lo lograste! 🎉',
               payload: RoutePath.goalsCrud,
             );
           }

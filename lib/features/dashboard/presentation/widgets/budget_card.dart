@@ -29,9 +29,10 @@ class BudgetCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(
-          color: hasNoBudget
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-              : isOverBudget
+          color:
+              hasNoBudget
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                  : isOverBudget
                   ? Colors.red.withValues(alpha: 0.3)
                   : Colors.green.withValues(alpha: 0.3),
           width: 1.5,
@@ -44,14 +45,16 @@ class BudgetCard extends StatelessWidget {
           gradient: LinearGradient(
             colors: <Color>[
               hasNoBudget
-                  ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4)
+                  ? Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withValues(alpha: 0.4)
                   : isOverBudget
-                      ? (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.red.withValues(alpha: 0.15)
-                          : Colors.red.shade50)
-                      : (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.green.withValues(alpha: 0.15)
-                          : Colors.green.shade50),
+                  ? (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.red.withValues(alpha: 0.15)
+                      : Colors.red.shade50)
+                  : (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.green.withValues(alpha: 0.15)
+                      : Colors.green.shade50),
               Theme.of(context).colorScheme.surface,
             ],
             begin: Alignment.topLeft,
@@ -71,9 +74,10 @@ class BudgetCard extends StatelessWidget {
                         hasNoBudget
                             ? Icons.account_balance_wallet_outlined
                             : Icons.account_balance_wallet,
-                        color: hasNoBudget
-                            ? Theme.of(context).colorScheme.primary
-                            : isOverBudget
+                        color:
+                            hasNoBudget
+                                ? Theme.of(context).colorScheme.primary
+                                : isOverBudget
                                 ? Colors.red[700]
                                 : Colors.green[700],
                         size: 20,
@@ -101,9 +105,10 @@ class BudgetCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: isOverBudget
-                          ? Colors.red.withValues(alpha: 0.1)
-                          : Colors.green.withValues(alpha: 0.1),
+                      color:
+                          isOverBudget
+                              ? Colors.red.withValues(alpha: 0.1)
+                              : Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -111,7 +116,8 @@ class BudgetCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: isOverBudget ? Colors.red[700] : Colors.green[700],
+                        color:
+                            isOverBudget ? Colors.red[700] : Colors.green[700],
                       ),
                     ),
                   ),
@@ -131,13 +137,18 @@ class BudgetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -171,9 +182,10 @@ class BudgetCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: isOverBudget
-                          ? Colors.red[700]
-                          : Theme.of(context).colorScheme.onSurface,
+                      color:
+                          isOverBudget
+                              ? Colors.red[700]
+                              : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   Text(
@@ -192,7 +204,8 @@ class BudgetCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: (percentage / 100).clamp(0.0, 1.0),
                   minHeight: 12,
-                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     isOverBudget ? Colors.red : Colors.green,
                   ),
@@ -267,4 +280,3 @@ class BudgetCard extends StatelessWidget {
     );
   }
 }
-

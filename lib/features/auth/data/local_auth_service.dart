@@ -10,15 +10,15 @@ import 'package:personal_finance/core/security/security_preferences.dart';
 /// always the authoritative source — never grant data access based solely
 /// on this flag.
 class LocalAuthService {
-  Future<bool> isFirstTime() => SecurityPreferences.getOnboardingComplete()
-      .then((complete) => !complete);
+  Future<bool> isFirstTime() =>
+      SecurityPreferences.getOnboardingComplete().then((complete) => !complete);
 
   Future<void> completeOnboarding() =>
       SecurityPreferences.setOnboardingComplete();
 
   Future<bool> isLoggedIn() => SecurityPreferences.getIsLoggedIn();
 
-  Future<void> login() => SecurityPreferences.setLoggedIn(true);
+  Future<void> login() => SecurityPreferences.setLoggedIn(value: true);
 
-  Future<void> logout() => SecurityPreferences.setLoggedIn(false);
+  Future<void> logout() => SecurityPreferences.setLoggedIn(value: false);
 }

@@ -61,9 +61,10 @@ class NotificationService {
     };
 
     // Notificar a las 9 AM del día del pago (o inmediatamente si es hoy)
-    final scheduledDate = daysUntil == 0
-        ? now.add(const Duration(minutes: 2))
-        : DateTime(paymentDate.year, paymentDate.month, paymentDate.day, 9);
+    final scheduledDate =
+        daysUntil == 0
+            ? now.add(const Duration(minutes: 2))
+            : DateTime(paymentDate.year, paymentDate.month, paymentDate.day, 9);
 
     await local.scheduleNotification(
       id: 'debt_pay_$debtId'.hashCode,

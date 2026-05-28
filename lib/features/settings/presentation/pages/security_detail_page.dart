@@ -51,21 +51,21 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
             'Confirma tu identidad para habilitar el desbloqueo biométrico',
       );
       if (authenticated) {
-        await SecurityPreferences.setBiometricEnabled(true);
+        await SecurityPreferences.setBiometricEnabled(bool: true, value: value);
         await HapticFeedbackService.success();
         setState(() => _biometricEnabled = true);
       } else {
         await HapticFeedbackService.error();
       }
     } else {
-      await SecurityPreferences.setBiometricEnabled(false);
+      await SecurityPreferences.setBiometricEnabled(bool: false, value: value);
       await HapticFeedbackService.selection();
       setState(() => _biometricEnabled = false);
     }
   }
 
   Future<void> _toggleAppLock(bool value) async {
-    await SecurityPreferences.setAppLockEnabled(value);
+    await SecurityPreferences.setAppLockEnabled(value: value);
     if (value) {
       await HapticFeedbackService.success();
     } else {
@@ -164,12 +164,12 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: colorScheme.primary.withOpacity(
-              0.05 + (0.05 * _pulseController.value),
+            color: colorScheme.primary.withValues(
+              alpha: 0.05 + (0.05 * _pulseController.value),
             ),
             border: Border.all(
-              color: colorScheme.primary.withOpacity(
-                0.1 + (0.2 * _pulseController.value),
+              color: colorScheme.primary.withValues(
+                alpha: 0.1 + (0.2 * _pulseController.value),
               ),
               width: 2,
             ),
@@ -183,7 +183,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                 color: colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.3),
+                    color: colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 15 * _pulseController.value,
                     spreadRadius: 2,
                   ),
@@ -210,7 +210,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
         ),
       ),
       child: Column(
@@ -227,8 +227,8 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
                   child: CircularProgressIndicator(
                     value: progress,
                     strokeWidth: 10,
-                    backgroundColor: theme.colorScheme.primary.withOpacity(
-                      0.08,
+                    backgroundColor: theme.colorScheme.primary.withValues(
+                      alpha: 0.08,
                     ),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _scoreColor(theme),
@@ -291,7 +291,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
           decoration: BoxDecoration(
             color:
                 check.enabled
-                    ? Colors.green.withOpacity(0.12)
+                    ? Colors.green.withValues(alpha: 0.12)
                     : theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -420,7 +420,9 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
     decoration: BoxDecoration(
       color: colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+      border: Border.all(
+        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+      ),
     ),
     child: Material(
       color: Colors.transparent,
@@ -429,7 +431,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: colorScheme.primary, size: 24),
@@ -439,7 +441,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
         trailing: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: colorScheme.primary,
+          activeTrackColor: colorScheme.primary,
         ),
       ),
     ),
@@ -458,7 +460,7 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Row(
@@ -484,9 +486,9 @@ class _SecurityDetailPageState extends State<SecurityDetailPage>
   Widget _buildEmergencyNote(ThemeData theme) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.amber.withOpacity(0.1),
+      color: Colors.amber.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.amber.withOpacity(0.3)),
+      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
     ),
     child: Row(
       children: [

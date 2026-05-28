@@ -8,7 +8,7 @@ enum TransactionType {
   @HiveField(0)
   income,
   @HiveField(1)
-  expense
+  expense,
 }
 
 /// Estado de sincronización para operaciones locales/remotas
@@ -19,7 +19,7 @@ enum SyncStatus {
   @HiveField(1)
   synced,
   @HiveField(2)
-  failed
+  failed,
 }
 
 /// Acción a realizar durante una sincronización
@@ -30,5 +30,5 @@ enum SyncAction {
   @HiveField(1)
   update,
   @HiveField(2)
-  delete
+  delete,
 }

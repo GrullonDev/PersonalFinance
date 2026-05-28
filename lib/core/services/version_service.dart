@@ -26,7 +26,7 @@ class VersionService {
         'store_url_ios': '',
       });
       await _remoteConfig.fetchAndActivate();
-      
+
       // Check for Android in-app update
       if (Platform.isAndroid) {
         await _performAndroidUpdate();

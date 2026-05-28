@@ -10,7 +10,7 @@ class TrendAnalyzerService {
 
   Future<List<RecommendationItem>> analyzeTrends({String? profileType}) async {
     final now = DateTime.now();
-    final twoMonthsAgoStart = DateTime(now.year, now.month - 2, 1);
+    final twoMonthsAgoStart = DateTime(now.year, now.month - 2);
 
     final result = await _repository.list(
       fechaDesde: twoMonthsAgoStart,

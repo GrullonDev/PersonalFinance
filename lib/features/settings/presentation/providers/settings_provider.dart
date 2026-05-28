@@ -50,6 +50,7 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setAnimationsEnabled(bool enabled) async {
     _animationsEnabled = enabled;
     final SharedPreferences prefs = await SharedPreferences.getInstance();

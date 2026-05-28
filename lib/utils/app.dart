@@ -80,8 +80,7 @@ class MyApp extends StatelessWidget {
             (_) => BudgetsBloc(getIt<BudgetRepository>())..add(BudgetsLoad()),
       ),
       BlocProvider<DebtsBloc>(
-        create:
-            (_) => getIt<DebtsBloc>()..add(DebtsLoad()),
+        create: (_) => getIt<DebtsBloc>()..add(DebtsLoad()),
       ),
       ChangeNotifierProvider<NotificationInboxProvider>(
         create:
@@ -107,7 +106,9 @@ class MyApp extends StatelessWidget {
             navigatorKey: getIt<NavigationService>().navigatorKey,
             themeMode: settingsProvider.themeMode,
             theme: AppTheme.light(primaryColor: settingsProvider.primaryColor),
-            darkTheme: AppTheme.dark(primaryColor: settingsProvider.primaryColor),
+            darkTheme: AppTheme.dark(
+              primaryColor: settingsProvider.primaryColor,
+            ),
             onGenerateTitle:
                 (BuildContext context) =>
                     AppLocalizations.of(context)?.appTitle ??
@@ -116,8 +117,8 @@ class MyApp extends StatelessWidget {
             // Global builder to clamp text scale and handle App Locking
             builder: (BuildContext context, Widget? child) {
               final MediaQueryData mq = MediaQuery.of(context);
-              
-              double textScale = 1.0;
+
+              double textScale = 1;
               switch (settingsProvider.textSize) {
                 case 'Pequeño':
                   textScale = 0.85;
@@ -140,8 +141,10 @@ class MyApp extends StatelessWidget {
               upgrader: Upgrader(
                 debugLogging: true,
                 durationUntilAlertAgain: const Duration(seconds: 30),
-                minAppVersion: getIt<VersionService>().minAppVersion, // Use min version from Remote Config
-                countryCode: 'es', 
+                minAppVersion:
+                    getIt<VersionService>()
+                        .minAppVersion, // Use min version from Remote Config
+                countryCode: 'es',
                 messages: UpgraderMessages(code: 'es'),
                 // Ensure the iOS store ID or URL is correctly provided if available
               ),

@@ -161,9 +161,7 @@ class CustomDrawer extends StatelessWidget {
     NumberFormat currencyFormat,
   ) => Container(
     height: 220,
-    decoration: BoxDecoration(
-      color: primaryColor,
-    ),
+    decoration: BoxDecoration(color: primaryColor),
     padding: EdgeInsets.only(
       top:
           MediaQuery.of(context).padding.top +
@@ -265,10 +263,7 @@ class CustomDrawer extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: color ?? CupertinoColors.activeBlue,
-        ),
+        leading: Icon(icon, color: color ?? CupertinoColors.activeBlue),
         title: Text(
           title,
           style: theme.textTheme.bodyLarge?.copyWith(

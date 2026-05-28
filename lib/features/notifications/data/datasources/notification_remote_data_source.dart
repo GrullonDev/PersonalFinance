@@ -20,7 +20,8 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     final String? jsonString = _sharedPrefs.getString(_prefsKey);
     if (jsonString != null) {
       try {
-        final Map<String, dynamic> jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+        final Map<String, dynamic> jsonMap =
+            json.decode(jsonString) as Map<String, dynamic>;
         return NotificationPreferencesModel.fromJson(jsonMap);
       } catch (e) {
         return _getDefaultPreferences();

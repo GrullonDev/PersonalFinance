@@ -24,27 +24,28 @@ class TipCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: tipProvider.isLoading
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Generando consejo personalizado...',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
+              child:
+                  tipProvider.isLoading
+                      ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Generando consejo personalizado...',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
+                          const SizedBox(height: 8),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
+                      : Text(
+                        tipProvider.todayTip,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontStyle: FontStyle.italic,
                         ),
-                        const SizedBox(height: 8),
-                        const LinearProgressIndicator(),
-                      ],
-                    )
-                  : Text(
-                      tipProvider.todayTip,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontStyle: FontStyle.italic,
                       ),
-                    ),
             ),
             if (!tipProvider.isLoading)
               IconButton(

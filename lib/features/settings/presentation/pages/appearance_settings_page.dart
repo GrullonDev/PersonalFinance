@@ -182,7 +182,8 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           separatorBuilder: (_, __) => const SizedBox(width: 16),
           itemBuilder: (context, index) {
             final color = _primaryColors[index];
-            final isSelected = settings.primaryColor.value == color.value;
+            final isSelected =
+                settings.primaryColor.toARGB32() == color.toARGB32();
             return GestureDetector(
               onTap: () => settings.setPrimaryColor(color),
               child: AnimatedContainer(

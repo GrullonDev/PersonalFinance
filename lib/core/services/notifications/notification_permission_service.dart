@@ -16,5 +16,6 @@ class NotificationPermissionService {
     return status.isGranted || localResult;
   }
 
-  Future<PermissionStatus> getStatus() async => await Permission.notification.status;
+  Future<PermissionStatus> getStatus() async =>
+      await Permission.notification.status;
 }

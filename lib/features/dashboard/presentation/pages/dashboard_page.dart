@@ -18,6 +18,7 @@ import 'package:personal_finance/features/notifications/presentation/providers/n
 import 'package:personal_finance/core/services/vertex_ai_service.dart'
     show FinancialHealthScore;
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/features/alerts/presentation/widgets/add_alert_modal.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -1177,7 +1178,9 @@ class _DashboardContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         color: Theme.of(context).colorScheme.surface,
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
         boxShadow: [
           BoxShadow(
@@ -1187,105 +1190,107 @@ class _DashboardContent extends StatelessWidget {
           ),
         ],
       ),
-      child: logic.isLoadingHealthScore
-          ? const Row(
-              children: [
-                SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: CircularProgressIndicator(strokeWidth: 4),
-                ),
-                SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Salud Financiera',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Calculando tu puntaje...',
-                        style: TextStyle(fontStyle: FontStyle.italic),
-                      ),
-                    ],
+      child:
+          logic.isLoadingHealthScore
+              ? const Row(
+                children: [
+                  SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: CircularProgressIndicator(strokeWidth: 4),
                   ),
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                SizedBox(
-                  width: 64,
-                  height: 64,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        value: (score?.score ?? 0) / 100,
-                        strokeWidth: 6,
-                        backgroundColor: Colors.grey.withValues(alpha: 0.15),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          scoreColor(score?.score ?? 0),
-                        ),
-                      ),
-                      Text(
-                        score?.grade ?? '-',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: scoreColor(score?.score ?? 0),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Salud Financiera',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                  SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Salud Financiera',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${score?.score ?? 0}/100',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: scoreColor(score?.score ?? 0),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        score?.summary ?? '',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.4,
                         ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                        SizedBox(height: 6),
+                        Text(
+                          'Calculando tu puntaje...',
+                          style: TextStyle(fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              )
+              : Row(
+                children: [
+                  SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: (score?.score ?? 0) / 100,
+                          strokeWidth: 6,
+                          backgroundColor: Colors.grey.withValues(alpha: 0.15),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            scoreColor(score?.score ?? 0),
+                          ),
+                        ),
+                        Text(
+                          score?.grade ?? '-',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: scoreColor(score?.score ?? 0),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Salud Financiera',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${score?.score ?? 0}/100',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: scoreColor(score?.score ?? 0),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          score?.summary ?? '',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
     );
   }
 
@@ -1344,9 +1349,10 @@ class _DashboardContent extends StatelessWidget {
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurface,
                     height: 1.4,
-                    fontStyle: logic.isLoadingPrediction
-                        ? FontStyle.italic
-                        : FontStyle.normal,
+                    fontStyle:
+                        logic.isLoadingPrediction
+                            ? FontStyle.italic
+                            : FontStyle.normal,
                   ),
                 ),
               ],
@@ -1402,8 +1408,12 @@ class _DashboardContent extends StatelessWidget {
                     // No action
                     break;
                   case RecommendationActionType.createBudgetAlert:
-                    // TODO: Handle this case.
-                    throw UnimplementedError();
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const AddAlertModal(),
+                    );
                 }
               },
             );

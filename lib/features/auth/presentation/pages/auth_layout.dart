@@ -58,9 +58,9 @@ class _AuthLayoutState extends State<AuthLayout> {
         width: 72,
         height: 72,
         decoration: BoxDecoration(
-          color: _kGreen.withOpacity(0.12),
+          color: _kGreen.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _kGreen.withOpacity(0.35)),
+          border: Border.all(color: _kGreen.withValues(alpha: 0.35)),
         ),
         child: const Icon(
           Icons.account_balance_wallet_outlined,
@@ -87,73 +87,78 @@ class _AuthLayoutState extends State<AuthLayout> {
       Text(
         'Controla tu dinero en segundos',
         textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 15),
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.5),
+          fontSize: 15,
+        ),
       ),
     ],
   );
 
   // ── Botón Google (CTA principal) ──────────────────────────────────────────
 
-  Widget _buildGoogleButton(
-    BuildContext context,
-    AuthProvider auth,
-  ) => SizedBox(
-    height: 54,
-    child: ElevatedButton(
-      onPressed: auth.isLoading ? null : () => _handleGoogle(context, auth),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1F1F1F),
-        disabledBackgroundColor: Colors.white.withOpacity(0.7),
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ).copyWith(
-        // Sombra ligera sin usar elevation para evitar el tinte de color
-        overlayColor: WidgetStateProperty.all(Colors.grey.withOpacity(0.08)),
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.10),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+  Widget _buildGoogleButton(BuildContext context, AuthProvider auth) =>
+      SizedBox(
+        height: 54,
+        child: ElevatedButton(
+          onPressed: auth.isLoading ? null : () => _handleGoogle(context, auth),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1F1F1F),
+            disabledBackgroundColor: Colors.white.withValues(alpha: 0.7),
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
-          ],
-        ),
-        child:
-            auth.isLoading
-                ? const SizedBox(
-                  height: 22,
-                  width: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF1F1F1F),
-                    ),
-                  ),
-                )
-                : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Icono Google con colores reales (sin ColorFilter)
-                    SvgPicture.asset('assets/icons/google.svg', height: 22),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Continuar con Google',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F1F1F),
-                      ),
-                    ),
-                  ],
+          ).copyWith(
+            // Sombra ligera sin usar elevation para evitar el tinte de color
+            overlayColor: WidgetStateProperty.all(
+              Colors.grey.withValues(alpha: 0.08),
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-      ),
-    ),
-  );
+              ],
+            ),
+            child:
+                auth.isLoading
+                    ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF1F1F1F),
+                        ),
+                      ),
+                    )
+                    : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Icono Google con colores reales (sin ColorFilter)
+                        SvgPicture.asset('assets/icons/google.svg', height: 22),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Continuar con Google',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F1F1F),
+                          ),
+                        ),
+                      ],
+                    ),
+          ),
+        ),
+      );
 
   Future<void> _handleGoogle(BuildContext context, AuthProvider auth) async {
     await HapticFeedbackService.selection();
@@ -175,7 +180,7 @@ class _AuthLayoutState extends State<AuthLayout> {
   // ── Divider ───────────────────────────────────────────────────────────────
 
   Widget _buildDivider(BuildContext context) {
-    final lineColor = Colors.white.withOpacity(0.12);
+    final lineColor = Colors.white.withValues(alpha: 0.12);
     return Row(
       children: [
         Expanded(child: Divider(color: lineColor, thickness: 1)),
@@ -184,7 +189,7 @@ class _AuthLayoutState extends State<AuthLayout> {
           child: Text(
             'o continúa con tu correo',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha: 0.4),
               fontSize: 13,
             ),
           ),
@@ -226,7 +231,7 @@ class _AuthLayoutState extends State<AuthLayout> {
               auth.obscurePassword
                   ? Icons.visibility_outlined
                   : Icons.visibility_off_outlined,
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               size: 20,
             ),
             onPressed: auth.togglePasswordVisibility,
@@ -253,7 +258,7 @@ class _AuthLayoutState extends State<AuthLayout> {
                   ),
                 ),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.white.withOpacity(0.5),
+              foregroundColor: Colors.white.withValues(alpha: 0.5),
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -276,7 +281,7 @@ class _AuthLayoutState extends State<AuthLayout> {
       onPressed: auth.isLoading ? null : () => _handleLogin(context, auth),
       style: ElevatedButton.styleFrom(
         backgroundColor: _kGreen,
-        disabledBackgroundColor: _kGreen.withOpacity(0.4),
+        disabledBackgroundColor: _kGreen.withValues(alpha: 0.4),
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -363,7 +368,7 @@ class _AuthLayoutState extends State<AuthLayout> {
           Text(
             '¿No tienes una cuenta? ',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),
@@ -392,7 +397,7 @@ class _AuthLayoutState extends State<AuthLayout> {
           onPressed: auth.isLoading ? null : () => _handleApple(context, auth),
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.white,
-            side: BorderSide(color: Colors.white.withOpacity(0.15)),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
@@ -414,7 +419,7 @@ class _AuthLayoutState extends State<AuthLayout> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
               ),
             ],
@@ -510,7 +515,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
     decoration: BoxDecoration(
       color: const Color(0xFF1A1F2E),
       borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Colors.white.withOpacity(0.08)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
     ),
     child: Padding(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -522,7 +527,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.12),
+              color: Colors.amber.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -546,7 +551,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             textAlign: TextAlign.center,
             text: TextSpan(
               style: TextStyle(
-                color: Colors.white.withOpacity(0.65),
+                color: Colors.white.withValues(alpha: 0.65),
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -570,9 +575,9 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.08),
+              color: Colors.amber.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.amber.withOpacity(0.2)),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,12 +638,12 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor:
-                    _resent ? _kGreen : Colors.white.withOpacity(0.85),
+                    _resent ? _kGreen : Colors.white.withValues(alpha: 0.85),
                 side: BorderSide(
                   color:
                       _resent
-                          ? _kGreen.withOpacity(0.4)
-                          : Colors.white.withOpacity(0.15),
+                          ? _kGreen.withValues(alpha: 0.4)
+                          : Colors.white.withValues(alpha: 0.15),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -656,7 +661,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             child: TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                foregroundColor: Colors.white.withOpacity(0.5),
+                foregroundColor: Colors.white.withValues(alpha: 0.5),
               ),
               child: const Text('Entendido'),
             ),

@@ -57,9 +57,7 @@ class BiometricService {
             signInTitle: 'Autenticación biométrica',
             cancelButton: 'No, gracias',
           ),
-          IOSAuthMessages(
-            cancelButton: 'No, gracias',
-          ),
+          IOSAuthMessages(cancelButton: 'No, gracias'),
         ],
         biometricOnly: biometricOnly,
         persistAcrossBackgrounding: stickyAuth,

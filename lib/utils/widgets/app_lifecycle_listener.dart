@@ -157,10 +157,15 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
             _lastFailTime = now;
             if (isLocked) {
               _isLockedOut = true;
-              SecurityLogger().logSuspiciousActivity('too_many_biometric_fails');
+              SecurityLogger().logSuspiciousActivity(
+                'too_many_biometric_fails',
+              );
             }
           });
-          await SecurityPreferences.saveBiometricLockout(newCount, isLocked ? now : null);
+          await SecurityPreferences.saveBiometricLockout(
+            newCount,
+            isLocked ? now : null,
+          );
         }
       } finally {
         setState(() => _isAuthenticating = false);
@@ -204,74 +209,76 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
               const SizedBox(height: 24),
               if (_isLockedOut) ...[
                 Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                'Demasiados intentos fallidos.\nPor seguridad, la app está bloqueada temporalmente.\nIntenta de nuevo en $_remainingMinutes minutos.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                  height: 1.4,
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    'Demasiados intentos fallidos.\nPor seguridad, la app está bloqueada temporalmente.\nIntenta de nuevo en $_remainingMinutes minutos.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      height: 1.4,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () async {
-                if (_lastFailTime != null && DateTime.now().difference(_lastFailTime!).inMinutes >= 15) {
-                  setState(() {
-                    _biometricFailCount = 0;
-                    _isLockedOut = false;
-                  });
-                  await SecurityPreferences.saveBiometricLockout(0, null);
-                }
-                _checkLock(forceAuth: true);
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Verificar estado'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    if (_lastFailTime != null &&
+                        DateTime.now().difference(_lastFailTime!).inMinutes >=
+                            15) {
+                      setState(() {
+                        _biometricFailCount = 0;
+                        _isLockedOut = false;
+                      });
+                      await SecurityPreferences.saveBiometricLockout(0, null);
+                    }
+                    _checkLock(forceAuth: true);
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Verificar estado'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ] else ...[
-            ElevatedButton.icon(
-              onPressed: () => _checkLock(forceAuth: true),
-              icon: const Icon(Icons.fingerprint),
-              label: const Text('Desbloquear ahora'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+              ] else ...[
+                ElevatedButton.icon(
+                  onPressed: () => _checkLock(forceAuth: true),
+                  icon: const Icon(Icons.fingerprint),
+                  label: const Text('Desbloquear ahora'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    ),
-  );
-}
+              ],
+            ],
+          ),
+        ),
+      );
+    }
 
-// Obscure financial content while the app is in the background so that
-// the OS app-switcher screenshot does not capture sensitive data.
-// On Android, FLAG_SECURE in MainActivity blocks the screenshot at the
-// system level; this blur is an additional defense for iOS and older Android.
-if (_isObscured) {
-  return Stack(
-    children: [
-      widget.child,
-      Positioned.fill(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: ColoredBox(
-            color: Colors.black.withValues(alpha: 0.4),
+    // Obscure financial content while the app is in the background so that
+    // the OS app-switcher screenshot does not capture sensitive data.
+    // On Android, FLAG_SECURE in MainActivity blocks the screenshot at the
+    // system level; this blur is an additional defense for iOS and older Android.
+    if (_isObscured) {
+      return Stack(
+        children: [
+          widget.child,
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.4),
                 child: const Center(
                   child: Icon(
                     Icons.lock_outline,

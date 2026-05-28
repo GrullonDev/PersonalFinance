@@ -21,7 +21,9 @@ class TipProvider extends ChangeNotifier {
   bool _isLoading = false;
 
   String get todayTip =>
-      _tip.isNotEmpty ? _tip : _fallbacks[DateTime.now().day % _fallbacks.length];
+      _tip.isNotEmpty
+          ? _tip
+          : _fallbacks[DateTime.now().day % _fallbacks.length];
   bool get isLoading => _isLoading;
 
   Future<void> _loadTip() async {
