@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class PrivacyPolicyPage extends StatelessWidget {
+class PrivacyPolicyPage extends StatefulWidget {
   const PrivacyPolicyPage({super.key});
+
+  @override
+  State<PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
+}
+
+class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +49,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                     child: Opacity(
                       opacity: 0.5,
                       child: Text(
-                        'Versión Legal: 2025.1.0',
+                        'Versión Legal: 2026.1.0 · Última actualización: Mayo 2026',
                         style: theme.textTheme.labelSmall,
                       ),
                     ),
@@ -80,7 +87,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tu Datos están Seguros',
+                  'Tus Datos están Seguros',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -184,27 +191,32 @@ class PrivacyPolicyPage extends StatelessWidget {
       {
         'title': 'Resumen Ejecutivo',
         'content':
-            'Nuestra política de privacidad es simple: priorizamos tu privacidad. Recopilamos y mantenemos tu información de forma segura para brindarte el mejor servicio posible de gestión financiera personal.',
+            'Priorizamos tu privacidad en cada decisión de diseño. Personal Finance recopila únicamente los datos que tú ingresas, los protege con cifrado de extremo a extremo y nunca los usa con fines distintos a brindarte el mejor servicio de gestión financiera personal.',
       },
       {
         'title': 'Información que recopilamos',
         'content':
-            'Únicamente recopilamos los datos esenciales que decides proporcionarnos al utilizar la app, como los balances de transacciones de tus categorías de ahorro, límites de gasto y credenciales encriptadas para autenticarte.',
+            'Recopilamos los datos que eliges ingresar: transacciones, categorías, metas de ahorro, deudas y límites de presupuesto. También almacenamos tu correo electrónico y nombre de perfil para la autenticación con Firebase. No recopilamos datos de ubicación, contactos ni actividad fuera de la app.',
+      },
+      {
+        'title': 'Tecnología y almacenamiento',
+        'content':
+            'Tus datos se guardan localmente en tu dispositivo usando Hive con cifrado AES-256. La sincronización con la nube usa Firebase Firestore con conexiones TLS. El asistente de inteligencia artificial (Gemini AI) procesa únicamente resúmenes anonimizados cuando solicitas análisis o sugerencias; nunca envía datos identificables sin tu consentimiento.',
       },
       {
         'title': 'Cómo usamos tus datos',
         'content':
-            'Usamos tus datos para ofrecer y mejorar el funcionamiento de la aplicación, mostrarte análisis visuales de tus presupuestos y metas. Nunca utilizamos la información para fines publicitarios intrusivos ni las vendemos a corredores de datos.',
+            'Usamos tu información exclusivamente para: mostrar tus reportes y gráficos financieros, generar alertas de presupuesto, sincronizar entre dispositivos y mejorar la experiencia de la app. Nunca vendemos ni compartimos tus datos con terceros con fines publicitarios.',
       },
       {
         'title': 'Derechos del usuario',
         'content':
-            'Tienes pleno control de tus datos. En cualquier momento puedes solicitar acceder, modificar, exportar o borrar toda la información asociada a tu cuenta en base a normativas GDPR.',
+            'Tienes control total sobre tu información. En cualquier momento puedes solicitar acceder, corregir, exportar o eliminar permanentemente todos los datos asociados a tu cuenta, tanto locales como en la nube. Para ejercer estos derechos, contáctanos directamente.',
       },
       {
-        'title': 'Contacto',
+        'title': 'Contacto directo',
         'content':
-            'Si tienes cualquier duda sobre cómo gestionamos tu privacidad, puedes contactar con nuestro equipo de soporte directamente dentro de la app o a través de nuestros canales oficiales señalados en el portal.',
+            'Para cualquier duda sobre privacidad o solicitud de datos, contáctanos en prosystem155@gmail.com o vía WhatsApp al +502 4290-9548. Respondemos en un máximo de 48 horas hábiles.',
       },
     ];
 
@@ -308,26 +320,75 @@ class PrivacyPolicyPage extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Nuestro delegado de protección de datos está disponible para ti.',
+          'Contáctanos directamente y te respondemos en menos de 48 horas.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white70, fontSize: 12),
         ),
         const SizedBox(height: 20),
-        FilledButton(
-          onPressed: () {},
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: colorScheme.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _launchEmail,
+                icon: const Icon(Icons.email_outlined, size: 16),
+                label: const Text('Email'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
             ),
-          ),
-          child: const Text(
-            'Enviar mensaje directo',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _launchWhatsApp,
+                icon: const Icon(Icons.chat_outlined, size: 16),
+                label: const Text('WhatsApp'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     ),
   );
+
+  Future<void> _launchEmail() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'prosystem155@gmail.com',
+      queryParameters: {'subject': 'Consulta sobre Privacidad - Personal Finance'},
+    );
+    if (!await launchUrl(uri) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir el cliente de correo'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _launchWhatsApp() async {
+    final uri = Uri.parse(
+      'https://wa.me/50242909548?text=Hola%2C%20tengo%20una%20consulta%20sobre%20privacidad%20de%20Personal%20Finance%20App',
+    );
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir WhatsApp'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 }
