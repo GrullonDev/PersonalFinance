@@ -7,6 +7,7 @@ import 'package:personal_finance/features/categories/presentation/bloc/categorie
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/utils/responsive.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:intl/intl.dart';
@@ -210,7 +211,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                                   ? const Color(0xFFD32F2F)
                                   : const Color(0xFF388E3C),
                         ),
-                        child: const Text('\$'),
+                        child: Text(CurrencyHelper.symbol),
                       ),
                       const SizedBox(width: 8),
                       IntrinsicWidth(

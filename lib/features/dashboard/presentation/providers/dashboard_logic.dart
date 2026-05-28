@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:get_it/get_it.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
@@ -107,9 +107,9 @@ class DashboardLogic extends ChangeNotifier {
     if (!hasData) return null;
     final double bal = balance;
     if (bal > 0) {
-      return 'Tu balance es positivo (${NumberFormat.simpleCurrency().format(bal)}). ¡Buen trabajo manteniendo tus gastos bajo control!';
+      return 'Tu balance es positivo (${CurrencyHelper.format(bal)}). ¡Buen trabajo manteniendo tus gastos bajo control!';
     } else if (bal < 0) {
-      return 'Tus gastos superan tus ingresos en ${NumberFormat.simpleCurrency().format(bal.abs())}. Considera revisar tu presupuesto.';
+      return 'Tus gastos superan tus ingresos en ${CurrencyHelper.format(bal.abs())}. Considera revisar tu presupuesto.';
     }
     return 'Tu balance está equilibrado. Registra más transacciones para obtener insights personalizados.';
   }
@@ -422,13 +422,14 @@ class DashboardLogic extends ChangeNotifier {
     notifyListeners();
     try {
       final aiService = GetIt.instance<VertexAiService>();
-      
+
       List<Debt> activeDebts = [];
       try {
         final debtRepository = GetIt.instance<DebtRepository>();
         final debtsResult = await debtRepository.getDebts();
         debtsResult.fold(
-          (failure) => debugPrint('Error al cargar deudas para Gemini: $failure'),
+          (failure) =>
+              debugPrint('Error al cargar deudas para Gemini: $failure'),
           (debts) => activeDebts = debts,
         );
       } catch (e) {
@@ -478,10 +479,15 @@ class DashboardLogic extends ChangeNotifier {
 
       double goalsProgress = 0;
       if (_goals.isNotEmpty) {
-        goalsProgress = _goals.fold<double>(0, (sum, g) {
-              final pct = g.objetivoAsDouble > 0
-                  ? (g.actualAsDouble / g.objetivoAsDouble * 100).clamp(0, 100)
-                  : 0.0;
+        goalsProgress =
+            _goals.fold<double>(0, (sum, g) {
+              final pct =
+                  g.objetivoAsDouble > 0
+                      ? (g.actualAsDouble / g.objetivoAsDouble * 100).clamp(
+                        0,
+                        100,
+                      )
+                      : 0.0;
               return sum + pct;
             }) /
             _goals.length;
@@ -494,8 +500,10 @@ class DashboardLogic extends ChangeNotifier {
         result.fold((_) {}, (d) => debts = d);
       } catch (_) {}
 
-      final totalDebtBalance =
-          debts.fold<double>(0, (s, d) => s + d.currentBalance);
+      final totalDebtBalance = debts.fold<double>(
+        0,
+        (s, d) => s + d.currentBalance,
+      );
 
       _healthScore = await aiService.getFinancialHealthScore(
         totalIncomes: totalIncomes,
@@ -592,11 +600,7 @@ class DashboardLogic extends ChangeNotifier {
   }
 
   // Métodos de utilidad
-  String formatCurrency(double amount) {
-    // Usa el locale del dispositivo para formatear la moneda correctamente
-    final formatter = NumberFormat.currency(locale: 'en_US', symbol: 'Q');
-    return formatter.format(amount);
-  }
+  String formatCurrency(double amount) => CurrencyHelper.format(amount);
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';

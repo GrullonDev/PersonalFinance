@@ -36,16 +36,18 @@ class AddTransactionRequested extends QuickFinanceEvent {
   final TransactionType type;
   final String note;
   final String? category;
+  final String? rawInput;
 
   const AddTransactionRequested({
     required this.amount,
     required this.type,
     required this.note,
     this.category,
+    this.rawInput,
   });
 
   @override
-  List<Object?> get props => [amount, type, note, category];
+  List<Object?> get props => [amount, type, note, category, rawInput];
 }
 
 /// Solicita eliminar (soft-delete) una transacción por su id.

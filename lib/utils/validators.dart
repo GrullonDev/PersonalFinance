@@ -1,4 +1,5 @@
 import 'package:personal_finance/utils/constants.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 /// Sistema de validaciones centralizado
 /// Proporciona validaciones consistentes en toda la aplicación
@@ -77,11 +78,11 @@ class AppValidators {
     final double amount = double.parse(value!);
 
     if (amount < AppConstants.minAmount) {
-      return 'El monto debe ser mayor a ${AppConstants.formatCurrency(AppConstants.minAmount)}';
+      return 'El monto debe ser mayor a ${CurrencyHelper.format(AppConstants.minAmount)}';
     }
 
     if (amount > AppConstants.maxAmount) {
-      return 'El monto no puede exceder ${AppConstants.formatCurrency(AppConstants.maxAmount)}';
+      return 'El monto no puede exceder ${CurrencyHelper.format(AppConstants.maxAmount)}';
     }
 
     return null;

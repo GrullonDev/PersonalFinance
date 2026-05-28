@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -109,8 +110,17 @@ class AppLocalizations {
   String get usageBoth => _text('usageBoth');
 
   NumberFormat get currencyFormatter {
-    final String localeName = kIsWeb ? locale.toLanguageTag() : Platform.localeName;
-    return NumberFormat.simpleCurrency(locale: localeName);
+    final String localeName =
+        kIsWeb ? locale.toLanguageTag() : Platform.localeName;
+    try {
+      return NumberFormat.currency(
+        locale: localeName,
+        symbol: CurrencyHelper.symbol,
+        decimalDigits: 2,
+      );
+    } catch (_) {
+      return NumberFormat.simpleCurrency(locale: localeName);
+    }
   }
 
   NumberFormat get decimalFormatter =>
