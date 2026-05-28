@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class GlassContainer extends StatelessWidget {
@@ -13,8 +12,8 @@ class GlassContainer extends StatelessWidget {
   final Color? color;
 
   const GlassContainer({
-    super.key,
     required this.child,
+    super.key,
     this.width,
     this.height,
     this.padding,
@@ -26,37 +25,29 @@ class GlassContainer extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      margin: margin,
-      child: ClipRRect(
+  Widget build(BuildContext context) => Container(
+    width: width,
+    height: height,
+    margin: margin,
+    child: Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: (color ?? Colors.white).withValues(alpha: opacity),
         borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              color: (color ?? Colors.white).withOpacity(opacity),
-              borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1.5,
-              ),
-              gradient: LinearGradient(
-                colors: [
-                  (color ?? Colors.white).withOpacity(0.15),
-                  (color ?? Colors.white).withOpacity(0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: child,
-          ),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+          width: 1.5,
+        ),
+        gradient: LinearGradient(
+          colors: [
+            (color ?? Colors.white).withValues(alpha: 0.2),
+            (color ?? Colors.white).withValues(alpha: 0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
-    );
-  }
+      child: child,
+    ),
+  );
 }

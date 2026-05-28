@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:personal_finance/core/security/security_preferences.dart';
 import 'package:personal_finance/core/services/biometric_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:personal_finance/core/services/security_logger.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 
 class AppLifecycleWrapper extends StatefulWidget {
@@ -22,13 +24,38 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
   bool _isAuthenticating = false;
   // True while the app is in the background / app-switcher — hides content.
   bool _isObscured = false;
+  int _biometricFailCount = 0;
+  DateTime? _lastFailTime;
+  bool _isLockedOut = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Verificar bloqueo al inicio con un pequeño delay para asegurar que el AuthProvider esté listo
-    Future.delayed(const Duration(milliseconds: 500), _checkLock);
+    _loadLockoutState().then((_) {
+      // Verificar bloqueo al inicio con un pequeño delay para asegurar que el AuthProvider esté listo
+      Future.delayed(const Duration(milliseconds: 500), _checkLock);
+    });
+  }
+
+  Future<void> _loadLockoutState() async {
+    final (count, lockTime) = await SecurityPreferences.getBiometricLockout();
+    setState(() {
+      _biometricFailCount = count;
+      _lastFailTime = lockTime;
+      if (lockTime != null) {
+        final diff = DateTime.now().difference(lockTime);
+        if (diff.inMinutes < 15) {
+          _isLockedOut = true;
+          _isLocking = true;
+        } else {
+          _biometricFailCount = 0;
+          _lastFailTime = null;
+          _isLockedOut = false;
+          SecurityPreferences.saveBiometricLockout(0, null);
+        }
+      }
+    });
   }
 
   @override
@@ -57,12 +84,47 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
     }
   }
 
-  Future<void> _checkLock() async {
-    if (_isLocking || _isAuthenticating) return;
+  int get _remainingMinutes {
+    if (_lastFailTime == null) return 0;
+    final diff = DateTime.now().difference(_lastFailTime!);
+    final remaining = 15 - diff.inMinutes;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  Future<void> _checkLock({bool forceAuth = false}) async {
+    final (count, lockTime) = await SecurityPreferences.getBiometricLockout();
+    _biometricFailCount = count;
+    _lastFailTime = lockTime;
+
+    if (lockTime != null) {
+      final diff = DateTime.now().difference(lockTime);
+      if (diff.inMinutes < 15) {
+        setState(() {
+          _isLockedOut = true;
+          _isLocking = true;
+        });
+        return;
+      } else {
+        setState(() {
+          _biometricFailCount = 0;
+          _lastFailTime = null;
+          _isLockedOut = false;
+        });
+        await SecurityPreferences.saveBiometricLockout(0, null);
+      }
+    } else {
+      setState(() {
+        _isLockedOut = false;
+      });
+    }
+
+    if (_isAuthenticating) return;
+    if (!forceAuth && _isLocking) return;
 
     final AuthProvider auth = context.read<AuthProvider>();
     await auth.syncSessionFromFirebase(notify: false);
-    if (!auth.isAuthenticated) return;
+    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null || !user.emailVerified) return;
 
     final bool appLockEnabled = await SecurityPreferences.getAppLockEnabled();
 
@@ -79,10 +141,28 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
         );
 
         if (authenticated) {
-          setState(() => _isLocking = false);
+          setState(() {
+            _isLocking = false;
+            _biometricFailCount = 0;
+            _lastFailTime = null;
+            _isLockedOut = false;
+          });
+          await SecurityPreferences.saveBiometricLockout(0, null);
+        } else {
+          final now = DateTime.now();
+          final newCount = _biometricFailCount + 1;
+          final isLocked = newCount >= 3;
+          setState(() {
+            _biometricFailCount = newCount;
+            _lastFailTime = now;
+            if (isLocked) {
+              _isLockedOut = true;
+              SecurityLogger().logSuspiciousActivity('too_many_biometric_fails');
+            }
+          });
+          await SecurityPreferences.saveBiometricLockout(newCount, isLocked ? now : null);
         }
       } finally {
-        // Siempre quitar el flag de autenticación después de la llamada nativa
         setState(() => _isAuthenticating = false);
       }
     }
@@ -100,56 +180,98 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
               end: Alignment.bottomCenter,
               colors: [
                 Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
               ],
             ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_outline, size: 80, color: Colors.white),
+              Icon(
+                _isLockedOut ? Icons.gpp_bad_outlined : Icons.lock_outline,
+                size: 80,
+                color: _isLockedOut ? Colors.redAccent : Colors.white,
+              ),
               const SizedBox(height: 24),
-              const Text(
-                'Aplicación Bloqueada',
-                style: TextStyle(
+              Text(
+                _isLockedOut ? 'Bloqueo de Seguridad' : 'Aplicación Bloqueada',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _checkLock,
-                icon: const Icon(Icons.fingerprint),
-                label: const Text('Desbloquear ahora'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
+              const SizedBox(height: 24),
+              if (_isLockedOut) ...[
+                Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'Demasiados intentos fallidos.\nPor seguridad, la app está bloqueada temporalmente.\nIntenta de nuevo en $_remainingMinutes minutos.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  height: 1.4,
                 ),
               ),
-            ],
-          ),
-        ),
-      );
-    }
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () async {
+                if (_lastFailTime != null && DateTime.now().difference(_lastFailTime!).inMinutes >= 15) {
+                  setState(() {
+                    _biometricFailCount = 0;
+                    _isLockedOut = false;
+                  });
+                  await SecurityPreferences.saveBiometricLockout(0, null);
+                }
+                _checkLock(forceAuth: true);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Verificar estado'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
+            ),
+          ] else ...[
+            ElevatedButton.icon(
+              onPressed: () => _checkLock(forceAuth: true),
+              icon: const Icon(Icons.fingerprint),
+              label: const Text('Desbloquear ahora'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
 
-    // Obscure financial content while the app is in the background so that
-    // the OS app-switcher screenshot does not capture sensitive data.
-    // On Android, FLAG_SECURE in MainActivity blocks the screenshot at the
-    // system level; this blur is an additional defense for iOS and older Android.
-    if (_isObscured) {
-      return Stack(
-        children: [
-          widget.child,
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: ColoredBox(
-                color: Colors.black.withOpacity(0.4),
+// Obscure financial content while the app is in the background so that
+// the OS app-switcher screenshot does not capture sensitive data.
+// On Android, FLAG_SECURE in MainActivity blocks the screenshot at the
+// system level; this blur is an additional defense for iOS and older Android.
+if (_isObscured) {
+  return Stack(
+    children: [
+      widget.child,
+      Positioned.fill(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: ColoredBox(
+            color: Colors.black.withValues(alpha: 0.4),
                 child: const Center(
                   child: Icon(
                     Icons.lock_outline,

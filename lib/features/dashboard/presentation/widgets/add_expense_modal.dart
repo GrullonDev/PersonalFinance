@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
+import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
 import 'package:provider/provider.dart';
 
 class AddExpenseModal extends StatefulWidget {
@@ -18,6 +22,45 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'Otros';
+  final FocusNode _titleFocusNode = FocusNode();
+  bool _isCategorizing = false;
+  bool _hasBeenAutoCategorized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleFocusNode.addListener(_onTitleFocusChange);
+  }
+
+  void _onTitleFocusChange() {
+    if (!_titleFocusNode.hasFocus) {
+      _autoCategorizeExpense();
+    }
+  }
+
+  Future<void> _autoCategorizeExpense() async {
+    final String title = _titleController.text.trim();
+    if (title.isEmpty) return;
+
+    setState(() => _isCategorizing = true);
+
+    try {
+      final aiService = getIt<VertexAiService>();
+      final String category = await aiService.getCategoryForExpense(title);
+      if (mounted && _categorySuggestions.contains(category)) {
+        setState(() {
+          _selectedCategory = category;
+          _hasBeenAutoCategorized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error auto-categorizing: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isCategorizing = false);
+      }
+    }
+  }
 
   final List<String> _categorySuggestions = <String>[
     'Alimentación',
@@ -29,6 +72,34 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     'Créditos',
     'Otros',
   ];
+
+  bool _isScanning = false;
+
+  Future<void> _scanReceipt() async {
+    setState(() => _isScanning = true);
+    try {
+      final scanner = getIt<ReceiptScannerService>();
+      final result = await scanner.scanReceipt();
+      if (result != null) {
+        if (result.title != null) _titleController.text = result.title!;
+        if (result.amount != null) {
+          _amountController.text = result.amount!.toStringAsFixed(2);
+        }
+        if (result.category != null &&
+            _categorySuggestions.contains(result.category)) {
+          setState(() => _selectedCategory = result.category!);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al escanear: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +127,29 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              if (_isScanning)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: OutlinedButton.icon(
+                    onPressed: _scanReceipt,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Escanear Ticket/Factura'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
               Autocomplete<String>(
+                focusNode: _titleFocusNode,
                 optionsBuilder: (TextEditingValue value) {
                   if (value.text.isEmpty) return const Iterable<String>.empty();
                   return _categorySuggestions.where(
@@ -80,11 +173,13 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                         labelText: 'Título del gasto',
                         border: OutlineInputBorder(),
                       ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                        LengthLimitingTextInputFormatter(120),
+                      ],
                       validator:
                           (String? value) =>
-                              (value == null || value.isEmpty)
-                                  ? 'Requerido'
-                                  : null,
+                              InputSanitizer.validateName(value ?? ''),
                     ),
               ),
               const SizedBox(height: 16),
@@ -93,18 +188,16 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 keyboardType: TextInputType.number,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  LengthLimitingTextInputFormatter(15),
                 ],
                 decoration: const InputDecoration(
                   labelText: 'Monto',
                   border: OutlineInputBorder(),
                   prefixText: 'Q ',
                 ),
-                validator: (String? value) {
-                  if (value == null || value.isEmpty) return 'Monto requerido';
-                  final double? amount = double.tryParse(value);
-                  if (amount == null || amount <= 0) return 'Monto inválido';
-                  return null;
-                },
+                validator:
+                    (String? value) =>
+                        InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -118,13 +211,26 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                           ),
                         )
                         .toList(),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Categoría',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  helperText:
+                      _isCategorizing
+                          ? '✨ Gemini está clasificando el gasto...'
+                          : (_hasBeenAutoCategorized
+                              ? 'Categorizado por Gemini IA ✨'
+                              : null),
+                  helperStyle: TextStyle(
+                    color: _isCategorizing ? Colors.blue : Colors.purple,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 onChanged: (String? value) {
                   if (value != null) {
-                    setState(() => _selectedCategory = value);
+                    setState(() {
+                      _selectedCategory = value;
+                      _hasBeenAutoCategorized = false;
+                    });
                   }
                 },
               ),
@@ -161,8 +267,10 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     if (_formKey.currentState!.validate()) {
                       // Agregar el gasto
                       await dashboardLogic.addExpense(
-                        title: _titleController.text,
-                        amount: _amountController.text,
+                        title: InputSanitizer.sanitizeText(
+                          _titleController.text.trim(),
+                        ),
+                        amount: _amountController.text.trim(),
                         date: _selectedDate,
                         category: _selectedCategory,
                       );
@@ -294,6 +402,8 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
 
   @override
   void dispose() {
+    _titleFocusNode.removeListener(_onTitleFocusChange);
+    _titleFocusNode.dispose();
     _titleController.dispose();
     _amountController.dispose();
     super.dispose();

@@ -52,7 +52,7 @@ linter:
     avoid_dynamic_calls: true  # Evitar llamadas dinámicas
     avoid_web_libraries_in_flutter: true  # Evitar librerías web en Flutter
     avoid_empty_else: true  # Evitar else vacíos
-    avoid_returning_null_for_future: true  # Evitar retornar null para Future
+    # avoid_returning_null_for_future: true  # Evitar retornar null para Future
     avoid_returning_null_for_void: true  # Evitar retornar null para void
     avoid_returning_this: true  # Evitar retornar this
     avoid_slow_async_io: true  # Evitar operaciones I/O lentas en async
@@ -93,7 +93,7 @@ linter:
     avoid_private_typedef_functions: true  # Evitar typedef de funciones privadas
     avoid_renaming_method_parameters: true  # Evitar renombrar parámetros de método
     avoid_return_types_on_setters: true  # Evitar tipos de retorno en setters
-    avoid_returning_null: true  # Evitar retornar null
+    # avoid_returning_null: true  # Evitar retornar null
     avoid_setters_without_getters: true  # Evitar setters sin getters
     avoid_shadowing_type_parameters: true  # Evitar sombrear parámetros de tipo
     

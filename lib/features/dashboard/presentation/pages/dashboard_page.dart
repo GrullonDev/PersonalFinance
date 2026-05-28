@@ -9,14 +9,22 @@ import 'package:personal_finance/features/dashboard/presentation/widgets/savings
 import 'package:personal_finance/features/transactions/domain/entities/transaction_detail.dart';
 import 'package:personal_finance/features/transactions/presentation/pages/transaction_detail_page.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/responsive.dart';
 import 'package:provider/provider.dart';
+import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
+import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
+import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart'
+    show FinancialHealthScore;
+import 'package:personal_finance/utils/routes/route_path.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider<DashboardLogic>(
-    create: (_) {
+    create: (context) {
       final logic = getIt<DashboardLogic>();
       logic.loadDashboardData();
       return logic;
@@ -35,18 +43,10 @@ class _DashboardContent extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       }
 
-      if (!logic.hasData && !logic.isLoading) {
-        return _buildEmptyState();
+      if (context.isMobile) {
+        return _buildMobileLayout(context, logic);
       }
-
-      return LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          if (constraints.maxWidth > 700) {
-            return _buildWideLayout(context, logic);
-          }
-          return _buildMobileLayout(context, logic);
-        },
-      );
+      return _buildWideLayout(context, logic);
     },
   );
 
@@ -66,49 +66,75 @@ class _DashboardContent extends StatelessWidget {
               child: Transform.translate(
                 offset: const Offset(0, -20),
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        BudgetCard(
-                          title:
-                              logic.activeBudget?.nombre ??
-                              'Presupuesto Mensual',
-                          amount:
-                              logic.activeBudget != null
-                                  ? logic.activeBudget!.montoAsDouble
-                                  : (logic.totalIncomes > 0
-                                      ? logic.totalIncomes
-                                      : 1000),
-                          spent: logic.totalExpenses,
-                        ),
-                        const SizedBox(height: 24),
-                        _buildSavingsGoalsSection(context, logic),
-                        const SizedBox(height: 24),
-                        _buildRecentTransactionsSection(logic, context),
-                        const SizedBox(height: 24),
-                        if (logic.shouldShowExpensesChart) ...<Widget>[
-                          _buildExpensesChart(logic),
-                          const SizedBox(height: 24),
-                          _buildExpensesList(logic),
-                          const SizedBox(height: 24),
-                        ],
-                        if (logic.shouldShowIncomesList) ...<Widget>[
-                          _buildIncomeList(logic),
-                          const SizedBox(height: 24),
-                        ],
-                        _buildRecommendationsSection(context, logic),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
+                    child:
+                        !logic.hasData
+                            ? _buildModernEmptyState(context)
+                            : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                if (logic.insightMessage != null ||
+                                    logic.personalizedTip != null ||
+                                    logic.isLoadingTip) ...[
+                                  _buildInsightsCard(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                if (logic.healthScore != null ||
+                                    logic.isLoadingHealthScore) ...[
+                                  _buildHealthScoreCard(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                GestureDetector(
+                                  onTap:
+                                      () => Navigator.pushNamed(
+                                        context,
+                                        RoutePath.budgetsCrud,
+                                      ),
+                                  child: BudgetCard(
+                                    title:
+                                        logic.activeBudget?.nombre ??
+                                        'Presupuesto Semanal',
+                                    amount:
+                                        logic.activeBudget != null
+                                            ? logic.activeBudget!.montoAsDouble
+                                            : 0,
+                                    spent: logic.weeklyBudgetSpent,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                _buildSavingsGoalsSection(context, logic),
+                                const SizedBox(height: 24),
+                                _buildDebtsOverviewSection(context),
+                                const SizedBox(height: 24),
+                                _buildRecentTransactionsSection(logic, context),
+                                const SizedBox(height: 24),
+                                if (logic.shouldShowExpensesChart) ...<Widget>[
+                                  _buildExpensesChart(context, logic),
+                                  const SizedBox(height: 24),
+                                  _buildExpensesList(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                if (logic.shouldShowIncomesList) ...<Widget>[
+                                  _buildIncomeList(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                if (logic.spendingPrediction != null ||
+                                    logic.isLoadingPrediction) ...[
+                                  _buildSpendingPredictionCard(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                _buildRecommendationsSection(context, logic),
+                                const SizedBox(height: 20),
+                              ],
+                            ),
                   ),
                 ),
               ),
@@ -117,87 +143,204 @@ class _DashboardContent extends StatelessWidget {
         ),
       );
 
-  Widget _buildWideLayout(BuildContext context, DashboardLogic logic) =>
-      RefreshIndicator(
-        onRefresh: () async {
-          await logic.loadDashboardData();
-        },
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: <Widget>[
-            SliverToBoxAdapter(child: _buildHeader(context, logic)),
-            SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: const Offset(0, -20),
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 1000),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.all(Radius.circular(30)),
-                    ),
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          // Left Column: Finances & Savings
-                          Expanded(
-                            flex: 5,
-                            child: Column(
-                              children: <Widget>[
-                                BudgetCard(
-                                  title:
-                                      logic.activeBudget?.nombre ??
-                                      'Presupuesto Mensual',
-                                  amount:
-                                      logic.activeBudget != null
-                                          ? logic.activeBudget!.montoAsDouble
-                                          : (logic.totalIncomes > 0
-                                              ? logic.totalIncomes
-                                              : 1000),
-                                  spent: logic.totalExpenses,
+  Widget _buildWideLayout(
+    BuildContext context,
+    DashboardLogic logic,
+  ) => RefreshIndicator(
+    onRefresh: () async {
+      await logic.loadDashboardData();
+    },
+    child: CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: <Widget>[
+        SliverToBoxAdapter(child: _buildHeader(context, logic)),
+        SliverToBoxAdapter(
+          child: Transform.translate(
+            offset: const Offset(0, -20),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.all(Radius.circular(30)),
+                ),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child:
+                      !logic.hasData
+                          ? _buildModernEmptyState(context)
+                          : Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              // Left Column: Finances & Savings
+                              Expanded(
+                                flex: 5,
+                                child: Column(
+                                  children: <Widget>[
+                                    if (logic.insightMessage != null ||
+                                        logic.personalizedTip != null ||
+                                        logic.isLoadingTip) ...[
+                                      _buildInsightsCard(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    if (logic.healthScore != null ||
+                                        logic.isLoadingHealthScore) ...[
+                                      _buildHealthScoreCard(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    GestureDetector(
+                                      onTap: () async {
+                                        await Navigator.pushNamed(
+                                          context,
+                                          RoutePath.budgetsCrud,
+                                        );
+                                        logic.loadDashboardData();
+                                      },
+                                      child: BudgetCard(
+                                        title:
+                                            logic.activeBudget?.nombre ??
+                                            'Presupuesto Semanal',
+                                        amount:
+                                            logic.activeBudget != null
+                                                ? logic
+                                                    .activeBudget!
+                                                    .montoAsDouble
+                                                : 0,
+                                        spent: logic.weeklyBudgetSpent,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 32),
+                                    const SizedBox(height: 32),
+                                    _buildSavingsGoalsSection(context, logic),
+                                    const SizedBox(height: 32),
+                                    _buildDebtsOverviewSection(context),
+                                    const SizedBox(height: 32),
+                                    if (logic.shouldShowExpensesChart)
+                                      _buildExpensesChart(context, logic),
+                                  ],
                                 ),
-                                const SizedBox(height: 32),
-                                const SizedBox(height: 32),
-                                _buildSavingsGoalsSection(context, logic),
-                                const SizedBox(height: 32),
-                                if (logic.shouldShowExpensesChart)
-                                  _buildExpensesChart(logic),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 40),
+                              // Right Column: Activity & Tips
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  children: <Widget>[
+                                    _buildRecentTransactionsSection(
+                                      logic,
+                                      context,
+                                    ),
+                                    const SizedBox(height: 32),
+                                    if (logic
+                                        .shouldShowExpensesChart) ...<Widget>[
+                                      _buildExpensesList(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    if (logic
+                                        .shouldShowIncomesList) ...<Widget>[
+                                      _buildIncomeList(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    if (logic.spendingPrediction != null ||
+                                        logic.isLoadingPrediction) ...[
+                                      _buildSpendingPredictionCard(
+                                        context,
+                                        logic,
+                                      ),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    _buildRecommendationsSection(
+                                      context,
+                                      logic,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 40),
-                          // Right Column: Activity & Tips
-                          Expanded(
-                            flex: 6,
-                            child: Column(
-                              children: <Widget>[
-                                _buildRecentTransactionsSection(logic, context),
-                                const SizedBox(height: 32),
-                                if (logic.shouldShowExpensesChart) ...<Widget>[
-                                  _buildExpensesList(logic),
-                                  const SizedBox(height: 32),
-                                ],
-                                if (logic.shouldShowIncomesList) ...<Widget>[
-                                  _buildIncomeList(logic),
-                                  const SizedBox(height: 32),
-                                ],
-                                _buildRecommendationsSection(context, logic),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
+
+  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) {
+    final String tipText = logic.personalizedTip ?? logic.insightMessage ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.auto_awesome,
+            color: Theme.of(context).colorScheme.primary,
+            size: 28,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Asesor Financiero IA ✨',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    if (logic.isLoadingTip) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.green,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  logic.isLoadingTip
+                      ? 'Generando consejos financieros a tu medida...'
+                      : tipText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.4,
+                    fontStyle:
+                        logic.isLoadingTip
+                            ? FontStyle.italic
+                            : FontStyle.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildHeader(BuildContext context, DashboardLogic logic) {
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -221,47 +364,232 @@ class _DashboardContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // Period Selector
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(50),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<PeriodFilter>(
-                      value: logic.selectedPeriod,
-                      dropdownColor: primaryColor.withOpacity(0.95),
-                      icon: const Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.white,
+                // ===== MAGIC SWITCH START =====
+                if (context.watch<SettingsProvider>().canToggleMode)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildModeTab(
+                              context,
+                              title: 'Personal',
+                              icon: Icons.person,
+                              isSelected:
+                                  !context
+                                      .watch<SettingsProvider>()
+                                      .isBusinessMode,
+                              onTap: () {
+                                context
+                                    .read<SettingsProvider>()
+                                    .toggleBusinessMode(value: false);
+                                logic.setProfileType('personal');
+                                logic.loadDashboardData();
+                                context.read<TransactionsBloc>().add(
+                                  TransactionsLoad(profileType: 'personal'),
+                                );
+                              },
+                            ),
+                            _buildModeTab(
+                              context,
+                              title: 'Negocio',
+                              icon: Icons.storefront,
+                              isSelected:
+                                  context
+                                      .watch<SettingsProvider>()
+                                      .isBusinessMode,
+                              onTap: () {
+                                context
+                                    .read<SettingsProvider>()
+                                    .toggleBusinessMode(value: true);
+                                logic.setProfileType('negocio');
+                                logic.loadDashboardData();
+                                context.read<TransactionsBloc>().add(
+                                  TransactionsLoad(profileType: 'negocio'),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      onChanged: (PeriodFilter? newValue) {
-                        if (newValue != null) {
-                          logic.changePeriod(newValue);
-                        }
-                      },
-                      items:
-                          PeriodFilter.values
-                              .map<DropdownMenuItem<PeriodFilter>>(
-                                (PeriodFilter value) =>
-                                    DropdownMenuItem<PeriodFilter>(
-                                      value: value,
-                                      child: Text(value.label),
-                                    ),
-                              )
-                              .toList(),
                     ),
                   ),
+
+                // ===== MAGIC SWITCH END =====
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Hola ${context.watch<AuthProvider>().currentUser?.fullName.split(' ').first ?? 'Usuario'} 👋',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Consumer<NotificationInboxProvider>(
+                                builder: (context, inboxProvider, _) {
+                                  final unreadCount = inboxProvider.unreadCount;
+                                  return Stack(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.notifications_outlined,
+                                          color: Colors.white,
+                                          size: 28,
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pushNamed(
+                                            context,
+                                            RoutePath.notificationsInbox,
+                                          );
+                                        },
+                                      ),
+                                      if (unreadCount > 0)
+                                        Positioned(
+                                          right: 8,
+                                          top: 8,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: primaryColor,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 16,
+                                              minHeight: 16,
+                                            ),
+                                            child: Text(
+                                              unreadCount > 9
+                                                  ? '9+'
+                                                  : unreadCount.toString(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Text(
+                                'Así van tus finanzas hoy',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              if (logic.savingsStreak > 0) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.local_fire_department,
+                                        color: Colors.orange,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Racha: ${logic.savingsStreak} d',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Period Selector
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(50),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<PeriodFilter>(
+                          value: logic.selectedPeriod,
+                          dropdownColor: primaryColor.withValues(alpha: 0.95),
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.white,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          onChanged: (PeriodFilter? newValue) {
+                            if (newValue != null) {
+                              logic.changePeriod(newValue);
+                            }
+                          },
+                          items:
+                              PeriodFilter.values
+                                  .map<DropdownMenuItem<PeriodFilter>>(
+                                    (PeriodFilter value) =>
+                                        DropdownMenuItem<PeriodFilter>(
+                                          value: value,
+                                          child: Text(value.label),
+                                        ),
+                                  )
+                                  .toList(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 // Balance total
                 _buildBalanceHeader(logic),
                 const SizedBox(
@@ -277,10 +605,53 @@ class _DashboardContent extends StatelessWidget {
     );
   }
 
+  Widget _buildModeTab(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.white : Colors.transparent,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.white70,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color:
+                  isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
   Widget _buildSummaryCards(DashboardLogic logic) => Row(
     children: <Widget>[
       Expanded(
         child: _buildSummaryCard(
+          logic: logic,
           title: 'INGRESOS',
           amount: logic.totalIncomes,
           icon: Icons.arrow_upward,
@@ -291,6 +662,7 @@ class _DashboardContent extends StatelessWidget {
       const SizedBox(width: 12),
       Expanded(
         child: _buildSummaryCard(
+          logic: logic,
           title: 'GASTOS',
           amount: logic.totalExpenses,
           icon: Icons.arrow_downward,
@@ -302,6 +674,7 @@ class _DashboardContent extends StatelessWidget {
   );
 
   Widget _buildSummaryCard({
+    required DashboardLogic logic,
     required String title,
     required double amount,
     required IconData icon,
@@ -333,7 +706,7 @@ class _DashboardContent extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          '\$${amount.toStringAsFixed(0)}',
+          logic.formatCurrency(amount),
           style: TextStyle(
             color: textColor,
             fontSize: 20,
@@ -344,31 +717,140 @@ class _DashboardContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildEmptyState() => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(
-          Icons.account_balance_wallet_outlined,
-          size: 80,
-          color: Colors.grey[400],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'No hay transacciones registradas',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
+  Widget _buildModernEmptyState(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 40),
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          // Ilustración minimalista fintech
+          SizedBox(
+            height: 160,
+            width: 160,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background subtle dashed circle and empty chart
+                SizedBox(
+                  width: 140,
+                  height: 140,
+                  child: SfCircularChart(
+                    margin: EdgeInsets.zero,
+                    series: <CircularSeries<Map<String, dynamic>, String>>[
+                      DoughnutSeries<Map<String, dynamic>, String>(
+                        animationDuration: 0,
+                        dataSource: const [
+                          {'x': '', 'y': 100},
+                        ],
+                        xValueMapper:
+                            (Map<String, dynamic> data, _) =>
+                                data['x'] as String,
+                        yValueMapper:
+                            (Map<String, dynamic> data, _) => data['y'] as int,
+                        pointColorMapper:
+                            (_, __) => Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.05),
+                        innerRadius: '85%',
+                      ),
+                    ],
+                  ),
+                ),
+                // Card 1 (Back)
+                Positioned(
+                  top: 25,
+                  right: 25,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: Container(
+                      width: 80,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+                // Card 2 (Front)
+                Positioned(
+                  top: 45,
+                  left: 20,
+                  child: Transform.rotate(
+                    angle: -0.15,
+                    child: Container(
+                      width: 90,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(2, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.credit_card, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+                // Floating Action widget (Graph element)
+                Positioned(
+                  bottom: 10,
+                  right: 30,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.show_chart_rounded,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Agrega tu primer gasto o ingreso\ntocando el botón +',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-        ),
-      ],
+          const SizedBox(height: 30),
+          Text(
+            '📉 Aún no tienes movimientos',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Empieza agregando tu primer ingreso o gasto',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
     ),
   );
 
@@ -390,7 +872,7 @@ class _DashboardContent extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '\$${logic.balance.toStringAsFixed(2)}',
+          logic.formatCurrency(logic.balance),
           style: TextStyle(
             fontSize: 42,
             fontWeight: FontWeight.bold,
@@ -411,22 +893,34 @@ class _DashboardContent extends StatelessWidget {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          const Text(
+          Text(
             'Metas de Ahorro',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          TextButton(
-            onPressed: () {
-              // Ver todas las metas
-            },
-            child: const Text(
-              'Ver todas',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, RoutePath.goalsCrud);
+                },
+                icon: const Icon(Icons.add_circle_outline, size: 20),
+                color: Theme.of(context).primaryColor,
+                tooltip: 'Nueva meta',
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, RoutePath.goalsCrud);
+                },
+                child: const Text(
+                  'Ver todas',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -436,18 +930,32 @@ class _DashboardContent extends StatelessWidget {
           height: 150,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
-          child: const Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.savings_outlined, size: 40, color: Colors.grey),
-              SizedBox(height: 8),
+              Icon(
+                Icons.savings_outlined,
+                size: 40,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 8),
               Text(
                 'No hay metas activas',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -474,6 +982,82 @@ class _DashboardContent extends StatelessWidget {
     ],
   );
 
+  Widget _buildDebtsOverviewSection(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Préstamos y Tarjetas',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, RoutePath.debts);
+            },
+            child: const Text(
+              'Gestionar',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      // Banner to redirect to DebtsPage
+      GestureDetector(
+        onTap: () => Navigator.pushNamed(context, RoutePath.debts),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.redAccent.shade400, Colors.redAccent.shade700],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.redAccent.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.credit_card_outlined, color: Colors.white, size: 32),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Control de Deudas',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Usa el método Bola de Nieve o Avalancha',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+
   Widget _buildRecentTransactionsSection(
     DashboardLogic logic,
     BuildContext context,
@@ -488,12 +1072,12 @@ class _DashboardContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text(
+        Text(
           'Últimas Transacciones',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
@@ -577,18 +1161,214 @@ class _DashboardContent extends StatelessWidget {
     return 'Compras';
   }
 
+  Widget _buildHealthScoreCard(BuildContext context, DashboardLogic logic) {
+    final FinancialHealthScore? score = logic.healthScore;
+
+    Color scoreColor(int s) {
+      if (s >= 75) return Colors.green;
+      if (s >= 60) return Colors.orange;
+      return Colors.red;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: logic.isLoadingHealthScore
+          ? const Row(
+              children: [
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: CircularProgressIndicator(strokeWidth: 4),
+                ),
+                SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Salud Financiera',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Calculando tu puntaje...',
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: (score?.score ?? 0) / 100,
+                        strokeWidth: 6,
+                        backgroundColor: Colors.grey.withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          scoreColor(score?.score ?? 0),
+                        ),
+                      ),
+                      Text(
+                        score?.grade ?? '-',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: scoreColor(score?.score ?? 0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Salud Financiera',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${score?.score ?? 0}/100',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: scoreColor(score?.score ?? 0),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        score?.summary ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildSpendingPredictionCard(
+    BuildContext context,
+    DashboardLogic logic,
+  ) {
+    const color = Colors.indigo;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.trending_up, color: color, size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Predicción Próxima Semana',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    if (logic.isLoadingPrediction) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  logic.isLoadingPrediction
+                      ? 'Analizando tus patrones de gasto...'
+                      : logic.spendingPrediction ?? '',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.4,
+                    fontStyle: logic.isLoadingPrediction
+                        ? FontStyle.italic
+                        : FontStyle.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRecommendationsSection(
     BuildContext context,
     DashboardLogic logic,
   ) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
-      const Text(
+      Text(
         'Recomendaciones Personalizadas',
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       const SizedBox(height: 12),
@@ -610,10 +1390,10 @@ class _DashboardContent extends StatelessWidget {
                 // Handle action based on type
                 switch (recommendation.actionType) {
                   case RecommendationActionType.createGoal:
-                    // Navigate to create goal
+                    Navigator.pushNamed(context, RoutePath.goalsCrud);
                     break;
                   case RecommendationActionType.viewExpenses:
-                    // Navigate to expenses view
+                    _showExpensesDetails(context, logic);
                     break;
                   case RecommendationActionType.viewInvestments:
                     // Navigate to investments (if exists)
@@ -621,6 +1401,9 @@ class _DashboardContent extends StatelessWidget {
                   case RecommendationActionType.none:
                     // No action
                     break;
+                  case RecommendationActionType.createBudgetAlert:
+                    // TODO: Handle this case.
+                    throw UnimplementedError();
                 }
               },
             );
@@ -630,74 +1413,77 @@ class _DashboardContent extends StatelessWidget {
     ],
   );
 
-  Widget _buildExpensesChart(DashboardLogic logic) => Column(
-    children: <Widget>[
-      const Text(
-        'Gastos por Categoría',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-      const SizedBox(height: 20),
-      SizedBox(
-        height: 300,
-        child: SfCircularChart(
-          legend: const Legend(
-            isVisible: true,
-            overflowMode: LegendItemOverflowMode.wrap,
-            position: LegendPosition.bottom,
-          ),
-          series: <CircularSeries<ChartData, String>>[
-            DoughnutSeries<ChartData, String>(
-              dataSource: logic.chartData,
-              xValueMapper: (ChartData data, _) => data.category,
-              yValueMapper: (ChartData data, _) => data.amount,
-              pointColorMapper: (ChartData data, _) => data.color,
-              dataLabelSettings: const DataLabelSettings(isVisible: true),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildExpensesList(DashboardLogic logic) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      const Text(
-        'Desglose de Gastos',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-      const SizedBox(height: 12),
-      ...logic
-          .getExpenseTransactions(limit: 10)
-          .map(
-            (TransactionItem transaction) => RecentTransactionItem(
-              icon: _getIconForTransaction(transaction),
-              title: transaction.title,
-              subtitle: _getCategoryForTransaction(transaction),
-              amount: transaction.amount,
-              onTap: () {},
+  Widget _buildExpensesChart(BuildContext context, DashboardLogic logic) =>
+      Column(
+        children: <Widget>[
+          Text(
+            'Gastos por Categoría',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-    ],
-  );
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 300,
+            child: SfCircularChart(
+              legend: const Legend(
+                isVisible: true,
+                overflowMode: LegendItemOverflowMode.wrap,
+                position: LegendPosition.bottom,
+              ),
+              series: <CircularSeries<ChartData, String>>[
+                DoughnutSeries<ChartData, String>(
+                  animationDuration: 0,
+                  dataSource: logic.chartData,
+                  xValueMapper: (ChartData data, _) => data.category,
+                  yValueMapper: (ChartData data, _) => data.amount,
+                  pointColorMapper: (ChartData data, _) => data.color,
+                  dataLabelSettings: const DataLabelSettings(isVisible: true),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
 
-  Widget _buildIncomeList(DashboardLogic logic) => Column(
+  Widget _buildExpensesList(BuildContext context, DashboardLogic logic) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'Desglose de Gastos',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...logic
+              .getExpenseTransactions(limit: 10)
+              .map(
+                (TransactionItem transaction) => RecentTransactionItem(
+                  icon: _getIconForTransaction(transaction),
+                  title: transaction.title,
+                  subtitle: _getCategoryForTransaction(transaction),
+                  amount: transaction.amount,
+                  onTap: () {},
+                ),
+              ),
+        ],
+      );
+
+  Widget _buildIncomeList(BuildContext context, DashboardLogic logic) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
-      const Text(
+      Text(
         'Desglose de Ingresos',
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       const SizedBox(height: 12),
@@ -715,4 +1501,90 @@ class _DashboardContent extends StatelessWidget {
           ),
     ],
   );
+
+  void _showExpensesDetails(BuildContext context, DashboardLogic logic) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.75,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Todos tus Gastos',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Has gastado un total de \$${logic.totalExpenses.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: logic.getExpenseTransactions(limit: -1).length,
+                    itemBuilder: (context, index) {
+                      final tx = logic.getExpenseTransactions(limit: -1)[index];
+                      return RecentTransactionItem(
+                        icon: _getIconForTransaction(tx),
+                        title: tx.title,
+                        subtitle: _getCategoryForTransaction(tx),
+                        amount: tx.amount,
+                        onTap: () {
+                          // Opcional: navegar al detalle
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
 }

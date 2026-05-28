@@ -24,7 +24,7 @@ class BalanceCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -41,7 +41,7 @@ class BalanceCard extends StatelessWidget {
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -53,7 +53,7 @@ class BalanceCard extends StatelessWidget {
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.secondary.withOpacity(0.1),
+                color: theme.colorScheme.secondary.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -71,7 +71,7 @@ class BalanceCard extends StatelessWidget {
                     Text(
                       'Saldo Total',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 1,
@@ -110,8 +110,8 @@ class BalanceCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color:
                                 balance >= 0
-                                    ? Colors.green.withOpacity(0.2)
-                                    : Colors.red.withOpacity(0.2),
+                                    ? Colors.green.withValues(alpha: 0.2)
+                                    : Colors.red.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -147,7 +147,7 @@ class BalanceCard extends StatelessWidget {
                         Text(
                           'vs mes anterior',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 12,
                           ),
                         ),
@@ -195,7 +195,7 @@ class BalanceCard extends StatelessWidget {
                               width: 24,
                               height: 24,
                               decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.8),
+                                color: Colors.orange.withValues(alpha: 0.8),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -206,7 +206,7 @@ class BalanceCard extends StatelessWidget {
                               width: 24,
                               height: 24,
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.8),
+                                color: Colors.red.withValues(alpha: 0.8),
                                 shape: BoxShape.circle,
                               ),
                             ),

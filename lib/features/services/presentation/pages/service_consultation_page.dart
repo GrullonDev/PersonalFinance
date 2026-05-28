@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:personal_finance/core/presentation/widgets/premium_background.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/premium_modals.dart';
 import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:table_calendar/table_calendar.dart';
+
+import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 
 class ServiceConsultationPage extends StatefulWidget {
   const ServiceConsultationPage({super.key});
@@ -14,14 +20,437 @@ class ServiceConsultationPage extends StatefulWidget {
   @override
   State<ServiceConsultationPage> createState() =>
       _ServiceConsultationPageState();
+
+  static Future<void> showAddServiceDialog(
+    BuildContext context, {
+    Budget? budget,
+  }) async {
+    final parentBloc = context.read<BudgetsBloc>();
+    final key = GlobalKey<FormState>();
+    final nameCtrl = TextEditingController(text: budget?.nombre ?? '');
+    final amountCtrl = TextEditingController(text: budget?.montoTotal ?? '');
+    DateTime start = budget?.fechaInicio ?? DateTime.now();
+    DateTime end =
+        budget?.fechaFin ?? DateTime.now().add(const Duration(days: 30));
+    String frecuencia = 'Mensual';
+
+    await showPremiumBottomSheet<void>(
+      context: context,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setState) => SafeArea(
+                  bottom: false,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: context.isMobile ? double.infinity : 500,
+                      maxHeight: MediaQuery.of(context).size.height * 0.9,
+                    ),
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                      top: 24,
+                      left: 24,
+                      right: 24,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(32),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: key,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    Icons.bolt_rounded,
+                                    color: Theme.of(context).primaryColor,
+                                    size: 32,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        budget == null
+                                            ? 'Agregar Servicio'
+                                            : 'Editar Servicio',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Gestiona pagos recurrentes',
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            TextFormField(
+                              controller: nameCtrl,
+                              decoration: InputDecoration(
+                                labelText: 'Nombre del Servicio',
+                                prefixIcon: const Icon(Icons.label_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
+                              ),
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Requerido'
+                                          : null,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: amountCtrl,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    decoration: InputDecoration(
+                                      labelText: 'Monto Total',
+                                      prefixIcon: const Icon(
+                                        Icons.attach_money,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      filled: true,
+                                      fillColor: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Requerido';
+                                      }
+                                      if (double.tryParse(value) == null) {
+                                        return 'Inválido';
+                                      }
+                                      if (double.parse(value) <= 0) {
+                                        return 'Monto inválido';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: frecuencia,
+                                    decoration: InputDecoration(
+                                      labelText: 'Frecuencia',
+                                      prefixIcon: const Icon(
+                                        Icons.autorenew_rounded,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      filled: true,
+                                      fillColor: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'Mensual',
+                                        child: Text('Mensual'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'Anual',
+                                        child: Text('Anual'),
+                                      ),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(() => frecuencia = val);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final d = await showDatePicker(
+                                        context: context,
+                                        initialDate: start,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (d != null) setState(() => start = d);
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.3),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline
+                                              .withValues(alpha: 0.2),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Inicio',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.calendar_today,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                DateFormat.yMMMd().format(
+                                                  start,
+                                                ),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final d = await showDatePicker(
+                                        context: context,
+                                        initialDate: end,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (d != null) setState(() => end = d);
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.3),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline
+                                              .withValues(alpha: 0.2),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Vencimiento',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.event_available,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                DateFormat.yMMMd().format(end),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextButton(
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      foregroundColor: Colors.grey.shade600,
+                                    ),
+                                    child: const Text(
+                                      'Cancelar',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 2,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      elevation: 2,
+                                    ),
+                                    onPressed: () {
+                                      if (!key.currentState!.validate()) return;
+                                      final now = DateTime.now();
+                                      final deviceId =
+                                          getIt<DeviceService>().deviceId;
+                                      final payload = Budget(
+                                        id:
+                                            budget?.id ??
+                                            'service_${now.microsecondsSinceEpoch}',
+                                        createdAt: budget?.createdAt ?? now,
+                                        updatedAt: now,
+                                        deviceId: budget?.deviceId ?? deviceId,
+                                        version: (budget?.version ?? 0) + 1,
+                                        nombre:
+                                            '${nameCtrl.text.trim()} ($frecuencia)',
+                                        montoTotal: amountCtrl.text.trim(),
+                                        fechaInicio: start,
+                                        fechaFin: end,
+                                      );
+                                      if (budget == null) {
+                                        parentBloc.add(BudgetCreate(payload));
+                                      } else {
+                                        parentBloc.add(BudgetUpdate(payload));
+                                      }
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      budget == null
+                                          ? 'Guardar Servicio'
+                                          : 'Actualizar',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+          ),
+    );
+  }
 }
 
 class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isCalendarView = false;
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
   @override
   void initState() {
     super.initState();
     // Asegurarse de cargar los presupuestos al entrar
     context.read<BudgetsBloc>().add(BudgetsLoad());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   IconData _getServiceIcon(String name) {
@@ -72,134 +501,336 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     final FinanceColors colors = Theme.of(context).extension<FinanceColors>()!;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: PremiumBackground(
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: context.isMobile ? double.infinity : 1000,
+                ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 16,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Mis Servicios',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mis Servicios',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Gestiona tus pagos recurrentes',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Gestiona tus pagos recurrentes desde Firebase',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                    if (!context.isMobile)
+                      FilledButton.icon(
+                        onPressed:
+                            () => ServiceConsultationPage.showAddServiceDialog(
+                              context,
+                            ),
+                        icon: const Icon(Icons.add_card_rounded),
+                        label: const Text('Agregar Servicio'),
                       ),
-                    ),
                   ],
                 ),
               ),
+            ),
 
-              Expanded(
-                child: BlocBuilder<BudgetsBloc, BudgetsState>(
-                  builder: (context, state) {
-                    if (state.loading && state.items.isEmpty) {
-                      return const Center(child: AppLoadingWidget());
-                    }
+            Expanded(
+              child: BlocBuilder<BudgetsBloc, BudgetsState>(
+                builder: (context, state) {
+                  if (state.loading && state.items.isEmpty) {
+                    return const Center(child: AppLoadingWidget());
+                  }
 
-                    if (state.error != null && state.items.isEmpty) {
-                      return Center(child: Text('Error: ${state.error}'));
-                    }
+                  if (state.error != null && state.items.isEmpty) {
+                    return Center(child: Text('Error: ${state.error}'));
+                  }
 
-                    if (state.items.isEmpty) {
-                      return EmptyState(
-                        title: 'No hay servicios',
-                        message:
-                            'Agrega un servicio para llevar el control de tus pagos.',
-                        action: IconButton.filledTonal(
-                          onPressed: () => _openAddServiceDialog(context),
-                          icon: const Icon(Icons.add),
-                        ),
-                      );
-                    }
-
-                    final totalAmount = state.items.fold<double>(
-                      0,
-                      (sum, item) => sum + item.montoAsDouble,
-                    );
-
-                    return RefreshIndicator(
-                      onRefresh:
-                          () async =>
-                              context.read<BudgetsBloc>().add(BudgetsLoad()),
-                      child: CustomScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        slivers: [
-                          // Status Summary Header
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                              child: _buildStatusCard(context, totalAmount),
+                  if (state.items.isEmpty) {
+                    return EmptyState(
+                      title: 'No hay servicios',
+                      message:
+                          'Agrega un servicio para llevar el control de tus pagos.',
+                      action: IconButton.filledTonal(
+                        onPressed:
+                            () => ServiceConsultationPage.showAddServiceDialog(
+                              context,
                             ),
-                          ),
-
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            sliver: SliverToBoxAdapter(
-                              child: Text(
-                                'Lista de Servicios',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-
-                          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate((
-                                context,
-                                index,
-                              ) {
-                                final budget = state.items[index];
-                                return _buildServiceItem(
-                                  context,
-                                  budget,
-                                  colors,
-                                );
-                              }, childCount: state.items.length),
-                            ),
-                          ),
-
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 80),
-                          ), // Space for FAB
-                        ],
+                        icon: const Icon(Icons.add),
                       ),
                     );
-                  },
-                ),
+                  }
+
+                  final totalAmount = state.items.fold<double>(
+                    0,
+                    (sum, item) => sum + item.montoAsDouble,
+                  );
+
+                  return RefreshIndicator(
+                    onRefresh:
+                        () async =>
+                            context.read<BudgetsBloc>().add(BudgetsLoad()),
+                    child: Center(
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: context.isMobile ? double.infinity : 1000,
+                        ),
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            // Status Summary Header
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 24,
+                                  left: 20,
+                                  right: 20,
+                                ),
+                                child: _buildStatusCard(context, totalAmount),
+                              ),
+                            ),
+
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              sliver: SliverToBoxAdapter(
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Mis Pagos',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SegmentedButton<bool>(
+                                      segments: const [
+                                        ButtonSegment(
+                                          value: false,
+                                          icon: Icon(Icons.list),
+                                        ),
+                                        ButtonSegment(
+                                          value: true,
+                                          icon: Icon(Icons.calendar_month),
+                                        ),
+                                      ],
+                                      selected: {_isCalendarView},
+                                      onSelectionChanged: (set) {
+                                        setState(
+                                          () => _isCalendarView = set.first,
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
+
+                            if (_isCalendarView)
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverToBoxAdapter(
+                                  child: _buildCalendarView(
+                                    context,
+                                    state.items,
+                                    colors,
+                                  ),
+                                ),
+                              )
+                            else if (context.isMobile)
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final budget = state.items[index];
+                                    return _buildServiceItem(
+                                      context,
+                                      budget,
+                                      colors,
+                                    );
+                                  }, childCount: state.items.length),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                sliver: SliverGrid(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithMaxCrossAxisExtent(
+                                        maxCrossAxisExtent: 450,
+                                        mainAxisExtent: 100,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                      ),
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final budget = state.items[index];
+                                    return _buildServiceItem(
+                                      context,
+                                      budget,
+                                      colors,
+                                    );
+                                  }, childCount: state.items.length),
+                                ),
+                              ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 80),
+                            ), // Space for FAB
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddServiceDialog(context),
-        icon: const Icon(Icons.add_card_rounded),
-        label: const Text('Agregar Servicio'),
-      ),
+    );
+  }
+
+  List<Budget> _getEventsForDay(List<Budget> budgets, DateTime day) =>
+      budgets.where((b) {
+        final fin = b.fechaFin;
+        // Asume simple lógica para (Mensual)
+        if (b.nombre.contains('(Mensual)')) {
+          return fin.day == day.day &&
+              (day.isAfter(b.fechaInicio.add(const Duration(days: -31))) ||
+                  isSameDay(b.fechaInicio, day));
+        } else {
+          return isSameDay(fin, day);
+        }
+      }).toList();
+
+  Widget _buildCalendarView(
+    BuildContext context,
+    List<Budget> budgets,
+    FinanceColors colors,
+  ) {
+    final selectedDay = _selectedDay ?? _focusedDay;
+    final eventsToday = _getEventsForDay(budgets, selectedDay);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: colors.glassBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colors.glassBorder),
+          ),
+          child: TableCalendar<Budget>(
+            firstDay: DateTime(2020),
+            lastDay: DateTime(2100),
+            focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            eventLoader: (day) => _getEventsForDay(budgets, day),
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            calendarStyle: CalendarStyle(
+              markerDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              todayDecoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+            onDaySelected: (selectedDay, focusedDay) {
+              if (!isSameDay(_selectedDay, selectedDay)) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+              }
+            },
+            onFormatChanged: (format) {
+              if (_calendarFormat != format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              }
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Pagos para el ${DateFormat.yMMMd().format(selectedDay)}',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        if (eventsToday.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'No hay pagos programados para este día.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          ...eventsToday.map((b) => _buildServiceItem(context, b, colors)),
+      ],
     );
   }
 
@@ -224,7 +855,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, color: color),
@@ -233,271 +864,130 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
           budget.nombre,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        subtitle: Text(
-          'Vence: ${DateFormat.yMMMd().format(budget.fechaFin)}',
-          style: TextStyle(
-            color:
-                isOverdue
-                    ? Colors.redAccent
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-            fontSize: 13,
-            fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
-          ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isOverdue)
+              const Text(
+                'Pago pendiente',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            Text(
+              isOverdue
+                  ? 'Vencido hace ${DateTime.now().difference(budget.fechaFin).inDays} días 🔴'
+                  : 'Vence en ${budget.fechaFin.difference(DateTime.now()).inDays} días',
+              style: TextStyle(
+                color:
+                    isOverdue
+                        ? Colors.redAccent
+                        : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 13,
+                fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '\$${double.tryParse(budget.montoTotal)?.toStringAsFixed(2) ?? "0.00"}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              '${CurrencyHelper.symbol}${double.tryParse(budget.montoTotal)?.toStringAsFixed(2) ?? "0.00"}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 4),
             Icon(
               Icons.chevron_right,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ],
         ),
-        onTap: () => _openAddServiceDialog(context, budget: budget),
+        onTap:
+            () => ServiceConsultationPage.showAddServiceDialog(
+              context,
+              budget: budget,
+            ),
         onLongPress: () => _confirmDelete(context, budget),
       ),
     );
   }
 
-  Widget _buildStatusCard(BuildContext context, double total) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+  Widget _buildStatusCard(BuildContext context, double total) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+        ],
+      ),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [
+        BoxShadow(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          blurRadius: 30,
+          spreadRadius: 5,
+          offset: const Offset(0, 15),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Icon(
+              Icons.account_balance_wallet,
+              color: Colors.white,
+              size: 32,
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Firebase Sync',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+        const SizedBox(height: 24),
+        const Text(
+          'Presupuesto Total en Servicios',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Total: ${CurrencyHelper.symbol}${total.toStringAsFixed(2)}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Icon(
-                Icons.account_balance_wallet,
-                color: Colors.white,
-                size: 32,
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Firebase Sync',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Presupuesto Total en Servicios',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '\$${total.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openAddServiceDialog(
-    BuildContext context, {
-    Budget? budget,
-  }) async {
-    final parentBloc = context.read<BudgetsBloc>();
-    final key = GlobalKey<FormState>();
-    final nameCtrl = TextEditingController(text: budget?.nombre ?? '');
-    final amountCtrl = TextEditingController(text: budget?.montoTotal ?? '');
-    DateTime start = budget?.fechaInicio ?? DateTime.now();
-    DateTime end =
-        budget?.fechaFin ?? DateTime.now().add(const Duration(days: 30));
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setState) => Container(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                    top: 24,
-                    left: 24,
-                    right: 24,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(32),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    child: Form(
-                      key: key,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            budget == null
-                                ? 'Nuevo Servicio'
-                                : 'Editar Servicio',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 24),
-                          TextFormField(
-                            controller: nameCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'Nombre del Servicio',
-                              prefixIcon: const Icon(Icons.label_outline),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            validator:
-                                (v) =>
-                                    v == null || v.isEmpty ? 'Requerido' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: amountCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Monto a Presupuestar',
-                              prefixIcon: const Icon(Icons.attach_money),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            validator:
-                                (v) =>
-                                    (double.tryParse(v ?? '') ?? 0) <= 0
-                                        ? 'Monto inválido'
-                                        : null,
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ListTile(
-                                  title: const Text(
-                                    'Inicio',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                  subtitle: Text(
-                                    DateFormat.yMMMd().format(start),
-                                  ),
-                                  onTap: () async {
-                                    final d = await showDatePicker(
-                                      context: context,
-                                      initialDate: start,
-                                      firstDate: DateTime(2020),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (d != null) setState(() => start = d);
-                                  },
-                                ),
-                              ),
-                              Expanded(
-                                child: ListTile(
-                                  title: const Text(
-                                    'Vencimiento',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                  subtitle: Text(
-                                    DateFormat.yMMMd().format(end),
-                                  ),
-                                  onTap: () async {
-                                    final d = await showDatePicker(
-                                      context: context,
-                                      initialDate: end,
-                                      firstDate: DateTime(2020),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (d != null) setState(() => end = d);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              onPressed: () {
-                                if (!key.currentState!.validate()) return;
-                                final payload = Budget(
-                                  id: budget?.id,
-                                  nombre: nameCtrl.text.trim(),
-                                  montoTotal: amountCtrl.text.trim(),
-                                  fechaInicio: start,
-                                  fechaFin: end,
-                                );
-                                if (budget == null) {
-                                  parentBloc.add(BudgetCreate(payload));
-                                } else {
-                                  parentBloc.add(BudgetUpdate(payload));
-                                }
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Guardar'),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-          ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 
   Future<void> _confirmDelete(BuildContext context, Budget budget) async {
     final confirm = await showDialog<bool>(
@@ -525,7 +1015,7 @@ class _ServiceConsultationPageState extends State<ServiceConsultationPage> {
     );
 
     if (confirm == true && mounted) {
-      context.read<BudgetsBloc>().add(BudgetDelete(budget.id!));
+      context.read<BudgetsBloc>().add(BudgetDelete(budget.id));
     }
   }
 }

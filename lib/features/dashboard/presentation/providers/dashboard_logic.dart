@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart';
+import 'package:get_it/get_it.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
@@ -11,6 +11,11 @@ import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/usecases/get_active_goals_usecase.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/usecases/get_active_budgets_usecase.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart'
+    show FinancialHealthScore, VertexAiService;
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
+import 'package:personal_finance/features/debts/domain/entities/debt.dart';
+import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
 
 /// Lógica del dashboard mejorada siguiendo Clean Architecture
 class DashboardLogic extends ChangeNotifier {
@@ -37,6 +42,12 @@ class DashboardLogic extends ChangeNotifier {
   Budget? _activeBudget;
   bool _isLoading = false;
   String? _error;
+  String? _personalizedTip;
+  bool _isLoadingTip = false;
+  String? _spendingPrediction;
+  bool _isLoadingPrediction = false;
+  FinancialHealthScore? _healthScore;
+  bool _isLoadingHealthScore = false;
 
   // Getters públicos
   PeriodFilter get selectedPeriod => _selectedPeriod;
@@ -46,6 +57,12 @@ class DashboardLogic extends ChangeNotifier {
   Budget? get activeBudget => _activeBudget;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get personalizedTip => _personalizedTip;
+  bool get isLoadingTip => _isLoadingTip;
+  String? get spendingPrediction => _spendingPrediction;
+  bool get isLoadingPrediction => _isLoadingPrediction;
+  FinancialHealthScore? get healthScore => _healthScore;
+  bool get isLoadingHealthScore => _isLoadingHealthScore;
 
   // Getters computados
   bool get hasData =>
@@ -58,6 +75,45 @@ class DashboardLogic extends ChangeNotifier {
   bool get shouldShowIncomesList => _incomes.isNotEmpty;
   bool get shouldShowTransactions =>
       _expenses.isNotEmpty || _incomes.isNotEmpty;
+
+  // Profile type — no-op stub; feature not active in current release.
+  // ignore: avoid_unused_parameters
+  void setProfileType(String profileType) {}
+
+  // Category filter — used by CategorySelector widget.
+  String? _selectedCategory;
+  String? get selectedCategory => _selectedCategory;
+  List<String> get availableCategories => ['Todas', ...expensesByCategory.keys];
+  void changeCategory(String category) {
+    _selectedCategory = category == 'Todas' ? null : category;
+    notifyListeners();
+  }
+
+  // Weekly budget spent — sum of expenses in current week vs active budget.
+  double get weeklyBudgetSpent {
+    final now = DateTime.now();
+    final startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
+    return _expenses
+        .where((e) => !e.date.isBefore(startOfWeek))
+        .fold(0, (sum, e) => sum + e.amount);
+  }
+
+  /// Mensaje de insight basado en el balance actual. Null si no hay datos.
+  String? get insightMessage {
+    if (!hasData) return null;
+    final double bal = balance;
+    if (bal > 0) {
+      return 'Tu balance es positivo (${CurrencyHelper.format(bal)}). ¡Buen trabajo manteniendo tus gastos bajo control!';
+    } else if (bal < 0) {
+      return 'Tus gastos superan tus ingresos en ${CurrencyHelper.format(bal.abs())}. Considera revisar tu presupuesto.';
+    }
+    return 'Tu balance está equilibrado. Registra más transacciones para obtener insights personalizados.';
+  }
+
   List<IncomeEntity> get filteredIncomes => sortedIncomes;
   List<ChartData> getChartData() => chartData;
 
@@ -154,14 +210,12 @@ class DashboardLogic extends ChangeNotifier {
     // Si no hay datos, recomendar empezar
     if (!hasData) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '📊',
           title: 'Comienza tu viaje',
           description:
               'Registra tus primeras transacciones para obtener recomendaciones personalizadas.',
           actionLabel: 'Agregar transacción',
-          accentColor: Colors.blue,
-          actionType: RecommendationActionType.none,
         ),
       );
       return items;
@@ -185,7 +239,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Crear meta de ahorro (si hay balance positivo pero no hay metas)
     if (balance > 0 && _goals.isEmpty) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '💰',
           title: 'Ahorro',
           description:
@@ -200,7 +254,7 @@ class DashboardLogic extends ChangeNotifier {
     // Recomendación: Invertir (si el balance es muy alto)
     if (balance > totalIncomes * 2) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '📈',
           title: 'Invierte',
           description:
@@ -230,14 +284,13 @@ class DashboardLogic extends ChangeNotifier {
     // Si no hay recomendaciones específicas, mostrar una genérica positiva
     if (items.isEmpty) {
       items.add(
-        RecommendationItem(
+        const RecommendationItem(
           icon: '✨',
           title: '¡Buen trabajo!',
           description:
               'Tus finanzas están en buen estado. Sigue registrando tus transacciones.',
           actionLabel: 'Continuar',
           accentColor: Colors.green,
-          actionType: RecommendationActionType.none,
         ),
       );
     }
@@ -283,8 +336,11 @@ class DashboardLogic extends ChangeNotifier {
         endDate: dateRange.end,
       );
 
-      final DashboardResult result = await _getDashboardDataUseCase.execute(
-        params,
+      final either = await _getDashboardDataUseCase.execute(params);
+      late final DashboardResult result;
+      either.fold(
+        (failure) => throw Exception(failure.toString()),
+        (data) => result = data,
       );
 
       // Fetch goals and budgets in parallel could be better, but sequential for simplicity first
@@ -308,10 +364,171 @@ class DashboardLogic extends ChangeNotifier {
       _incomes = result.incomes;
 
       notifyListeners();
+
+      // Iniciar cargas asíncronas de IA y reprogramar notificaciones
+      fetchPersonalizedTip();
+      fetchSpendingPrediction();
+      fetchHealthScore();
+      _rescheduleLocalNotifications();
     } catch (e) {
       _setError('Error al cargar datos: $e');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Calcula la racha actual de ahorro (días consecutivos registrando transacciones)
+  int get savingsStreak {
+    final List<DateTime> dates = <DateTime>[
+      ..._expenses.map((e) => e.date),
+      ..._incomes.map((i) => i.date),
+    ];
+    if (dates.isEmpty) return 0;
+
+    final uniqueDates =
+        dates.map((d) => DateTime(d.year, d.month, d.day)).toSet().toList()
+          ..sort((a, b) => b.compareTo(a));
+
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (uniqueDates.isEmpty ||
+        (uniqueDates.first != today && uniqueDates.first != yesterday)) {
+      return 0;
+    }
+
+    int streak = 0;
+    DateTime currentDay = uniqueDates.first;
+
+    for (final date in uniqueDates) {
+      if (date == currentDay) {
+        streak++;
+        currentDay = currentDay.subtract(const Duration(days: 1));
+      } else if (date.isBefore(currentDay)) {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  /// Obtiene un consejo financiero personalizado desde Vertex AI in Firebase (Gemini)
+  Future<void> fetchPersonalizedTip() async {
+    if (!hasData) return;
+    _isLoadingTip = true;
+    notifyListeners();
+    try {
+      final aiService = GetIt.instance<VertexAiService>();
+
+      List<Debt> activeDebts = [];
+      try {
+        final debtRepository = GetIt.instance<DebtRepository>();
+        final debtsResult = await debtRepository.getDebts();
+        debtsResult.fold(
+          (failure) =>
+              debugPrint('Error al cargar deudas para Gemini: $failure'),
+          (debts) => activeDebts = debts,
+        );
+      } catch (e) {
+        debugPrint('Error al instanciar o usar DebtRepository: $e');
+      }
+
+      _personalizedTip = await aiService.getPersonalizedTip(
+        _expenses,
+        _incomes,
+        goals: _goals,
+        debts: activeDebts,
+      );
+    } catch (e) {
+      debugPrint('Error al obtener consejo personalizado de Gemini: $e');
+    } finally {
+      _isLoadingTip = false;
+      notifyListeners();
+    }
+  }
+
+  /// Genera predicción de gasto para la próxima semana usando Gemini.
+  Future<void> fetchSpendingPrediction() async {
+    if (_expenses.isEmpty) return;
+    _isLoadingPrediction = true;
+    notifyListeners();
+    try {
+      final aiService = GetIt.instance<VertexAiService>();
+      _spendingPrediction = await aiService.getSpendingPrediction(
+        _expenses,
+        _incomes,
+      );
+    } catch (e) {
+      debugPrint('Error al obtener predicción de gastos: $e');
+    } finally {
+      _isLoadingPrediction = false;
+      notifyListeners();
+    }
+  }
+
+  /// Calcula el score de salud financiera 0–100 usando Gemini.
+  Future<void> fetchHealthScore() async {
+    if (totalIncomes == 0 && totalExpenses == 0) return;
+    _isLoadingHealthScore = true;
+    notifyListeners();
+    try {
+      final aiService = GetIt.instance<VertexAiService>();
+
+      double goalsProgress = 0;
+      if (_goals.isNotEmpty) {
+        goalsProgress =
+            _goals.fold<double>(0, (sum, g) {
+              final pct =
+                  g.objetivoAsDouble > 0
+                      ? (g.actualAsDouble / g.objetivoAsDouble * 100).clamp(
+                        0,
+                        100,
+                      )
+                      : 0.0;
+              return sum + pct;
+            }) /
+            _goals.length;
+      }
+
+      List<Debt> debts = [];
+      try {
+        final debtRepository = GetIt.instance<DebtRepository>();
+        final result = await debtRepository.getDebts();
+        result.fold((_) {}, (d) => debts = d);
+      } catch (_) {}
+
+      final totalDebtBalance = debts.fold<double>(
+        0,
+        (s, d) => s + d.currentBalance,
+      );
+
+      _healthScore = await aiService.getFinancialHealthScore(
+        totalIncomes: totalIncomes,
+        totalExpenses: totalExpenses,
+        activeGoals: _goals.length,
+        activeDebts: debts.length,
+        goalsProgress: goalsProgress,
+        totalDebtBalance: totalDebtBalance,
+      );
+    } catch (e) {
+      debugPrint('Error al calcular health score: $e');
+    } finally {
+      _isLoadingHealthScore = false;
+      notifyListeners();
+    }
+  }
+
+  /// Reprograma las notificaciones locales con los datos actualizados
+  Future<void> _rescheduleLocalNotifications() async {
+    try {
+      final notifService = GetIt.instance<NotificationService>();
+      await notifService.local.scheduleStreakReminder(savingsStreak);
+      await notifService.local.scheduleWeeklySummary();
+    } catch (e) {
+      debugPrint('Error reprogramando notificaciones locales: $e');
     }
   }
 
@@ -383,11 +600,7 @@ class DashboardLogic extends ChangeNotifier {
   }
 
   // Métodos de utilidad
-  String formatCurrency(double amount) {
-    // Usa el locale del dispositivo para formatear la moneda correctamente
-    final formatter = NumberFormat.currency(locale: 'en_US', symbol: 'Q');
-    return formatter.format(amount);
-  }
+  String formatCurrency(double amount) => CurrencyHelper.format(amount);
 
   String formatPercentage(double value, double total) {
     if (total == 0) return '0%';
@@ -469,9 +682,14 @@ class DashboardLogic extends ChangeNotifier {
           end: endOfYear.add(const Duration(days: 1)),
         );
       case PeriodFilter.historico:
+        return DateTimeRange(start: DateTime(2000), end: DateTime(3000));
+      case PeriodFilter.personalizado:
+        // Custom range not implemented in this view — fall back to current month.
+        final DateTime startOfMonth = DateTime(now.year, now.month);
+        final DateTime endOfMonth = DateTime(now.year, now.month + 1, 0);
         return DateTimeRange(
-          start: DateTime(2000), // Fecha muy antigua
-          end: DateTime(3000), // Fecha muy futura
+          start: startOfMonth,
+          end: endOfMonth.add(const Duration(days: 1)),
         );
     }
   }

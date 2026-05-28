@@ -13,6 +13,15 @@ class QuickFinanceState extends Equatable {
   /// `true` cuando el SyncManager está ejecutando push/pull.
   final bool isSyncing;
 
+  /// `true` cuando el dispositivo no tiene conexión a internet.
+  final bool isOffline;
+
+  /// Timestamp de la última sincronización exitosa.
+  final DateTime? lastSyncAt;
+
+  /// Mensaje del último error de sincronización (null si no hubo error).
+  final String? syncError;
+
   const QuickFinanceState({
     this.status = QuickFinanceStatus.initial,
     this.transactions = const [],
@@ -23,6 +32,9 @@ class QuickFinanceState extends Equatable {
     ),
     this.errorMessage,
     this.isSyncing = false,
+    this.isOffline = false,
+    this.lastSyncAt,
+    this.syncError,
   });
 
   QuickFinanceState copyWith({
@@ -32,6 +44,10 @@ class QuickFinanceState extends Equatable {
     String? errorMessage,
     bool clearError = false,
     bool? isSyncing,
+    bool? isOffline,
+    DateTime? lastSyncAt,
+    String? syncError,
+    bool clearSyncError = false,
   }) {
     return QuickFinanceState(
       status: status ?? this.status,
@@ -39,9 +55,21 @@ class QuickFinanceState extends Equatable {
       balance: balance ?? this.balance,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isSyncing: isSyncing ?? this.isSyncing,
+      isOffline: isOffline ?? this.isOffline,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      syncError: clearSyncError ? null : (syncError ?? this.syncError),
     );
   }
 
   @override
-  List<Object?> get props => [status, transactions, balance, errorMessage, isSyncing];
+  List<Object?> get props => [
+    status,
+    transactions,
+    balance,
+    errorMessage,
+    isSyncing,
+    isOffline,
+    lastSyncAt,
+    syncError,
+  ];
 }

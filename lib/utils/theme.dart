@@ -1,27 +1,33 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AppTheme {
   // Premium/Neon Palette
   static const Color _seedColor = Color(0xFF6C63FF); // Electric Violet
   static const Color _primaryLight = Color(0xFF6C63FF);
+  static const Color _secondaryLight = Color(0xFF4F46E5); // Indigo
   static const Color _primaryDark = Color(0xFF8B80F9);
 
-  static const Color _bgLight = Color(0xFFF0F2F5);
-  static const Color _bgDark = Color(0xFF0F111A); // Deep Midnight Blue
+  static const Color _bgLight = Color(0xFFF6F7FB); // Claro y fresco
+  static const Color _bgDark = Color(0xFF07090F); // Ultra Deep Premium Navy
 
   static const Color _surfaceLight = Colors.white;
-  static const Color _surfaceDark = Color(0xFF1E2130);
+  static const Color _surfaceDark = Color(0xFF131620); // Premium dark card
 
   static const Color _success = Color(0xFF00E676); // Neon Green
   static const Color _error = Color(0xFFFF2D55); // Neon Red
 
-  static ThemeData dark() {
+  static const Color _textMainLight = Color(0xFF111827); // Dark Gray
+  static const Color _textSecondaryLight = Color(0xFF6B7280); // Gray
+
+  static ThemeData dark({Color? primaryColor}) {
+    final Color seed = primaryColor ?? _seedColor;
     final ColorScheme base = ColorScheme.fromSeed(
-      seedColor: _seedColor,
+      seedColor: seed,
       brightness: Brightness.dark,
     );
     final ColorScheme scheme = base.copyWith(
-      primary: _primaryDark,
+      primary: primaryColor ?? _primaryDark,
       secondary: const Color(0xFF03DAC6),
       surface: _surfaceDark,
       error: _error,
@@ -30,14 +36,16 @@ class AppTheme {
     return _buildTheme(scheme, _bgDark);
   }
 
-  static ThemeData light() {
-    final ColorScheme base = ColorScheme.fromSeed(seedColor: _seedColor);
+  static ThemeData light({Color? primaryColor}) {
+    final Color seed = primaryColor ?? _seedColor;
+    final ColorScheme base = ColorScheme.fromSeed(seedColor: seed);
     final ColorScheme scheme = base.copyWith(
-      primary: _primaryLight,
-      secondary: const Color(0xFF03DAC6),
+      primary: primaryColor ?? _primaryLight,
+      secondary: _secondaryLight,
       surface: _surfaceLight,
       error: _error,
-      // background: _bgLight,
+      onSurface: _textMainLight,
+      onSurfaceVariant: _textSecondaryLight,
     );
     return _buildTheme(scheme, _bgLight);
   }
@@ -51,7 +59,6 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: scaffoldBg,
       fontFamily: 'Roboto', // Or 'Inter' if added to pubspec
-
       // Transiciones de página estilo iOS por defecto cuando la app corre
       // en iPhone/iPad (swipe-back, slide horizontal). En Android mantenemos
       // el comportamiento Material estándar (zoom).
@@ -83,27 +90,42 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 10,
+        backgroundColor: isDark ? const Color(0xFF1E2132) : Colors.black87,
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'Roboto',
+        ),
+      ),
+
       textTheme: Typography.material2021(platform: TargetPlatform.iOS)
           .englishLike
           .apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
 
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.outline.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.15)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(
+            color: scheme.primary.withValues(alpha: 0.8),
+            width: 2,
+          ),
         ),
         filled: true,
-        fillColor: isDark ? const Color(0xFF2C2F40) : Colors.grey.shade100,
+        fillColor: isDark ? const Color(0xFF191C2B) : Colors.grey.shade50,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
-          vertical: 16,
+          vertical: 18,
         ),
-        labelStyle: TextStyle(color: scheme.onSurface.withOpacity(0.6)),
+        labelStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -111,7 +133,7 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: Colors.white,
           elevation: 4,
-          shadowColor: scheme.primary.withOpacity(0.4),
+          shadowColor: scheme.primary.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -132,7 +154,7 @@ class AppTheme {
 
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         selectedItemColor: scheme.primary,
-        unselectedItemColor: scheme.onSurface.withOpacity(0.4),
+        unselectedItemColor: scheme.onSurface.withValues(alpha: 0.4),
         backgroundColor: isDark ? const Color(0xFF1E2130) : Colors.white,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -140,7 +162,7 @@ class AppTheme {
       ),
 
       dividerTheme: DividerThemeData(
-        color: scheme.outline.withOpacity(0.1),
+        color: scheme.outline.withValues(alpha: 0.1),
         thickness: 1,
       ),
 
@@ -152,12 +174,12 @@ class AppTheme {
           info: const Color(0xFF2196F3),
           glassBackground:
               isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.white.withOpacity(0.7),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white.withValues(alpha: 0.7),
           glassBorder:
               isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.white.withOpacity(0.2),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.2),
         ),
       ],
     );

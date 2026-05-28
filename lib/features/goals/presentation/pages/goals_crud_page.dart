@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:confetti/confetti.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
@@ -143,8 +147,8 @@ class GoalsCrudPage extends StatelessWidget {
   const GoalsCrudPage({super.key, this.showAppBar = true});
 
   @override
-  Widget build(BuildContext context) => BlocProvider<GoalsBloc>(
-    create: (_) => GoalsBloc(getIt<GoalRepository>())..add(GoalsLoad()),
+  Widget build(BuildContext context) => BlocProvider<GoalsBloc>.value(
+    value: getIt<GoalsBloc>()..add(GoalsLoad()),
     child: _GoalsView(showAppBar: showAppBar),
   );
 }
@@ -194,13 +198,34 @@ class _DateTile extends StatelessWidget {
   );
 }
 
-class _GoalsView extends StatelessWidget {
+class _GoalsView extends StatefulWidget {
   final bool showAppBar;
 
   const _GoalsView({required this.showAppBar});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  State<_GoalsView> createState() => _GoalsViewState();
+}
+
+class _GoalsViewState extends State<_GoalsView> {
+  late ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      Scaffold(
     appBar: PreferredSize(
       preferredSize: const Size.fromHeight(120),
       child: Container(
@@ -210,12 +235,12 @@ class _GoalsView extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primary.withOpacity(0.8),
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -250,7 +275,7 @@ class _GoalsView extends StatelessWidget {
                   'Alcanza tus objetivos',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -352,13 +377,13 @@ class _GoalsView extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
                               Text(
-                                '\$${g.actualAsDouble.toStringAsFixed(0)}',
+                                '${CurrencyHelper.symbol}${g.actualAsDouble.toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                '\$${g.objetivoAsDouble.toStringAsFixed(0)}',
+                                '${CurrencyHelper.symbol}${g.objetivoAsDouble.toStringAsFixed(0)}',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
@@ -388,11 +413,33 @@ class _GoalsView extends StatelessWidget {
         );
       },
     ),
-    floatingActionButton: FloatingActionButton.extended(
-      onPressed: () => _openDialog(context),
-      label: const Text('Nueva meta'),
-      icon: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
+        onPressed: () => _openDialog(context),
+        label: const Text('Nueva meta'),
+        icon: const Icon(Icons.add),
+      ),
     ),
+      Align(
+        alignment: Alignment.topCenter,
+        child: ConfettiWidget(
+          confettiController: _confettiController,
+          blastDirection: 3.14 / 2, // Default: downwards
+          blastDirectionality: BlastDirectionality.explosive,
+          minBlastForce: 8, // set a lower min blast force
+          emissionFrequency: 0.05,
+          numberOfParticles: 50, // a reasonable number
+          gravity: 0.1,
+          colors: const [
+            Colors.green,
+            Colors.blue,
+            Colors.pink,
+            Colors.orange,
+            Colors.purple
+          ], // manually specify the colors to be used
+        ),
+      ),
+    ],
   );
 
   Future<void> _openDialog(BuildContext context, {Goal? goal}) async {
@@ -423,17 +470,18 @@ class _GoalsView extends StatelessWidget {
               key: key,
               child: SizedBox(
                 width: 360,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     TextFormField(
                       controller: nameCtrl,
                       decoration: const InputDecoration(labelText: 'Nombre'),
-                      validator:
-                          (String? v) =>
-                              v == null || v.trim().isEmpty
-                                  ? 'Ingresa un nombre'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                        LengthLimitingTextInputFormatter(120),
+                      ],
+                      validator: (String? v) => InputSanitizer.validateName(v ?? ''),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -444,11 +492,11 @@ class _GoalsView extends StatelessWidget {
                       decoration: const InputDecoration(
                         labelText: 'Monto objetivo',
                       ),
-                      validator:
-                          (String? v) =>
-                              (double.tryParse(v ?? '') ?? -1) <= 0
-                                  ? 'Ingresa un monto válido'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                        LengthLimitingTextInputFormatter(15),
+                      ],
+                      validator: (String? v) => InputSanitizer.validateAmount(v ?? ''),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -459,11 +507,17 @@ class _GoalsView extends StatelessWidget {
                       decoration: const InputDecoration(
                         labelText: 'Monto actual',
                       ),
-                      validator:
-                          (String? v) =>
-                              (double.tryParse(v ?? '') ?? -1) < 0
-                                  ? 'Monto inválido'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                        LengthLimitingTextInputFormatter(15),
+                      ],
+                      validator: (String? v) {
+                        if (v == null || v.isEmpty) return 'Requerido';
+                        final val = double.tryParse(v);
+                        if (val == null || val < 0) return 'Monto inválido';
+                        if (val > 999999999) return 'Monto demasiado grande';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 12),
                     _DateTile(
@@ -480,6 +534,17 @@ class _GoalsView extends StatelessWidget {
                             decoration: const InputDecoration(
                               labelText: 'Icono (nombre Material)',
                             ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_\-\.]')),
+                              LengthLimitingTextInputFormatter(50),
+                            ],
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Requerido';
+                              if (!RegExp(r'^[a-zA-Z0-9_\-\.]+$').hasMatch(v.trim())) {
+                                return 'Icono inválido';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -500,6 +565,7 @@ class _GoalsView extends StatelessWidget {
                     ),
                   ],
                 ),
+               ),
               ),
             ),
             actions: <Widget>[
@@ -534,9 +600,13 @@ class _GoalsView extends StatelessWidget {
     );
 
     if (saved == true && context.mounted) {
+      if (goal == null) {
+        _confettiController.play();
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(goal == null ? 'Meta creada' : 'Meta actualizada'),
+          content: Text(goal == null ? '¡Felicidades! Meta creada' : 'Meta actualizada'),
+          backgroundColor: goal == null ? Colors.green.shade600 : null,
         ),
       );
     }

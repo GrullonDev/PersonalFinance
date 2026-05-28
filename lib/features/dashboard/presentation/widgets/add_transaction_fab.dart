@@ -9,6 +9,7 @@ class AddTransactionFAB extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FloatingActionButton(
+    heroTag: null,
     onPressed: () {
       final TransactionsBloc bloc = context.read<TransactionsBloc>();
       showModalBottomSheet<void>(

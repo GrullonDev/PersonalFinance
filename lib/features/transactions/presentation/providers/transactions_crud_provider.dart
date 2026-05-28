@@ -93,9 +93,8 @@ class TransactionsCrudProvider extends ChangeNotifier {
   }
 
   Future<bool> remove(TransactionBackend tx) async {
-    if (tx.id == null) return false;
     _setLoading(true);
-    final Either<Failure, void> res = await _repository.delete(tx.id!);
+    final Either<Failure, void> res = await _repository.delete(tx.id);
     final bool ok = res.isRight();
     res.fold((Failure l) => _error = l.message, (_) {
       _error = null;

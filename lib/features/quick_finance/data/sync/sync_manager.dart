@@ -51,7 +51,7 @@ class SyncManager {
   final _stateController = StreamController<SyncResult>.broadcast();
   Stream<SyncResult> get syncStream => _stateController.stream;
 
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   /// ID del usuario actual. Se debe asignar antes de sincronizar.
   String? _userId;
@@ -135,9 +135,10 @@ class SyncManager {
   void startConnectivityListener() {
     _connectivitySubscription?.cancel();
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
-      ConnectivityResult result,
+      List<ConnectivityResult> results,
     ) {
-      final isConnected = result != ConnectivityResult.none;
+      final isConnected = results.isNotEmpty &&
+          results.any((r) => r != ConnectivityResult.none);
       // Solo sincronizar en la transición offline → online.
       if (isConnected && _wasConnected == false) {
         syncNow();

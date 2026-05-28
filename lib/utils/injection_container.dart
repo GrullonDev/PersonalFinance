@@ -36,6 +36,10 @@ import 'package:personal_finance/features/profile/data/repositories/profile_back
 import 'package:personal_finance/features/profile/domain/profile_datasource.dart';
 import 'package:personal_finance/features/profile/domain/profile_repository.dart';
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
+import 'package:personal_finance/features/debts/data/datasources/debt_remote_data_source.dart';
+import 'package:personal_finance/features/debts/data/repositories/debt_repository_impl.dart';
+import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
+import 'package:personal_finance/utils/offline_sync_service.dart';
 
 import 'package:personal_finance/features/transactions/data/datasources/transaction_backend_remote_data_source.dart'
     as backend_tx_ds;
@@ -49,6 +53,24 @@ import 'package:personal_finance/features/notifications/data/repositories/notifi
     as notif_repo_impl;
 import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
     as notif_repo;
+import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/core/services/navigation_service.dart';
+import 'package:personal_finance/core/services/notifications/local_notification_service.dart';
+import 'package:personal_finance/core/services/notifications/push_notification_service.dart';
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
+import 'package:personal_finance/core/services/notifications/notification_permission_service.dart';
+import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
+import 'package:personal_finance/core/services/notifications/push_token_manager.dart';
+import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart'
+    as notif_inbox_repo;
+import 'package:personal_finance/features/notifications/data/repositories/notification_inbox_repository_impl.dart'
+    as notif_inbox_repo_impl;
+import 'package:personal_finance/features/notifications/domain/entities/notification_item.dart';
+import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
+import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -165,6 +187,23 @@ Future<void> initDependencies() async {
     );
   }
 
+  // Debts Data Source
+  if (!getIt.isRegistered<DebtRemoteDataSource>()) {
+    getIt.registerLazySingleton<DebtRemoteDataSource>(
+      () => DebtRemoteDataSourceImpl(),
+    );
+  }
+
+  // Debts Repository
+  if (!getIt.isRegistered<DebtRepository>()) {
+    getIt.registerLazySingleton<DebtRepository>(
+      () => DebtRepositoryImpl(
+        remoteDataSource: getIt<DebtRemoteDataSource>(),
+        offlineSyncService: OfflineSyncService(),
+      ),
+    );
+  }
+
   // Backend Transactions Data Source (FastAPI endpoints)
   if (!getIt.isRegistered<backend_tx_ds.TransactionBackendRemoteDataSource>()) {
     getIt.registerLazySingleton<
@@ -184,7 +223,8 @@ Future<void> initDependencies() async {
   // Notifications Remote Data Source
   if (!getIt.isRegistered<notif_ds.NotificationRemoteDataSource>()) {
     getIt.registerLazySingleton<notif_ds.NotificationRemoteDataSource>(
-      () => notif_ds.NotificationRemoteDataSourceImpl(),
+      () =>
+          notif_ds.NotificationRemoteDataSourceImpl(getIt<SharedPreferences>()),
     );
   }
 
@@ -246,6 +286,27 @@ Future<void> initDependencies() async {
     );
   }
 
+  // Trend Analyzer Service
+  if (!getIt.isRegistered<TrendAnalyzerService>()) {
+    getIt.registerLazySingleton<TrendAnalyzerService>(
+      () => TrendAnalyzerService(
+        getIt<backend_tx_repo.TransactionBackendRepository>(),
+      ),
+    );
+  }
+
+  // Receipt Scanner Service
+  if (!getIt.isRegistered<ReceiptScannerService>()) {
+    getIt.registerLazySingleton<ReceiptScannerService>(
+      () => ReceiptScannerService(),
+    );
+  }
+
+  // Vertex AI Service
+  if (!getIt.isRegistered<VertexAiService>()) {
+    getIt.registerLazySingleton<VertexAiService>(() => VertexAiService());
+  }
+
   // Dashboard Logic
   if (!getIt.isRegistered<DashboardLogic>()) {
     getIt.registerFactory<DashboardLogic>(
@@ -254,6 +315,80 @@ Future<void> initDependencies() async {
         addTransactionUseCase: getIt<AddTransactionUseCase>(),
         getActiveGoalsUseCase: getIt<GetActiveGoalsUseCase>(),
         getActiveBudgetsUseCase: getIt<GetActiveBudgetsUseCase>(),
+      ),
+    );
+  }
+  if (!getIt.isRegistered<GoalsBloc>()) {
+    getIt.registerLazySingleton<GoalsBloc>(
+      () => GoalsBloc(getIt<GoalRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<DebtsBloc>()) {
+    getIt.registerLazySingleton<DebtsBloc>(
+      () => DebtsBloc(getIt<DebtRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<VersionService>()) {
+    final VersionService versionService = VersionService();
+    await versionService.init();
+    getIt.registerLazySingleton<VersionService>(() => versionService);
+  }
+
+  // Device Service
+  if (!getIt.isRegistered<DeviceService>()) {
+    final deviceService = DeviceService();
+    await deviceService.init();
+    getIt.registerLazySingleton<DeviceService>(() => deviceService);
+  }
+
+  // Notification Services
+  if (!getIt.isRegistered<LocalNotificationService>()) {
+    getIt.registerLazySingleton<LocalNotificationService>(
+      () => LocalNotificationService(
+        getIt<NavigationService>(),
+        getIt<notif_inbox_repo.NotificationInboxRepository>(),
+      ),
+    );
+  }
+
+  if (!getIt.isRegistered<PushNotificationService>()) {
+    getIt.registerLazySingleton<PushNotificationService>(
+      () => PushNotificationService(
+        getIt<notif_inbox_repo.NotificationInboxRepository>(),
+        getIt<NavigationService>(),
+      ),
+    );
+  }
+
+  if (!getIt.isRegistered<NotificationService>()) {
+    getIt.registerLazySingleton<NotificationService>(
+      () => NotificationService(
+        local: getIt<LocalNotificationService>(),
+        push: getIt<PushNotificationService>(),
+      ),
+    );
+  }
+
+  if (!getIt.isRegistered<NotificationPermissionService>()) {
+    getIt.registerLazySingleton<NotificationPermissionService>(
+      () => NotificationPermissionService(getIt<LocalNotificationService>()),
+    );
+  }
+
+  if (!getIt.isRegistered<PushTokenManager>()) {
+    getIt.registerLazySingleton<PushTokenManager>(
+      () => PushTokenManager(getIt<SharedPreferences>()),
+    );
+  }
+
+  if (!getIt.isRegistered<NavigationService>()) {
+    getIt.registerLazySingleton<NavigationService>(() => NavigationService());
+  }
+
+  if (!getIt.isRegistered<notif_inbox_repo.NotificationInboxRepository>()) {
+    getIt.registerLazySingleton<notif_inbox_repo.NotificationInboxRepository>(
+      () => notif_inbox_repo_impl.NotificationInboxRepositoryImpl(
+        Hive.box<NotificationItem>('notifications_inbox'),
       ),
     );
   }

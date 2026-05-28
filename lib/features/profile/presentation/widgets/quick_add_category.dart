@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart';
-
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
 
 class QuickAddCategory extends StatelessWidget {
@@ -73,11 +74,11 @@ class _QuickAddCategoryContentState extends State<_QuickAddCategoryContent> {
                             labelText: 'Nombre de la categoría',
                             isDense: true,
                           ),
-                          validator:
-                              (String? v) =>
-                                  v == null || v.trim().isEmpty
-                                      ? 'Ingrese un nombre'
-                                      : null,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                            LengthLimitingTextInputFormatter(120),
+                          ],
+                          validator: (String? v) => InputSanitizer.validateName(v ?? ''),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -170,11 +171,11 @@ class _QuickAddCategoryContentState extends State<_QuickAddCategoryContent> {
                         labelText: 'Nombre de la categoría',
                         isDense: true,
                       ),
-                      validator:
-                          (String? v) =>
-                              v == null || v.trim().isEmpty
-                                  ? 'Ingrese un nombre'
-                                  : null,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                        LengthLimitingTextInputFormatter(120),
+                      ],
+                      validator: (String? v) => InputSanitizer.validateName(v ?? ''),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(

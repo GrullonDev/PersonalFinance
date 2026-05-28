@@ -12,11 +12,18 @@ abstract class TransactionsEvent extends Equatable {
 }
 
 class TransactionsLoad extends TransactionsEvent {
-  TransactionsLoad({this.desde, this.hasta, this.categoriaId, this.tipo});
+  TransactionsLoad({
+    this.desde,
+    this.hasta,
+    this.categoriaId,
+    this.tipo,
+    this.profileType,
+  });
   final DateTime? desde;
   final DateTime? hasta;
   final String? categoriaId;
   final String? tipo;
+  final String? profileType;
 }
 
 class TransactionCreate extends TransactionsEvent {
@@ -43,6 +50,7 @@ class TransactionsState extends Equatable {
     this.hasta,
     this.categoriaId,
     this.tipo,
+    this.profileType,
   });
   final bool loading;
   final String? error;
@@ -51,6 +59,7 @@ class TransactionsState extends Equatable {
   final DateTime? hasta;
   final String? categoriaId;
   final String? tipo;
+  final String? profileType;
 
   TransactionsState copyWith({
     bool? loading,
@@ -60,6 +69,7 @@ class TransactionsState extends Equatable {
     DateTime? hasta,
     String? categoriaId,
     String? tipo,
+    String? profileType,
   }) => TransactionsState(
     loading: loading ?? this.loading,
     error: error,
@@ -68,6 +78,7 @@ class TransactionsState extends Equatable {
     hasta: hasta ?? this.hasta,
     categoriaId: categoriaId ?? this.categoriaId,
     tipo: tipo ?? this.tipo,
+    profileType: profileType ?? this.profileType,
   );
 
   @override
@@ -79,6 +90,7 @@ class TransactionsState extends Equatable {
     hasta,
     categoriaId,
     tipo,
+    profileType,
   ];
 }
 
@@ -102,6 +114,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
         hasta: e.hasta ?? state.hasta,
         categoriaId: e.categoriaId ?? state.categoriaId,
         tipo: e.tipo ?? state.tipo,
+        profileType: e.profileType ?? state.profileType,
       ),
     );
     final Either<Failure, List<TransactionBackend>> r = await _repo.list(
@@ -109,6 +122,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
       fechaHasta: e.hasta ?? state.hasta,
       categoriaId: e.categoriaId ?? state.categoriaId,
       tipo: e.tipo ?? state.tipo,
+      profileType: e.profileType ?? state.profileType,
     );
     r.fold(
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),

@@ -8,7 +8,5 @@ class GetActiveGoalsUseCase {
 
   GetActiveGoalsUseCase(this.repository);
 
-  Future<Either<Failure, List<Goal>>> execute() async {
-    return await repository.getGoals();
-  }
+  Future<Either<Failure, List<Goal>>> execute() async => await repository.getGoals();
 }

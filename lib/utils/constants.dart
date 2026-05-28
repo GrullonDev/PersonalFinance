@@ -8,7 +8,7 @@ class AppConstants {
 
   // ===== CONSTANTES DE LA APLICACIÓN =====
   static const String appName = 'Personal Finance';
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '1.1.0';
   static const String appDescription = 'Aplicación de finanzas personales';
 
   // ===== CONSTANTES DE BASE DE DATOS =====

@@ -26,7 +26,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebase_auth.User? user =
           firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return Left(AuthFailure(message: 'Google Sign-In failed'));
+        return const Left(AuthFailure(message: 'Google Sign-In failed'));
       }
 
       await _ensureUserDocumentExists(user);
@@ -44,7 +44,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebase_auth.User? user =
           firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return Left(AuthFailure(message: 'Apple Sign-In failed'));
+        return const Left(AuthFailure(message: 'Apple Sign-In failed'));
       }
 
       await _ensureUserDocumentExists(user);
@@ -60,7 +60,7 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     final String? token = await user.getIdToken();
     if (token == null) {
-      return Left(AuthFailure(message: 'Failed to retrieve auth token'));
+      return const Left(AuthFailure(message: 'Failed to retrieve auth token'));
     }
 
     final DocumentSnapshot doc =
@@ -312,7 +312,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebase_auth.User? firebaseUser =
           firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) {
-        return Left(
+        return const Left(
           AuthFailure(
             message:
                 'No se pudo restaurar la sesión de Firebase después del login.',
@@ -323,7 +323,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await firebaseUser.reload();
       final refreshedUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (refreshedUser == null) {
-        return Left(
+        return const Left(
           AuthFailure(
             message:
                 'La sesión de Firebase no está disponible después del login.',
@@ -332,22 +332,34 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       if (!refreshedUser.emailVerified) {
+        // Reenviar correo de verificación por si el usuario no lo recibió
+        try {
+          await refreshedUser.sendEmailVerification();
+        } catch (_) {
+          // Ignorar si ya se envió recientemente (too-many-requests)
+        }
         await _firebaseDataSource.logout();
         return const Left(
-          AuthFailure(
-            message:
-                'Debes verificar tu correo electrónico antes de acceder al dashboard.',
-            statusCode: 403,
-          ),
+          AuthFailure(message: 'email-not-verified', statusCode: 403),
         );
       }
 
       await _ensureUserDocumentExists(refreshedUser);
       return _createLoginResponse(refreshedUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
+      final String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          errorMessage = 'Email o contraseña incorrectos';
+          break;
+        default:
+          errorMessage = e.message ?? 'Error al iniciar sesión con Firebase.';
+      }
       return Left(
         AuthFailure(
-          message: e.message ?? 'Error al iniciar sesión con Firebase.',
+          message: errorMessage,
         ),
       );
     } catch (e) {
@@ -377,7 +389,9 @@ class AuthRepositoryImpl implements AuthRepository {
     String refreshToken,
   ) async {
     // Firebase handles token refresh automatically.
-    return Left(AuthFailure(message: "Refresh token no necesario en Firebase"));
+    return const Left(
+      AuthFailure(message: 'Refresh token no necesario en Firebase'),
+    );
   }
 
   @override
@@ -385,13 +399,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = firebase_auth.FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return Left(AuthFailure(message: "No hay usuario autenticado"));
+        return const Left(AuthFailure(message: 'No hay usuario autenticado'));
       }
 
       final DocumentSnapshot doc =
           await _firestore.collection('users').doc(user.uid).get();
       if (!doc.exists) {
-        return Left(
+        return const Left(
           AuthFailure(message: 'Perfil no encontrado en base de datos.'),
         );
       }

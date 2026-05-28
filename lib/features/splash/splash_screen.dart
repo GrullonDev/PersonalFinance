@@ -30,7 +30,8 @@ class _SplashScreenState extends State<SplashScreen> {
         final AuthProvider auth = context.read<AuthProvider>();
         await firebase_auth.FirebaseAuth.instance.authStateChanges().first;
         await auth.syncSessionFromFirebase(notify: false);
-        if (auth.isAuthenticated) {
+        final user = firebase_auth.FirebaseAuth.instance.currentUser;
+        if (user != null && user.emailVerified) {
           await auth.loadCurrentUser();
           if (!mounted) return;
           Navigator.of(

@@ -11,7 +11,7 @@ class OfflineSyncService {
   OfflineSyncService._internal();
 
   late Box<PendingAction> _actionBox;
-  late StreamSubscription<ConnectivityResult> _connectivitySub;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySub;
 
   Future<void> init(HiveAesCipher cipher) async {
     _actionBox = await HiveEncryptionService.openBoxSafe<PendingAction>(
@@ -37,8 +37,8 @@ class OfflineSyncService {
           .where((PendingAction a) => a.status == 'pending')
           .toList();
 
-  Future<void> _onConnectivityChanged(ConnectivityResult result) async {
-    if (result != ConnectivityResult.none) {
+  Future<void> _onConnectivityChanged(List<ConnectivityResult> results) async {
+    if (results.any((result) => result != ConnectivityResult.none)) {
       await syncPendingActions();
     }
   }

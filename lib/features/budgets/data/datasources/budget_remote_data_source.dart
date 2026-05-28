@@ -1,6 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:personal_finance/core/data/datasources/base_firestore_service.dart';
 import 'package:personal_finance/core/error/exceptions.dart';
 import 'package:personal_finance/features/budgets/data/models/budget_model.dart';
 
@@ -11,36 +9,19 @@ abstract class BudgetRemoteDataSource {
   Future<void> deleteBudget(String id);
 }
 
-class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
-  BudgetRemoteDataSourceImpl({FirebaseFirestore? firestore, FirebaseAuth? auth})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _auth = auth ?? FirebaseAuth.instance;
+class BudgetRemoteDataSourceImpl extends BaseFirestoreService<BudgetModel>
+    implements BudgetRemoteDataSource {
+  @override
+  String get collectionName => 'budgets';
 
-  final FirebaseFirestore _firestore;
-  final FirebaseAuth _auth;
-
-  String get _uid {
-    final User? user = _auth.currentUser;
-    if (user == null) {
-      throw ApiException(message: 'User not authenticated', statusCode: 401);
-    }
-    return user.uid;
-  }
-
-  CollectionReference<Map<String, dynamic>> get _budgetsCollection =>
-      _firestore.collection('users').doc(_uid).collection('budgets');
+  @override
+  BudgetModel fromFirestore(Map<String, dynamic> json) =>
+      BudgetModel.fromFirestore(json);
 
   @override
   Future<List<BudgetModel>> getBudgets() async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> snapshot =
-          await _budgetsCollection.orderBy('fecha_inicio').get();
-      return snapshot.docs
-          .map(
-            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
-                BudgetModel.fromJson({...doc.data(), 'id': doc.id}),
-          )
-          .toList();
+      return await getAll();
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }
@@ -49,11 +30,8 @@ class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
   @override
   Future<BudgetModel> createBudget(BudgetModel budget) async {
     try {
-      final DocumentReference<Map<String, dynamic>> docRef =
-          _budgetsCollection.doc();
-      final Map<String, dynamic> data = budget.toJson()..remove('id');
-      await docRef.set(data);
-      return BudgetModel.fromJson({...data, 'id': docRef.id});
+      await upsert(budget);
+      return budget;
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }
@@ -62,9 +40,8 @@ class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
   @override
   Future<BudgetModel> updateBudget(String id, BudgetModel budget) async {
     try {
-      final Map<String, dynamic> data = budget.toJson()..remove('id');
-      await _budgetsCollection.doc(id).update(data);
-      return BudgetModel.fromJson({...data, 'id': id});
+      await upsert(budget);
+      return budget;
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }
@@ -73,7 +50,7 @@ class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
   @override
   Future<void> deleteBudget(String id) async {
     try {
-      await _budgetsCollection.doc(id).delete();
+      await softDelete(id);
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }

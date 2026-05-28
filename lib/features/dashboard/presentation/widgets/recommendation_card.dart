@@ -27,11 +27,11 @@ class RecommendationCard extends StatelessWidget {
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: Colors.white,
-        border: Border.all(color: color.withAlpha(50), width: 2),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 2),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: color.withAlpha(20),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -49,7 +49,7 @@ class RecommendationCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withAlpha(30),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(icon, style: const TextStyle(fontSize: 22)),
@@ -74,9 +74,9 @@ class RecommendationCard extends StatelessWidget {
             Flexible(
               child: Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.3,
                 ),
                 maxLines: 2,

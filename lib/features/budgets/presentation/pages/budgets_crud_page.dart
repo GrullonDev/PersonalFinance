@@ -1,10 +1,14 @@
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/core/error/failures.dart';
+import 'package:personal_finance/core/utils/input_sanitizer.dart';
 import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/categories/domain/entities/category.dart'
     as cat_entity;
 import 'package:personal_finance/features/categories/presentation/bloc/categories_bloc.dart';
@@ -12,11 +16,14 @@ import 'package:personal_finance/features/transactions/domain/entities/transacti
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
     as tx_backend;
 import 'package:personal_finance/utils/budget_category_prefs.dart';
-import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/premium_modals.dart';
+import 'package:personal_finance/utils/responsive.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:personal_finance/utils/dashboard_budget_prefs.dart';
 
 class BudgetsCrudPage extends StatelessWidget {
   final bool showAppBar;
@@ -28,31 +35,121 @@ class BudgetsCrudPage extends StatelessWidget {
     create: (_) => BudgetsBloc(getIt<BudgetRepository>())..add(BudgetsLoad()),
     child: Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(120),
+        preferredSize: Size.fromHeight(context.isMobile ? 120 : 100),
+        child: _buildAppBar(context),
+      ),
+      body: Center(
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+          constraints: BoxConstraints(
+            maxWidth: context.isMobile ? double.infinity : 1000,
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: BlocBuilder<BudgetsBloc, BudgetsState>(
+            builder: (BuildContext context, BudgetsState state) {
+              if (state.loading && state.items.isEmpty) {
+                return const Center(child: AppLoadingWidget());
+              }
+              if (state.error != null && state.items.isEmpty) {
+                return Center(child: ew.AppErrorWidget(message: state.error!));
+              }
+              if (state.items.isEmpty) {
+                return EmptyState(
+                  title: 'Sin presupuestos',
+                  message: 'Crea un presupuesto para planear tus gastos.',
+                  action: FilledButton.icon(
+                    onPressed: () => showAddBudgetDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nuevo presupuesto'),
+                  ),
+                );
+              }
+
+              // Use GridView for larger screens, ListView for mobile
+              if (!context.isMobile) {
+                return RefreshIndicator(
+                  onRefresh:
+                      () async =>
+                          context.read<BudgetsBloc>().add(BudgetsLoad()),
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(20),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 500,
+                          mainAxisExtent: 220,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                        ),
+                    itemCount: state.items.length,
+                    itemBuilder: (context, i) {
+                      final b = state.items[i];
+                      return _BudgetCard(budget: b);
+                    },
+                  ),
+                );
+              }
+
+              return RefreshIndicator(
+                onRefresh:
+                    () async => context.read<BudgetsBloc>().add(BudgetsLoad()),
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: state.items.length,
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+                  itemBuilder: (BuildContext context, int i) {
+                    final Budget b = state.items[i];
+                    return Dismissible(
+                      key: ValueKey<String?>(b.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        color: Colors.red,
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      confirmDismiss: (_) => _confirmDelete(context),
+                      onDismissed:
+                          (_) => context.read<BudgetsBloc>().add(
+                            BudgetDelete(b.id),
+                          ),
+                      child: _BudgetCard(budget: b),
+                    );
+                  },
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _buildAppBar(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+        ],
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Row(
                     children: [
@@ -62,91 +159,41 @@ class BudgetsCrudPage extends StatelessWidget {
                         size: 28,
                       ),
                       SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Presupuestos',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
+                      Text(
+                        'Presupuestos',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     'Planifica tus gastos',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-      body: BlocBuilder<BudgetsBloc, BudgetsState>(
-        builder: (BuildContext context, BudgetsState state) {
-          if (state.loading && state.items.isEmpty) {
-            return const Center(child: AppLoadingWidget());
-          }
-          if (state.error != null && state.items.isEmpty) {
-            return Center(child: ew.AppErrorWidget(message: state.error!));
-          }
-          if (state.items.isEmpty) {
-            return EmptyState(
-              title: 'Sin presupuestos',
-              message: 'Crea un presupuesto para planear tus gastos.',
-              action: FilledButton.icon(
-                onPressed: () => _openDialog(context),
+            if (!context.isMobile)
+              FilledButton.icon(
+                onPressed: () => showAddBudgetDialog(context),
                 icon: const Icon(Icons.add),
                 label: const Text('Nuevo presupuesto'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                ),
               ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh:
-                () async => context.read<BudgetsBloc>().add(BudgetsLoad()),
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: state.items.length,
-              // Extra espacio inferior para que no colisione con el FAB.
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
-              itemBuilder: (BuildContext context, int i) {
-                final Budget b = state.items[i];
-                return Dismissible(
-                  key: ValueKey<String?>(b.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    color: Colors.red,
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  confirmDismiss: (_) => _confirmDelete(context),
-                  onDismissed:
-                      (_) =>
-                          context.read<BudgetsBloc>().add(BudgetDelete(b.id!)),
-                  child: _BudgetCard(budget: b),
-                );
-              },
-              separatorBuilder: (_, _) => const Divider(height: 1),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: Builder(
-        builder:
-            (BuildContext context) => FloatingActionButton.extended(
-              onPressed: () => _openDialog(context),
-              label: const Text('Nuevo presupuesto'),
-              icon: const Icon(Icons.add),
-            ),
+          ],
+        ),
       ),
     ),
   );
@@ -169,7 +216,9 @@ class BudgetsCrudPage extends StatelessWidget {
               FilledButton.tonal(
                 onPressed: () => Navigator.pop(context, true),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF2D55).withOpacity(0.1),
+                  backgroundColor: const Color(
+                    0xFFFF2D55,
+                  ).withValues(alpha: 0.1),
                   foregroundColor: const Color(0xFFFF2D55),
                 ),
                 child: const Text('Eliminar'),
@@ -180,7 +229,10 @@ class BudgetsCrudPage extends StatelessWidget {
     return confirm ?? false;
   }
 
-  Future<void> _openDialog(BuildContext context, {Budget? budget}) async {
+  static Future<void> showAddBudgetDialog(
+    BuildContext context, {
+    Budget? budget,
+  }) async {
     final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final TextEditingController nameCtrl = TextEditingController(
@@ -191,102 +243,270 @@ class BudgetsCrudPage extends StatelessWidget {
     );
     DateTime start = budget?.fechaInicio ?? DateTime.now();
     DateTime end =
-        budget?.fechaFin ?? DateTime.now().add(const Duration(days: 30));
+        budget?.fechaFin ?? DateTime.now().add(const Duration(days: 7));
+    bool isDashboardWeekly = false;
 
-    final bool? saved = await showDialog<bool>(
+    // Load current preference
+    if (budget != null) {
+      final currentWeeklyId = await DashboardBudgetPrefs.getWeeklyBudgetId();
+      isDashboardWeekly = (currentWeeklyId == budget.id);
+    }
+
+    final bool? saved = await showPremiumDialog<bool>(
       context: context,
       builder:
           (BuildContext context) => StatefulBuilder(
             builder:
                 (BuildContext context, StateSetter setState) => AlertDialog(
-                  title: Text(
-                    budget == null ? 'Crear presupuesto' : 'Editar presupuesto',
+                  title: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.track_changes_rounded,
+                          color: Theme.of(context).primaryColor,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        budget == null
+                            ? 'Define tu límite de gasto'
+                            : 'Editar límite de gasto',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Te notificaremos cuando estés cerca del límite',
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 13,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                   content: Form(
                     key: key,
                     child: SizedBox(
                       width: 360,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          TextFormField(
-                            controller: nameCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Nombre',
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            TextFormField(
+                              controller: nameCtrl,
+                              decoration: InputDecoration(
+                                labelText:
+                                    'Nombre del Presupuesto (ej: Comida)',
+                                prefixIcon: const Icon(Icons.label_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
+                              ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                                LengthLimitingTextInputFormatter(120),
+                              ],
+                              validator: (String? v) => InputSanitizer.validateName(v ?? ''),
                             ),
-                            validator:
-                                (String? v) =>
-                                    v == null || v.trim().isEmpty
-                                        ? 'Ingresa un nombre'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: amountCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: amountCtrl,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                labelText: 'Monto Límite',
+                                prefixIcon: const Icon(Icons.attach_money),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
+                              ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                                LengthLimitingTextInputFormatter(15),
+                              ],
+                              validator: (String? v) => InputSanitizer.validateAmount(v ?? ''),
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'Monto total',
+                            const SizedBox(height: 16),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: _DateTile(
+                                    label: 'Inicio',
+                                    value: start,
+                                    onPick: (DateTime d) {
+                                      setState(() => start = d);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _DateTile(
+                                    label: 'Fin',
+                                    value: end,
+                                    onPick: (DateTime d) {
+                                      setState(() => end = d);
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
-                            validator:
-                                (String? v) =>
-                                    (double.tryParse(v ?? '') ?? -1) <= 0
-                                        ? 'Ingresa un monto válido'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Inicio',
-                                  value: start,
-                                  onPick: (DateTime d) {
-                                    setState(() => start = d);
-                                  },
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.timer_outlined, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Duración: ${end.difference(start).inDays} días',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SwitchListTile(
+                              title: const Text(
+                                'Presupuesto semanal principal',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Fin',
-                                  value: end,
-                                  onPick: (DateTime d) {
-                                    setState(() => end = d);
-                                  },
-                                ),
+                              subtitle: const Text(
+                                'Mostrar este presupuesto y calcular gastos de la semana actual en el Panel Principal.',
+                                style: TextStyle(fontSize: 11),
                               ),
-                            ],
-                          ),
-                        ],
+                              value: isDashboardWeekly,
+                              onChanged: (bool val) {
+                                setState(() => isDashboardWeekly = val);
+                              },
+                              activeThumbColor:
+                                  Theme.of(context).colorScheme.primary,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    FilledButton(
-                      onPressed: () async {
-                        if (!key.currentState!.validate()) return;
-                        final Budget payload = Budget(
-                          id: budget?.id,
-                          nombre: nameCtrl.text.trim(),
-                          montoTotal:
-                              (double.parse(amountCtrl.text.trim())).toString(),
-                          fechaInicio: start,
-                          fechaFin: end,
-                        );
-                        if (budget == null) {
-                          parentBloc.add(BudgetCreate(payload));
-                        } else {
-                          parentBloc.add(BudgetUpdate(payload));
-                        }
-                        if (context.mounted) Navigator.pop(context, true);
-                      },
-                      child: const Text('Guardar'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              foregroundColor: Colors.grey.shade600,
+                            ),
+                            child: const Text(
+                              'Cancelar',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 2,
+                            ),
+                            onPressed: () async {
+                              if (!key.currentState!.validate()) return;
+                              final now = DateTime.now();
+                              final deviceId = getIt<DeviceService>().deviceId;
+                              final Budget payload = Budget(
+                                id:
+                                    budget?.id ??
+                                    'budget_${now.microsecondsSinceEpoch}',
+                                createdAt: budget?.createdAt ?? now,
+                                updatedAt: now,
+                                deviceId: budget?.deviceId ?? deviceId,
+                                version: (budget?.version ?? 0) + 1,
+                                nombre: nameCtrl.text.trim(),
+                                montoTotal:
+                                    (double.parse(
+                                      amountCtrl.text.trim(),
+                                    )).toString(),
+                                fechaInicio: start,
+                                fechaFin: end,
+                              );
+                              if (budget == null) {
+                                parentBloc.add(BudgetCreate(payload));
+                                // Can't easily set weekly if it's new because ID is generated during save in some architectures,
+                                // but here we actually generate the ID upfront:
+                                if (isDashboardWeekly) {
+                                  await DashboardBudgetPrefs.setWeeklyBudgetId(
+                                    payload.id,
+                                  );
+                                }
+                              } else {
+                                parentBloc.add(BudgetUpdate(payload));
+                                if (isDashboardWeekly) {
+                                  await DashboardBudgetPrefs.setWeeklyBudgetId(
+                                    payload.id,
+                                  );
+                                } else {
+                                  final currentWeeklyId =
+                                      await DashboardBudgetPrefs.getWeeklyBudgetId();
+                                  if (currentWeeklyId == payload.id) {
+                                    await DashboardBudgetPrefs.clearWeeklyBudgetId();
+                                  }
+                                }
+                              }
+                              if (context.mounted) Navigator.pop(context, true);
+                            },
+                            child: const Text(
+                              'Guardar',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -334,7 +554,16 @@ class _BudgetCardState extends State<_BudgetCard> {
             total <= 0 ? 0.0 : (spent / total).clamp(0.0, 1.0);
         final String range =
             '${_fmt2(widget.budget.fechaInicio)} → ${_fmt2(widget.budget.fechaFin)}';
-        final bool over = spent > total && total > 0;
+        final double remaining = (total - spent).clamp(0.0, double.infinity);
+
+        Color progressColor;
+        if (progress < 0.5) {
+          progressColor = Colors.blue;
+        } else if (progress < 0.8) {
+          progressColor = Colors.amber;
+        } else {
+          progressColor = const Color(0xFFFF2D55);
+        }
 
         final CategoriesState catsState = context.watch<CategoriesBloc>().state;
 
@@ -345,7 +574,7 @@ class _BudgetCardState extends State<_BudgetCard> {
             border: Border.all(color: colors.glassBorder),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -353,7 +582,11 @@ class _BudgetCardState extends State<_BudgetCard> {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => _openBudgetDialog(context),
+            onTap:
+                () => BudgetsCrudPage.showAddBudgetDialog(
+                  context,
+                  budget: widget.budget,
+                ),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -392,9 +625,11 @@ class _BudgetCardState extends State<_BudgetCard> {
                               style: Theme.of(
                                 context,
                               ).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.color?.withOpacity(0.7),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -404,21 +639,20 @@ class _BudgetCardState extends State<_BudgetCard> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}%',
+                            remaining <= 0
+                                ? 'Presupuesto agotado'
+                                : 'Quedan ${CurrencyHelper.symbol}${remaining.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color:
-                                  over
-                                      ? const Color(0xFFFF2D55)
-                                      : Theme.of(context).colorScheme.primary,
+                              fontSize: 14,
+                              color: progressColor,
                             ),
                           ),
                           InkWell(
                             onTap: _assignCategories,
                             borderRadius: BorderRadius.circular(20),
                             child: Padding(
-                              padding: const EdgeInsets.all(4.0),
+                              padding: const EdgeInsets.all(4),
                               child: Icon(
                                 Icons.tune_rounded,
                                 size: 16,
@@ -444,10 +678,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                               Theme.of(
                                 context,
                               ).colorScheme.surfaceContainerHighest,
-                          color:
-                              over
-                                  ? const Color(0xFFFF2D55)
-                                  : Theme.of(context).colorScheme.primary,
+                          color: progressColor,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -455,7 +686,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           Text(
-                            'Gastado: \$${spent.toStringAsFixed(2)}',
+                            'Gastado: ${CurrencyHelper.symbol}${spent.toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -466,7 +697,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                             ),
                           ),
                           Text(
-                            'Total: \$${total.toStringAsFixed(2)}',
+                            'Total: ${CurrencyHelper.symbol}${total.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -503,6 +734,10 @@ class _BudgetCardState extends State<_BudgetCard> {
                                             id: id,
                                             nombre: 'Cat #$id',
                                             tipo: 'gasto',
+                                            createdAt: DateTime.now(),
+                                            updatedAt: DateTime.now(),
+                                            deviceId: 'system',
+                                            version: 1,
                                           ),
                                     )
                                     .nombre;
@@ -519,19 +754,17 @@ class _BudgetCardState extends State<_BudgetCard> {
                               backgroundColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceContainerHighest
-                                  .withOpacity(0.5),
+                                  .withValues(alpha: 0.5),
                               side: BorderSide.none,
                               deleteIcon: const Icon(Icons.close, size: 14),
                               onDeleted: () async {
                                 final List<String> list = List<String>.from(
                                   _categoryIds,
                                 )..remove(id);
-                                if (widget.budget.id != null) {
-                                  await BudgetCategoryPrefs.save(
-                                    widget.budget.id!,
-                                    list,
-                                  );
-                                }
+                                await BudgetCategoryPrefs.save(
+                                  widget.budget.id,
+                                  list,
+                                );
                                 if (mounted) {
                                   setState(() => _categoryIds = list);
                                 }
@@ -556,7 +789,6 @@ class _BudgetCardState extends State<_BudgetCard> {
   }
 
   Future<void> _assignCategories() async {
-    if (widget.budget.id == null) return;
     final Set<String> selected = _categoryIds.toSet();
     final bool? saved = await showModalBottomSheet<bool>(
       context: context,
@@ -596,7 +828,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                                       color: (c.tipo.toLowerCase() == 'ingreso'
                                               ? Colors.green
                                               : Colors.red)
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
@@ -612,7 +844,7 @@ class _BudgetCardState extends State<_BudgetCard> {
                                   ),
                                   onChanged: (bool? v) {
                                     if (v == true) {
-                                      selected.add(c.id!);
+                                      selected.add(c.id);
                                     } else {
                                       selected.remove(c.id);
                                     }
@@ -644,7 +876,7 @@ class _BudgetCardState extends State<_BudgetCard> {
     );
     if (saved == true) {
       final List<String> list = selected.toList();
-      await BudgetCategoryPrefs.save(widget.budget.id!, list);
+      await BudgetCategoryPrefs.save(widget.budget.id, list);
       if (mounted) setState(() => _categoryIds = list);
     }
   }
@@ -652,125 +884,8 @@ class _BudgetCardState extends State<_BudgetCard> {
   String _fmt2(DateTime d) => '${d.day}/${d.month}';
 
   Future<void> _loadCategories() async {
-    if (widget.budget.id != null) {
-      final List<String> ids = await BudgetCategoryPrefs.load(
-        widget.budget.id!,
-      );
-      if (mounted) setState(() => _categoryIds = ids);
-    }
-  }
-
-  Future<void> _openBudgetDialog(BuildContext context) async {
-    final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
-    final GlobalKey<FormState> key = GlobalKey<FormState>();
-    final TextEditingController nameCtrl = TextEditingController(
-      text: widget.budget.nombre,
-    );
-    final TextEditingController amountCtrl = TextEditingController(
-      text: widget.budget.montoAsDouble.toStringAsFixed(2),
-    );
-    DateTime start = widget.budget.fechaInicio;
-    DateTime end = widget.budget.fechaFin;
-
-    final bool? saved = await showDialog<bool>(
-      context: context,
-      builder:
-          (BuildContext context) => StatefulBuilder(
-            builder:
-                (BuildContext context, StateSetter setState) => AlertDialog(
-                  title: const Text('Editar presupuesto'),
-                  content: Form(
-                    key: key,
-                    child: SizedBox(
-                      width: 360,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          TextFormField(
-                            controller: nameCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Nombre',
-                            ),
-                            validator:
-                                (String? v) =>
-                                    v == null || v.trim().isEmpty
-                                        ? 'Ingresa un nombre'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: amountCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Monto total',
-                            ),
-                            validator:
-                                (String? v) =>
-                                    (double.tryParse(v ?? '') ?? -1) <= 0
-                                        ? 'Ingresa un monto válido'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Inicio',
-                                  value: start,
-                                  onPick: (DateTime d) {
-                                    setState(() => start = d);
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _DateTile(
-                                  label: 'Fin',
-                                  value: end,
-                                  onPick: (DateTime d) {
-                                    setState(() => end = d);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    FilledButton(
-                      onPressed: () async {
-                        if (!key.currentState!.validate()) return;
-                        final Budget payload = Budget(
-                          id: widget.budget.id,
-                          nombre: nameCtrl.text.trim(),
-                          montoTotal:
-                              (double.parse(amountCtrl.text.trim())).toString(),
-                          fechaInicio: start,
-                          fechaFin: end,
-                        );
-                        parentBloc.add(BudgetUpdate(payload));
-                        if (context.mounted) Navigator.pop(context, true);
-                      },
-                      child: const Text('Guardar'),
-                    ),
-                  ],
-                ),
-          ),
-    );
-
-    if (saved == true && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Presupuesto actualizado')));
-    }
+    final List<String> ids = await BudgetCategoryPrefs.load(widget.budget.id);
+    if (mounted) setState(() => _categoryIds = ids);
   }
 
   Future<double> _spent(tx_backend.TransactionBackendRepository repo) async =>
@@ -832,16 +947,15 @@ class _DateTile extends StatelessWidget {
             initialDate: value,
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),
-            builder: (BuildContext context, Widget? child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: Theme.of(context).colorScheme.copyWith(
-                    primary: Theme.of(context).primaryColor,
+            builder:
+                (BuildContext context, Widget? child) => Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: Theme.of(context).colorScheme.copyWith(
+                      primary: Theme.of(context).primaryColor,
+                    ),
                   ),
+                  child: child!,
                 ),
-                child: child!,
-              );
-            },
           );
           if (picked != null) onPick(picked);
         },
@@ -850,7 +964,7 @@ class _DateTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.2),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
             ),
             borderRadius: BorderRadius.circular(12),
             color: Theme.of(context).colorScheme.surface,

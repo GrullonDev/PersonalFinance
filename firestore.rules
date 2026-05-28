@@ -41,6 +41,13 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
+      match /debts/{debtId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+                              && isValidDebt(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
       // ── Transactions ──────────────────────────────────────────────────────
       match /transactions/{transactionId} {
         allow read: if isOwner(userId);
@@ -60,7 +67,9 @@ service cloud.firestore {
     // ── Helper functions ─────────────────────────────────────────────────────
 
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return request.auth != null
+          && request.auth.uid == userId
+          && request.auth.token.email_verified == true;
     }
 
     function isValidTransaction(data, userId) {
@@ -136,8 +145,8 @@ service cloud.firestore {
           && data.balance is number
           && data.type is string
           && data.type.size() > 0
-          && (!data.keys().hasAny(['icon']) || data.icon == null || data.icon is string)
-          && (!data.keys().hasAny(['color']) || data.color == null || data.color is string);
+          && (!data.keys().hasAny(['icon']) || data.icon == null || (data.icon is string && data.icon.size() <= 50 && data.icon.matches('^[a-zA-Z0-9_\\-\\.]+$')))
+          && (!data.keys().hasAny(['color']) || data.color == null || (data.color is string && data.color.matches('^#[0-9A-Fa-f]{6}$')));
     }
 
     function isValidBudget(data) {
@@ -158,7 +167,7 @@ service cloud.firestore {
           && data.nombre.size() > 0
           && data.nombre.size() <= 120
           && data.tipo in ['ingreso', 'egreso']
-          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is int);
+          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || (data.profile_id is string && data.profile_id.size() > 0));
     }
 
     function isValidGoal(data) {
@@ -171,12 +180,30 @@ service cloud.firestore {
           && data.monto_actual is number
           && data.monto_actual >= 0
           && isDateLike(data.fecha_limite)
-          && (!data.keys().hasAny(['icono']) || data.icono == null || data.icono is string)
+          && (!data.keys().hasAny(['icono']) || data.icono == null || (data.icono is string && data.icono.size() <= 50 && data.icono.matches('^[a-zA-Z0-9_\\-\\.]+$')))
+          && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is string);
+    }
+
+    function isValidDebt(data) {
+      return data.keys().hasAll(['name', 'current_balance', 'original_amount', 'interest_rate', 'next_payment_date', 'minimum_payment'])
+          && data.name is string
+          && data.name.size() > 0
+          && data.name.size() <= 120
+          && data.current_balance is number
+          && data.current_balance >= 0
+          && data.original_amount is number
+          && data.original_amount >= 0
+          && data.interest_rate is number
+          && data.interest_rate >= 0
+          && data.minimum_payment is number
+          && data.minimum_payment >= 0
+          && isDateLike(data.next_payment_date)
           && (!data.keys().hasAny(['profile_id']) || data.profile_id == null || data.profile_id is string);
     }
 
     function isDateLike(value) {
-      return value is timestamp || value is string;
+      return value is timestamp
+          || (value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})?)?$'));
     }
   }
 }

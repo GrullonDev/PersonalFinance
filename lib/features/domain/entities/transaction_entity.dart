@@ -1,23 +1,40 @@
-import 'package:equatable/equatable.dart';
+import 'package:personal_finance/core/domain/entities/syncable_entity.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
+
+enum TransactionType { income, expense }
 
 /// Entidad base para todas las transacciones financieras
-abstract class TransactionEntity extends Equatable {
-  final String id;
+abstract class TransactionEntity extends SyncableEntity {
   final String title;
   final double amount;
   final DateTime date;
   final String? description;
+  final String? profileType;
 
   const TransactionEntity({
-    required this.id,
+    required super.id,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.deviceId,
+    required super.version,
     required this.title,
     required this.amount,
     required this.date,
     this.description,
+    this.profileType,
+    super.deletedAt,
+    super.syncStatus,
   });
 
   @override
-  List<Object?> get props => <Object?>[id, title, amount, date, description];
+  List<Object?> get props => [
+    ...super.props,
+    title,
+    amount,
+    date,
+    description,
+    profileType,
+  ];
 
   /// Verifica si la transacción es válida
   bool get isValid => title.isNotEmpty && amount > 0;
@@ -25,8 +42,11 @@ abstract class TransactionEntity extends Equatable {
   /// Obtiene el tipo de transacción
   String get transactionType;
 
+  String get formattedDate =>
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
   /// Formatea el monto para mostrar
-  String get formattedAmount => '\$${amount.toStringAsFixed(2)}';
+  String get formattedAmount => '${CurrencyHelper.symbol}${amount.toStringAsFixed(2)}';
 
   /// Verifica si la transacción es reciente (últimos 7 días)
   bool get isRecent {

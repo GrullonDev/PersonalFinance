@@ -56,11 +56,8 @@ class BudgetsCrudProvider extends ChangeNotifier {
   }
 
   Future<bool> remove(Budget budget) async {
-    if (budget.id == null) return false;
     _setLoading(true);
-    final Either<Failure, void> res = await _repository.deleteBudget(
-      budget.id!,
-    );
+    final Either<Failure, void> res = await _repository.deleteBudget(budget.id);
     final bool ok = res.isRight();
     res.fold((Failure l) => _error = l.message, (_) {
       _error = null;

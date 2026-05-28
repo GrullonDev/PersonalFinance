@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/budgets/presentation/pages/budgets_crud_page.dart';
 import 'package:personal_finance/features/dashboard/presentation/pages/dashboard_page.dart';
@@ -9,6 +10,12 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
     as tx_backend;
 import 'package:personal_finance/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
+import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
+import 'package:personal_finance/utils/responsive.dart';
+import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/utils/premium_modals.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,8 +24,44 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUpdate();
+
+    _fabAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _fabAnimation = Tween<double>(begin: 0, end: 12).animate(
+      CurvedAnimation(
+        parent: _fabAnimationController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fabAnimationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkUpdate() async {
+    final VersionService versionService = getIt<VersionService>();
+    final bool updateRequired = await versionService.isUpdateRequired();
+
+    if (updateRequired && mounted) {
+      Navigator.of(context).pushReplacementNamed(RoutePath.forceUpdate);
+    }
+  }
 
   final List<Widget> _pages = <Widget>[
     const DashboardPage(),
@@ -31,107 +74,189 @@ class _HomePageState extends State<HomePage> {
     'Finanzas',
     'Servicios',
     'Presupuestos',
-    'Perfil',
+    'Cuenta',
   ];
 
   // Mostrar AppBar solo en las pantallas que lo requieren
-  final List<bool> _showAppBar = <bool>[true, false, false, true];
+  final List<bool> _showAppBar = <bool>[false, false, false, false];
 
   @override
   Widget build(BuildContext context) => BlocProvider<TransactionsBloc>(
     create:
         (BuildContext ctx) => TransactionsBloc(
           ctx.read<tx_backend.TransactionBackendRepository>(),
-        )..add(TransactionsLoad()),
+        )..add(TransactionsLoad(
+          profileType:
+              ctx.read<SettingsProvider>().isBusinessMode
+                  ? 'negocio'
+                  : 'personal',
+        )),
     child: Scaffold(
-      backgroundColor: Colors.grey[50], // Theme handles this now
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar:
-          _showAppBar[_currentIndex]
+          context.isMobile && _showAppBar[_currentIndex]
               ? PreferredSize(
-                preferredSize: const Size.fromHeight(
-                  100,
-                ), // Reduced height for cleaner look
-                child: Container(
-                  // Clean App Bar without heavy gradient, using Theme instead
-                  color: Colors.transparent,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                _getIconForIndex(_currentIndex),
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.primary, // Use theme color
-                                size: 28,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _titles[_currentIndex],
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _getSubtitleForIndex(_currentIndex),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.6),
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                preferredSize: const Size.fromHeight(100),
+                child: _buildResponsiveAppBar(context),
               )
               : null,
-      body: _pages[_currentIndex],
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavTap,
-        onAddPressed: () => _onAddPressed(context),
+      body: Row(
+        children: [
+          if (!context.isMobile) _buildNavigationRail(context),
+          Expanded(
+            child: Column(
+              children: [
+                if (!context.isMobile && _showAppBar[_currentIndex])
+                  _buildResponsiveAppBar(context),
+                Expanded(
+                  child: _FadeIndexedStack(
+                    index: _currentIndex,
+                    children: _pages,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+      bottomNavigationBar:
+          context.isMobile
+              ? CustomBottomNavBar(
+                currentIndex: _currentIndex,
+                onTap: _onNavTap,
+                onAddPressed: () => _onAddPressed(context),
+              )
+              : null,
       floatingActionButton:
-          (_currentIndex == 1 || _currentIndex == 2)
-              ? null
-              : Builder(
+          context.isMobile
+              ? Builder(
                 builder:
-                    (BuildContext innerCtx) => FloatingActionButton(
-                      onPressed: () => _onAddPressed(innerCtx),
-                      elevation: 4,
-                      child: const Icon(
-                        Icons.add,
-                        size: 32,
-                        color: Colors.white,
+                    (BuildContext innerCtx) => AnimatedBuilder(
+                      animation: _fabAnimation,
+                      builder:
+                          (context, child) => Container(
+                            transform: Matrix4.translationValues(
+                              0,
+                              -_fabAnimation.value,
+                              0,
+                            ),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(
+                                    innerCtx,
+                                  ).primaryColor.withValues(alpha: 0.4),
+                                  blurRadius: 16 + (_fabAnimation.value / 2),
+                                  spreadRadius: 2 + (_fabAnimation.value / 4),
+                                  offset: Offset(0, 6 + _fabAnimation.value),
+                                ),
+                              ],
+                            ),
+                            child: child,
+                          ),
+                      child: FloatingActionButton(
+                        heroTag: null,
+                        onPressed: () => _onAddPressed(innerCtx),
+                        elevation: 0, // Using Container's shadow
+                        hoverElevation: 2,
+                        highlightElevation: 4,
+                        child: const Icon(
+                          Icons.add,
+                          size: 32,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-              ),
+              )
+              : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     ),
   );
+
+  Widget _buildResponsiveAppBar(BuildContext context) => Container(
+    color: Colors.transparent,
+    child: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _getIconForIndex(_currentIndex),
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _titles[_currentIndex],
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _getSubtitleForIndex(_currentIndex),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _buildNavigationRail(BuildContext context) => NavigationRail(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: _onNavTap,
+      labelType: NavigationRailLabelType.all,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      elevation: 5,
+      leading: Column(
+        children: [
+          const SizedBox(height: 20),
+          FloatingActionButton(
+            heroTag: null,
+            onPressed: () => _onAddPressed(context),
+            elevation: 2,
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+      destinations: [
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(0)),
+          label: Text(_titles[0]),
+        ),
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(1)),
+          label: Text(_titles[1]),
+        ),
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(2)),
+          label: Text(_titles[2]),
+        ),
+        NavigationRailDestination(
+          icon: Icon(_getIconForIndex(3)),
+          label: Text(_titles[3]),
+        ),
+      ],
+    );
 
   IconData _getIconForIndex(int index) {
     switch (index) {
@@ -164,18 +289,36 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onAddPressed(BuildContext ctx) {
+    HapticFeedback.lightImpact();
+
+    if (_currentIndex == 1) {
+      // Screen 1: Services
+      ServiceConsultationPage.showAddServiceDialog(ctx);
+      return;
+    }
+
+    if (_currentIndex == 2) {
+      // Screen 2: Budgets
+      BudgetsCrudPage.showAddBudgetDialog(ctx);
+      return;
+    }
+
+    // Default or Screens 0/3: Transactions
     final TransactionsBloc bloc = ctx.read<TransactionsBloc>();
-    showModalBottomSheet<void>(
+    showPremiumBottomSheet<void>(
       context: ctx,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(ctx).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder:
           (BuildContext _) => BlocProvider.value(
             value: bloc,
-            child: const AddTransactionModal(),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+              ),
+              child: const AddTransactionModal(),
+            ),
           ),
     ).then((_) {
       setState(() {});
@@ -183,8 +326,53 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onNavTap(int index) {
+    HapticFeedback.selectionClick();
     setState(() {
       _currentIndex = index;
     });
   }
+}
+
+class _FadeIndexedStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const _FadeIndexedStack({required this.index, required this.children});
+
+  @override
+  State<_FadeIndexedStack> createState() => _FadeIndexedStackState();
+}
+
+class _FadeIndexedStackState extends State<_FadeIndexedStack>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..forward();
+  }
+
+  @override
+  void didUpdateWidget(_FadeIndexedStack oldWidget) {
+    if (widget.index != oldWidget.index) {
+      _controller.forward(from: 0);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+      opacity: _controller,
+      child: IndexedStack(index: widget.index, children: widget.children),
+    );
 }

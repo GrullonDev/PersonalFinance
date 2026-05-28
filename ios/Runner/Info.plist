@@ -59,11 +59,20 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 
-	<!-- ───────────────────────── Permisos / Privacy Strings ───────────────── -->
+	<!-- ───────────────────────── Permisos / Privacy Strings ─────────────────
+	     Apple rechaza el binario si un permiso es solicitado en runtime sin tener
+	     su NS*UsageDescription declarado aquí. Mantener TODOS los que cualquier
+	     plugin pueda invocar, aunque la feature sea opcional. -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Se usa Face ID / Touch ID para desbloquear la app y proteger tu información financiera.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Se accede a tu galería para adjuntar imágenes de recibos a tus movimientos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Se guardan en tu galería las imágenes generadas o exportadas desde la app.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Se accede a la cámara para escanear recibos y reconocer su texto automáticamente.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Se accede al micrófono si grabas notas de voz para tus movimientos. Opcional.</string>
 
 	<!-- ───────────────────────── Plataforma iOS ───────────────────────────── -->
 	<key>LSRequiresIPhoneOS</key>

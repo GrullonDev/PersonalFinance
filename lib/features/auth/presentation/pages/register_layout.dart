@@ -40,9 +40,10 @@ class RegisterLayout extends StatelessWidget {
                   primary: Colors.blue.shade400,
                   onPrimary: Colors.white,
                   surface: const Color(0xFF1E293B),
-                  onSurface: Colors.white,
                 ),
-                dialogBackgroundColor: const Color(0xFF0F172A),
+                dialogTheme: const DialogThemeData(
+                  backgroundColor: Color(0xFF0F172A),
+                ),
               ),
               child: child!,
             ),
@@ -64,8 +65,10 @@ class RegisterLayout extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Registro exitoso. Verifica tu correo antes de iniciar sesión.',
+              'Registro exitoso. Hemos enviado un correo de verificación. '
+              'Revisa tu bandeja de entrada y la carpeta de Spam antes de iniciar sesión.',
             ),
+            duration: Duration(seconds: 6),
           ),
         );
         Navigator.pushNamed(context, '/login');

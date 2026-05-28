@@ -21,6 +21,13 @@ class NotificationRepositoryImpl implements NotificationRepository {
           emailEnabled: m.emailEnabled,
           pushEnabled: m.pushEnabled,
           marketingEnabled: m.marketingEnabled,
+          emailFrequency: m.emailFrequency,
+          servicesDueEnabled: m.servicesDueEnabled,
+          servicesDueTiming: m.servicesDueTiming,
+          budgetAlertsEnabled: m.budgetAlertsEnabled,
+          budgetThreshold: m.budgetThreshold,
+          savingsGoalsEnabled: m.savingsGoalsEnabled,
+          weeklySummaryEnabled: m.weeklySummaryEnabled,
         ),
       );
     } on ApiException catch (e) {
@@ -40,6 +47,13 @@ class NotificationRepositoryImpl implements NotificationRepository {
           emailEnabled: prefs.emailEnabled,
           pushEnabled: prefs.pushEnabled,
           marketingEnabled: prefs.marketingEnabled,
+          emailFrequency: prefs.emailFrequency,
+          servicesDueEnabled: prefs.servicesDueEnabled,
+          servicesDueTiming: prefs.servicesDueTiming,
+          budgetAlertsEnabled: prefs.budgetAlertsEnabled,
+          budgetThreshold: prefs.budgetThreshold,
+          savingsGoalsEnabled: prefs.savingsGoalsEnabled,
+          weeklySummaryEnabled: prefs.weeklySummaryEnabled,
         ),
       );
       return Right(
@@ -47,6 +61,13 @@ class NotificationRepositoryImpl implements NotificationRepository {
           emailEnabled: m.emailEnabled,
           pushEnabled: m.pushEnabled,
           marketingEnabled: m.marketingEnabled,
+          emailFrequency: m.emailFrequency,
+          servicesDueEnabled: m.servicesDueEnabled,
+          servicesDueTiming: m.servicesDueTiming,
+          budgetAlertsEnabled: m.budgetAlertsEnabled,
+          budgetThreshold: m.budgetThreshold,
+          savingsGoalsEnabled: m.savingsGoalsEnabled,
+          weeklySummaryEnabled: m.weeklySummaryEnabled,
         ),
       );
     } on ApiException catch (e) {

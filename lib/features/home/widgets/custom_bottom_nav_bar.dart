@@ -21,12 +21,12 @@ class CustomBottomNavBar extends StatelessWidget {
     final bool isSmall = width < 360;
     final bool isMedium = width >= 360 && width < 420;
     final double barHeight = isSmall ? 64 : (isMedium ? 68 : 72);
-    final double iconSize = isSmall ? 22 : (isMedium ? 24 : 26);
-    final double fontSize = isSmall ? 11 : (isMedium ? 12 : 13);
-    final double spacing = isSmall ? 3 : 4;
+    // final double iconSize = isSmall ? 22 : (isMedium ? 24 : 26);
+    // final double fontSize = isSmall ? 11 : (isMedium ? 12 : 13);
+    // final double spacing = isSmall ? 3 : 4;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: Colors.black.withAlpha(10),
@@ -72,7 +72,7 @@ class CustomBottomNavBar extends StatelessWidget {
               context,
               icon: Icons.person_outline,
               activeIcon: Icons.person,
-              label: 'Perfil',
+              label: 'Cuenta',
               index: 3,
               scheme: scheme,
             ),
@@ -91,7 +91,7 @@ class CustomBottomNavBar extends StatelessWidget {
     required ColorScheme scheme,
   }) {
     final bool isSelected = currentIndex == index;
-    final Color color = isSelected ? scheme.primary : Colors.grey.shade600;
+    final Color color = isSelected ? scheme.primary : scheme.onSurfaceVariant;
     final double width = MediaQuery.sizeOf(context).width;
     final double iconSize = width < 360 ? 22 : (width < 420 ? 24 : 26);
     final double fontSize = width < 360 ? 11 : (width < 420 ? 12 : 13);
@@ -107,7 +107,7 @@ class CustomBottomNavBar extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 isSelected
-                    ? (scheme.primaryContainer.withOpacity(0.6))
+                    ? (scheme.primaryContainer.withValues(alpha: 0.6))
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),

@@ -49,6 +49,16 @@ class UserProfile {
     'address': address,
   };
 
+  /* UserProfile copyWith({String? photoUrl}) => UserProfile(
+    id: id,
+    firstName: firstName,
+    lastName: lastName,
+    birthDate: birthDate,
+    username: username,
+    email: email,
+    photoUrl: photoUrl ?? this.photoUrl,
+  ); */
+
   UserProfile copyWith({
     String? firstName,
     String? lastName,

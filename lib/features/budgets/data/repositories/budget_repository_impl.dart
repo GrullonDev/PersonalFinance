@@ -16,20 +16,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
   Future<Either<Failure, List<Budget>>> getBudgets() async {
     try {
       final List<BudgetModel> list = await _remote.getBudgets();
-      return Right(
-        list
-            .map(
-              (BudgetModel e) => Budget(
-                id: e.id,
-                nombre: e.nombre,
-                montoTotal: e.montoTotal,
-                fechaInicio: e.fechaInicio,
-                fechaFin: e.fechaFin,
-                profileId: e.profileId,
-              ),
-            )
-            .toList(),
-      );
+      return Right(list.map((BudgetModel e) => e.toEntity()).toList());
     } on ApiException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } catch (e) {
@@ -41,23 +28,9 @@ class BudgetRepositoryImpl implements BudgetRepository {
   Future<Either<Failure, Budget>> createBudget(Budget budget) async {
     try {
       final BudgetModel created = await _remote.createBudget(
-        BudgetModel(
-          nombre: budget.nombre,
-          montoTotal: budget.montoTotal,
-          fechaInicio: budget.fechaInicio,
-          fechaFin: budget.fechaFin,
-        ),
+        BudgetModel.fromEntity(budget),
       );
-      return Right(
-        Budget(
-          id: created.id,
-          nombre: created.nombre,
-          montoTotal: created.montoTotal,
-          fechaInicio: created.fechaInicio,
-          fechaFin: created.fechaFin,
-          profileId: created.profileId,
-        ),
-      );
+      return Right(created.toEntity());
     } on ApiException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } catch (e) {
@@ -69,25 +42,10 @@ class BudgetRepositoryImpl implements BudgetRepository {
   Future<Either<Failure, Budget>> updateBudget(Budget budget) async {
     try {
       final BudgetModel updated = await _remote.updateBudget(
-        budget.id!,
-        BudgetModel(
-          id: budget.id,
-          nombre: budget.nombre,
-          montoTotal: budget.montoTotal,
-          fechaInicio: budget.fechaInicio,
-          fechaFin: budget.fechaFin,
-        ),
+        budget.id,
+        BudgetModel.fromEntity(budget),
       );
-      return Right(
-        Budget(
-          id: updated.id,
-          nombre: updated.nombre,
-          montoTotal: updated.montoTotal,
-          fechaInicio: updated.fechaInicio,
-          fechaFin: updated.fechaFin,
-          profileId: updated.profileId,
-        ),
-      );
+      return Right(updated.toEntity());
     } on ApiException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } catch (e) {

@@ -1,7 +1,6 @@
-import 'package:equatable/equatable.dart';
+import 'package:personal_finance/core/domain/entities/syncable_entity.dart';
 
-class TransactionBackend extends Equatable {
-  final String? id;
+class TransactionBackend extends SyncableEntity {
   final String tipo; // ingreso | gasto
   final String monto; // string
   final String descripcion;
@@ -9,20 +8,33 @@ class TransactionBackend extends Equatable {
   final String categoriaId;
   final bool esRecurrente;
   final int? profileId;
+  final String? profileType;
 
   const TransactionBackend({
+    required super.id,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.deviceId,
+    required super.version,
     required this.tipo,
     required this.monto,
     required this.descripcion,
     required this.fecha,
     required this.categoriaId,
     required this.esRecurrente,
-    this.id,
+    super.deletedAt,
+    super.syncStatus,
     this.profileId,
+    this.profileType,
   });
 
   TransactionBackend copyWith({
     String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    String? deviceId,
+    int? version,
     String? tipo,
     String? monto,
     String? descripcion,
@@ -30,8 +42,14 @@ class TransactionBackend extends Equatable {
     String? categoriaId,
     bool? esRecurrente,
     int? profileId,
+    String? profileType,
   }) => TransactionBackend(
     id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt ?? this.deletedAt,
+    deviceId: deviceId ?? this.deviceId,
+    version: version ?? this.version,
     tipo: tipo ?? this.tipo,
     monto: monto ?? this.monto,
     descripcion: descripcion ?? this.descripcion,
@@ -39,13 +57,14 @@ class TransactionBackend extends Equatable {
     categoriaId: categoriaId ?? this.categoriaId,
     esRecurrente: esRecurrente ?? this.esRecurrente,
     profileId: profileId ?? this.profileId,
+    profileType: profileType ?? this.profileType,
   );
 
   double get montoAsDouble => double.tryParse(monto) ?? 0.0;
 
   @override
-  List<Object?> get props => <Object?>[
-    id,
+  List<Object?> get props => [
+    ...super.props,
     tipo,
     monto,
     descripcion,
@@ -53,5 +72,6 @@ class TransactionBackend extends Equatable {
     categoriaId,
     esRecurrente,
     profileId,
+    profileType,
   ];
 }

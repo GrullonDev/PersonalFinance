@@ -1,7 +1,10 @@
 name: personal_finance
-description: "A new Flutter project."
+description: "A project to manage personal finances with features like income and expense tracking, charts, and Firebase integration."
 
-version: 1.0.1
+# Formato: <marketing>+<build>
+# - marketing (CFBundleShortVersionString) → visible al usuario en App Store.
+# - build (CFBundleVersion) → ÚNICO por upload a TestFlight; incrementar siempre.
+version: 1.1.4+5
 
 environment:
   sdk: ">=3.7.0 <4.0.0"
@@ -16,37 +19,52 @@ dependencies:
   hive_flutter: ^1.1.0
   path_provider: ^2.1.5
   fl_chart: ^1.0.0
-  syncfusion_flutter_charts: ^30.1.37
+  syncfusion_flutter_charts: ^32.2.8
 
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  google_fonts: ^6.2.1
+  google_fonts: ^8.0.2
   shared_preferences: ^2.5.3
-  get_it: ^8.0.3
+  get_it: ^9.2.1
   equatable: ^2.0.5
   flutter_bloc: ^9.0.0
-  firebase_auth: ^5.7.0
+  firebase_auth: ^6.2.0
   sign_in_with_apple: ^7.0.1
-  google_sign_in: ^6.2.0
-  firebase_core: ^3.15.2
-  connectivity_plus: ^5.0.2
-  cloud_firestore: ^5.6.11
-  firebase_storage: ^12.0.0
-  image_picker: ^1.1.1
+  google_sign_in: ^7.1.0
+  firebase_core: ^4.5.0
+  connectivity_plus: ^7.0.0
+  cloud_firestore: ^6.1.3
+  firebase_storage: ^13.1.0
+  image_picker: ^1.1.2
   flutter_svg: ^2.2.1
   http: ^1.2.2
 
   dartz: ^0.10.1
   json_annotation: ^4.9.0
   jwt_decoder: ^2.0.1
-  permission_handler: ^11.3.1
-  package_info_plus: ^8.0.2
-  url_launcher: ^6.3.0
-  firebase_analytics: ^11.6.0
-  firebase_crashlytics: ^4.3.10
-  local_auth: ^2.3.0
+  permission_handler: ^12.0.1
+  package_info_plus: ^9.0.0
+  url_launcher: ^6.3.1
+  firebase_analytics: ^12.1.3
+  firebase_crashlytics: ^5.0.8
+  firebase_remote_config: ^6.2.0
+  local_auth: ^3.0.1
+  local_auth_android: ^2.0.5
+  local_auth_darwin: ^2.0.3
+  flutter_local_notifications: ^21.0.0-dev.2
+  timezone: ^0.11.0
+  firebase_messaging: ^16.1.2
+  firebase_vertexai: ^2.2.0
+  flutter_timezone: ^5.0.1
+  in_app_update: ^4.2.5
+  upgrader: ^12.5.0
+  confetti: ^0.8.0
+  table_calendar: ^3.2.0
+  uuid: ^4.5.3
+  google_mlkit_text_recognition: ^0.14.0
   flutter_secure_storage: ^9.2.2
+  flutter_jailbreak_detection: ^1.9.0
 
 dev_dependencies:
   flutter_test:
@@ -56,31 +74,26 @@ dev_dependencies:
   build_runner: ^2.4.6
   hive_generator: ^2.0.1
   json_serializable: ^6.8.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
   mocktail: ^1.0.4
 
-flutter:  
+flutter:
   uses-material-design: true
 
   assets:
     - assets/logo.png
+    - assets/privacy_policy.md
     - assets/images/
     - assets/icons/
-    - assets/privacy_policy.md
 
 # Launcher icons configuration
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: assets/logo.png
-  # Android adaptive icon (API 26+ / Android 8.0+)
-  # Background blanco para que coincida con el fondo del logo
   adaptive_icon_foreground: assets/logo.png
-  adaptive_icon_background: "#FFFFFF"
-  # Android legacy icon (API < 26) — ícono cuadrado sin adaptive layer
-  image_path_android: assets/logo.png
+  adaptive_icon_background: "#0E8F5B"
   min_sdk_android: 21
-  # iOS — sin canal alfa, fondo sólido exigido por App Store
   remove_alpha_ios: true
   web:
     generate: false

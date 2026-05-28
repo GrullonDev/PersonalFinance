@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
@@ -7,18 +5,17 @@ import 'package:personal_finance/features/profile/domain/entities/profile_info.d
 import 'package:personal_finance/features/profile/presentation/widgets/profile_menu_item.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:provider/provider.dart';
-import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
-import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart'
-    as notif_repo;
-import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/settings/presentation/pages/notifications_detail_page.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
-import 'package:personal_finance/features/categories/presentation/pages/categories_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/help_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/about_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/appearance_settings_page.dart';
 import 'package:personal_finance/features/privacy/pages/privacy_policy_page.dart';
+import 'package:personal_finance/features/privacy/pages/terms_page.dart';
+import 'package:personal_finance/utils/responsive.dart';
+import 'package:personal_finance/utils/offline_sync_service.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -31,21 +28,19 @@ class ProfileView extends StatelessWidget {
       }
 
       if (state.error != null) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(state.error!, style: TextStyle(color: Colors.grey[600])),
-            ],
-          ),
-        );
+        debugPrint('ProfileBloc load error (falling back to AuthProvider): ${state.error}');
       }
 
-      final String fullName = state.info?.fullName ?? 'Usuario';
-      final String email = state.info?.email ?? '';
-      final String? photoUrl = state.info?.photoUrl;
+      final authUser = context.watch<AuthProvider>().currentUser;
+      final String fullName = (state.info?.fullName != null && state.info!.fullName.isNotEmpty)
+          ? state.info!.fullName
+          : (authUser?.fullName != null && authUser!.fullName.isNotEmpty ? authUser.fullName : 'Usuario');
+      final String email = (state.info?.email != null && state.info!.email.isNotEmpty)
+          ? state.info!.email
+          : (authUser?.email ?? '');
+      final String? photoUrl = (state.info?.photoUrl != null && state.info!.photoUrl!.isNotEmpty)
+          ? state.info!.photoUrl
+          : authUser?.photoUrl;
       final String initials = _getInitials(fullName);
 
       return CustomScrollView(
@@ -59,140 +54,208 @@ class ProfileView extends StatelessWidget {
               children: <Widget>[
                 const SizedBox(height: 20),
 
-                // Secciones de menú
-                _buildMenuSection(
-                  context,
-                  title: 'CUENTA',
-                  items: <Widget>[
-                    ProfileMenuItem(
-                      icon: Icons.person_outline,
-                      title: 'Editar perfil',
-                      // subtitle: 'Actualiza tu información personal',
-                      onTap: () {
-                        final bloc = context.read<ProfileBloc>();
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (_) => BlocProvider<ProfileBloc>.value(
-                                  value: bloc,
-                                  child: const EditProfilePage(),
+                // Wrap content in a constrained box for larger screens
+                Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: context.isMobile ? double.infinity : 700,
+                    ),
+                    child: Column(
+                      children: [
+                        // Secciones de menú
+                        _buildMenuSection(
+                          context,
+                          title: 'INFORMACIÓN',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.person_outline_rounded,
+                              title: 'Ver Perfil',
+                              onTap: () {
+                                final bloc = context.read<ProfileBloc>();
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder:
+                                        (_) => BlocProvider<ProfileBloc>.value(
+                                          value: bloc,
+                                          child: const EditProfilePage(),
+                                        ),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.cloud_sync_outlined,
+                              title: 'Sincronización',
+                              onTap: () async {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Sincronizando datos...'),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                                await OfflineSyncService().syncPendingActions();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Sincronización completada'),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        _buildMenuSection(
+                          context,
+                          title: 'AJUSTES',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.category_outlined,
+                              title: 'Categorías',
+                              onTap: () {
+                                Navigator.of(
+                                  context,
+                                ).pushNamed(RoutePath.categories);
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.palette_outlined,
+                              title: 'Apariencia',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder:
+                                        (_) => const AppearanceSettingsPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.notifications_none_rounded,
+                              title: 'Notificaciones',
+                              onTap: () {
+                                Navigator.of(context).pushNamed(
+                                  RoutePath.notificationsInbox,
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.alarm_rounded,
+                              title: 'Recordatorios',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const NotificationsDetailPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        _buildMenuSection(
+                          context,
+                          title: 'SEGURIDAD',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.lock_outline_rounded,
+                              title: 'Centro de Seguridad',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const SecurityDetailPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            /* ProfileMenuItem(
+                              icon: Icons.fingerprint_rounded,
+                              title: 'Autenticación biométrica',
+                              onTap: () {},
+                            ), */
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        _buildMenuSection(
+                          context,
+                          title: 'LEGAL Y SOPORTE',
+                          items: <Widget>[
+                            ProfileMenuItem(
+                              icon: Icons.help_outline_rounded,
+                              title: 'Centro de ayuda',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const HelpDetailPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.privacy_tip_outlined,
+                              title: 'Privacidad',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const PrivacyPolicyPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.description_outlined,
+                              title: 'Términos',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const TermsPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            ProfileMenuItem(
+                              icon: Icons.info_outline_rounded,
+                              title: 'Acerca de',
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const AboutPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Botón de cerrar sesión
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _handleLogout(context),
+                              icon: const Icon(Icons.logout),
+                              label: const Text('Cerrar sesión'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
                                 ),
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.security,
-                      title: 'Seguridad',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const SecurityDetailPage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildMenuSection(
-                  context,
-                  title: 'PREFERENCIAS',
-                  items: <Widget>[
-                    ProfileMenuItem(
-                      icon: Icons.notifications_none,
-                      title: 'Notificaciones',
-                      // subtitle: 'Gestiona tus alertas',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const _NotificationsEntry(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.category_outlined,
-                      title: 'Gestionar Categorías',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const CategoriesPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.palette_outlined,
-                      title: 'Apariencia',
-                      // subtitle: 'Tema y personalización',
-                      onTap: () {
-                        Navigator.pushNamed(context, '/settings');
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildMenuSection(
-                  context,
-                  title: 'AYUDA Y SOPORTE',
-                  items: <Widget>[
-                    ProfileMenuItem(
-                      icon: Icons.help_outline,
-                      title: 'Centro de ayuda',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const HelpDetailPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.info_outline,
-                      title: 'Acerca de',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const AboutPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    ProfileMenuItem(
-                      icon: Icons.privacy_tip_outlined,
-                      title: 'Política de privacidad',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const PrivacyPolicyPage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // Botón de cerrar sesión
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _handleLogout(context),
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Cerrar sesión'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -230,7 +293,7 @@ class ProfileView extends StatelessWidget {
             : fullName;
 
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 250,
       pinned: true,
       backgroundColor: primaryColor,
       automaticallyImplyLeading: false, // Quita la flecha de retroceso
@@ -310,7 +373,6 @@ class ProfileView extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
 
-                  // Email
                   Text(
                     email,
                     style: TextStyle(
@@ -318,6 +380,61 @@ class ProfileView extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
                     textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nivel Pro y Miembro desde
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Nivel: Usuario',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'Miembro desde 2026',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -373,20 +490,25 @@ class ProfileView extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               letterSpacing: 0.5,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -427,19 +549,4 @@ class ProfileView extends StatelessWidget {
       }
     }
   }
-}
-
-// Entry para notificaciones con provider inyectado desde Profile
-class _NotificationsEntry extends StatelessWidget {
-  const _NotificationsEntry();
-
-  @override
-  Widget build(BuildContext context) =>
-      ChangeNotifierProvider<NotificationPrefsProvider>(
-        create:
-            (_) => NotificationPrefsProvider(
-              getIt<notif_repo.NotificationRepository>(),
-            )..load(),
-        child: const NotificationsDetailPage(),
-      );
 }

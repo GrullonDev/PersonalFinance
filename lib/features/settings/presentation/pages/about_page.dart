@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -8,6 +11,7 @@ class AboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final packageInfo = getIt<VersionService>().packageInfo;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Acerca de la App'), centerTitle: true),
@@ -15,7 +19,7 @@ class AboutPage extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 48),
-            _buildAppIdentity(colorScheme, theme),
+            _buildAppIdentity(colorScheme, theme, packageInfo),
             const SizedBox(height: 48),
             _buildInfoList(colorScheme, theme, context),
             const SizedBox(height: 48),
@@ -27,7 +31,11 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAppIdentity(ColorScheme colorScheme, ThemeData theme) => Column(
+  Widget _buildAppIdentity(
+    ColorScheme colorScheme,
+    ThemeData theme,
+    PackageInfo packageInfo,
+  ) => Column(
     children: [
       Container(
         width: 100,
@@ -66,10 +74,65 @@ class AboutPage extends StatelessWidget {
         ),
       ),
       Text(
-        'Versión 1.0.1 (Stable)',
+        'Versión ${packageInfo.version} (${packageInfo.buildNumber})',
         style: theme.textTheme.bodyMedium?.copyWith(
           color: colorScheme.onSurfaceVariant,
         ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        'Finanzas inteligentes para tu día a día',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: 24),
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 40),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Column(
+          children: [
+            _buildDetailRow(
+              'Build Number',
+              packageInfo.buildNumber,
+              theme,
+              colorScheme,
+            ),
+            const Divider(height: 16),
+            _buildDetailRow('Servidor', 'En línea 🟢', theme, colorScheme),
+            const Divider(height: 16),
+            _buildDetailRow('Cuenta', 'Pro ✨', theme, colorScheme),
+          ],
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        label,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      Text(
+        value,
+        style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
       ),
     ],
   );
@@ -104,7 +167,7 @@ class AboutPage extends StatelessWidget {
         _buildInfoItem(
           icon: Icons.code_outlined,
           title: 'Licencias de Software',
-          onTap: () => showLicensePage(context: context), // Built-in
+          onTap: () => showLicensePage(context: context),
         ),
       ],
     ),
@@ -144,7 +207,7 @@ class AboutPage extends StatelessWidget {
       ),
       const SizedBox(height: 24),
       Text(
-        '© 2026 Personal Finance. Todos los derechos reservados.',
+        '© ${DateTime.now().year} Personal Finance. Todos los derechos reservados.',
         style: theme.textTheme.labelSmall?.copyWith(
           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
         ),

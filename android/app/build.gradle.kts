@@ -26,7 +26,11 @@ android {
         applicationId = "com.grullondev.personal_finance"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
-        versionCode = flutter.versionCode
+        
+        // Genera un versionCode incremental automáticamente basado en el tiempo (minutos)
+        // Esto evita errores de "versionCode ya utilizado" en Google Play Console.
+        val timestampVersionCode = (System.currentTimeMillis() / 60000).toInt() - 29000000
+        versionCode = timestampVersionCode
         versionName = flutter.versionName
         multiDexEnabled = true
     }
@@ -34,6 +38,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -58,8 +63,11 @@ android {
 
     buildTypes {
         getByName("release") {
-            if (keystoreProperties["keyAlias"] != null) {
-                signingConfig = signingConfigs.getByName("release")
+            // Use production keystore when available; fall back to debug for local APK testing.
+            signingConfig = if (keystoreProperties["keyAlias"] != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
             isMinifyEnabled = true
             proguardFiles(
@@ -68,14 +76,22 @@ android {
             )
         }
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("androidx.multidex:multidex:2.0.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
 
 flutter {

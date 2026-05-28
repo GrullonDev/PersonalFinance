@@ -1,3 +1,7 @@
+import 'package:dartz/dartz.dart';
+import 'package:personal_finance/core/error/failures.dart';
+import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
@@ -10,6 +14,7 @@ class AddExpenseParams {
   final String category;
   final String? description;
   final String? notes;
+  final String? profileType;
 
   const AddExpenseParams({
     required this.title,
@@ -18,6 +23,7 @@ class AddExpenseParams {
     required this.category,
     this.description,
     this.notes,
+    this.profileType,
   });
 }
 
@@ -29,6 +35,7 @@ class AddIncomeParams {
   final String source;
   final String? description;
   final String? notes;
+  final String? profileType;
 
   const AddIncomeParams({
     required this.title,
@@ -37,6 +44,7 @@ class AddIncomeParams {
     required this.source,
     this.description,
     this.notes,
+    this.profileType,
   });
 }
 
@@ -47,62 +55,98 @@ class AddTransactionUseCase {
   const AddTransactionUseCase(this.repository);
 
   /// Agrega un nuevo gasto
-  Future<void> addExpense(AddExpenseParams params) async {
+  Future<Either<Failure, void>> addExpense(AddExpenseParams params) async {
     try {
       // Validaciones
       if (params.title.isEmpty) {
-        throw Exception('El título del gasto no puede estar vacío');
+        return const Left(
+          ValidationFailure(
+            message: 'El título del gasto no puede estar vacío',
+          ),
+        );
       }
       if (params.amount <= 0) {
-        throw Exception('El monto del gasto debe ser mayor a 0');
+        return const Left(
+          ValidationFailure(message: 'El monto del gasto debe ser mayor a 0'),
+        );
       }
       if (params.category.isEmpty) {
-        throw Exception('La categoría del gasto no puede estar vacía');
+        return const Left(
+          ValidationFailure(
+            message: 'La categoría del gasto no puede estar vacía',
+          ),
+        );
       }
 
+      final now = DateTime.now();
+      final deviceId = getIt<DeviceService>().deviceId;
+
       final ExpenseEntity expense = ExpenseEntity(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: 'exp_${now.microsecondsSinceEpoch}',
+        createdAt: now,
+        updatedAt: now,
+        deviceId: deviceId,
+        version: 1,
         title: params.title,
         amount: params.amount,
         date: params.date,
         category: params.category,
         description: params.description,
         notes: params.notes,
+        profileType: params.profileType,
       );
 
-      await repository.addExpense(expense);
+      return await repository.addExpense(expense);
     } catch (e) {
-      throw Exception('Error al agregar gasto: $e');
+      return Left(ServerFailure(message: 'Error al agregar gasto: $e'));
     }
   }
 
   /// Agrega un nuevo ingreso
-  Future<void> addIncome(AddIncomeParams params) async {
+  Future<Either<Failure, void>> addIncome(AddIncomeParams params) async {
     try {
       // Validaciones
       if (params.title.isEmpty) {
-        throw Exception('El título del ingreso no puede estar vacío');
+        return const Left(
+          ValidationFailure(
+            message: 'El título del ingreso no puede estar vacío',
+          ),
+        );
       }
       if (params.amount <= 0) {
-        throw Exception('El monto del ingreso debe ser mayor a 0');
+        return const Left(
+          ValidationFailure(message: 'El monto del ingreso debe ser mayor a 0'),
+        );
       }
       if (params.source.isEmpty) {
-        throw Exception('La fuente del ingreso no puede estar vacía');
+        return const Left(
+          ValidationFailure(
+            message: 'La fuente del ingreso no puede estar vacía',
+          ),
+        );
       }
 
+      final now = DateTime.now();
+      final deviceId = getIt<DeviceService>().deviceId;
+
       final IncomeEntity income = IncomeEntity(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: 'inc_${now.microsecondsSinceEpoch}',
+        createdAt: now,
+        updatedAt: now,
+        deviceId: deviceId,
+        version: 1,
         title: params.title,
         amount: params.amount,
         date: params.date,
         source: params.source,
         description: params.description,
         notes: params.notes,
+        profileType: params.profileType,
       );
 
-      await repository.addIncome(income);
+      return await repository.addIncome(income);
     } catch (e) {
-      throw Exception('Error al agregar ingreso: $e');
+      return Left(ServerFailure(message: 'Error al agregar ingreso: $e'));
     }
   }
 }
