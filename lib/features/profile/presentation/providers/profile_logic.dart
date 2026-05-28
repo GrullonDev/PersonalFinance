@@ -1,5 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
+import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
+import 'package:personal_finance/features/profile/data/datasources/profile_remote_data_source.dart';
+import 'package:personal_finance/features/profile/data/models/profile_me_model.dart';
 import 'package:personal_finance/features/profile/domain/entities/user_profile.dart';
 
 enum ActivityType { expense, income, goal, budget }
@@ -44,19 +49,31 @@ class ProfileLogic extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implementar actualización real del perfil en el backend
-      await Future<void>.delayed(const Duration(seconds: 1));
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('No hay sesión activa');
+
+      if (name != null) {
+        await user.updateDisplayName(name);
+      }
+
+      final dataSource = GetIt.instance<ProfileRemoteDataSource>();
+      final List<String> nameParts = (name ?? _profile?.name ?? '').trim().split(' ');
+      final String updatedFirstName = nameParts.isNotEmpty ? nameParts.first : (_profile?.firstName ?? '');
+      final String updatedLastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : (_profile?.lastName ?? '');
+
+      final ProfileMeModel updated = ProfileMeModel(
+        fullName: name ?? _profile?.name ?? '',
+        email: email ?? _profile?.email ?? user.email ?? '',
+        firstName: updatedFirstName,
+        lastName: updatedLastName,
+        username: _profile?.username,
+        phoneNumber: _profile?.phoneNumber,
+        address: _profile?.address,
+        photoUrl: _profile?.photoUrl,
+      );
+      await dataSource.updateMe(updated);
 
       if (_profile != null) {
-        final String resolvedName = name ?? _profile!.name;
-        final List<String> nameParts = resolvedName.trim().split(' ');
-        final String updatedFirstName =
-            nameParts.isNotEmpty ? nameParts.first : _profile!.firstName;
-        final String updatedLastName =
-            nameParts.length > 1
-                ? nameParts.sublist(1).join(' ')
-                : _profile!.lastName;
-
         _profile = _profile!.copyWith(
           firstName: updatedFirstName,
           lastName: updatedLastName,
@@ -78,8 +95,7 @@ class ProfileLogic extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implementar cierre de sesión real
-      await Future<void>.delayed(const Duration(seconds: 1));
+      await GetIt.instance<AuthDataSource>().logout();
       _profile = null;
       _recentActivity = <ActivityItem>[];
       notifyListeners();
@@ -97,40 +113,34 @@ class ProfileLogic extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implementar carga real del perfil desde el backend
-      await Future<void>.delayed(const Duration(seconds: 1));
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _setError('No hay sesión activa');
+        return;
+      }
+
+      final dataSource = GetIt.instance<ProfileRemoteDataSource>();
+      final ProfileMeModel model = await dataSource.getMe();
+
+      final List<String> nameParts = (model.fullName.isNotEmpty ? model.fullName : user.displayName ?? '').trim().split(' ');
+      final String firstName = model.firstName?.isNotEmpty == true
+          ? model.firstName!
+          : (nameParts.isNotEmpty ? nameParts.first : 'Usuario');
+      final String lastName = model.lastName?.isNotEmpty == true
+          ? model.lastName!
+          : (nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '');
 
       _profile = UserProfile(
-        id: 'demo-user',
-        firstName: 'Sofia',
-        lastName: 'Ramirez',
-        birthDate: DateTime(1990, 5, 12),
-        username: 'sofia.ramirez',
-        email: 'sofia.ramirez@gmail.com',
+        id: user.uid,
+        firstName: firstName,
+        lastName: lastName,
+        birthDate: DateTime(2000),
+        username: model.username ?? user.displayName ?? '',
+        email: model.email.isNotEmpty ? model.email : (user.email ?? ''),
+        photoUrl: model.photoUrl ?? user.photoURL,
+        phoneNumber: model.phoneNumber,
+        address: model.address,
       );
-
-      _recentActivity = <ActivityItem>[
-        ActivityItem(
-          title: 'Compra en línea',
-          amount: -28.50,
-          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-          type: ActivityType.expense,
-        ),
-        ActivityItem(
-          title: 'Meta "Viaje de Verano"',
-          description: 'actualizada',
-          amount: 150,
-          timestamp: DateTime.now().subtract(const Duration(hours: 4)),
-          type: ActivityType.goal,
-        ),
-        ActivityItem(
-          title: 'Presupuesto "Comida"',
-          description: 'ajustado',
-          amount: -20,
-          timestamp: DateTime.now().subtract(const Duration(days: 3)),
-          type: ActivityType.budget,
-        ),
-      ];
 
       notifyListeners();
     } catch (e) {

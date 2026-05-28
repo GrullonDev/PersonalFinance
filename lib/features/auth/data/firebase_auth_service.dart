@@ -54,19 +54,20 @@ class FirebaseAuthService implements AuthDataSource {
   // Android: flujo web via Chrome Custom Tab.
   // No requiere SHA-1 registrado — usa el Web OAuth client (client_type 3).
   Future<User?> _signInWithGoogleAndroid() async {
-    final GoogleAuthProvider googleProvider = GoogleAuthProvider()
-      ..addScope('email')
-      ..addScope('profile');
-    final UserCredential userCredential =
-        await _auth.signInWithProvider(googleProvider);
+    final GoogleAuthProvider googleProvider =
+        GoogleAuthProvider()
+          ..addScope('email')
+          ..addScope('profile');
+    final UserCredential userCredential = await _auth.signInWithProvider(
+      googleProvider,
+    );
     return userCredential.user;
   }
 
   // iOS: flujo nativo con selector de cuenta de Google (google_sign_in v7.x).
   // authenticate() abre el selector nativo; authentication es getter síncrono.
   Future<User?> _signInWithGoogleIOS() async {
-    final GoogleSignInAccount googleUser =
-        await _googleSignIn.authenticate();
+    final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
     final String? idToken = googleUser.authentication.idToken;
 
@@ -80,8 +81,9 @@ class FirebaseAuthService implements AuthDataSource {
     final AuthCredential credential = GoogleAuthProvider.credential(
       idToken: idToken,
     );
-    final UserCredential userCredential =
-        await _auth.signInWithCredential(credential);
+    final UserCredential userCredential = await _auth.signInWithCredential(
+      credential,
+    );
     return userCredential.user;
   }
 
