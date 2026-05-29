@@ -6,10 +6,12 @@ import 'package:personal_finance/features/quick_finance/data/models/transaction_
 /// Un mapper tolerante a fallos que convierte documentos crudos de Firestore
 /// que contienen esquema legacy hacia nuestro nuevo TransactionModel cerrado.
 class LegacyTransactionMapper {
-  
   /// Opción Ideal para Firestore: Úsalo cuando consumes la base de datos remotamente.
   static TransactionModel fromFirestore(DocumentSnapshot doc) {
-    developer.log('Interception Firestore Mapeo de legacy payload para: ${doc.id}', name: 'LegacyMapper');
+    developer.log(
+      'Interception Firestore Mapeo de legacy payload para: ${doc.id}',
+      name: 'LegacyMapper',
+    );
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return fromMap(data, documentId: doc.id);
   }
@@ -45,7 +47,10 @@ class LegacyTransactionMapper {
         amount = double.tryParse(sanitized) ?? 0.0;
       }
     } else {
-      developer.log('Problema grave: Monto no encontrado o inválido en el documento $id, forzando a 0.0', name: 'LegacyMapper');
+      developer.log(
+        'Problema grave: Monto no encontrado o inválido en el documento $id, forzando a 0.0',
+        name: 'LegacyMapper',
+      );
     }
 
     // 4. Manejo de Tipo de Transacción tolerante a fallos (Prioridad: type -> tipo)
@@ -55,17 +60,25 @@ class LegacyTransactionMapper {
       final t = rawType.toString().toLowerCase();
       if (t.startsWith('ingre') || t.startsWith('incom')) {
         type = TransactionType.income;
-      } else if (t.startsWith('gast') || t.startsWith('egres') || t.startsWith('expens')) {
+      } else if (t.startsWith('gast') ||
+          t.startsWith('egres') ||
+          t.startsWith('expens')) {
         type = TransactionType.expense;
       } else {
-        developer.log('Problema detectado: Tipo inválido "$t" en doc $id, infiriendo por signo', name: 'LegacyMapper');
+        developer.log(
+          'Problema detectado: Tipo inválido "$t" en doc $id, infiriendo por signo',
+          name: 'LegacyMapper',
+        );
         type = amount >= 0 ? TransactionType.income : TransactionType.expense;
       }
     } else {
-      developer.log('Problema crítico: Tipo inexistente en doc $id, infiriendo por monto', name: 'LegacyMapper');
+      developer.log(
+        'Problema crítico: Tipo inexistente en doc $id, infiriendo por monto',
+        name: 'LegacyMapper',
+      );
       type = amount >= 0 ? TransactionType.income : TransactionType.expense;
     }
-    
+
     // Si queremos el monto absoluto independientemente del signo
     amount = amount.abs();
 
@@ -77,9 +90,13 @@ class LegacyTransactionMapper {
                 json['title'] ??
                 json['nombre'] ??
                 '')
-            .toString().trim();
+            .toString()
+            .trim();
     if (note.isEmpty) {
-      developer.log('Problema: Transacción $id no tiene texto o nombre, usando "Sin descripción"', name: 'LegacyMapper');
+      developer.log(
+        'Problema: Transacción $id no tiene texto o nombre, usando "Sin descripción"',
+        name: 'LegacyMapper',
+      );
       note = 'Sin descripción';
     }
 
@@ -106,7 +123,10 @@ class LegacyTransactionMapper {
         parsedDate = DateTime.fromMillisecondsSinceEpoch(rawDate);
       }
     } else {
-      developer.log('Problema grave: Fecha inexistente en doc $id, forzando a DateTime.now()', name: 'LegacyMapper');
+      developer.log(
+        'Problema grave: Fecha inexistente en doc $id, forzando a DateTime.now()',
+        name: 'LegacyMapper',
+      );
     }
 
     // 7. Campos de Sincronización y Retención Local

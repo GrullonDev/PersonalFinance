@@ -89,9 +89,10 @@ TransactionModel _$TransactionModelFromJson(Map<String, dynamic> json) =>
       syncStatus: $enumDecode(_$SyncStatusEnumMap, json['syncStatus']),
       version: (json['version'] as num).toInt(),
       deviceId: json['deviceId'] as String,
-      deletedAt: json['deletedAt'] == null
-          ? null
-          : DateTime.parse(json['deletedAt'] as String),
+      deletedAt:
+          json['deletedAt'] == null
+              ? null
+              : DateTime.parse(json['deletedAt'] as String),
       categoryId: json['categoryId'] as String?,
     );
 

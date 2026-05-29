@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:personal_finance/core/domain/entities/sync_status.dart';
 import 'package:personal_finance/core/services/vertex_ai_service.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
@@ -18,22 +17,33 @@ void main() {
   });
 
   group('VertexAiService Tests with MockGeminiClient', () {
-    test('getCategoryForExpense returns correct category on successful prediction', () async {
-      when(() => mockClient.generate(any())).thenAnswer((_) async => 'Alimentación');
+    test(
+      'getCategoryForExpense returns correct category on successful prediction',
+      () async {
+        when(
+          () => mockClient.generate(any()),
+        ).thenAnswer((_) async => 'Alimentación');
 
-      final category = await vertexAiService.getCategoryForExpense('Comida en el restaurante');
-      expect(category, 'Alimentación');
-    });
+        final category = await vertexAiService.getCategoryForExpense(
+          'Comida en el restaurante',
+        );
+        expect(category, 'Alimentación');
+      },
+    );
 
     test('getCategoryForExpense returns Otros on exception', () async {
       when(() => mockClient.generate(any())).thenThrow(Exception('API Error'));
 
-      final category = await vertexAiService.getCategoryForExpense('Algo aleatorio');
+      final category = await vertexAiService.getCategoryForExpense(
+        'Algo aleatorio',
+      );
       expect(category, 'Otros');
     });
 
     test('getPersonalizedTip returns a tip on successful prediction', () async {
-      when(() => mockClient.generate(any())).thenAnswer((_) async => 'Ahorra comiendo en casa.');
+      when(
+        () => mockClient.generate(any()),
+      ).thenAnswer((_) async => 'Ahorra comiendo en casa.');
 
       final expenses = [
         ExpenseEntity(
@@ -42,9 +52,8 @@ void main() {
           updatedAt: DateTime.now(),
           deviceId: 'dev',
           version: 1,
-          syncStatus: SyncStatus.synchronized,
           title: 'Sushi',
-          amount: 50.0,
+          amount: 50,
           date: DateTime.now(),
           category: 'Alimentación',
         ),
@@ -54,13 +63,18 @@ void main() {
       expect(tip, 'Ahorra comiendo en casa.');
     });
 
-    test('getPersonalizedTip returns default message when transactions are empty', () async {
-      final tip = await vertexAiService.getPersonalizedTip([], []);
-      expect(tip.contains('Comienza a registrar'), true);
-    });
+    test(
+      'getPersonalizedTip returns default message when transactions are empty',
+      () async {
+        final tip = await vertexAiService.getPersonalizedTip([], []);
+        expect(tip.contains('Comienza a registrar'), true);
+      },
+    );
 
     test('getPersonalizedTip includes goals and debts in prompt', () async {
-      when(() => mockClient.generate(any())).thenAnswer((_) async => 'Enfócate en tu meta Viaje y paga tu tarjeta.');
+      when(
+        () => mockClient.generate(any()),
+      ).thenAnswer((_) async => 'Enfócate en tu meta Viaje y paga tu tarjeta.');
 
       final goals = [
         Goal(
@@ -79,17 +93,22 @@ void main() {
           deviceId: 'dev',
           version: 1,
           name: 'Tarjeta de Crédito',
-          currentBalance: 1000.0,
-          originalAmount: 1000.0,
-          interestRate: 15.0,
+          currentBalance: 1000,
+          originalAmount: 1000,
+          interestRate: 15,
           nextPaymentDate: DateTime.now(),
-          minimumPayment: 50.0,
+          minimumPayment: 50,
         ),
       ];
 
-      final tip = await vertexAiService.getPersonalizedTip([], [], goals: goals, debts: debts);
+      final tip = await vertexAiService.getPersonalizedTip(
+        [],
+        [],
+        goals: goals,
+        debts: debts,
+      );
       expect(tip, 'Enfócate en tu meta Viaje y paga tu tarjeta.');
-      
+
       final captured = verify(() => mockClient.generate(captureAny())).captured;
       expect(captured.length, 1);
       final promptText = captured.first as String;

@@ -5,7 +5,9 @@ class CurrencyHelper {
   /// Obtiene de manera dinámica el símbolo de la moneda según la configuración regional del dispositivo.
   static String get symbol {
     try {
-      final String locale = Intl.defaultLocale ?? ui.PlatformDispatcher.instance.locale.toLanguageTag();
+      final String locale =
+          Intl.defaultLocale ??
+          ui.PlatformDispatcher.instance.locale.toLanguageTag();
       final String currencyCode = _getCurrencyCodeForLocale(locale);
       return NumberFormat().simpleCurrencySymbol(currencyCode);
     } catch (_) {
@@ -16,7 +18,7 @@ class CurrencyHelper {
   /// Mapea locales/países comunes a su código de moneda ISO 4217 correspondiente.
   static String _getCurrencyCodeForLocale(String locale) {
     String countryCode = '';
-    
+
     if (locale.contains('_')) {
       final List<String> parts = locale.split('_');
       if (parts.length > 1) {
@@ -30,9 +32,9 @@ class CurrencyHelper {
     } else {
       countryCode = locale;
     }
-    
+
     countryCode = countryCode.toUpperCase();
-    
+
     final Map<String, String> countryToCurrency = <String, String>{
       'GT': 'GTQ', // Guatemala (Quetzal)
       'MX': 'MXN', // México (Peso)
@@ -58,7 +60,7 @@ class CurrencyHelper {
       'CA': 'CAD', // Canadá (Dólar)
       'GB': 'GBP', // Reino Unido (Libra)
     };
-    
+
     return countryToCurrency[countryCode] ?? 'GTQ';
   }
 

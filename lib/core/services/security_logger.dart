@@ -2,7 +2,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 
 class SecurityLogger {
   SecurityLogger({FirebaseAnalytics? analytics})
-      : _analytics = analytics ?? FirebaseAnalytics.instance;
+    : _analytics = analytics ?? FirebaseAnalytics.instance;
 
   final FirebaseAnalytics _analytics;
 

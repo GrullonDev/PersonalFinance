@@ -336,13 +336,7 @@ String _inferCat(TransactionEntity t) {
   ])) {
     return 'transporte';
   }
-  if (_kw(text, [
-    'venta',
-    'ventas',
-    'negocio',
-    'comercio',
-    'producto',
-  ])) {
+  if (_kw(text, ['venta', 'ventas', 'negocio', 'comercio', 'producto'])) {
     return 'negocio';
   }
 

@@ -10,82 +10,83 @@ class SyncStatusPage extends StatelessWidget {
   const SyncStatusPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFFF6F7F9),
+    appBar: AppBar(
       backgroundColor: const Color(0xFFF6F7F9),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF6F7F9),
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        title: const Text(
-          'Estado de sincronización',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-        ),
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 1,
+      title: const Text(
+        'Estado de sincronización',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
       ),
-      body: BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
-        builder: (context, state) {
-          final pendingCount = state.transactions
-              .where(
-                (t) =>
-                    t.syncStatus == SyncStatus.pending && t.deletedAt == null,
-              )
-              .length;
+    ),
+    body: BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
+      builder: (context, state) {
+        final pendingCount =
+            state.transactions
+                .where(
+                  (t) =>
+                      t.syncStatus == SyncStatus.pending && t.deletedAt == null,
+                )
+                .length;
 
-          final failedCount = state.transactions
-              .where(
-                (t) =>
-                    t.syncStatus == SyncStatus.failed && t.deletedAt == null,
-              )
-              .length;
+        final failedCount =
+            state.transactions
+                .where(
+                  (t) =>
+                      t.syncStatus == SyncStatus.failed && t.deletedAt == null,
+                )
+                .length;
 
-          final _Status status;
-          if (state.isSyncing) {
-            status = _Status.syncing;
-          } else if (state.isOffline) {
-            status = _Status.offline;
-          } else if (state.syncError != null) {
-            status = _Status.error;
-          } else if (pendingCount > 0 || failedCount > 0) {
-            status = _Status.pending;
-          } else {
-            status = _Status.synced;
-          }
+        final _Status status;
+        if (state.isSyncing) {
+          status = _Status.syncing;
+        } else if (state.isOffline) {
+          status = _Status.offline;
+        } else if (state.syncError != null) {
+          status = _Status.error;
+        } else if (pendingCount > 0 || failedCount > 0) {
+          status = _Status.pending;
+        } else {
+          status = _Status.synced;
+        }
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-            children: [
-              _StatusCard(
-                status: status,
-                pendingCount: pendingCount,
-                failedCount: failedCount,
-                syncError: state.syncError,
-              ),
-              const SizedBox(height: 16),
-              _LastSyncCard(lastSyncAt: state.lastSyncAt),
-              const SizedBox(height: 16),
-              _StatsCard(
-                pendingCount: pendingCount,
-                failedCount: failedCount,
-                syncedCount: state.transactions
-                    .where(
-                      (t) =>
-                          t.syncStatus == SyncStatus.synced &&
-                          t.deletedAt == null,
-                    )
-                    .length,
-              ),
-              const SizedBox(height: 32),
-              _SyncNowButton(
-                isSyncing: state.isSyncing,
-                isOffline: state.isOffline,
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+          children: [
+            _StatusCard(
+              status: status,
+              pendingCount: pendingCount,
+              failedCount: failedCount,
+              syncError: state.syncError,
+            ),
+            const SizedBox(height: 16),
+            _LastSyncCard(lastSyncAt: state.lastSyncAt),
+            const SizedBox(height: 16),
+            _StatsCard(
+              pendingCount: pendingCount,
+              failedCount: failedCount,
+              syncedCount:
+                  state.transactions
+                      .where(
+                        (t) =>
+                            t.syncStatus == SyncStatus.synced &&
+                            t.deletedAt == null,
+                      )
+                      .length,
+            ),
+            const SizedBox(height: 32),
+            _SyncNowButton(
+              isSyncing: state.isSyncing,
+              isOffline: state.isOffline,
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }
 
 // ── Status indicator ──────────────────────────────────────────────────────────
@@ -107,39 +108,43 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (IconData icon, String title, String subtitle, Color color) =
-        switch (status) {
-          _Status.syncing => (
-            Icons.sync_rounded,
-            'Sincronizando…',
-            'Subiendo y descargando cambios',
-            const Color(0xFF007AFF),
-          ),
-          _Status.synced => (
-            Icons.cloud_done_rounded,
-            'Sincronizado',
-            'Todos tus datos están al día',
-            const Color(0xFF34C759),
-          ),
-          _Status.pending => (
-            Icons.cloud_upload_rounded,
-            'Pendiente de sincronizar',
-            _pendingLabel(pendingCount, failedCount),
-            const Color(0xFFFF9500),
-          ),
-          _Status.offline => (
-            Icons.wifi_off_rounded,
-            'Sin conexión',
-            'Se sincronizará cuando recuperes internet',
-            const Color(0xFF8E8E93),
-          ),
-          _Status.error => (
-            Icons.cloud_off_rounded,
-            'Error al sincronizar',
-            'No se pudo completar la sincronización',
-            const Color(0xFFFF3B30),
-          ),
-        };
+    final (
+      IconData icon,
+      String title,
+      String subtitle,
+      Color color,
+    ) = switch (status) {
+      _Status.syncing => (
+        Icons.sync_rounded,
+        'Sincronizando…',
+        'Subiendo y descargando cambios',
+        const Color(0xFF007AFF),
+      ),
+      _Status.synced => (
+        Icons.cloud_done_rounded,
+        'Sincronizado',
+        'Todos tus datos están al día',
+        const Color(0xFF34C759),
+      ),
+      _Status.pending => (
+        Icons.cloud_upload_rounded,
+        'Pendiente de sincronizar',
+        _pendingLabel(pendingCount, failedCount),
+        const Color(0xFFFF9500),
+      ),
+      _Status.offline => (
+        Icons.wifi_off_rounded,
+        'Sin conexión',
+        'Se sincronizará cuando recuperes internet',
+        const Color(0xFF8E8E93),
+      ),
+      _Status.error => (
+        Icons.cloud_off_rounded,
+        'Error al sincronizar',
+        'No se pudo completar la sincronización',
+        const Color(0xFFFF3B30),
+      ),
+    };
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -163,9 +168,10 @@ class _StatusCard extends StatelessWidget {
               color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: status == _Status.syncing
-                ? _SpinningIcon(icon: icon, color: color)
-                : Icon(icon, color: color, size: 36),
+            child:
+                status == _Status.syncing
+                    ? _SpinningIcon(icon: icon, color: color)
+                    : Icon(icon, color: color, size: 36),
           ),
           const SizedBox(height: 16),
           Text(
@@ -214,7 +220,11 @@ class _StatusCard extends StatelessWidget {
   static String _pendingLabel(int pending, int failed) {
     final parts = <String>[];
     if (pending > 0) {
-      parts.add(pending == 1 ? '1 movimiento pendiente' : '$pending movimientos pendientes');
+      parts.add(
+        pending == 1
+            ? '1 movimiento pendiente'
+            : '$pending movimientos pendientes',
+      );
     }
     if (failed > 0) {
       parts.add(failed == 1 ? '1 con error' : '$failed con error');
@@ -270,9 +280,10 @@ class _LastSyncCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = lastSyncAt == null
-        ? 'Nunca sincronizado'
-        : _formatTimestamp(lastSyncAt!);
+    final label =
+        lastSyncAt == null
+            ? 'Nunca sincronizado'
+            : _formatTimestamp(lastSyncAt!);
 
     return _InfoRow(
       icon: Icons.access_time_rounded,
@@ -455,21 +466,23 @@ class _SyncNowButton extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: FilledButton.icon(
-        onPressed: disabled
-            ? null
-            : () => context
-                .read<QuickFinanceBloc>()
-                .add(const SyncTransactionsRequested()),
-        icon: isSyncing
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+        onPressed:
+            disabled
+                ? null
+                : () => context.read<QuickFinanceBloc>().add(
+                  const SyncTransactionsRequested(),
                 ),
-              )
-            : const Icon(Icons.sync_rounded),
+        icon:
+            isSyncing
+                ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+                : const Icon(Icons.sync_rounded),
         label: Text(
           isSyncing
               ? 'Sincronizando…'

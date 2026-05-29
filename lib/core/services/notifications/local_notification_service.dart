@@ -156,7 +156,9 @@ class LocalNotificationService {
       );
     } on PlatformException catch (e) {
       if (e.code == 'exact_alarms_not_permitted') {
-        debugPrint('Exact alarms not permitted, scheduling inexactly instead: ${e.message}');
+        debugPrint(
+          'Exact alarms not permitted, scheduling inexactly instead: ${e.message}',
+        );
         try {
           await _notificationsPlugin.zonedSchedule(
             id: id,

@@ -27,18 +27,22 @@ class ProdFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBI-YOUR-PROD-ANDROID-API-KEY-HERE',
-    appId: '1:116411792004:android:a713a79228fc59a773prod', // Replace with your Prod Android App ID
+    appId:
+        '1:116411792004:android:a713a79228fc59a773prod', // Replace with your Prod Android App ID
     messagingSenderId: '116411792004',
     projectId: 'personalfinance-prod', // Replace with your Prod Project ID
-    storageBucket: 'personalfinance-prod.firebasestorage.app', // Replace with your Prod Storage Bucket
+    storageBucket:
+        'personalfinance-prod.firebasestorage.app', // Replace with your Prod Storage Bucket
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAd-YOUR-PROD-IOS-API-KEY-HERE',
-    appId: '1:116411792004:ios:3fec80f6377d2f9173prod', // Replace with your Prod iOS App ID
+    appId:
+        '1:116411792004:ios:3fec80f6377d2f9173prod', // Replace with your Prod iOS App ID
     messagingSenderId: '116411792004',
     projectId: 'personalfinance-prod', // Replace with your Prod Project ID
-    storageBucket: 'personalfinance-prod.firebasestorage.app', // Replace with your Prod Storage Bucket
+    storageBucket:
+        'personalfinance-prod.firebasestorage.app', // Replace with your Prod Storage Bucket
     iosBundleId: 'com.grullondev.personalFinance',
   );
 }

@@ -322,10 +322,14 @@ class BudgetsCrudPage extends StatelessWidget {
                                     .withValues(alpha: 0.3),
                               ),
                               inputFormatters: [
-                                FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                                FilteringTextInputFormatter.deny(
+                                  RegExp(r'[<>]'),
+                                ),
                                 LengthLimitingTextInputFormatter(120),
                               ],
-                              validator: (String? v) => InputSanitizer.validateName(v ?? ''),
+                              validator:
+                                  (String? v) =>
+                                      InputSanitizer.validateName(v ?? ''),
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -347,10 +351,14 @@ class BudgetsCrudPage extends StatelessWidget {
                                     .withValues(alpha: 0.3),
                               ),
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d+\.?\d{0,2}'),
+                                ),
                                 LengthLimitingTextInputFormatter(15),
                               ],
-                              validator: (String? v) => InputSanitizer.validateAmount(v ?? ''),
+                              validator:
+                                  (String? v) =>
+                                      InputSanitizer.validateAmount(v ?? ''),
                             ),
                             const SizedBox(height: 16),
                             Row(

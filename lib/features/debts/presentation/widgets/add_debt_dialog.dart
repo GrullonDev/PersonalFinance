@@ -144,7 +144,8 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   LengthLimitingTextInputFormatter(15),
                 ],
-                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -158,7 +159,8 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   LengthLimitingTextInputFormatter(15),
                 ],
-                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -175,7 +177,9 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Requerido';
                   final val = double.tryParse(value);
-                  if (val == null || val < 0 || val > 100) return 'Tasa inválida (0-100)';
+                  if (val == null || val < 0 || val > 100) {
+                    return 'Tasa inválida (0-100)';
+                  }
                   return null;
                 },
               ),
@@ -191,7 +195,8 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   LengthLimitingTextInputFormatter(15),
                 ],
-                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(

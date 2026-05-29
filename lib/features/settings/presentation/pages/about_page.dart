@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:personal_finance/core/services/version_service.dart';
+import 'package:personal_finance/features/privacy/pages/terms_page.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 
 class AboutPage extends StatelessWidget {
@@ -22,8 +23,10 @@ class AboutPage extends StatelessWidget {
             _buildAppIdentity(colorScheme, theme, packageInfo),
             const SizedBox(height: 48),
             _buildInfoList(colorScheme, theme, context),
+            const SizedBox(height: 32),
+            _buildContactCard(colorScheme, theme, context),
             const SizedBox(height: 48),
-            _buildBrandFooter(colorScheme, theme),
+            _buildBrandFooter(colorScheme, theme, context),
             const SizedBox(height: 32),
           ],
         ),
@@ -153,7 +156,9 @@ class AboutPage extends StatelessWidget {
         _buildInfoItem(
           icon: Icons.description_outlined,
           title: 'Términos de Servicio',
-          onTap: () {},
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const TermsPage()),
+          ),
         ),
         _buildInfoItem(
           icon: Icons.update,
@@ -189,7 +194,91 @@ class AboutPage extends StatelessWidget {
     ],
   );
 
-  Widget _buildBrandFooter(ColorScheme colorScheme, ThemeData theme) => Column(
+  Widget _buildContactCard(
+    ColorScheme colorScheme,
+    ThemeData theme,
+    BuildContext context,
+  ) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.contact_support_outlined,
+            size: 36,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Soporte y Contacto',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Estamos aquí para ayudarte',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launchUrl(
+                    context,
+                    'mailto:prosystem155@gmail.com?subject=Soporte%20Personal%20Finance%20App',
+                  ),
+                  icon: const Icon(Icons.email_outlined, size: 18),
+                  label: const Text('Email'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(
+                      color: colorScheme.primary.withValues(alpha: 0.5),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => _launchUrl(
+                    context,
+                    'https://wa.me/50242909548?text=Hola%2C%20necesito%20soporte%20con%20Personal%20Finance%20App',
+                  ),
+                  icon: const Icon(Icons.chat_outlined, size: 18),
+                  label: const Text('WhatsApp'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _buildBrandFooter(ColorScheme colorScheme, ThemeData theme, BuildContext context) => Column(
     children: [
       Text(
         'Desarrollado con ❤️ por',
@@ -198,11 +287,16 @@ class AboutPage extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 4),
-      Text(
-        'GrullonDev Solutions',
-        style: theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: colorScheme.primary,
+      GestureDetector(
+        onTap: () => _launchUrl(context, 'https://jorgegrullondev.com/'),
+        child: Text(
+          'Jorge Grullón · GrullonDev',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+            decoration: TextDecoration.underline,
+            decorationColor: colorScheme.primary,
+          ),
         ),
       ),
       const SizedBox(height: 24),

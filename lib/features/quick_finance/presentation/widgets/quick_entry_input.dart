@@ -66,9 +66,10 @@ class QuickEntryInputState extends State<QuickEntryInput>
     final text = _controller.text;
     final sign = isExpense ? '-' : '+';
     final opposite = isExpense ? '+' : '-';
-    final newText = text.startsWith(opposite)
-        ? sign + text.substring(1)
-        : text.startsWith(sign)
+    final newText =
+        text.startsWith(opposite)
+            ? sign + text.substring(1)
+            : text.startsWith(sign)
             ? text
             : sign + text;
     _controller.text = newText;
@@ -83,8 +84,7 @@ class QuickEntryInputState extends State<QuickEntryInput>
     if (!current.toLowerCase().contains(keyword.toLowerCase())) {
       final newText = current.isEmpty ? keyword : '$current $keyword';
       _controller.text = newText;
-      _controller.selection =
-          TextSelection.collapsed(offset: newText.length);
+      _controller.selection = TextSelection.collapsed(offset: newText.length);
     }
     if (_errorText != null) setState(() => _errorText = null);
     _focusNode.requestFocus();
@@ -147,8 +147,9 @@ class QuickEntryInputState extends State<QuickEntryInput>
           backgroundColor:
               isIncome ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           duration: const Duration(seconds: 2),
         ),
@@ -286,24 +287,24 @@ class _TypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.25)),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: color,
         ),
-      );
+      ),
+    ),
+  );
 }
 
 // ── Category entry chip ───────────────────────────────────────────────────────
@@ -316,21 +317,21 @@ class _CategoryEntryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
-            ),
-          ),
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Colors.grey.shade600,
         ),
-      );
+      ),
+    ),
+  );
 }

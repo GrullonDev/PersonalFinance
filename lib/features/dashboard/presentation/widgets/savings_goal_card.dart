@@ -158,7 +158,9 @@ class SavingsGoalCard extends StatelessWidget {
                           color:
                               isCompleted
                                   ? Colors.green.withValues(alpha: 0.2)
-                                  : Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+                                  : Theme.of(
+                                    context,
+                                  ).colorScheme.surface.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -219,7 +221,8 @@ class SavingsGoalCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -249,7 +252,10 @@ class SavingsGoalCard extends StatelessWidget {
                               child: LinearProgressIndicator(
                                 value: value,
                                 minHeight: 6,
-                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                backgroundColor:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   isCompleted
                                       ? Colors.green

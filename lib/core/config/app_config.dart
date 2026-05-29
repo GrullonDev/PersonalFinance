@@ -24,8 +24,10 @@ class AppConfig {
 
   /// Current environment. Defaults to 'development' so that running
   /// `flutter run` without any flags works out-of-the-box.
-  static const String _env =
-      String.fromEnvironment('APP_ENV', defaultValue: 'development');
+  static const String _env = String.fromEnvironment(
+    'APP_ENV',
+    defaultValue: 'development',
+  );
 
   /// If APP_ENV is explicitly set to production, or we are building in release mode,
   /// we run in production.

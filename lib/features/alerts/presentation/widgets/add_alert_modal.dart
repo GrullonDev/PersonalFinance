@@ -53,7 +53,8 @@ class _AddAlertModalState extends State<AddAlertModal> {
                   FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
                   LengthLimitingTextInputFormatter(120),
                 ],
-                validator: (String? value) => InputSanitizer.validateName(value ?? ''),
+                validator:
+                    (String? value) => InputSanitizer.validateName(value ?? ''),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -105,9 +106,11 @@ class _AddAlertModalState extends State<AddAlertModal> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                       final AlertItem alert = AlertItem(
+                      final AlertItem alert = AlertItem(
                         title: _titleController.text.trim(),
-                        description: InputSanitizer.sanitizeText(_descriptionController.text),
+                        description: InputSanitizer.sanitizeText(
+                          _descriptionController.text,
+                        ),
                         date: _selectedDate,
                       );
                       await provider.addAlert(alert);

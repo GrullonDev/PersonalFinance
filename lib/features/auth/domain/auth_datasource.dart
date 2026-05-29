@@ -67,7 +67,7 @@ class AuthLocalDataSource {
 
   Future<bool> getIsLoggedIn() => SecurityPreferences.getIsLoggedIn();
 
-  Future<void> setLogin() => SecurityPreferences.setLoggedIn(true);
+  Future<void> setLogin() => SecurityPreferences.setLoggedIn(value: true);
 
-  Future<void> setLogout() => SecurityPreferences.setLoggedIn(false);
+  Future<void> setLogout() => SecurityPreferences.setLoggedIn(value: false);
 }

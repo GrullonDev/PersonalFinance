@@ -34,10 +34,11 @@ class RouteSwitch {
         // reconstruya en cada login/logout y no conserve estado del usuario
         // anterior.
         return MaterialPageRoute<void>(
-          builder: (BuildContext context) => BlocProvider<QuickFinanceBloc>(
-            create: (_) => GetIt.instance<QuickFinanceBloc>(),
-            child: const QuickFinanceHomePage(),
-          ),
+          builder:
+              (BuildContext context) => BlocProvider<QuickFinanceBloc>(
+                create: (_) => GetIt.instance<QuickFinanceBloc>(),
+                child: const QuickFinanceHomePage(),
+              ),
         );
       case RoutePath.onboarding:
         return MaterialPageRoute<void>(

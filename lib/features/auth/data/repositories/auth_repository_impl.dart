@@ -232,14 +232,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String token,
     required String newPassword,
     required String confirmPassword,
-  }) async {
-    // Note: Firebase handles password reset via the link sent to email.
-    // ConfimPassword reset via API is not directly supported by client SDK in the same way as backend tokens.
-    // However, if the user is logged in, we can update password.
-    // If this is a flow where the user receives a code, Firebase dynamic links manage it.
-    // For now, returning success as this flow might need UI adjustment for Firebase.
-    return right(unit);
-  }
+  }) async => right(unit);
 
   @override
   Future<Either<AuthFailure, RegisterUserResponse>> registerUser(
@@ -357,11 +350,7 @@ class AuthRepositoryImpl implements AuthRepository {
         default:
           errorMessage = e.message ?? 'Error al iniciar sesión con Firebase.';
       }
-      return Left(
-        AuthFailure(
-          message: errorMessage,
-        ),
-      );
+      return Left(AuthFailure(message: errorMessage));
     } catch (e) {
       return Left(
         AuthFailure(message: 'Error inesperado al iniciar sesión: $e'),
@@ -387,12 +376,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(
     String refreshToken,
-  ) async {
-    // Firebase handles token refresh automatically.
-    return const Left(
-      AuthFailure(message: 'Refresh token no necesario en Firebase'),
-    );
-  }
+  ) async =>
+      const Left(
+        AuthFailure(message: 'Refresh token no necesario en Firebase'),
+      );
 
   @override
   Future<Either<AuthFailure, CurrentUserResponse>> getCurrentUser() async {

@@ -1,5 +1,8 @@
-import '../models/transaction_model.dart';
-import '../models/sync_operation_model.dart';
+import 'package:personal_finance/features/quick_finance/data/sync/sync_manager.dart'
+    show SyncManager;
+
+import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
+import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
 
 /// Contrato de acceso al almacenamiento local (Hive).
 ///

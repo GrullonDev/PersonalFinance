@@ -16,7 +16,7 @@ import 'package:personal_finance/features/quick_finance/domain/repositories/quic
 ///   2. Si no hay datos en caché para el usuario, se dispara un fetch remoto
 ///      en segundo plano; el resultado se upserta en Hive y el stream lo
 ///      propaga automáticamente a la UI.
-///   3. El [userId] fluye explícito por todas las capas: nunca se mezclan
+///   3. El ID del usuario fluye explícito por todas las capas: nunca se mezclan
 ///      datos de usuarios distintos aunque compartan el mismo dispositivo.
 ///   4. Toda mutación escribe primero en Hive y encola una SyncOperation para
 ///      que el SyncManager la envíe a Firestore.
@@ -49,25 +49,24 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
   }
 
   @override
-  Stream<BalanceSummaryEntity> watchBalance({required String userId}) {
-    return localDataSource.watchTransactions(userId).map((transactions) {
-      double income = 0;
-      double expenses = 0;
-      for (final t in transactions) {
-        // watchTransactions(userId) ya filtra soft-deleted y por userId
-        if (t.type == TransactionType.income) {
-          income += t.amount;
-        } else {
-          expenses += t.amount;
+  Stream<BalanceSummaryEntity> watchBalance({required String userId}) =>
+      localDataSource.watchTransactions(userId).map((transactions) {
+        double income = 0;
+        double expenses = 0;
+        for (final t in transactions) {
+          // watchTransactions(userId) ya filtra soft-deleted y por userId
+          if (t.type == TransactionType.income) {
+            income += t.amount;
+          } else {
+            expenses += t.amount;
+          }
         }
-      }
-      return BalanceSummaryEntity(
-        totalBalance: income - expenses,
-        totalIncome: income,
-        totalExpenses: expenses,
-      );
-    });
-  }
+        return BalanceSummaryEntity(
+          totalBalance: income - expenses,
+          totalIncome: income,
+          totalExpenses: expenses,
+        );
+      });
 
   /// Fetch remoto de seguridad: solo se ejecuta si Hive no tiene datos para
   /// [userId] y no hay ya un fetch en curso para ese usuario.

@@ -214,7 +214,26 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
-    final String? token = await user.getIdToken(forceRefresh);
+    String? token;
+    try {
+      token = await user.getIdToken(forceRefresh);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'channel-error' && _accessToken != null && _accessToken!.isNotEmpty) {
+        // Canal Pigeon no disponible (hot-restart). Reutilizar token en caché.
+        if (notify) notifyListeners();
+        return true;
+      }
+      await _clearAuthData(notify: notify);
+      return false;
+    } catch (_) {
+      if (_accessToken != null && _accessToken!.isNotEmpty) {
+        if (notify) notifyListeners();
+        return true;
+      }
+      await _clearAuthData(notify: notify);
+      return false;
+    }
+
     if (token == null || token.isEmpty) {
       await _clearAuthData(notify: notify);
       return false;

@@ -75,11 +75,17 @@ class QuickFinanceRemoteDataSourceImpl implements QuickFinanceRemoteDataSource {
           debugPrint('  userId (path): $userId');
           debugPrint('  transactionId: ${model.id}');
           debugPrint('  model.userId:  ${model.userId}');
-          debugPrint('  amount:        ${model.amount} (${model.amount.runtimeType})');
+          debugPrint(
+            '  amount:        ${model.amount} (${model.amount.runtimeType})',
+          );
           debugPrint('  type:          ${model.type}');
           debugPrint('  syncStatus:    ${model.syncStatus}');
-          debugPrint('  version:       ${model.version} (${model.version.runtimeType})');
-          debugPrint('  deviceId:      "${model.deviceId}" (len=${model.deviceId.length})');
+          debugPrint(
+            '  version:       ${model.version} (${model.version.runtimeType})',
+          );
+          debugPrint(
+            '  deviceId:      "${model.deviceId}" (len=${model.deviceId.length})',
+          );
           debugPrint('  note len:      ${model.note.length}');
           debugPrint('  deletedAt:     ${model.deletedAt}');
         }

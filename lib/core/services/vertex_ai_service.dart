@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 
-import 'package:firebase_vertexai/firebase_vertexai.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
@@ -86,9 +86,7 @@ class VertexAiService {
     : _client =
           client ??
           FirebaseGeminiClient(
-            FirebaseVertexAI.instance.generativeModel(
-              model: 'gemini-1.5-flash',
-            ),
+            FirebaseAI.vertexAI().generativeModel(model: 'gemini-1.5-flash'),
           );
 
   /// Categoriza automáticamente un gasto según su título/descripción
@@ -147,35 +145,51 @@ Responde únicamente con el nombre de la categoría elegida, exactamente como ap
     List<Goal>? goals,
     List<Debt>? debts,
   }) async {
-    if (expenses.isEmpty && incomes.isEmpty && (goals == null || goals.isEmpty) && (debts == null || debts.isEmpty)) {
+    if (expenses.isEmpty &&
+        incomes.isEmpty &&
+        (goals == null || goals.isEmpty) &&
+        (debts == null || debts.isEmpty)) {
       return 'Comienza a registrar tus movimientos, metas o deudas para darte consejos financieros personalizados.';
     }
 
-    final String expensesSummary = expenses.isEmpty
-        ? 'Sin gastos recientes.'
-        : expenses
-            .take(10)
-            .map((e) => '- ${e.title}: Q${e.amount} (Categoría: ${e.category})')
-            .join('\n');
+    final String expensesSummary =
+        expenses.isEmpty
+            ? 'Sin gastos recientes.'
+            : expenses
+                .take(10)
+                .map(
+                  (e) =>
+                      '- ${e.title}: Q${e.amount} (Categoría: ${e.category})',
+                )
+                .join('\n');
 
-    final String incomesSummary = incomes.isEmpty
-        ? 'Sin ingresos recientes.'
-        : incomes
-            .take(5)
-            .map((i) => '- ${i.title}: Q${i.amount}')
-            .join('\n');
+    final String incomesSummary =
+        incomes.isEmpty
+            ? 'Sin ingresos recientes.'
+            : incomes
+                .take(5)
+                .map((i) => '- ${i.title}: Q${i.amount}')
+                .join('\n');
 
-    final String goalsSummary = (goals != null && goals.isNotEmpty)
-        ? goals
-            .map((g) => '- Meta: "${g.nombre}", Objetivo: Q${g.montoObjetivo}, Actual: Q${g.montoActual}, Fecha límite: ${g.fechaLimite.toIso8601String().split('T').first}')
-            .join('\n')
-        : 'Sin metas de ahorro configuradas.';
+    final String goalsSummary =
+        (goals != null && goals.isNotEmpty)
+            ? goals
+                .map(
+                  (g) =>
+                      '- Meta: "${g.nombre}", Objetivo: Q${g.montoObjetivo}, Actual: Q${g.montoActual}, Fecha límite: ${g.fechaLimite.toIso8601String().split('T').first}',
+                )
+                .join('\n')
+            : 'Sin metas de ahorro configuradas.';
 
-    final String debtsSummary = (debts != null && debts.isNotEmpty)
-        ? debts
-            .map((d) => '- Deuda: "${d.name}", Saldo actual: Q${d.currentBalance}, Monto original: Q${d.originalAmount}, Tasa: ${d.interestRate}%, Próximo pago: ${d.nextPaymentDate.toIso8601String().split('T').first}')
-            .join('\n')
-        : 'Sin deudas registradas.';
+    final String debtsSummary =
+        (debts != null && debts.isNotEmpty)
+            ? debts
+                .map(
+                  (d) =>
+                      '- Deuda: "${d.name}", Saldo actual: Q${d.currentBalance}, Monto original: Q${d.originalAmount}, Tasa: ${d.interestRate}%, Próximo pago: ${d.nextPaymentDate.toIso8601String().split('T').first}',
+                )
+                .join('\n')
+            : 'Sin deudas registradas.';
 
     final prompt = '''
 Eres un asesor financiero personal amigable y experto. Analiza el siguiente resumen de movimientos recientes del usuario, sus metas de ahorro y sus deudas. Genera un único consejo de ahorro personalizado, práctico y motivador en español.
@@ -235,11 +249,17 @@ Si no puedes extraer un campo, usa null. El monto debe ser el total del document
     try {
       final responseText = await _client.generate(prompt);
       if (responseText == null) return null;
-      final clean = responseText.trim().replaceAll(RegExp(r'^```.*\n?'), '').replaceAll('```', '');
+      final clean = responseText
+          .trim()
+          .replaceAll(RegExp(r'^```.*\n?'), '')
+          .replaceAll('```', '');
       final json = jsonDecode(clean) as Map<String, dynamic>;
       return ScannedFinancialDocument.fromJson(json);
     } catch (e) {
-      developer.log('Error extrayendo datos de documento con Gemini: $e', error: e);
+      developer.log(
+        'Error extrayendo datos de documento con Gemini: $e',
+        error: e,
+      );
       return null;
     }
   }
@@ -255,7 +275,10 @@ Si no puedes extraer un campo, usa null. El monto debe ser el total del document
 
     final expensesSummary = expenses
         .take(20)
-        .map((e) => '- ${e.title}: Q${e.amount.toStringAsFixed(0)} (${e.category}) — ${e.date.toIso8601String().split('T').first}')
+        .map(
+          (e) =>
+              '- ${e.title}: Q${e.amount.toStringAsFixed(0)} (${e.category}) — ${e.date.toIso8601String().split('T').first}',
+        )
         .join('\n');
 
     final totalIncomes = incomes.fold<double>(0, (s, i) => s + i.amount);
@@ -296,12 +319,17 @@ Sé específico: menciona el monto estimado total y las categorías principales.
       return FinancialHealthScore.fallback();
     }
 
-    final savingsRate = totalIncomes > 0
-        ? ((totalIncomes - totalExpenses) / totalIncomes * 100).clamp(0, 100)
-        : 0;
-    final debtToIncome = totalIncomes > 0
-        ? (totalDebtBalance / totalIncomes * 100).clamp(0, 300)
-        : 0;
+    final savingsRate =
+        totalIncomes > 0
+            ? ((totalIncomes - totalExpenses) / totalIncomes * 100).clamp(
+              0,
+              100,
+            )
+            : 0;
+    final debtToIncome =
+        totalIncomes > 0
+            ? (totalDebtBalance / totalIncomes * 100).clamp(0, 300)
+            : 0;
 
     final prompt = '''
 Eres un asesor financiero certificado. Evalúa la salud financiera de este usuario guatemalteco y asigna un puntaje de 0 a 100.
@@ -327,11 +355,17 @@ El summary debe ser 1 frase concreta y motivadora en español. Si el usuario cue
     try {
       final responseText = await _client.generate(prompt);
       if (responseText == null) return FinancialHealthScore.fallback();
-      final clean = responseText.trim().replaceAll(RegExp(r'^```.*\n?'), '').replaceAll('```', '');
+      final clean = responseText
+          .trim()
+          .replaceAll(RegExp(r'^```.*\n?'), '')
+          .replaceAll('```', '');
       final json = jsonDecode(clean) as Map<String, dynamic>;
       return FinancialHealthScore.fromJson(json);
     } catch (e) {
-      developer.log('Error en score de salud financiera con Gemini: $e', error: e);
+      developer.log(
+        'Error en score de salud financiera con Gemini: $e',
+        error: e,
+      );
       return FinancialHealthScore.fallback();
     }
   }

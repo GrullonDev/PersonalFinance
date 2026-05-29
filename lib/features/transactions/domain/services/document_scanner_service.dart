@@ -42,8 +42,9 @@ class DocumentScannerService {
     if (image == null) return null;
 
     final inputImage = InputImage.fromFilePath(image.path);
-    final RecognizedText recognized =
-        await _textRecognizer.processImage(inputImage);
+    final RecognizedText recognized = await _textRecognizer.processImage(
+      inputImage,
+    );
     final String ocrText = recognized.text;
 
     if (ocrText.trim().isEmpty) return null;
@@ -51,8 +52,9 @@ class DocumentScannerService {
     // Intentar extracción inteligente con Gemini
     try {
       final aiService = GetIt.instance<VertexAiService>();
-      final extracted =
-          await aiService.extractFinancialDataFromDocument(ocrText);
+      final extracted = await aiService.extractFinancialDataFromDocument(
+        ocrText,
+      );
 
       if (extracted != null) {
         return ScannedDocument(
@@ -77,12 +79,13 @@ class DocumentScannerService {
     String? title;
 
     final RegExp amountRegExp = RegExp(r'(\d+[.,]\d{2})');
-    final amounts = amountRegExp
-        .allMatches(text)
-        .map((m) => double.tryParse(m.group(0)!.replaceAll(',', '.')))
-        .whereType<double>()
-        .toList()
-      ..sort();
+    final amounts =
+        amountRegExp
+            .allMatches(text)
+            .map((m) => double.tryParse(m.group(0)!.replaceAll(',', '.')))
+            .whereType<double>()
+            .toList()
+          ..sort();
     if (amounts.isNotEmpty) amount = amounts.last;
 
     final textLower = text.toLowerCase();

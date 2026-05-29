@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+
 import 'package:personal_finance/features/dashboard/domain/entities/dashboard_models.dart';
+import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart';
 
 class ReportsLogic extends ChangeNotifier {
   List<ChartData> _chartData = <ChartData>[];
@@ -30,31 +33,64 @@ class ReportsLogic extends ChangeNotifier {
 
   void _clearError() => _setError(null);
 
+  static const List<Color> _chartColors = <Color>[
+    Colors.blue,
+    Colors.red,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.teal,
+    Colors.pink,
+    Colors.amber,
+  ];
+
   // Public methods
   Future<void> loadReportData() async {
     _setLoading(true);
     _clearError();
 
     try {
-      // TODO: Implementar lógica para cargar datos del reporte
-      // Por ahora usaremos datos de prueba
-      _chartData = <ChartData>[
-        ChartData(category: 'Alimentación', amount: 1200, color: Colors.blue),
-        ChartData(category: 'Transporte', amount: 800, color: Colors.red),
-        ChartData(
-          category: 'Entretenimiento',
-          amount: 500,
-          color: Colors.green,
-        ),
-        ChartData(category: 'Servicios', amount: 900, color: Colors.orange),
-        ChartData(category: 'Otros', amount: 300, color: Colors.purple),
-      ];
+      final repo = GetIt.instance<TransactionBackendRepository>();
+      final result = await repo.list();
 
-      _totalIncomes = 5000;
-      _totalExpenses = 3700;
-      _hasData = true;
+      result.fold(
+        (failure) {
+          _setError('Error al cargar datos: ${failure.message}');
+        },
+        (transactions) {
+          _totalIncomes = transactions
+              .where((tx) => tx.tipo == 'ingreso')
+              .fold(0, (sum, tx) => sum + tx.montoAsDouble);
 
-      notifyListeners();
+          _totalExpenses = transactions
+              .where((tx) => tx.tipo == 'gasto')
+              .fold(0, (sum, tx) => sum + tx.montoAsDouble);
+
+          // Agrupar gastos por categoría
+          final Map<String, double> categoryTotals = <String, double>{};
+          for (final tx in transactions.where((tx) => tx.tipo == 'gasto')) {
+            final String cat = tx.categoriaId.isNotEmpty ? tx.categoriaId : 'Otros';
+            categoryTotals[cat] = (categoryTotals[cat] ?? 0.0) + tx.montoAsDouble;
+          }
+
+          // Ordenar de mayor a menor y construir ChartData
+          final List<MapEntry<String, double>> sorted = categoryTotals.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+
+          _chartData = sorted.indexed
+              .map(
+                (entry) => ChartData(
+                  category: entry.$2.key,
+                  amount: entry.$2.value,
+                  color: _chartColors[entry.$1 % _chartColors.length],
+                ),
+              )
+              .toList();
+
+          _hasData = _chartData.isNotEmpty || _totalIncomes > 0;
+          notifyListeners();
+        },
+      );
     } catch (e) {
       _setError('Error al cargar datos: $e');
     } finally {
