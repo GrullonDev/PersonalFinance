@@ -72,9 +72,8 @@ class SubscriptionService {
 
       final entity = SubscriptionEntity.fromMap(doc.data()!);
 
-      // Verifica expiración de planes con fecha
-      if (entity.tier != PlanTier.proLifetime &&
-          entity.expiresAt != null &&
+      // Verifica expiración
+      if (entity.expiresAt != null &&
           entity.expiresAt!.isBefore(DateTime.now())) {
         _current = entity.copyWith(status: SubscriptionStatus.expired);
       } else {
@@ -103,8 +102,7 @@ class SubscriptionService {
           );
 
   SubscriptionEntity _resolveExpiration(SubscriptionEntity entity) {
-    if (entity.tier != PlanTier.proLifetime &&
-        entity.expiresAt != null &&
+    if (entity.expiresAt != null &&
         entity.expiresAt!.isBefore(DateTime.now())) {
       return entity.copyWith(status: SubscriptionStatus.expired);
     }

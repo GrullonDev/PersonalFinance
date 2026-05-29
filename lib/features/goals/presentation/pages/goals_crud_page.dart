@@ -10,6 +10,8 @@ import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
+import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
+import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
 
 Future<bool> _confirmDelete(BuildContext context) async {
   final bool? confirm = await showDialog<bool>(
@@ -455,6 +457,16 @@ class _GoalsViewState extends State<_GoalsView> {
   );
 
   Future<void> _openDialog(BuildContext context, {Goal? goal}) async {
+    // Feature gate: solo se comprueba al crear, no al editar.
+    if (goal == null) {
+      final subscriptionService = getIt<SubscriptionService>();
+      final currentCount = context.read<GoalsBloc>().state.items.length;
+      if (subscriptionService.isAtGoalLimit(currentCount)) {
+        await PaywallPage.show(context);
+        return;
+      }
+    }
+
     // Capturar el bloc del contexto padre antes de abrir el diálogo
     final GoalsBloc parentBloc = context.read<GoalsBloc>();
     final GlobalKey<FormState> key = GlobalKey<FormState>();

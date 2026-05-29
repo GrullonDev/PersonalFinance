@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
+import 'package:personal_finance/features/subscription/data/services/revenue_cat_service.dart';
 import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
+import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:personal_finance/core/security/hive_encryption_service.dart';
 import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_local_datasource.dart';
@@ -49,8 +51,13 @@ Future<void> init(HiveAesCipher hiveCipher) async {
   // Subscription
   // -------------------------------------------------------------------------
 
+  sl.registerLazySingleton(() => SubscriptionService(firestore: sl()));
+  sl.registerLazySingleton(() => RevenueCatService());
   sl.registerLazySingleton(
-    () => SubscriptionService(firestore: sl()),
+    () => SubscriptionBloc(
+      revenueCatService: sl(),
+      subscriptionService: sl(),
+    ),
   );
 
   // -------------------------------------------------------------------------
