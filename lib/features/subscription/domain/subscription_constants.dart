@@ -58,7 +58,7 @@ class PlanFeatures {
 }
 
 class PlanFeatureLabels {
-  static const Map<PlanFeature, ({String title, String description})> labels = {
+  static const Map<PlanFeature, ({String title, String description})> _en = {
     PlanFeature.unlimitedBudgets: (
       title: 'Unlimited budgets',
       description: 'Create as many budgets as you need',
@@ -100,4 +100,55 @@ class PlanFeatureLabels {
       description: 'Balance and budget progress at a glance',
     ),
   };
+
+  static const Map<PlanFeature, ({String title, String description})> _es = {
+    PlanFeature.unlimitedBudgets: (
+      title: 'Presupuestos ilimitados',
+      description: 'Crea todos los presupuestos que necesites',
+    ),
+    PlanFeature.unlimitedGoals: (
+      title: 'Metas de ahorro ilimitadas',
+      description: 'Establece y rastrea metas financieras sin límite',
+    ),
+    PlanFeature.unlimitedAccounts: (
+      title: 'Gestión multi-cuenta',
+      description: 'Cuentas bancarias, efectivo y tarjetas de crédito',
+    ),
+    PlanFeature.aiChat: (
+      title: 'Asistente financiero con IA',
+      description: 'Haz preguntas en lenguaje natural',
+    ),
+    PlanFeature.monthlyAiReports: (
+      title: 'Reportes mensuales con IA',
+      description: 'Informes PDF con análisis y recomendaciones',
+    ),
+    PlanFeature.predictiveAlerts: (
+      title: 'Alertas predictivas de presupuesto',
+      description: 'Sabe antes de gastar de más — con días de anticipación',
+    ),
+    PlanFeature.exportCsvPdf: (
+      title: 'Exportar CSV y PDF',
+      description: 'Descarga tus datos financieros en cualquier momento',
+    ),
+    PlanFeature.recurringTransactions: (
+      title: 'Transacciones recurrentes',
+      description: 'Automatiza salarios, alquiler y suscripciones',
+    ),
+    PlanFeature.premiumThemes: (
+      title: 'Temas premium',
+      description: 'Modo oscuro AMOLED y paletas de colores personalizadas',
+    ),
+    PlanFeature.homeWidget: (
+      title: 'Widget en pantalla de inicio',
+      description: 'Balance y progreso de presupuesto de un vistazo',
+    ),
+  };
+
+  // Kept for backwards compatibility — defaults to English.
+  static const Map<PlanFeature, ({String title, String description})> labels =
+      _en;
+
+  static Map<PlanFeature, ({String title, String description})> labelsFor(
+    String languageCode,
+  ) => languageCode == 'es' ? _es : _en;
 }

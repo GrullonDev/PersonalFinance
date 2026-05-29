@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-import 'package:personal_finance/features/subscription/data/services/revenue_cat_service.dart';
+import 'package:personal_finance/features/subscription/data/datasources/revenue_cat_service.dart';
 import 'package:personal_finance/features/subscription/domain/entities/subscription_entity.dart';
 import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
 
@@ -26,6 +26,14 @@ class SubscriptionLoad extends SubscriptionEvent {
 class SubscriptionPurchasePro extends SubscriptionEvent {}
 
 class SubscriptionRestore extends SubscriptionEvent {}
+
+// Evento interno — emitido por el stream de Firestore.
+class _SubscriptionUpdated extends SubscriptionEvent {
+  _SubscriptionUpdated(this.subscription);
+  final SubscriptionEntity subscription;
+  @override
+  List<Object?> get props => [subscription];
+}
 
 // ---------------------------------------------------------------------------
 // State
@@ -64,8 +72,13 @@ class SubscriptionState extends Equatable {
   );
 
   @override
-  List<Object?> get props =>
-      [subscription, isPurchasing, isRestoring, purchaseSuccess, error];
+  List<Object?> get props => [
+    subscription,
+    isPurchasing,
+    isRestoring,
+    purchaseSuccess,
+    error,
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -85,46 +98,58 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<SubscriptionLoad>(_onLoad);
     on<SubscriptionPurchasePro>(_onPurchasePro);
     on<SubscriptionRestore>(_onRestore);
+    on<_SubscriptionUpdated>(_onUpdated);
   }
 
   Future<void> _onLoad(
     SubscriptionLoad event,
     Emitter<SubscriptionState> emit,
   ) async {
+    // ── Paso 1: Firestore es la fuente principal ─────────────────────────────
+    // Se carga y emite de inmediato, sin depender de RevenueCat.
     try {
-      await _revenueCat.login(event.userId);
-      final fromRevenueCat = await _revenueCat.getCurrentSubscription();
-
-      // Si RevenueCat confirma Pro, sincronizamos Firestore también.
-      if (fromRevenueCat.isPremium) {
-        await _subscriptionService.save(event.userId, fromRevenueCat);
-      } else {
-        // Carga desde Firestore como respaldo.
-        await _subscriptionService.load(event.userId);
-      }
-
-      final resolved =
-          fromRevenueCat.isPremium ? fromRevenueCat : _subscriptionService.current;
-
-      _subscriptionService.updateLocal(resolved);
-      emit(state.copyWith(subscription: resolved, clearError: true));
-    } catch (_) {
-      // Si falla la red, confiamos en el estado local de Firestore.
       await _subscriptionService.load(event.userId);
-      emit(
-        state.copyWith(
-          subscription: _subscriptionService.current,
-          clearError: true,
-        ),
-      );
+    } catch (_) {
+      // Si Firestore falla en cold-start, _current queda en free.
     }
+    emit(
+      state.copyWith(
+        subscription: _subscriptionService.current,
+        clearError: true,
+      ),
+    );
+
+    // ── Paso 2: Suscribir al stream de Firestore para actualizaciones en tiempo real.
+    emit.forEach<SubscriptionEntity>(
+      _subscriptionService.watch(event.userId),
+      onData: (entity) {
+        _subscriptionService.updateLocal(entity);
+        return state.copyWith(subscription: entity, clearError: true);
+      },
+      onError: (_, __) => state,
+    );
+  }
+
+  // Manejador del stream interno (actualización en tiempo real desde Firestore).
+  void _onUpdated(
+    _SubscriptionUpdated event,
+    Emitter<SubscriptionState> emit,
+  ) {
+    _subscriptionService.updateLocal(event.subscription);
+    emit(state.copyWith(subscription: event.subscription, clearError: true));
   }
 
   Future<void> _onPurchasePro(
     SubscriptionPurchasePro event,
     Emitter<SubscriptionState> emit,
   ) async {
-    emit(state.copyWith(isPurchasing: true, purchaseSuccess: false, clearError: true));
+    emit(
+      state.copyWith(
+        isPurchasing: true,
+        purchaseSuccess: false,
+        clearError: true,
+      ),
+    );
     try {
       final subscription = await _revenueCat.purchasePro();
       _subscriptionService.updateLocal(subscription);
@@ -137,7 +162,6 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       );
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
-      // El usuario canceló — no mostramos error.
       if (code == PurchasesErrorCode.purchaseCancelledError) {
         emit(state.copyWith(isPurchasing: false, clearError: true));
       } else {
@@ -177,11 +201,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
   String _mapErrorCode(PurchasesErrorCode code) => switch (code) {
     PurchasesErrorCode.networkError =>
-      'No internet connection. Please try again.',
+      'Sin conexión a internet. Por favor, intenta de nuevo.',
     PurchasesErrorCode.storeProblemError =>
-      'Store error. Please try again later.',
+      'Error en la tienda. Por favor, intenta más tarde.',
     PurchasesErrorCode.productNotAvailableForPurchaseError =>
-      'Product not available. Please try again later.',
-    _ => 'Purchase failed. Please try again.',
+      'Producto no disponible en este momento. Intenta más tarde.',
+    _ => 'La compra no se pudo completar. Por favor, intenta de nuevo.',
   };
 }

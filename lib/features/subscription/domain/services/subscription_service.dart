@@ -1,8 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:personal_finance/features/subscription/domain/entities/subscription_entity.dart';
+import 'package:personal_finance/features/subscription/domain/repositories/i_subscription_repository.dart';
 import 'package:personal_finance/features/subscription/domain/subscription_constants.dart';
 
-/// Servicio central para consultar el plan del usuario y controlar acceso a features.
+/// Servicio de dominio para consultar el plan del usuario y controlar acceso a features.
+///
+/// No tiene dependencias de infraestructura — delega la persistencia en
+/// [ISubscriptionRepository]. Mantiene un caché en memoria del estado actual.
 ///
 /// Uso:
 /// ```dart
@@ -11,12 +14,11 @@ import 'package:personal_finance/features/subscription/domain/subscription_const
 /// if (service.isAtBudgetLimit(currentCount)) { showPaywall(); }
 /// ```
 class SubscriptionService {
-  final FirebaseFirestore _firestore;
+  SubscriptionService({required ISubscriptionRepository repository})
+      : _repository = repository;
 
+  final ISubscriptionRepository _repository;
   SubscriptionEntity _current = SubscriptionEntity.free;
-
-  SubscriptionService({required FirebaseFirestore firestore})
-    : _firestore = firestore;
 
   SubscriptionEntity get current => _current;
   bool get isPremium => _current.isPremium;
@@ -43,84 +45,34 @@ class SubscriptionService {
   bool isAtAccountLimit(int currentCount) =>
       _isAtLimit(PlanLimits.forTier(_current.tier).maxAccounts, currentCount);
 
-  bool _isAtLimit(int max, int current) {
-    if (max == PlanLimits.unlimited) return false;
-    return current >= max;
-  }
-
   PlanLimits get limits => PlanLimits.forTier(_current.tier);
 
   // ---------------------------------------------------------------------------
-  // Remote sync
+  // Persistence (delegated to repository)
   // ---------------------------------------------------------------------------
 
-  /// Carga la suscripción desde Firestore y actualiza el estado local.
   Future<void> load(String userId) async {
-    try {
-      final doc =
-          await _firestore
-              .collection('users')
-              .doc(userId)
-              .collection('subscription')
-              .doc('current')
-              .get();
-
-      if (!doc.exists || doc.data() == null) {
-        _current = SubscriptionEntity.free;
-        return;
-      }
-
-      final entity = SubscriptionEntity.fromMap(doc.data()!);
-
-      // Verifica expiración
-      if (entity.expiresAt != null &&
-          entity.expiresAt!.isBefore(DateTime.now())) {
-        _current = entity.copyWith(status: SubscriptionStatus.expired);
-      } else {
-        _current = entity;
-      }
-    } catch (_) {
-      _current = SubscriptionEntity.free;
-    }
+    _current = await _repository.load(userId);
   }
 
-  /// Escucha cambios en tiempo real (útil tras completar un pago).
   Stream<SubscriptionEntity> watch(String userId) =>
-      _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('subscription')
-          .doc('current')
-          .snapshots()
-          .map(
-            (snap) =>
-                (!snap.exists || snap.data() == null)
-                    ? SubscriptionEntity.free
-                    : _resolveExpiration(
-                        SubscriptionEntity.fromMap(snap.data()!),
-                      ),
-          );
+      _repository.watch(userId);
 
-  SubscriptionEntity _resolveExpiration(SubscriptionEntity entity) {
-    if (entity.expiresAt != null &&
-        entity.expiresAt!.isBefore(DateTime.now())) {
-      return entity.copyWith(status: SubscriptionStatus.expired);
-    }
-    return entity;
-  }
-
-  /// Actualiza la suscripción en Firestore (se llamará desde el flujo de pago).
   Future<void> save(String userId, SubscriptionEntity subscription) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('subscription')
-        .doc('current')
-        .set(subscription.toMap());
+    await _repository.save(userId, subscription);
     _current = subscription;
   }
 
   void updateLocal(SubscriptionEntity subscription) {
     _current = subscription;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private
+  // ---------------------------------------------------------------------------
+
+  bool _isAtLimit(int max, int current) {
+    if (max == PlanLimits.unlimited) return false;
+    return current >= max;
   }
 }

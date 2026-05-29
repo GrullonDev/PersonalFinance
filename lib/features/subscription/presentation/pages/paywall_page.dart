@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/subscription/domain/entities/subscription_entity.dart';
 import 'package:personal_finance/features/subscription/domain/subscription_constants.dart';
 import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 
 class PaywallPage extends StatelessWidget {
@@ -13,17 +14,21 @@ class PaywallPage extends StatelessWidget {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black87,
-        pageBuilder: (_, __, ___) => BlocProvider.value(
-          value: getIt<SubscriptionBloc>(),
-          child: const PaywallPage(),
-        ),
-        transitionsBuilder: (_, animation, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
+        pageBuilder:
+            (_, __, ___) => BlocProvider.value(
+              value: getIt<SubscriptionBloc>(),
+              child: const PaywallPage(),
+            ),
+        transitionsBuilder:
+            (_, animation, __, child) => SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
+              child: child,
+            ),
       ),
     );
     return result ?? false;
@@ -32,8 +37,8 @@ class PaywallPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       BlocListener<SubscriptionBloc, SubscriptionState>(
-        listenWhen: (prev, curr) =>
-            curr.purchaseSuccess && !prev.purchaseSuccess,
+        listenWhen:
+            (prev, curr) => curr.purchaseSuccess && !prev.purchaseSuccess,
         listener: (context, state) => Navigator.of(context).pop(true),
         child: _PaywallContent(),
       );
@@ -83,11 +88,11 @@ class _PaywallContent extends StatelessWidget {
                   child: Column(
                     children: [
                       const SizedBox(height: 8),
-                      _buildHeader(),
+                      _buildHeader(context),
                       const SizedBox(height: 28),
-                      _buildFeatureList(),
+                      _buildFeatureList(context),
                       const SizedBox(height: 28),
-                      _buildPriceCard(),
+                      _buildPriceCard(context),
                       const SizedBox(height: 24),
                       _buildActions(context),
                       const SizedBox(height: 16),
@@ -117,208 +122,231 @@ class _PaywallContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildHeader() => Column(
-    children: [
-      Container(
-        width: 72,
-        height: 72,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.5),
-              blurRadius: 20,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: const Icon(Icons.workspace_premium, color: Colors.white, size: 36),
-      ),
-      const SizedBox(height: 16),
-      const Text(
-        'PersonalFinance Pro',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 26,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -0.5,
-        ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        'Take full control of your finances',
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.6),
-          fontSize: 15,
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildFeatureList() => Column(
-    children: PlanFeatures.proFeatures
-        .map((f) => _FeatureTile(feature: f))
-        .toList(),
-  );
-
-  Widget _buildPriceCard() => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      gradient: LinearGradient(
-        colors: [
-          const Color(0xFF6366F1).withValues(alpha: 0.2),
-          const Color(0xFFEC4899).withValues(alpha: 0.15),
-        ],
-      ),
-      border: Border.all(
-        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-      ),
-    ),
-    child: Column(
+  Widget _buildHeader(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
       children: [
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(
-                '\$',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
             ),
-            Text(
-              '5.99',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 52,
-                fontWeight: FontWeight.bold,
-                height: 1,
-                letterSpacing: -2,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.5),
+                blurRadius: 20,
+                spreadRadius: 2,
               ),
-            ),
-          ],
+            ],
+          ),
+          child: const Icon(
+            Icons.workspace_premium,
+            color: Colors.white,
+            size: 36,
+          ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          'per month · cancel anytime',
+        const SizedBox(height: 16),
+        const Text(
+          'PersonalFinance Pro',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.55),
-            fontSize: 13,
+            color: Colors.white,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n?.paywallSubtitle ?? 'Take full control of your finances',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 15,
           ),
         ),
       ],
-    ),
+    );
+  }
+
+  Widget _buildFeatureList(BuildContext context) => Column(
+    children:
+        PlanFeatures.proFeatures.map((f) => _FeatureTile(feature: f)).toList(),
   );
 
-  Widget _buildActions(BuildContext context) =>
-      BlocBuilder<SubscriptionBloc, SubscriptionState>(
-        builder: (context, state) => Column(
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: state.isPurchasing
-                      ? null
-                      : () => context
-                            .read<SubscriptionBloc>()
-                            .add(SubscriptionPurchasePro()),
-                  child: state.isPurchasing
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Get Pro Now',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: state.isRestoring
-                  ? null
-                  : () => context
-                        .read<SubscriptionBloc>()
-                        .add(SubscriptionRestore()),
-              child: state.isRestoring
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white54,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'Restore purchases',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 14,
-                      ),
-                    ),
-            ),
-            if (state.error != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                state.error!,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 13),
-                textAlign: TextAlign.center,
-              ),
-            ],
+  Widget _buildPriceCard(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF6366F1).withValues(alpha: 0.2),
+            const Color(0xFFEC4899).withValues(alpha: 0.15),
           ],
         ),
-      );
+        border: Border.all(
+          color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  '\$',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Text(
+                '5.99',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 52,
+                  fontWeight: FontWeight.bold,
+                  height: 1,
+                  letterSpacing: -2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n?.paywallPerMonth ?? 'per month · cancel anytime',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildFooterLinks(BuildContext context) => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      _FooterLink(
-        label: 'Terms of Use',
-        onTap: () {/* TODO: abrir URL de términos */},
-      ),
-      Text(
-        '  ·  ',
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      _FooterLink(
-        label: 'Privacy Policy',
-        onTap: () {/* TODO: abrir URL de privacidad */},
-      ),
-    ],
-  );
+  Widget _buildActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+      builder:
+          (context, state) => Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed:
+                        state.isPurchasing
+                            ? null
+                            : () => context.read<SubscriptionBloc>().add(
+                              SubscriptionPurchasePro(),
+                            ),
+                    child:
+                        state.isPurchasing
+                            ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                            : Text(
+                              l10n?.paywallGetPro ?? 'Get Pro Now',
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed:
+                    state.isRestoring
+                        ? null
+                        : () => context.read<SubscriptionBloc>().add(
+                          SubscriptionRestore(),
+                        ),
+                child:
+                    state.isRestoring
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white54,
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : Text(
+                          l10n?.paywallRestore ?? 'Restore purchases',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.55),
+                            fontSize: 14,
+                          ),
+                        ),
+              ),
+              if (state.error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  state.error!,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+    );
+  }
+
+  Widget _buildFooterLinks(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _FooterLink(
+          label: l10n?.paywallTerms ?? 'Terms of Use',
+          onTap: () {
+            /* TODO: abrir URL de términos */
+          },
+        ),
+        Text(
+          '  ·  ',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        ),
+        _FooterLink(
+          label: l10n?.paywallPrivacy ?? 'Privacy Policy',
+          onTap: () {
+            /* TODO: abrir URL de privacidad */
+          },
+        ),
+      ],
+    );
+  }
 }
 
 class _FeatureTile extends StatelessWidget {
@@ -327,7 +355,9 @@ class _FeatureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = PlanFeatureLabels.labels[feature];
+    final languageCode =
+        AppLocalizations.of(context)?.locale.languageCode ?? 'es';
+    final label = PlanFeatureLabels.labelsFor(languageCode)[feature];
     if (label == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

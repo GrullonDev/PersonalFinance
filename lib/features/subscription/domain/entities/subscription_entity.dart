@@ -74,12 +74,14 @@ class SubscriptionEntity extends Equatable {
           (e) => e.name == (map['status'] as String? ?? 'active'),
           orElse: () => SubscriptionStatus.active,
         ),
-        expiresAt: map['expiresAt'] != null
-            ? (map['expiresAt'] as Timestamp).toDate()
-            : null,
-        purchasedAt: map['purchasedAt'] != null
-            ? (map['purchasedAt'] as Timestamp).toDate()
-            : null,
+        expiresAt:
+            map['expiresAt'] != null
+                ? (map['expiresAt'] as Timestamp).toDate()
+                : null,
+        purchasedAt:
+            map['purchasedAt'] != null
+                ? (map['purchasedAt'] as Timestamp).toDate()
+                : null,
         orderId: map['orderId'] as String?,
         productId: map['productId'] as String?,
       );
@@ -111,6 +113,12 @@ class SubscriptionEntity extends Equatable {
   );
 
   @override
-  List<Object?> get props =>
-      [tier, status, expiresAt, purchasedAt, orderId, productId];
+  List<Object?> get props => [
+    tier,
+    status,
+    expiresAt,
+    purchasedAt,
+    orderId,
+    productId,
+  ];
 }
