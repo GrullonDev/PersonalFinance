@@ -1,5 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
+import 'package:personal_finance/features/subscription/data/datasources/revenue_cat_service.dart';
+import 'package:personal_finance/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:personal_finance/features/subscription/domain/repositories/i_subscription_repository.dart';
+import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
+import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:personal_finance/core/security/hive_encryption_service.dart';
 import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_local_datasource.dart';
@@ -43,6 +48,21 @@ Future<void> init(HiveAesCipher hiveCipher) async {
   sl.registerLazySingleton(() => transactionBox);
   sl.registerLazySingleton(() => syncOperationBox);
   sl.registerLazySingleton(() => FirebaseFirestore.instance);
+
+  // -------------------------------------------------------------------------
+  // Subscription
+  // -------------------------------------------------------------------------
+
+  sl.registerLazySingleton<ISubscriptionRepository>(
+    () => SubscriptionRepositoryImpl(firestore: sl()),
+  );
+  sl.registerLazySingleton(
+    () => SubscriptionService(repository: sl<ISubscriptionRepository>()),
+  );
+  sl.registerLazySingleton(() => RevenueCatService());
+  sl.registerLazySingleton(
+    () => SubscriptionBloc(revenueCatService: sl(), subscriptionService: sl()),
+  );
 
   // -------------------------------------------------------------------------
   // Data sources
@@ -97,9 +117,8 @@ Future<void> init(HiveAesCipher hiveCipher) async {
     () => QuickFinanceBloc(
       addTransaction: sl(),
       deleteTransaction: sl(),
-      // AuthDataSource ya registrado por old_di.initDependencies() (mismo
-      // GetIt.instance) — mvp_di.init() se llama después, por lo que sl<AuthDataSource>()
-      // resuelve correctamente en el momento de construir el Bloc.
+      // AuthDataSource registrado por old_di.initDependencies() (mismo GetIt.instance).
+      // mvp_di.init() se llama después, por lo que sl<AuthDataSource>() resuelve correctamente.
       hydrateCurrentUserTransactions: sl(),
       watchBalance: sl(),
       watchTransactions: sl(),

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,6 +7,9 @@ import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
+import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
+import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_bloc.dart';
@@ -38,6 +42,11 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
     );
 
     context.read<QuickFinanceBloc>().add(const WatchDataRequested());
+
+    final uid = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      getIt<SubscriptionBloc>().add(SubscriptionLoad(uid));
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -84,7 +93,9 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
     );
 
     if (confirmed == true && mounted) {
-      await context.read<AuthProvider>().logout();
+      try {
+        await context.read<AuthProvider>().logout();
+      } catch (_) {}
       if (mounted) {
         Navigator.of(
           context,
@@ -184,31 +195,56 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
       ),
       elevation: 0,
       scrolledUnderElevation: 1,
+      leading: _ChatButton(),
       actions: [
         // Botón sync
         BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
           buildWhen: (prev, curr) => prev.isSyncing != curr.isSyncing,
           builder:
-              (context, state) => IconButton(
-                icon: RotationTransition(
-                  turns: _syncAnim,
-                  child: Icon(
-                    Icons.sync_rounded,
-                    color:
-                        state.isSyncing ? Theme.of(context).primaryColor : null,
+              (context, state) => Row(
+                children: [
+                  IconButton(
+                    icon: RotationTransition(
+                      turns: _syncAnim,
+                      child: Icon(
+                        Icons.sync_rounded,
+                        color:
+                            state.isSyncing
+                                ? Theme.of(context).primaryColor
+                                : null,
+                      ),
+                    ),
+                    tooltip: state.isSyncing ? 'Sincronizando…' : 'Sincronizar',
+                    onPressed:
+                        state.isSyncing
+                            ? null
+                            : () => context.read<QuickFinanceBloc>().add(
+                              const SyncTransactionsRequested(),
+                            ),
                   ),
-                ),
-                tooltip: state.isSyncing ? 'Sincronizando…' : 'Sincronizar',
-                onPressed:
-                    state.isSyncing
-                        ? null
-                        : () => context.read<QuickFinanceBloc>().add(
-                          const SyncTransactionsRequested(),
-                        ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.settings_outlined,
+                      color:
+                          state.isSyncing
+                              ? Theme.of(context).primaryColor
+                              : null,
+                    ),
+                    onPressed:
+                        () =>
+                            Navigator.of(context).pushNamed(RoutePath.settings),
+                    tooltip: 'Configuración',
+                  ),
+                  IconButton(
+                    onPressed: () => _logout(),
+                    icon: const Icon(Icons.logout_rounded, color: Colors.red),
+                    tooltip: 'Cerrar sesión',
+                  ),
+                ],
               ),
         ),
         // Menú de opciones
-        PopupMenuButton<_MenuAction>(
+        /* PopupMenuButton<_MenuAction>(
           icon: const Icon(Icons.more_vert_rounded),
           onSelected: (action) {
             switch (action) {
@@ -244,7 +280,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
                   ),
                 ),
               ],
-        ),
+        ), */
       ],
     );
   }
@@ -255,7 +291,60 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
   }
 }
 
-enum _MenuAction { settings, logout }
+// enum _MenuAction { settings, logout }
+
+// ── Chat button con gate de suscripción ───────────────────────────────────────
+
+class _ChatButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+      bloc: getIt<SubscriptionBloc>(),
+      builder: (context, state) {
+        final isPremium = state.isPremium;
+        return IconButton(
+          tooltip: isPremium ? 'Asistente Financiero IA' : 'Función Pro',
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                isPremium ? Icons.chat_rounded : Icons.chat_outlined,
+                color:
+                    isPremium
+                        ? const Color(0xFF6366F1)
+                        : Theme.of(context).primaryColor,
+                applyTextScaling: true,
+              ),
+              if (!isPremium)
+                Positioned(
+                  top: -2,
+                  right: -4,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
+                      ),
+                    ),
+                    child: const Icon(Icons.lock, size: 6, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          onPressed: () {
+            if (isPremium) {
+              Navigator.of(context).pushNamed(RoutePath.aiChat);
+            } else {
+              PaywallPage.show(context);
+            }
+          },
+        );
+      },
+    );
+  }
+}
 
 // ── Cuerpo principal ──────────────────────────────────────────────────────────
 

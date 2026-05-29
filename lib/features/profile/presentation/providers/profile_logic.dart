@@ -57,9 +57,15 @@ class ProfileLogic extends ChangeNotifier {
       }
 
       final dataSource = GetIt.instance<ProfileRemoteDataSource>();
-      final List<String> nameParts = (name ?? _profile?.name ?? '').trim().split(' ');
-      final String updatedFirstName = nameParts.isNotEmpty ? nameParts.first : (_profile?.firstName ?? '');
-      final String updatedLastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : (_profile?.lastName ?? '');
+      final List<String> nameParts = (name ?? _profile?.name ?? '')
+          .trim()
+          .split(' ');
+      final String updatedFirstName =
+          nameParts.isNotEmpty ? nameParts.first : (_profile?.firstName ?? '');
+      final String updatedLastName =
+          nameParts.length > 1
+              ? nameParts.sublist(1).join(' ')
+              : (_profile?.lastName ?? '');
 
       final ProfileMeModel updated = ProfileMeModel(
         fullName: name ?? _profile?.name ?? '',
@@ -122,13 +128,19 @@ class ProfileLogic extends ChangeNotifier {
       final dataSource = GetIt.instance<ProfileRemoteDataSource>();
       final ProfileMeModel model = await dataSource.getMe();
 
-      final List<String> nameParts = (model.fullName.isNotEmpty ? model.fullName : user.displayName ?? '').trim().split(' ');
-      final String firstName = model.firstName?.isNotEmpty == true
-          ? model.firstName!
-          : (nameParts.isNotEmpty ? nameParts.first : 'Usuario');
-      final String lastName = model.lastName?.isNotEmpty == true
-          ? model.lastName!
-          : (nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '');
+      final List<String> nameParts = (model.fullName.isNotEmpty
+              ? model.fullName
+              : user.displayName ?? '')
+          .trim()
+          .split(' ');
+      final String firstName =
+          model.firstName?.isNotEmpty == true
+              ? model.firstName!
+              : (nameParts.isNotEmpty ? nameParts.first : 'Usuario');
+      final String lastName =
+          model.lastName?.isNotEmpty == true
+              ? model.lastName!
+              : (nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '');
 
       _profile = UserProfile(
         id: user.uid,

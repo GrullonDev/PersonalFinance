@@ -244,11 +244,12 @@ class _HelpDetailPageState extends State<HelpDetailPage> {
           _selectedCategory == 'Todos' || faq['category'] == _selectedCategory;
       if (!matchesCategory) return false;
       if (query.isEmpty) return true;
-      final haystack = <String>[
-        faq['question'] ?? '',
-        faq['answer'] ?? '',
-        faq['category'] ?? '',
-      ].join(' ').toLowerCase();
+      final haystack =
+          <String>[
+            faq['question'] ?? '',
+            faq['answer'] ?? '',
+            faq['category'] ?? '',
+          ].join(' ').toLowerCase();
       return haystack.contains(query);
     }).toList();
   }

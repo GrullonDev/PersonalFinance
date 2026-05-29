@@ -69,23 +69,27 @@ class ReportsLogic extends ChangeNotifier {
           // Agrupar gastos por categoría
           final Map<String, double> categoryTotals = <String, double>{};
           for (final tx in transactions.where((tx) => tx.tipo == 'gasto')) {
-            final String cat = tx.categoriaId.isNotEmpty ? tx.categoriaId : 'Otros';
-            categoryTotals[cat] = (categoryTotals[cat] ?? 0.0) + tx.montoAsDouble;
+            final String cat =
+                tx.categoriaId.isNotEmpty ? tx.categoriaId : 'Otros';
+            categoryTotals[cat] =
+                (categoryTotals[cat] ?? 0.0) + tx.montoAsDouble;
           }
 
           // Ordenar de mayor a menor y construir ChartData
-          final List<MapEntry<String, double>> sorted = categoryTotals.entries.toList()
-            ..sort((a, b) => b.value.compareTo(a.value));
+          final List<MapEntry<String, double>> sorted =
+              categoryTotals.entries.toList()
+                ..sort((a, b) => b.value.compareTo(a.value));
 
-          _chartData = sorted.indexed
-              .map(
-                (entry) => ChartData(
-                  category: entry.$2.key,
-                  amount: entry.$2.value,
-                  color: _chartColors[entry.$1 % _chartColors.length],
-                ),
-              )
-              .toList();
+          _chartData =
+              sorted.indexed
+                  .map(
+                    (entry) => ChartData(
+                      category: entry.$2.key,
+                      amount: entry.$2.value,
+                      color: _chartColors[entry.$1 % _chartColors.length],
+                    ),
+                  )
+                  .toList();
 
           _hasData = _chartData.isNotEmpty || _totalIncomes > 0;
           notifyListeners();
