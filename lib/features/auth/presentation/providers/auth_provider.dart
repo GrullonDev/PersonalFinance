@@ -9,7 +9,7 @@ import 'package:personal_finance/core/services/app_data_cleanup_service.dart';
 import 'package:personal_finance/core/security/auth_session_storage.dart';
 import 'package:personal_finance/core/services/security_logger.dart';
 
-import 'package:personal_finance/features/auth/data/local_auth_service.dart';
+import 'package:personal_finance/features/auth/data/datasources/local_auth_service.dart';
 import 'package:personal_finance/features/auth/data/models/request/login_user_request.dart';
 import 'package:personal_finance/features/auth/data/models/request/register_user_request.dart';
 import 'package:personal_finance/features/auth/data/models/response/current_user_response.dart';
@@ -55,17 +55,8 @@ class AuthProvider extends ChangeNotifier {
     return user != null && user.emailVerified;
   }
 
-  ThemeMode _themeMode = ThemeMode.system;
-
-  ThemeMode get themeMode => _themeMode;
-
   void togglePasswordVisibility() {
     _obscurePassword = !_obscurePassword;
-    notifyListeners();
-  }
-
-  void setThemeMode(ThemeMode mode) {
-    _themeMode = mode;
     notifyListeners();
   }
 
@@ -162,8 +153,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       await LocalAuthService().logout();
       await authRepository.logout();
+    } catch (_) {
+      // Si falla el logout remoto, continuamos limpiando estado local.
     } finally {
-      await _clearAuthData();
+      await _clearAuthData(notify: false);
       await AppDataCleanupService.clearUserScopedData(userId: userId);
     }
     notifyListeners();
@@ -218,7 +211,9 @@ class AuthProvider extends ChangeNotifier {
     try {
       token = await user.getIdToken(forceRefresh);
     } on firebase_auth.FirebaseAuthException catch (e) {
-      if (e.code == 'channel-error' && _accessToken != null && _accessToken!.isNotEmpty) {
+      if (e.code == 'channel-error' &&
+          _accessToken != null &&
+          _accessToken!.isNotEmpty) {
         // Canal Pigeon no disponible (hot-restart). Reutilizar token en caché.
         if (notify) notifyListeners();
         return true;
@@ -515,6 +510,8 @@ class AuthProvider extends ChangeNotifier {
           }
 
           _setError(errorMessage);
+          emailController.clear();
+          passwordController.clear();
           return Left(
             AuthFailure(
               message: errorMessage,
@@ -525,6 +522,8 @@ class AuthProvider extends ChangeNotifier {
         },
         (LoginUserResponse response) async {
           _setError(null);
+          emailController.clear();
+          passwordController.clear();
           await _handleSuccessfulLogin(response);
           final bool restored = await syncSessionFromFirebase(
             forceRefresh: true,
