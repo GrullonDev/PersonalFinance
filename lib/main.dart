@@ -30,7 +30,7 @@ import 'package:personal_finance/injection_container.dart' as mvp_di;
 import 'package:personal_finance/utils/app.dart';
 import 'package:personal_finance/utils/injection_container.dart' as old_di;
 import 'package:personal_finance/utils/offline_sync_service.dart';
-import 'package:personal_finance/features/subscription/data/services/revenue_cat_service.dart';
+import 'package:personal_finance/features/subscription/data/datasources/revenue_cat_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
 
 Future<void> main() async {
