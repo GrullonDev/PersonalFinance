@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:personal_finance/features/domain/repositories/transaction_repository.dart';
@@ -76,16 +77,26 @@ class _ExportDataPageState extends State<ExportDataPage> {
       final ext = _format == _ExportFormat.csv ? 'csv' : 'txt';
       final fileName = 'finanzas_$dateRange.$ext';
 
+      final mimeType = ext == 'csv' ? 'text/csv' : 'text/plain';
       final content = _format == _ExportFormat.csv
           ? _buildCsv(expenses, incomes)
           : _buildTxt(expenses, incomes);
 
-      final dir = await getApplicationDocumentsDirectory();
+      // On Android use app-specific external storage (visible in file manager).
+      // Fallback to app documents dir on iOS / if external unavailable.
+      final dir = (Platform.isAndroid ? await getExternalStorageDirectory() : null)
+          ?? await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/$fileName');
       await file.writeAsString(content);
 
       if (!mounted) return;
       setState(() => _lastExportPath = file.path);
+
+      // Open system share sheet so the user can save to Downloads, Drive, etc.
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: mimeType)],
+        subject: 'Finanzas personales – $dateRange',
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -263,6 +274,13 @@ class _ExportDataPageState extends State<ExportDataPage> {
                   const SnackBar(content: Text('Ruta copiada al portapapeles')),
                 );
               },
+              onShare: () {
+                final mime = _lastExportPath!.endsWith('.csv') ? 'text/csv' : 'text/plain';
+                Share.shareXFiles(
+                  [XFile(_lastExportPath!, mimeType: mime)],
+                  subject: 'Finanzas personales',
+                );
+              },
             ),
           ],
         ],
@@ -404,10 +422,15 @@ class _FormatCard extends StatelessWidget {
 }
 
 class _SuccessCard extends StatelessWidget {
-  const _SuccessCard({required this.filePath, required this.onCopyPath});
+  const _SuccessCard({
+    required this.filePath,
+    required this.onCopyPath,
+    required this.onShare,
+  });
 
   final String filePath;
   final VoidCallback onCopyPath;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -439,18 +462,32 @@ class _SuccessCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Guardado en Documentos de la app',
+            'Guardado en almacenamiento externo de la app',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           const SizedBox(height: 10),
-          TextButton.icon(
-            onPressed: onCopyPath,
-            icon: const Icon(Icons.copy, size: 16),
-            label: const Text('Copiar ruta'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.green,
-              padding: EdgeInsets.zero,
-            ),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: onShare,
+                icon: const Icon(Icons.share, size: 16),
+                label: const Text('Compartir / Guardar'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.green,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+              const SizedBox(width: 16),
+              TextButton.icon(
+                onPressed: onCopyPath,
+                icon: const Icon(Icons.copy, size: 16),
+                label: const Text('Copiar ruta'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),

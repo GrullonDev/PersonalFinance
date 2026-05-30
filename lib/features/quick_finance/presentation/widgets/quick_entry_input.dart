@@ -163,7 +163,7 @@ class QuickEntryInputState extends State<QuickEntryInput>
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -200,7 +200,7 @@ class QuickEntryInputState extends State<QuickEntryInput>
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: const Color(0xFFF2F3F5),
+              fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
@@ -321,7 +321,7 @@ class _CategoryEntryChip extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
@@ -329,7 +329,7 @@ class _CategoryEntryChip extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: Colors.grey.shade600,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
         ),
       ),
     ),
