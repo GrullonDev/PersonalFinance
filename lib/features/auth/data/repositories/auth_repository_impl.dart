@@ -14,10 +14,10 @@ import 'package:personal_finance/features/auth/data/models/response/refresh_toke
 import 'package:personal_finance/features/auth/data/models/response/current_user_response.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl(this._firebaseDataSource);
+  const AuthRepositoryImpl(this._firebaseDataSource, this._firestore);
 
   final AuthDataSource _firebaseDataSource;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
 
   @override
   Future<Either<AuthFailure, LoginUserResponse>> signInWithGoogle() async {
@@ -376,10 +376,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<AuthFailure, RefreshTokenResponse>> refreshToken(
     String refreshToken,
-  ) async =>
-      const Left(
-        AuthFailure(message: 'Refresh token no necesario en Firebase'),
-      );
+  ) async => const Left(
+    AuthFailure(message: 'Refresh token no necesario en Firebase'),
+  );
 
   @override
   Future<Either<AuthFailure, CurrentUserResponse>> getCurrentUser() async {

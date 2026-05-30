@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -11,7 +12,7 @@ import 'package:personal_finance/features/accounts/data/repositories/account_rep
 import 'package:personal_finance/features/accounts/domain/repositories/account_repository.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 
-import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
+import 'package:personal_finance/features/auth/data/datasources/firebase_auth_service.dart';
 import 'package:personal_finance/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
@@ -89,7 +90,10 @@ Future<void> initDependencies() async {
   // AuthRepository
   if (!getIt.isRegistered<AuthRepository>()) {
     getIt.registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(getIt<AuthDataSource>()),
+      () => AuthRepositoryImpl(
+        getIt<AuthDataSource>(),
+        FirebaseFirestore.instance,
+      ),
     );
   }
 

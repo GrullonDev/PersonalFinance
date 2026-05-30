@@ -20,8 +20,10 @@ class AppTheme {
   static const Color _textMainLight = Color(0xFF111827); // Dark Gray
   static const Color _textSecondaryLight = Color(0xFF6B7280); // Gray
 
-  static ThemeData dark({Color? primaryColor}) {
+  static ThemeData dark({Color? primaryColor, Color? background, Color? surface}) {
     final Color seed = primaryColor ?? _seedColor;
+    final Color bg = background ?? _bgDark;
+    final Color surf = surface ?? _surfaceDark;
     final ColorScheme base = ColorScheme.fromSeed(
       seedColor: seed,
       brightness: Brightness.dark,
@@ -29,25 +31,26 @@ class AppTheme {
     final ColorScheme scheme = base.copyWith(
       primary: primaryColor ?? _primaryDark,
       secondary: const Color(0xFF03DAC6),
-      surface: _surfaceDark,
+      surface: surf,
       error: _error,
-      // background: _bgDark,
     );
-    return _buildTheme(scheme, _bgDark);
+    return _buildTheme(scheme, bg);
   }
 
-  static ThemeData light({Color? primaryColor}) {
+  static ThemeData light({Color? primaryColor, Color? background, Color? surface}) {
     final Color seed = primaryColor ?? _seedColor;
+    final Color bg = background ?? _bgLight;
+    final Color surf = surface ?? _surfaceLight;
     final ColorScheme base = ColorScheme.fromSeed(seedColor: seed);
     final ColorScheme scheme = base.copyWith(
       primary: primaryColor ?? _primaryLight,
       secondary: _secondaryLight,
-      surface: _surfaceLight,
+      surface: surf,
       error: _error,
       onSurface: _textMainLight,
       onSurfaceVariant: _textSecondaryLight,
     );
-    return _buildTheme(scheme, _bgLight);
+    return _buildTheme(scheme, bg);
   }
 
   static ThemeData _buildTheme(ColorScheme scheme, Color scaffoldBg) {

@@ -36,7 +36,7 @@ import 'package:personal_finance/features/notifications/domain/repositories/noti
 import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart'
     as notif_inbox_repo;
 import 'package:personal_finance/core/services/navigation_service.dart';
-import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/app_theme_preset.dart';
 import 'package:personal_finance/utils/widgets/app_lifecycle_listener.dart';
 import 'package:personal_finance/features/splash/splash_screen.dart';
 
@@ -104,11 +104,12 @@ class MyApp extends StatelessWidget {
             _,
           ) => MaterialApp(
             navigatorKey: getIt<NavigationService>().navigatorKey,
-            themeMode: settingsProvider.themeMode,
-            theme: AppTheme.light(primaryColor: settingsProvider.primaryColor),
-            darkTheme: AppTheme.dark(
-              primaryColor: settingsProvider.primaryColor,
-            ),
+            // ThemeMode.light means "always use theme, never darkTheme".
+            // The app owns its brightness — the OS dark-mode switch has no effect.
+            themeMode: ThemeMode.light,
+            theme: AppThemePreset.getById(
+              settingsProvider.selectedThemeId,
+            ).themeData,
             onGenerateTitle:
                 (BuildContext context) =>
                     AppLocalizations.of(context)?.appTitle ??

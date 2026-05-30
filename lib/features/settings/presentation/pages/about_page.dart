@@ -156,9 +156,10 @@ class AboutPage extends StatelessWidget {
         _buildInfoItem(
           icon: Icons.description_outlined,
           title: 'Términos de Servicio',
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const TermsPage()),
-          ),
+          onTap:
+              () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const TermsPage()),
+              ),
         ),
         _buildInfoItem(
           icon: Icons.update,
@@ -206,9 +207,7 @@ class AboutPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -237,10 +236,11 @@ class AboutPage extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _launchUrl(
-                    context,
-                    'mailto:prosystem155@gmail.com?subject=Soporte%20Personal%20Finance%20App',
-                  ),
+                  onPressed:
+                      () => _launchUrl(
+                        context,
+                        'mailto:prosystem155@gmail.com?subject=Soporte%20Personal%20Finance%20App',
+                      ),
                   icon: const Icon(Icons.email_outlined, size: 18),
                   label: const Text('Email'),
                   style: OutlinedButton.styleFrom(
@@ -257,10 +257,11 @@ class AboutPage extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => _launchUrl(
-                    context,
-                    'https://wa.me/50242909548?text=Hola%2C%20necesito%20soporte%20con%20Personal%20Finance%20App',
-                  ),
+                  onPressed:
+                      () => _launchUrl(
+                        context,
+                        'https://wa.me/50242909548?text=Hola%2C%20necesito%20soporte%20con%20Personal%20Finance%20App',
+                      ),
                   icon: const Icon(Icons.chat_outlined, size: 18),
                   label: const Text('WhatsApp'),
                   style: FilledButton.styleFrom(
@@ -278,7 +279,11 @@ class AboutPage extends StatelessWidget {
     ),
   );
 
-  Widget _buildBrandFooter(ColorScheme colorScheme, ThemeData theme, BuildContext context) => Column(
+  Widget _buildBrandFooter(
+    ColorScheme colorScheme,
+    ThemeData theme,
+    BuildContext context,
+  ) => Column(
     children: [
       Text(
         'Desarrollado con ❤️ por',

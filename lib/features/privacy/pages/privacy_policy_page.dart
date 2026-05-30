@@ -9,7 +9,6 @@ class PrivacyPolicyPage extends StatefulWidget {
 }
 
 class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -287,86 +286,86 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-  Widget _buildContactSupportCard(
-    ColorScheme colorScheme,
-    ThemeData theme,
-  ) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [colorScheme.primary, colorScheme.primary.withBlue(200)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: [
-        BoxShadow(
-          color: colorScheme.primary.withValues(alpha: 0.3),
-          blurRadius: 12,
-          offset: const Offset(0, 6),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-        const Text(
-          '¿Preguntas sobre Privacidad?',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+  Widget _buildContactSupportCard(ColorScheme colorScheme, ThemeData theme) =>
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [colorScheme.primary, colorScheme.primary.withBlue(200)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Contáctanos directamente y te respondemos en menos de 48 horas.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _launchEmail,
-                icon: const Icon(Icons.email_outlined, size: 16),
-                label: const Text('Email'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _launchWhatsApp,
-                icon: const Icon(Icons.chat_outlined, size: 16),
-                label: const Text('WhatsApp'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-      ],
-    ),
-  );
+        child: Column(
+          children: [
+            const Text(
+              '¿Preguntas sobre Privacidad?',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Contáctanos directamente y te respondemos en menos de 48 horas.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _launchEmail,
+                    icon: const Icon(Icons.email_outlined, size: 16),
+                    label: const Text('Email'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: colorScheme.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _launchWhatsApp,
+                    icon: const Icon(Icons.chat_outlined, size: 16),
+                    label: const Text('WhatsApp'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: colorScheme.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
 
   Future<void> _launchEmail() async {
     final uri = Uri(
       scheme: 'mailto',
       path: 'prosystem155@gmail.com',
-      queryParameters: {'subject': 'Consulta sobre Privacidad - Personal Finance'},
+      queryParameters: {
+        'subject': 'Consulta sobre Privacidad - Personal Finance',
+      },
     );
     if (!await launchUrl(uri) && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -382,7 +381,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     final uri = Uri.parse(
       'https://wa.me/50242909548?text=Hola%2C%20tengo%20una%20consulta%20sobre%20privacidad%20de%20Personal%20Finance%20App',
     );
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
+        mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No se pudo abrir WhatsApp'),

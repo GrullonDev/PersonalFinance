@@ -24,6 +24,8 @@ import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
 import 'package:personal_finance/utils/dashboard_budget_prefs.dart';
+import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
+import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
 
 class BudgetsCrudPage extends StatelessWidget {
   final bool showAppBar;
@@ -233,6 +235,16 @@ class BudgetsCrudPage extends StatelessWidget {
     BuildContext context, {
     Budget? budget,
   }) async {
+    // Feature gate: solo se comprueba al crear, no al editar.
+    if (budget == null) {
+      final subscriptionService = getIt<SubscriptionService>();
+      final currentCount = context.read<BudgetsBloc>().state.items.length;
+      if (subscriptionService.isAtBudgetLimit(currentCount)) {
+        await PaywallPage.show(context);
+        return;
+      }
+    }
+
     final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final TextEditingController nameCtrl = TextEditingController(

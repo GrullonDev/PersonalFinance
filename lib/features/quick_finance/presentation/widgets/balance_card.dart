@@ -143,7 +143,7 @@ class _BalanceCardState extends State<BalanceCard> {
     final balance = _balance;
     final balanceColor =
         effectiveHidden
-            ? Colors.grey.shade700
+            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)
             : (balance >= 0
                 ? const Color(0xFF34C759)
                 : const Color(0xFFFF3B30));
@@ -158,7 +158,7 @@ class _BalanceCardState extends State<BalanceCard> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -243,7 +243,7 @@ class _BalanceCardState extends State<BalanceCard> {
           ],
 
           const SizedBox(height: 16),
-          Divider(color: Colors.grey.shade100, height: 1),
+          const Divider(height: 1),
           const SizedBox(height: 16),
 
           // Fila ingresos / gastos
@@ -276,7 +276,7 @@ class _BalanceCardState extends State<BalanceCard> {
           // Top category (only when data is meaningful)
           if (_topCategory case final top?) ...[
             const SizedBox(height: 10),
-            Divider(color: Colors.grey.shade100, height: 1),
+            const Divider(height: 1),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -379,7 +379,7 @@ class _PeriodSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: Colors.grey.shade100,
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(10),
     ),
     padding: const EdgeInsets.all(3),
@@ -405,7 +405,9 @@ class _PeriodSelector extends StatelessWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.surface
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(7),
                   boxShadow:
                       isSelected
@@ -477,7 +479,7 @@ class _StatRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],

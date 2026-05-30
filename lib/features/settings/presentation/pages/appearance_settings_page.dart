@@ -1,53 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance/features/settings/presentation/pages/themes_page.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
+import 'package:personal_finance/utils/app_theme_preset.dart';
 import 'package:provider/provider.dart';
 
-class AppearanceSettingsPage extends StatefulWidget {
+class AppearanceSettingsPage extends StatelessWidget {
   const AppearanceSettingsPage({super.key});
-
-  @override
-  State<AppearanceSettingsPage> createState() => _AppearanceSettingsPageState();
-}
-
-class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
-  final List<Color> _primaryColors = [
-    Colors.blue,
-    Colors.purple,
-    Colors.teal,
-    Colors.orange,
-    Colors.pink,
-  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final settingsProvider = context.watch<SettingsProvider>();
+    final cs = theme.colorScheme;
+    final settings = context.watch<SettingsProvider>();
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: cs.surface,
       appBar: AppBar(title: const Text('Apariencia'), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
-          _buildSectionHeader(context, 'TEMA Y COLORES'),
-          _buildThemeSelector(colorScheme, settingsProvider),
+          _sectionHeader(context, 'TEMA Y COLORES'),
+          _buildThemeEntry(context, cs, settings),
           const SizedBox(height: 24),
-          _buildColorPicker(colorScheme, settingsProvider),
+          _sectionHeader(context, 'INTERFAZ'),
+          _buildTextSizeSelector(cs, settings),
+          _buildAnimationsToggle(cs, settings),
           const SizedBox(height: 24),
-          _buildSectionHeader(context, 'INTERFAZ'),
-          _buildTextSizeSelector(colorScheme, settingsProvider),
-          _buildAnimationsToggle(colorScheme, settingsProvider),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'DATOS Y REPORTES'),
-          _buildChartStyleSelector(colorScheme, settingsProvider),
+          _sectionHeader(context, 'DATOS Y REPORTES'),
+          _buildChartStyleSelector(cs, settings),
           const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) => Padding(
+  // ── Section header ──────────────────────────────────────────────────────────
+
+  Widget _sectionHeader(BuildContext context, String title) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
     child: Text(
       title,
@@ -60,180 +49,130 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ),
   );
 
-  Widget _buildThemeSelector(
-    ColorScheme colorScheme,
+  // ── Theme entry ─────────────────────────────────────────────────────────────
+
+  Widget _buildThemeEntry(
+    BuildContext context,
+    ColorScheme cs,
     SettingsProvider settings,
-  ) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+  ) {
+    final preset = AppThemePreset.getById(settings.selectedThemeId);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: InkWell(
+        onTap: () => Navigator.push<void>(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const ThemesPage()),
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildThemeOption(
-            'Claro',
-            Icons.light_mode_rounded,
-            settings.themeModeString == 'Claro',
-            () => settings.setThemeMode('Claro'),
-            colorScheme,
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-          _buildThemeOption(
-            'Oscuro',
-            Icons.dark_mode_rounded,
-            settings.themeModeString == 'Oscuro',
-            () => settings.setThemeMode('Oscuro'),
-            colorScheme,
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-          _buildThemeOption(
-            'Sistema',
-            Icons.brightness_auto_rounded,
-            settings.themeModeString == 'Sistema',
-            () => settings.setThemeMode('Sistema'),
-            colorScheme,
-          ),
-        ],
-      ),
-    ),
-  );
-
-  Widget _buildThemeOption(
-    String label,
-    IconData icon,
-    bool isSelected,
-    VoidCallback onTap,
-    ColorScheme colorScheme,
-  ) => Expanded(
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primaryContainer : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 24,
-              color:
-                  isSelected
-                      ? colorScheme.onPrimaryContainer
-                      : colorScheme.onSurfaceVariant,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: cs.outlineVariant.withValues(alpha: 0.5),
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color:
-                    isSelected
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-
-  Widget _buildColorPicker(
-    ColorScheme colorScheme,
-    SettingsProvider settings,
-  ) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Text(
-          'Color Principal',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
           ),
-        ),
-      ),
-      const SizedBox(height: 16),
-      SizedBox(
-        height: 50,
-        child: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          scrollDirection: Axis.horizontal,
-          itemCount: _primaryColors.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 16),
-          itemBuilder: (context, index) {
-            final color = _primaryColors[index];
-            final isSelected =
-                settings.primaryColor.toARGB32() == color.toARGB32();
-            return GestureDetector(
-              onTap: () => settings.setPrimaryColor(color),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: 50,
-                height: 50,
+          child: Row(
+            children: [
+              // Color swatch
+              Container(
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: color,
+                  color: preset.primary,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color:
-                        isSelected ? colorScheme.onSurface : Colors.transparent,
-                    width: isSelected ? 3 : 0,
-                  ),
                   boxShadow: [
-                    if (isSelected)
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
+                    BoxShadow(
+                      color: preset.primary.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
-                child:
-                    isSelected
-                        ? const Icon(Icons.check, color: Colors.white)
-                        : null,
               ),
-            );
-          },
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      preset.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          preset.isDark
+                              ? Icons.dark_mode_rounded
+                              : Icons.light_mode_rounded,
+                          size: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          preset.isDark ? 'Oscuro' : 'Claro',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        if (preset.isPremium) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
+                              ),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: const Text(
+                              'PRO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, size: 14, color: cs.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
-    ],
-  );
+    );
+  }
+
+  // ── Text size ───────────────────────────────────────────────────────────────
 
   Widget _buildTextSizeSelector(
-    ColorScheme colorScheme,
+    ColorScheme cs,
     SettingsProvider settings,
   ) => ListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     leading: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(
-        Icons.text_fields_rounded,
-        color: colorScheme.onSurfaceVariant,
-      ),
+      child: Icon(Icons.text_fields_rounded, color: cs.onSurfaceVariant),
     ),
     title: const Text(
       'Tamaño de texto',
@@ -241,21 +180,20 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ),
     subtitle: Text(
       'Ajusta la lectura de la app',
-      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
     ),
     trailing: DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: settings.textSize,
         borderRadius: BorderRadius.circular(16),
-        items:
-            ['Pequeño', 'Mediano', 'Grande']
-                .map(
-                  (e) => DropdownMenuItem(
-                    value: e,
-                    child: Text(e, style: const TextStyle(fontSize: 14)),
-                  ),
-                )
-                .toList(),
+        items: ['Pequeño', 'Mediano', 'Grande']
+            .map(
+              (e) => DropdownMenuItem(
+                value: e,
+                child: Text(e, style: const TextStyle(fontSize: 14)),
+              ),
+            )
+            .toList(),
         onChanged: (val) {
           if (val != null) settings.setTextSize(val);
         },
@@ -263,21 +201,23 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ),
   );
 
+  // ── Animations toggle ───────────────────────────────────────────────────────
+
   Widget _buildAnimationsToggle(
-    ColorScheme colorScheme,
+    ColorScheme cs,
     SettingsProvider settings,
   ) => SwitchListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     value: settings.animationsEnabled,
-    onChanged: (val) => settings.setAnimationsEnabled(val),
-    activeThumbColor: colorScheme.primary,
+    onChanged: (val) => settings.setAnimationsEnabled(enabled: val),
+    activeThumbColor: cs.primary,
     secondary: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(Icons.animation_rounded, color: colorScheme.onSurfaceVariant),
+      child: Icon(Icons.animation_rounded, color: cs.onSurfaceVariant),
     ),
     title: const Text(
       'Animaciones',
@@ -285,25 +225,24 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ),
     subtitle: Text(
       'Transiciones fluidas',
-      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
     ),
   );
 
+  // ── Chart style ─────────────────────────────────────────────────────────────
+
   Widget _buildChartStyleSelector(
-    ColorScheme colorScheme,
+    ColorScheme cs,
     SettingsProvider settings,
   ) => ListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     leading: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(
-        Icons.pie_chart_outline_rounded,
-        color: colorScheme.onSurfaceVariant,
-      ),
+      child: Icon(Icons.pie_chart_outline_rounded, color: cs.onSurfaceVariant),
     ),
     title: const Text(
       'Estilo de gráfico',
@@ -311,38 +250,28 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
     ),
     subtitle: Text(
       'Presentación en reportes',
-      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
     ),
     trailing: Container(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildChartIconOption(
-            Icons.donut_large_rounded,
-            'Anillo',
-            colorScheme,
-            settings,
-          ),
-          _buildChartIconOption(
-            Icons.bar_chart_rounded,
-            'Barras',
-            colorScheme,
-            settings,
-          ),
+          _chartIconOption(Icons.donut_large_rounded, 'Anillo', cs, settings),
+          _chartIconOption(Icons.bar_chart_rounded, 'Barras', cs, settings),
         ],
       ),
     ),
   );
 
-  Widget _buildChartIconOption(
+  Widget _chartIconOption(
     IconData icon,
     String value,
-    ColorScheme colorScheme,
+    ColorScheme cs,
     SettingsProvider settings,
   ) {
     final isSelected = settings.chartStyle == value;
@@ -352,26 +281,24 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
         padding: const EdgeInsets.all(8),
         margin: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.surface : Colors.transparent,
+          color: isSelected ? cs.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          boxShadow:
-              isSelected
-                  ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                  : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Icon(
           icon,
           size: 20,
-          color:
-              isSelected
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          color: isSelected
+              ? cs.primary
+              : cs.onSurfaceVariant.withValues(alpha: 0.5),
         ),
       ),
     );

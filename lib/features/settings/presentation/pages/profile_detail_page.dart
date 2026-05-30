@@ -4,6 +4,9 @@ import 'package:personal_finance/features/auth/presentation/providers/auth_provi
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
+import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 
 class ProfileDetailPage extends StatelessWidget {
@@ -130,6 +133,8 @@ class ProfileDetailView extends StatelessWidget {
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 24),
+                  const _PlanStatusCard(),
                   const SizedBox(height: 32),
 
                   // Profile fields card
@@ -257,6 +262,274 @@ class ProfileDetailView extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ],
+        ),
+      ],
+    ),
+  );
+}
+
+// ── Plan status card ──────────────────────────────────────────────────────────
+
+class _PlanStatusCard extends StatelessWidget {
+  const _PlanStatusCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+      bloc: getIt<SubscriptionBloc>(),
+      builder: (_, state) =>
+          state.isPremium ? const _ProCard() : const _FreeCard(),
+    );
+  }
+}
+
+class _ProCard extends StatelessWidget {
+  const _ProCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isEs = l10n?.locale.languageCode == 'es';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.workspace_premium, color: Colors.white, size: 14),
+                    const SizedBox(width: 5),
+                    Text(
+                      isEs ? 'Plan Pro' : 'Pro Plan',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF34C759).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF34C759).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Text(
+                  isEs ? 'Activo' : 'Active',
+                  style: const TextStyle(
+                    color: Color(0xFF34C759),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isEs
+                ? 'Tienes acceso a todas las funciones premium'
+                : 'You have access to all premium features',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _FeatureChip(
+                icon: Icons.chat_rounded,
+                label: isEs ? 'Asistente IA' : 'AI Assistant',
+              ),
+              _FeatureChip(
+                icon: Icons.bar_chart_rounded,
+                label: isEs ? 'Reportes IA' : 'AI Reports',
+              ),
+              _FeatureChip(
+                icon: Icons.all_inclusive_rounded,
+                label: isEs ? 'Sin límites' : 'Unlimited',
+              ),
+              _FeatureChip(
+                icon: Icons.download_rounded,
+                label: isEs ? 'Exportar' : 'Export',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FreeCard extends StatelessWidget {
+  const _FreeCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isEs = l10n?.locale.languageCode == 'es';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: Theme.of(context).cardColor,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.grey.shade200,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.person_outline, color: Colors.grey.shade600, size: 14),
+                    const SizedBox(width: 5),
+                    Text(
+                      isEs ? 'Plan Gratuito' : 'Free Plan',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF007AFF).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF007AFF).withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Text(
+                  isEs ? 'Activo' : 'Active',
+                  style: const TextStyle(
+                    color: Color(0xFF007AFF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            isEs
+                ? 'Tienes acceso limitado. Actualiza a Pro para desbloquear todas las funciones.'
+                : 'You have limited access. Upgrade to Pro to unlock all features.',
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.workspace_premium, size: 18),
+                label: Text(
+                  isEs ? 'Actualizar a Pro — \$5.99/mes' : 'Upgrade to Pro — \$5.99/mo',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                onPressed: () => PaywallPage.show(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureChip extends StatelessWidget {
+  const _FeatureChip({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: const Color(0xFF818CF8)),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF818CF8),
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     ),

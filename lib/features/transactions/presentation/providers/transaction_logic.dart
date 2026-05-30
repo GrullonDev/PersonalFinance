@@ -115,10 +115,7 @@ class TransactionLogic extends ChangeNotifier {
 
       final repo = GetIt.instance<TransactionBackendRepository>();
       final result = await repo.create(entity);
-      result.fold(
-        (failure) => throw Exception(failure.message),
-        (_) => null,
-      );
+      result.fold((failure) => throw Exception(failure.message), (_) => null);
 
       _currentTransaction = null;
     } catch (e) {

@@ -45,9 +45,8 @@ class AddTransactionLogic extends ChangeNotifier {
 
       final double amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
       final String category = (data['category'] as String?) ?? '';
-      final DateTime fecha = data['date'] is DateTime
-          ? data['date'] as DateTime
-          : DateTime.now();
+      final DateTime fecha =
+          data['date'] is DateTime ? data['date'] as DateTime : DateTime.now();
       final String descripcion = (data['description'] as String?) ?? '';
       final bool esRecurrente = (data['isRecurring'] as bool?) ?? false;
 
@@ -68,10 +67,7 @@ class AddTransactionLogic extends ChangeNotifier {
 
       final repo = GetIt.instance<TransactionBackendRepository>();
       final result = await repo.create(entity);
-      result.fold(
-        (failure) => throw Exception(failure.message),
-        (_) => null,
-      );
+      result.fold((failure) => throw Exception(failure.message), (_) => null);
 
       notifyListeners();
     } catch (e) {
