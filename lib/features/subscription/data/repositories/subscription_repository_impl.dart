@@ -22,25 +22,31 @@ class SubscriptionRepositoryImpl implements ISubscriptionRepository {
   @override
   Future<SubscriptionEntity> load(String userId) async {
     try {
-      // 1. Intentar el path canónico primero (ruta rápida post-migración).
-      final snap = await _currentDoc(userId).get();
+      // Intentar servidor primero para ignorar caché stale; si falla (offline),
+      // usar caché local.
+      DocumentSnapshot<Map<String, dynamic>> snap;
+      try {
+        snap = await _currentDoc(userId).get(
+          const GetOptions(source: Source.server),
+        );
+      } catch (_) {
+        snap = await _currentDoc(userId).get(
+          const GetOptions(source: Source.cache),
+        );
+      }
+
       if (snap.exists && snap.data() != null) {
         return _resolveExpiration(SubscriptionEntity.fromMap(snap.data()!));
       }
 
-      // 2. Fallback: buscar cualquier documento en la colección.
-      //    Cubre datos legacy con IDs autogenerados o pruebas manuales.
+      // Fallback: buscar cualquier documento en la colección.
       final query = await _collection(userId).limit(1).get();
       if (query.docs.isEmpty) return SubscriptionEntity.free;
 
       final entity = _resolveExpiration(
         SubscriptionEntity.fromMap(query.docs.first.data()),
       );
-
-      // 3. Migrar al path canónico para que lecturas futuras (incluido watch)
-      //    encuentren siempre 'current'.
       await save(userId, entity);
-
       return entity;
     } catch (_) {
       return SubscriptionEntity.free;
@@ -53,14 +59,14 @@ class SubscriptionRepositoryImpl implements ISubscriptionRepository {
 
   @override
   Stream<SubscriptionEntity> watch(String userId) =>
-      _currentDoc(userId).snapshots().map(
-            (snap) =>
-                (!snap.exists || snap.data() == null)
-                    ? SubscriptionEntity.free
-                    : _resolveExpiration(
-                        SubscriptionEntity.fromMap(snap.data()!),
-                      ),
-          );
+      _currentDoc(userId).snapshots().map((snap) {
+        if (!snap.exists || snap.data() == null) return SubscriptionEntity.free;
+        try {
+          return _resolveExpiration(SubscriptionEntity.fromMap(snap.data()!));
+        } catch (_) {
+          return SubscriptionEntity.free;
+        }
+      });
 
   SubscriptionEntity _resolveExpiration(SubscriptionEntity entity) {
     if (entity.expiresAt != null &&

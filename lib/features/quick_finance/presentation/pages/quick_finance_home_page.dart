@@ -111,7 +111,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF6F7F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: _buildAppBar(context),
         body: BlocListener<QuickFinanceBloc, QuickFinanceState>(
           listenWhen:
@@ -171,7 +171,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
 
     return AppBar(
       automaticallyImplyLeading: false,
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       surfaceTintColor: Colors.transparent,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,53 +297,56 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
 
 class _ChatButton extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
-      bloc: getIt<SubscriptionBloc>(),
-      builder: (context, state) {
-        final isPremium = state.isPremium;
-        return IconButton(
-          tooltip: isPremium ? 'Asistente Financiero IA' : 'Función Pro',
-          icon: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                isPremium ? Icons.chat_rounded : Icons.chat_outlined,
-                color:
-                    isPremium
-                        ? const Color(0xFF6366F1)
-                        : Theme.of(context).primaryColor,
-                applyTextScaling: true,
-              ),
-              if (!isPremium)
-                Positioned(
-                  top: -2,
-                  right: -4,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
+  Widget build(BuildContext context) =>
+      BlocBuilder<SubscriptionBloc, SubscriptionState>(
+        bloc: getIt<SubscriptionBloc>(),
+        builder: (context, state) {
+          final isPremium = state.isPremium;
+          return IconButton(
+            tooltip: isPremium ? 'Asistente Financiero IA' : 'Función Pro',
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  isPremium ? Icons.chat_rounded : Icons.chat_outlined,
+                  color: Theme.of(context).primaryColor,
+                  applyTextScaling: true,
+                ),
+                if (!isPremium)
+                  Positioned(
+                    top: -2,
+                    right: -4,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).colorScheme.secondary,
+                          ],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.lock,
+                        size: 6,
+                        color: Colors.white,
                       ),
                     ),
-                    child: const Icon(Icons.lock, size: 6, color: Colors.white),
                   ),
-                ),
-            ],
-          ),
-          onPressed: () {
-            if (isPremium) {
-              Navigator.of(context).pushNamed(RoutePath.aiChat);
-            } else {
-              PaywallPage.show(context);
-            }
-          },
-        );
-      },
-    );
-  }
+              ],
+            ),
+            onPressed: () {
+              if (isPremium) {
+                Navigator.of(context).pushNamed(RoutePath.aiChat);
+              } else {
+                PaywallPage.show(context);
+              }
+            },
+          );
+        },
+      );
 }
 
 // ── Cuerpo principal ──────────────────────────────────────────────────────────

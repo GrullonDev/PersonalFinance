@@ -65,6 +65,7 @@ class FinancialHealthScore {
 /// Interfaz para abstraer el cliente de Gemini y facilitar pruebas unitarias.
 abstract class GeminiClient {
   Future<String?> generate(String prompt);
+  Future<String?> generateMultiTurn(List<Content> contents);
 }
 
 /// Implementación real utilizando la clase final GenerativeModel de Firebase.
@@ -77,6 +78,12 @@ class FirebaseGeminiClient implements GeminiClient {
     final response = await _model.generateContent([Content.text(prompt)]);
     return response.text;
   }
+
+  @override
+  Future<String?> generateMultiTurn(List<Content> contents) async {
+    final response = await _model.generateContent(contents);
+    return response.text;
+  }
 }
 
 class VertexAiService {
@@ -86,7 +93,7 @@ class VertexAiService {
     : _client =
           client ??
           FirebaseGeminiClient(
-            FirebaseAI.vertexAI().generativeModel(model: 'gemini-1.5-flash'),
+            FirebaseAI.vertexAI().generativeModel(model: 'gemini-2.5-flash'),
           );
 
   /// Categoriza automáticamente un gasto según su título/descripción
@@ -303,6 +310,112 @@ Sé específico: menciona el monto estimado total y las categorías principales.
     } catch (e) {
       developer.log('Error en predicción de gastos con Gemini: $e', error: e);
       return 'No se pudo generar la predicción en este momento.';
+    }
+  }
+
+  /// Genera un reporte mensual completo con análisis de ingresos, gastos,
+  /// patrones de comportamiento y recomendaciones accionables.
+  Future<String> generateMonthlyReport({
+    required List<ExpenseEntity> expenses,
+    required List<IncomeEntity> incomes,
+    required double totalIncome,
+    required double totalExpenses,
+    required String monthLabel,
+  }) async {
+    if (expenses.isEmpty && incomes.isEmpty) {
+      return 'No hay transacciones registradas en $monthLabel para generar un reporte.';
+    }
+
+    final savings = totalIncome - totalExpenses;
+    final savingsRate = totalIncome > 0 ? (savings / totalIncome * 100) : 0.0;
+
+    final Map<String, double> categoryTotals = {};
+    for (final e in expenses) {
+      categoryTotals[e.category] = (categoryTotals[e.category] ?? 0) + e.amount;
+    }
+    final topCategories = (categoryTotals.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value)))
+        .take(5)
+        .map((e) => '- ${e.key}: Q${e.value.toStringAsFixed(2)}')
+        .join('\n');
+
+    final incomesSummary =
+        incomes.isEmpty
+            ? 'Sin ingresos registrados.'
+            : incomes
+                .take(8)
+                .map((i) => '- ${i.title}: Q${i.amount.toStringAsFixed(2)}')
+                .join('\n');
+
+    final prompt = '''
+Eres un asesor financiero personal experto en finanzas para Guatemala. Genera un reporte mensual financiero detallado, profesional y motivador para el mes de $monthLabel.
+
+DATOS FINANCIEROS:
+- Ingresos totales: Q${totalIncome.toStringAsFixed(2)}
+- Gastos totales: Q${totalExpenses.toStringAsFixed(2)}
+- Balance neto: Q${savings.toStringAsFixed(2)}
+- Tasa de ahorro: ${savingsRate.toStringAsFixed(1)}%
+
+DETALLE DE INGRESOS:
+$incomesSummary
+
+TOP CATEGORÍAS DE GASTOS:
+$topCategories
+
+Genera el reporte con las siguientes secciones (usa emojis para hacerlo visual):
+
+1. 📊 RESUMEN EJECUTIVO (2-3 frases sobre el mes)
+2. 💰 ANÁLISIS DE INGRESOS (comportamiento de ingresos)
+3. 💸 ANÁLISIS DE GASTOS (patrones y categorías principales)
+4. 📈 BALANCE Y AHORRO (evaluación del ahorro del mes)
+5. ⚠️ ALERTAS (si hay algo preocupante, máximo 2 puntos)
+6. 🎯 RECOMENDACIONES (3 acciones concretas y prácticas para el próximo mes)
+
+Sé específico con los montos en quetzales (Q). Usa un tono profesional pero amigable. Máximo 300 palabras en total.
+''';
+
+    try {
+      final responseText = await _client.generate(prompt);
+      return responseText?.trim() ??
+          'No se pudo generar el reporte en este momento. Por favor intenta de nuevo.';
+    } catch (e) {
+      developer.log('Error generando reporte mensual con Gemini: $e', error: e);
+      return 'Error al generar el reporte. Verifica tu conexión e intenta de nuevo.';
+    }
+  }
+
+  /// Envía un mensaje al asistente financiero manteniendo el historial de conversación.
+  /// [history]: lista de mensajes previos, cada uno con `role` ('user' | 'model') y `text`.
+  Future<String> sendChatMessage(
+    String userMessage,
+    List<({String role, String text})> history,
+  ) async {
+    const systemContext =
+        'Eres un asesor financiero personal experto, amigable y empático, '
+        'especializado en finanzas personales para Guatemala. '
+        'Ayudas a los usuarios a entender sus gastos, presupuestos, metas de ahorro y deudas. '
+        'Usas quetzales (Q) como moneda y referencias locales de Guatemala cuando sea relevante. '
+        'Responde siempre en español, de forma clara y concisa. '
+        'No repitas los datos que el usuario ya conoce; ve directo al consejo o análisis.';
+
+    final contents = <Content>[
+      Content('user', [const TextPart(systemContext)]),
+      Content('model', [
+        const TextPart(
+          'Entendido. Soy tu asesor financiero personal para Guatemala. ¿En qué te puedo ayudar hoy?',
+        ),
+      ]),
+      ...history.map((m) => Content(m.role, [TextPart(m.text)])),
+      Content('user', [TextPart(userMessage)]),
+    ];
+
+    try {
+      final responseText = await _client.generateMultiTurn(contents);
+      return responseText?.trim() ??
+          'No pude procesar tu consulta. Por favor, intenta de nuevo.';
+    } catch (e) {
+      developer.log('Error en chat financiero con Gemini: $e', error: e);
+      return 'Ocurrió un error al conectar con el asistente. Verifica tu conexión e intenta de nuevo.';
     }
   }
 

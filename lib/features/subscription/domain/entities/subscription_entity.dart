@@ -64,6 +64,13 @@ class SubscriptionEntity extends Equatable {
     status: SubscriptionStatus.active,
   );
 
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
   factory SubscriptionEntity.fromMap(Map<String, dynamic> map) =>
       SubscriptionEntity(
         tier: PlanTier.values.firstWhere(
@@ -74,14 +81,8 @@ class SubscriptionEntity extends Equatable {
           (e) => e.name == (map['status'] as String? ?? 'active'),
           orElse: () => SubscriptionStatus.active,
         ),
-        expiresAt:
-            map['expiresAt'] != null
-                ? (map['expiresAt'] as Timestamp).toDate()
-                : null,
-        purchasedAt:
-            map['purchasedAt'] != null
-                ? (map['purchasedAt'] as Timestamp).toDate()
-                : null,
+        expiresAt: _parseDate(map['expiresAt']),
+        purchasedAt: _parseDate(map['purchasedAt']),
         orderId: map['orderId'] as String?,
         productId: map['productId'] as String?,
       );
