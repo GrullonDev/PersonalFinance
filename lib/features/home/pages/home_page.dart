@@ -81,20 +81,26 @@ class _HomePageState extends State<HomePage>
   final List<bool> _showAppBar = <bool>[false, false, false, false];
 
   @override
-  Widget build(BuildContext context) => BlocProvider<TransactionsBloc>(
-    create:
-        (BuildContext ctx) => TransactionsBloc(
-          ctx.read<tx_backend.TransactionBackendRepository>(),
-        )..add(
-          TransactionsLoad(
-            profileType:
-                ctx.read<SettingsProvider>().isBusinessMode
-                    ? 'negocio'
-                    : 'personal',
+  Widget build(BuildContext context) {
+    // Watching SettingsProvider ensures this subtree rebuilds whenever the
+    // selected theme changes, guaranteeing the IndexedStack children (dashboard,
+    // budgets, profile…) all receive the updated ThemeData.
+    context.watch<SettingsProvider>();
+
+    return BlocProvider<TransactionsBloc>(
+      create:
+          (BuildContext ctx) => TransactionsBloc(
+            ctx.read<tx_backend.TransactionBackendRepository>(),
+          )..add(
+            TransactionsLoad(
+              profileType:
+                  ctx.read<SettingsProvider>().isBusinessMode
+                      ? 'negocio'
+                      : 'personal',
+            ),
           ),
-        ),
-    child: Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
       appBar:
           context.isMobile && _showAppBar[_currentIndex]
               ? PreferredSize(
@@ -173,8 +179,9 @@ class _HomePageState extends State<HomePage>
               )
               : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    ),
-  );
+      ),
+    );
+  }
 
   Widget _buildResponsiveAppBar(BuildContext context) => Container(
     color: Colors.transparent,

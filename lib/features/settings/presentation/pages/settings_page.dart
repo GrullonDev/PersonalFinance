@@ -8,6 +8,7 @@ import 'package:personal_finance/features/settings/presentation/pages/profile_de
 import 'package:personal_finance/features/settings/presentation/pages/security_detail_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/ai_reports_page.dart';
 import 'package:personal_finance/features/settings/presentation/pages/export_data_page.dart';
+import 'package:personal_finance/features/settings/presentation/pages/themes_page.dart';
 import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
 import 'package:provider/provider.dart';
@@ -264,14 +265,18 @@ class SettingsPage extends StatelessWidget {
                 onProTap: () =>
                     _showComingSoon(context, 'Transacciones Recurrentes'),
               ),
-              _buildProItem(
+              _buildSettingItem(
                 context,
-                isPro: isPro,
                 icon: Icons.palette_outlined,
                 iconColor: Colors.pink,
-                title: 'Temas premium',
-                subtitle: 'Modo oscuro AMOLED y paletas personalizadas',
-                onProTap: () => _showComingSoon(context, 'Temas Premium'),
+                title: 'Temas',
+                subtitle: 'Personaliza colores y modo de la app',
+                onTap: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const ThemesPage(),
+                  ),
+                ),
               ),
             ],
           );
