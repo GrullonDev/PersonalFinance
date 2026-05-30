@@ -116,7 +116,7 @@ Future<void> main() async {
           Hive.registerAdapter(SyncOperationModelAdapter());
         }
 
-        // ── Firebase + Crashlytics + Analytics ─────────────────────────────
+        // ── Firebase + Crashlytics + Analytics ───────────────────────────────
         // Cualquier error aquí se loggea pero NO impide arrancar la UI.
         try {
           if (Firebase.apps.isEmpty) {

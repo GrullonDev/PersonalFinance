@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -34,6 +37,9 @@ class _SubscriptionUpdated extends SubscriptionEvent {
   @override
   List<Object?> get props => [subscription];
 }
+
+// Evento interno — emitido al cerrar sesión.
+class _SubscriptionReset extends SubscriptionEvent {}
 
 // ---------------------------------------------------------------------------
 // State
@@ -88,6 +94,9 @@ class SubscriptionState extends Equatable {
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final RevenueCatService _revenueCat;
   final SubscriptionService _subscriptionService;
+  StreamSubscription<SubscriptionEntity>? _firestoreSubscription;
+  StreamSubscription<User?>? _authSubscription;
+  String? _userId;
 
   SubscriptionBloc({
     required RevenueCatService revenueCatService,
@@ -99,19 +108,44 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<SubscriptionPurchasePro>(_onPurchasePro);
     on<SubscriptionRestore>(_onRestore);
     on<_SubscriptionUpdated>(_onUpdated);
+    on<_SubscriptionReset>(_onReset);
+
+    // Auto-carga basada en auth: si el usuario ya está autenticado al construir
+    // el bloc, despacha SubscriptionLoad de inmediato. Luego escucha cambios
+    // futuros (login/logout) para recargar o resetear.
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      add(SubscriptionLoad(currentUser.uid));
+    }
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        add(SubscriptionLoad(user.uid));
+      } else {
+        add(_SubscriptionReset());
+      }
+    });
   }
 
   Future<void> _onLoad(
     SubscriptionLoad event,
     Emitter<SubscriptionState> emit,
   ) async {
+    _userId = event.userId;
+
+    // Cancelar suscripción previa antes de crear una nueva.
+    await _firestoreSubscription?.cancel();
+    _firestoreSubscription = null;
+
+    // ── Paso 0: Identificar al usuario en RevenueCat ─────────────────────────
+    // Sin esto, RevenueCat usa un ID anónimo y no puede confirmar la suscripción.
+    try {
+      await _revenueCat.login(event.userId);
+    } catch (_) {}
+
     // ── Paso 1: Firestore es la fuente principal ─────────────────────────────
-    // Se carga y emite de inmediato, sin depender de RevenueCat.
     try {
       await _subscriptionService.load(event.userId);
-    } catch (_) {
-      // Si Firestore falla en cold-start, _current queda en free.
-    }
+    } catch (_) {}
     emit(
       state.copyWith(
         subscription: _subscriptionService.current,
@@ -119,24 +153,48 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       ),
     );
 
-    // ── Paso 2: Suscribir al stream de Firestore para actualizaciones en tiempo real.
-    emit.forEach<SubscriptionEntity>(
-      _subscriptionService.watch(event.userId),
-      onData: (entity) {
-        _subscriptionService.updateLocal(entity);
-        return state.copyWith(subscription: entity, clearError: true);
-      },
-      onError: (_, __) => state,
-    );
+    // ── Paso 2: Si Firestore dice Free, reconciliar con RevenueCat ───────────
+    // Cubre el caso donde la compra se completó pero no se guardó en Firestore.
+    if (!_subscriptionService.current.isPremium) {
+      try {
+        final rcSubscription = await _revenueCat.getCurrentSubscription();
+        if (rcSubscription.isPremium) {
+          await _subscriptionService.save(event.userId, rcSubscription);
+          emit(state.copyWith(subscription: rcSubscription, clearError: true));
+        }
+      } catch (_) {}
+    }
+
+    // ── Paso 3: Stream de Firestore para actualizaciones en tiempo real ───────
+    // onError evita que el stream muera silenciosamente si fromMap lanza.
+    _firestoreSubscription = _subscriptionService
+        .watch(event.userId)
+        .listen(
+          (entity) => add(_SubscriptionUpdated(entity)),
+          onError: (_) {},
+          cancelOnError: false,
+        );
   }
 
-  // Manejador del stream interno (actualización en tiempo real desde Firestore).
+  // Manejador del stream interno (actualizaciones en tiempo real desde Firestore).
   void _onUpdated(
     _SubscriptionUpdated event,
     Emitter<SubscriptionState> emit,
   ) {
     _subscriptionService.updateLocal(event.subscription);
     emit(state.copyWith(subscription: event.subscription, clearError: true));
+  }
+
+  // Manejador de logout — resetea al estado free y cancela el stream.
+  Future<void> _onReset(
+    _SubscriptionReset event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    await _firestoreSubscription?.cancel();
+    _firestoreSubscription = null;
+    _userId = null;
+    _subscriptionService.updateLocal(SubscriptionEntity.free);
+    emit(const SubscriptionState());
   }
 
   Future<void> _onPurchasePro(
@@ -153,6 +211,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final subscription = await _revenueCat.purchasePro();
       _subscriptionService.updateLocal(subscription);
+
+      // Persistir en Firestore para que reinicios de app lean el estado correcto.
+      if (_userId != null) {
+        await _subscriptionService.save(_userId!, subscription);
+      }
+
       emit(
         state.copyWith(
           subscription: subscription,
@@ -180,6 +244,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final subscription = await _revenueCat.restorePurchases();
       _subscriptionService.updateLocal(subscription);
+
+      // Persistir en Firestore para que reinicios de app lean el estado correcto.
+      if (_userId != null) {
+        await _subscriptionService.save(_userId!, subscription);
+      }
+
       emit(
         state.copyWith(
           subscription: subscription,
@@ -197,6 +267,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     } catch (e) {
       emit(state.copyWith(isRestoring: false, error: e.toString()));
     }
+  }
+
+  @override
+  Future<void> close() async {
+    await _authSubscription?.cancel();
+    await _firestoreSubscription?.cancel();
+    return super.close();
   }
 
   String _mapErrorCode(PurchasesErrorCode code) => switch (code) {
