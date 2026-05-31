@@ -209,17 +209,6 @@ Future<void> initDependencies() async {
     );
   }
 
-  // TransactionLinkingService
-  if (!getIt.isRegistered<TransactionLinkingService>()) {
-    getIt.registerLazySingleton<TransactionLinkingService>(
-      () => TransactionLinkingService(
-        transactionRepo: getIt<backend_tx_repo.TransactionBackendRepository>(),
-        goalRepo: getIt<GoalRepository>(),
-        debtRepo: getIt<DebtRepository>(),
-      ),
-    );
-  }
-
   // Backend Transactions Data Source (FastAPI endpoints)
   if (!getIt.isRegistered<backend_tx_ds.TransactionBackendRemoteDataSource>()) {
     getIt.registerLazySingleton<
@@ -232,6 +221,17 @@ Future<void> initDependencies() async {
     getIt.registerLazySingleton<backend_tx_repo.TransactionBackendRepository>(
       () => backend_tx_repo_impl.TransactionBackendRepositoryImpl(
         getIt<backend_tx_ds.TransactionBackendRemoteDataSource>(),
+      ),
+    );
+  }
+
+  // TransactionLinkingService
+  if (!getIt.isRegistered<TransactionLinkingService>()) {
+    getIt.registerLazySingleton<TransactionLinkingService>(
+      () => TransactionLinkingService(
+        transactionRepo: getIt<backend_tx_repo.TransactionBackendRepository>(),
+        goalRepo: getIt<GoalRepository>(),
+        debtRepo: getIt<DebtRepository>(),
       ),
     );
   }
