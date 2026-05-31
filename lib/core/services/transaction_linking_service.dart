@@ -59,9 +59,9 @@ class TransactionLinkingService {
       if (keywords.isEmpty) return;
 
       if (transaction.tipo == 'ingreso') {
-        await _updateMatchingGoals(keywords, amount);
+        await _updateMatchingGoals(transaction.descripcion, amount);
       } else if (transaction.tipo == 'gasto') {
-        await _updateMatchingDebts(keywords, amount);
+        await _updateMatchingDebts(transaction.descripcion, amount);
       }
     } catch (e) {
       debugPrint('[TransactionLinkingService] processTransaction error: $e');
@@ -69,7 +69,7 @@ class TransactionLinkingService {
   }
 
   Future<void> _updateMatchingGoals(
-    List<String> txKeywords,
+    String transactionDescription,
     double amount,
   ) async {
     final result = await _goalRepo.getGoals();
@@ -77,7 +77,7 @@ class TransactionLinkingService {
     for (final goal in goals) {
       if (goal.actualAsDouble >= goal.objetivoAsDouble) continue;
       final goalKeywords = _keywords(goal.nombre);
-      if (!goalKeywords.any(txKeywords.contains)) continue;
+      if (!_matches(transactionDescription, goalKeywords)) continue;
       final newAmount = goal.actualAsDouble + amount;
       await _goalRepo.updateGoal(
         goal.copyWith(montoActual: newAmount.toStringAsFixed(2)),
@@ -86,7 +86,7 @@ class TransactionLinkingService {
   }
 
   Future<void> _updateMatchingDebts(
-    List<String> txKeywords,
+    String transactionDescription,
     double amount,
   ) async {
     final result = await _debtRepo.getDebts();
@@ -94,7 +94,7 @@ class TransactionLinkingService {
     for (final debt in debts) {
       if (debt.currentBalance <= 0) continue;
       final debtKeywords = _keywords(debt.name);
-      if (!debtKeywords.any(txKeywords.contains)) continue;
+      if (!_matches(transactionDescription, debtKeywords)) continue;
       final newBalance =
           (debt.currentBalance - amount).clamp(0.0, double.infinity);
       await _debtRepo.updateDebt(debt.copyWith(currentBalance: newBalance));
