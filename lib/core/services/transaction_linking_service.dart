@@ -73,17 +73,16 @@ class TransactionLinkingService {
     double amount,
   ) async {
     final result = await _goalRepo.getGoals();
-    result.fold((_) {}, (goals) async {
-      for (final goal in goals) {
-        if (goal.actualAsDouble >= goal.objetivoAsDouble) continue;
-        final goalKeywords = _keywords(goal.nombre);
-        if (!goalKeywords.any(txKeywords.contains)) continue;
-        final newAmount = goal.actualAsDouble + amount;
-        await _goalRepo.updateGoal(
-          goal.copyWith(montoActual: newAmount.toStringAsFixed(2)),
-        );
-      }
-    });
+    final goals = result.fold((_) => <Goal>[], (g) => g);
+    for (final goal in goals) {
+      if (goal.actualAsDouble >= goal.objetivoAsDouble) continue;
+      final goalKeywords = _keywords(goal.nombre);
+      if (!goalKeywords.any(txKeywords.contains)) continue;
+      final newAmount = goal.actualAsDouble + amount;
+      await _goalRepo.updateGoal(
+        goal.copyWith(montoActual: newAmount.toStringAsFixed(2)),
+      );
+    }
   }
 
   Future<void> _updateMatchingDebts(
@@ -91,15 +90,14 @@ class TransactionLinkingService {
     double amount,
   ) async {
     final result = await _debtRepo.getDebts();
-    result.fold((_) {}, (debts) async {
-      for (final debt in debts) {
-        if (debt.currentBalance <= 0) continue;
-        final debtKeywords = _keywords(debt.name);
-        if (!debtKeywords.any(txKeywords.contains)) continue;
-        final newBalance =
-            (debt.currentBalance - amount).clamp(0.0, double.infinity);
-        await _debtRepo.updateDebt(debt.copyWith(currentBalance: newBalance));
-      }
-    });
+    final debts = result.fold((_) => <Debt>[], (d) => d);
+    for (final debt in debts) {
+      if (debt.currentBalance <= 0) continue;
+      final debtKeywords = _keywords(debt.name);
+      if (!debtKeywords.any(txKeywords.contains)) continue;
+      final newBalance =
+          (debt.currentBalance - amount).clamp(0.0, double.infinity);
+      await _debtRepo.updateDebt(debt.copyWith(currentBalance: newBalance));
+    }
   }
 }

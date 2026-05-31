@@ -162,6 +162,27 @@ void main() {
 
       verifyNever(() => goalRepo.updateGoal(any()));
     });
+
+    test('updates multiple matching goals independently', () async {
+      final goal1 = _goal(nombre: 'Viaje Europa', actual: 50, objetivo: 500);
+      final goal2 = _goal(nombre: 'Fondo Viaje', actual: 100, objetivo: 800);
+      when(() => goalRepo.getGoals())
+          .thenAnswer((_) async => Right([goal1, goal2]));
+      when(() => debtRepo.getDebts()).thenAnswer((_) async => const Right([]));
+      when(() => goalRepo.updateGoal(any()))
+          .thenAnswer((_) async => Right(goal1));
+
+      await service.processTransaction(
+        _tx(descripcion: 'ahorro viaje', tipo: 'ingreso', monto: 75),
+      );
+
+      final captured = verify(() => goalRepo.updateGoal(captureAny())).captured;
+      expect(captured.length, 2);
+      final updated1 = captured[0] as Goal;
+      final updated2 = captured[1] as Goal;
+      expect(updated1.actualAsDouble, closeTo(125.0, 0.01));
+      expect(updated2.actualAsDouble, closeTo(175.0, 0.01));
+    });
   });
 
   group('processTransaction - debts', () {
