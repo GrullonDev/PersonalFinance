@@ -7,6 +7,7 @@ import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
@@ -479,6 +480,7 @@ class _GoalsViewState extends State<_GoalsView> {
     final TextEditingController currentCtrl = TextEditingController(
       text: goal?.actualAsDouble.toStringAsFixed(2) ?? '0',
     );
+    bool isDetecting = false;
     final TextEditingController iconCtrl = TextEditingController(
       text: goal?.icono ?? 'flag',
     );
@@ -487,8 +489,8 @@ class _GoalsViewState extends State<_GoalsView> {
 
     final bool? saved = await showDialog<bool>(
       context: context,
-      builder:
-          (BuildContext context) => AlertDialog(
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setDialogState) => AlertDialog(
             title: Text(goal == null ? 'Crear meta' : 'Editar meta'),
             content: Form(
               key: key,
@@ -508,6 +510,36 @@ class _GoalsViewState extends State<_GoalsView> {
                         validator:
                             (String? v) => InputSanitizer.validateName(v ?? ''),
                       ),
+                      if (goal == null) // Only show for new goals
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: isDetecting
+                                ? null
+                                : () async {
+                                    final name = nameCtrl.text.trim();
+                                    if (name.length < 3) return;
+                                    setDialogState(() => isDetecting = true);
+                                    try {
+                                      final matched = await getIt<TransactionLinkingService>()
+                                          .sumMatchingTransactions(name, 'ingreso');
+                                      if (matched > 0) {
+                                        currentCtrl.text = matched.toStringAsFixed(2);
+                                      }
+                                    } finally {
+                                      setDialogState(() => isDetecting = false);
+                                    }
+                                  },
+                            icon: isDetecting
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.search, size: 16),
+                            label: const Text('Detectar transacciones', style: TextStyle(fontSize: 12)),
+                          ),
+                        ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: targetCtrl,
@@ -634,6 +666,7 @@ class _GoalsViewState extends State<_GoalsView> {
               ),
             ],
           ),
+        ),
     );
 
     if (saved == true && context.mounted) {
