@@ -114,6 +114,15 @@ void main() {
       expect(result, 35.0);
     });
 
+    test('matching is accent-insensitive (crédito matches credito)', () async {
+      when(() => txRepo.list(tipo: 'gasto')).thenAnswer((_) async => Right([
+        _tx(descripcion: 'pago credito mensual', tipo: 'gasto', monto: 35),
+      ]));
+
+      final result = await service.sumMatchingTransactions('Tarjeta de Crédito', 'gasto');
+      expect(result, 35.0);
+    });
+
     test('returns 0 on repo failure', () async {
       when(() => txRepo.list(tipo: 'ingreso'))
           .thenAnswer((_) async => Left(ServerFailure(message: 'error')));

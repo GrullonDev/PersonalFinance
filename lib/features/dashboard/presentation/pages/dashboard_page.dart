@@ -34,6 +34,12 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   void initState() {
     super.initState();
     _routeObserver = getIt<RouteObserver<ModalRoute<dynamic>>>();
+    // Schedule initial load after first frame so context.read is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<DashboardLogic>().loadDashboardData();
+      }
+    });
   }
 
   @override

@@ -19,17 +19,25 @@ class TransactionLinkingService {
   final GoalRepository _goalRepo;
   final DebtRepository _debtRepo;
 
+  /// Removes Spanish diacritics for accent-insensitive matching.
+  String _normalize(String s) => s
+      .replaceAll('á', 'a').replaceAll('é', 'e').replaceAll('í', 'i')
+      .replaceAll('ó', 'o').replaceAll('ú', 'u').replaceAll('ü', 'u')
+      .replaceAll('ñ', 'n').replaceAll('Á', 'A').replaceAll('É', 'E')
+      .replaceAll('Í', 'I').replaceAll('Ó', 'O').replaceAll('Ú', 'U')
+      .replaceAll('Ü', 'U').replaceAll('Ñ', 'N');
+
   /// Returns 3+ character keywords from a name, lowercased.
-  List<String> _keywords(String name) => name
+  List<String> _keywords(String name) => _normalize(name)
       .toLowerCase()
-      .replaceAll(RegExp(r'[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ\s]'), '')
+      .replaceAll(RegExp(r'[^a-zA-Z\s]'), '')
       .split(RegExp(r'\s+'))
       .where((w) => w.length >= 3)
       .toList();
 
   /// True if the description contains any keyword from the list.
   bool _matches(String description, List<String> keywords) {
-    final lower = description.toLowerCase();
+    final lower = _normalize(description).toLowerCase();
     return keywords.any(lower.contains);
   }
 

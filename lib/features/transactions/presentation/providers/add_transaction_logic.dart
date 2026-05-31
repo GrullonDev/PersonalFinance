@@ -70,10 +70,10 @@ class AddTransactionLogic extends ChangeNotifier {
       final result = await repo.create(entity);
       result.fold(
         (failure) => throw Exception(failure.message),
-        (_) {
+        (saved) {
           // Non-blocking: link transaction to matching goals/debts
           GetIt.instance<TransactionLinkingService>()
-              .processTransaction(entity)
+              .processTransaction(saved)
               .ignore();
         },
       );
