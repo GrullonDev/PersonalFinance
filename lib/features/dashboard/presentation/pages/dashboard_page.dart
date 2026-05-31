@@ -20,18 +20,51 @@ import 'package:personal_finance/core/services/vertex_ai_service.dart'
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/features/alerts/presentation/widgets/add_alert_modal.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) => ChangeNotifierProvider<DashboardLogic>(
-    create: (context) {
-      final logic = getIt<DashboardLogic>();
-      logic.loadDashboardData();
-      return logic;
-    },
-    child: const _DashboardContent(),
-  );
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> with RouteAware {
+  late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
+
+  @override
+  void initState() {
+    super.initState();
+    _routeObserver = getIt<RouteObserver<ModalRoute<dynamic>>>();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      _routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    _routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  /// Called when the route is first pushed onto the navigator.
+  @override
+  void didPush() {
+    context.read<DashboardLogic>().loadDashboardData();
+  }
+
+  /// Called when the user pops a route on top of this one (returns to dashboard).
+  @override
+  void didPopNext() {
+    context.read<DashboardLogic>().loadDashboardData();
+  }
+
+  @override
+  Widget build(BuildContext context) => const _DashboardContent();
 }
 
 class _DashboardContent extends StatelessWidget {
