@@ -72,6 +72,7 @@ import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
 import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
 import 'package:personal_finance/core/services/vertex_ai_service.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -204,6 +205,17 @@ Future<void> initDependencies() async {
       () => DebtRepositoryImpl(
         remoteDataSource: getIt<DebtRemoteDataSource>(),
         offlineSyncService: OfflineSyncService(),
+      ),
+    );
+  }
+
+  // TransactionLinkingService
+  if (!getIt.isRegistered<TransactionLinkingService>()) {
+    getIt.registerLazySingleton<TransactionLinkingService>(
+      () => TransactionLinkingService(
+        transactionRepo: getIt<backend_tx_repo.TransactionBackendRepository>(),
+        goalRepo: getIt<GoalRepository>(),
+        debtRepo: getIt<DebtRepository>(),
       ),
     );
   }
