@@ -26,10 +26,10 @@ Verificar que el proyecto compila limpio antes de abrir Xcode.
 **Comandos en orden:**
 ```bash
 cd /Users/jorgegrullon/Dev/PersonalFinance
-flutter clean
-flutter pub get
+fvm flutter clean
+fvm flutter pub get
 cd ios && pod install --repo-update && cd ..
-flutter build ios --release --no-codesign
+fvm flutter build ios --release --no-codesign
 ```
 
 **Criterio de éxito:** `flutter build ios` termina sin errores. Warnings de SPM/Kotlin son no-bloqueantes.
@@ -70,7 +70,7 @@ flutter build ios --release --no-codesign
 
 ## Criterios de éxito
 
-- [ ] `flutter build ios --release --no-codesign` termina sin errores
+- [ ] `fvm flutter build ios --release --no-codesign` termina sin errores
 - [ ] Archive completa sin errores de codesigning
 - [ ] Build visible en App Store Connect → TestFlight
 - [ ] Build supera la validación automática de Apple (sin errores de compliance)
