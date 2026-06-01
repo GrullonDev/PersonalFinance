@@ -185,9 +185,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
             'Tu resumen de hoy',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -197,90 +195,67 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
       scrolledUnderElevation: 1,
       leading: _ChatButton(),
       actions: [
-        // Botón sync
         BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
           buildWhen: (prev, curr) => prev.isSyncing != curr.isSyncing,
-          builder:
-              (context, state) => Row(
-                children: [
-                  IconButton(
-                    icon: RotationTransition(
-                      turns: _syncAnim,
-                      child: Icon(
-                        Icons.sync_rounded,
-                        color:
-                            state.isSyncing
-                                ? Theme.of(context).primaryColor
-                                : null,
-                      ),
-                    ),
-                    tooltip: state.isSyncing ? 'Sincronizando…' : 'Sincronizar',
-                    onPressed:
-                        state.isSyncing
-                            ? null
-                            : () => context.read<QuickFinanceBloc>().add(
-                              const SyncTransactionsRequested(),
-                            ),
+          builder: (context, state) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: RotationTransition(
+                  turns: _syncAnim,
+                  child: Icon(
+                    Icons.sync_rounded,
+                    color: state.isSyncing ? Theme.of(context).primaryColor : null,
                   ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color:
-                          state.isSyncing
-                              ? Theme.of(context).primaryColor
-                              : null,
+                ),
+                tooltip: state.isSyncing ? 'Sincronizando…' : 'Sincronizar',
+                onPressed: state.isSyncing
+                    ? null
+                    : () => context.read<QuickFinanceBloc>().add(
+                          const SyncTransactionsRequested(),
+                        ),
+              ),
+              PopupMenuButton<_MenuAction>(
+                icon: const Icon(Icons.more_vert_rounded),
+                tooltip: 'Más opciones',
+                onSelected: (action) {
+                  switch (action) {
+                    case _MenuAction.settings:
+                      Navigator.of(context).pushNamed(RoutePath.settings);
+                    case _MenuAction.logout:
+                      _logout();
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: _MenuAction.settings,
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings_outlined, size: 20),
+                        SizedBox(width: 12),
+                        Text('Configuración'),
+                      ],
                     ),
-                    onPressed:
-                        () =>
-                            Navigator.of(context).pushNamed(RoutePath.settings),
-                    tooltip: 'Configuración',
                   ),
-                  IconButton(
-                    onPressed: () => _logout(),
-                    icon: const Icon(Icons.logout_rounded, color: Colors.red),
-                    tooltip: 'Cerrar sesión',
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: _MenuAction.logout,
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout_rounded, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text(
+                          'Cerrar sesión',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
+            ],
+          ),
         ),
-        // Menú de opciones
-        /* PopupMenuButton<_MenuAction>(
-          icon: const Icon(Icons.more_vert_rounded),
-          onSelected: (action) {
-            switch (action) {
-              case _MenuAction.settings:
-                Navigator.of(context).pushNamed(RoutePath.settings);
-              case _MenuAction.logout:
-                _logout();
-            }
-          },
-          itemBuilder:
-              (_) => const [
-                PopupMenuItem(
-                  value: _MenuAction.settings,
-                  child: Row(
-                    children: [
-                      Icon(Icons.settings_outlined, size: 20),
-                      SizedBox(width: 12),
-                      Text('Configuración'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: _MenuAction.logout,
-                  child: Row(
-                    children: [
-                      Icon(Icons.logout_rounded, size: 20, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text(
-                        'Cerrar sesión',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-        ), */
       ],
     );
   }
@@ -291,7 +266,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
   }
 }
 
-// enum _MenuAction { settings, logout }
+enum _MenuAction { settings, logout }
 
 // ── Chat button con gate de suscripción ───────────────────────────────────────
 
@@ -431,23 +406,32 @@ class _BodyState extends State<_Body> {
                 child: _InsightBanner(insight: insight),
               ),
             ),
+          const SliverPadding(
+            padding: EdgeInsets.fromLTRB(0, 16, 0, 0),
+            sliver: SliverToBoxAdapter(child: _QuickActionsRow()),
+          ),
           SliverPadding(
-            padding: EdgeInsets.fromLTRB(20, insight != null ? 16 : 28, 20, 0),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _SectionBadge(
+                    label: 'REGISTRAR',
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(height: 7),
                   Text(
                     'Entrada rápida',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      letterSpacing: -0.3,
                     ),
                   ),
                   const SizedBox(height: 12),
                   QuickEntryInput(
                     key: widget.entryKey,
-                    onSubmit:
-                        (raw) => context.read<QuickFinanceBloc>().add(
+                    onSubmit: (raw) => context.read<QuickFinanceBloc>().add(
                           RawEntrySubmitted(raw),
                         ),
                   ),
@@ -456,25 +440,36 @@ class _BodyState extends State<_Body> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 36, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 8),
             sliver: SliverToBoxAdapter(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _SectionBadge(
+                        label: 'HISTORIAL',
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      if (widget.state.transactions.isNotEmpty)
+                        Text(
+                          '${widget.state.transactions.length} registros',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
                   Text(
                     'Movimientos recientes',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  if (widget.state.transactions.isNotEmpty)
-                    Text(
-                      '${widget.state.transactions.length} registros',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -632,6 +627,131 @@ class _SyncStatusRow extends StatelessWidget {
   }
 }
 
+// ── Quick actions row ─────────────────────────────────────────────────────────
+
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow();
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Row(
+      children: [
+        _QuickActionCard(
+          icon: Icons.flag_rounded,
+          label: 'Metas',
+          color: const Color(0xFF34C759),
+          onTap: () => Navigator.of(context).pushNamed(RoutePath.goals),
+        ),
+        const SizedBox(width: 10),
+        _QuickActionCard(
+          icon: Icons.pie_chart_rounded,
+          label: 'Presupuestos',
+          color: const Color(0xFF007AFF),
+          onTap: () => Navigator.of(context).pushNamed(RoutePath.budgetsCrud),
+        ),
+        const SizedBox(width: 10),
+        _QuickActionCard(
+          icon: Icons.credit_card_rounded,
+          label: 'Deudas',
+          color: const Color(0xFFFF9500),
+          onTap: () => Navigator.of(context).pushNamed(RoutePath.debts),
+        ),
+        const SizedBox(width: 10),
+        _QuickActionCard(
+          icon: Icons.grid_view_rounded,
+          label: 'Categorías',
+          color: const Color(0xFF5856D6),
+          onTap: () => Navigator.of(context).pushNamed(RoutePath.categories),
+        ),
+      ],
+    ),
+  );
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 78,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// ── Section badge (onboarding-style label) ────────────────────────────────────
+
+class _SectionBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _SectionBadge({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: color.withValues(alpha: 0.28)),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: 0.8,
+      ),
+    ),
+  );
+}
+
 // ── Insight banner ────────────────────────────────────────────────────────────
 
 class _InsightBanner extends StatelessWidget {
@@ -642,9 +762,12 @@ class _InsightBanner extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
     decoration: BoxDecoration(
-      color: insight.color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: insight.color.withValues(alpha: 0.20)),
+      color: insight.color.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(
+        color: insight.color.withValues(alpha: 0.35),
+        width: 1.2,
+      ),
     ),
     child: Row(
       children: [
@@ -653,7 +776,11 @@ class _InsightBanner extends StatelessWidget {
         Expanded(
           child: Text(
             insight.text,
-            style: TextStyle(fontSize: 13, color: insight.color),
+            style: TextStyle(
+              fontSize: 13,
+              color: insight.color,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],

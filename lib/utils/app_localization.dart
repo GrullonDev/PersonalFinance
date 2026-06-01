@@ -33,18 +33,23 @@ class AppLocalizations {
       'add': 'Add',
       'addIncome': 'Add Income',
       'addExpense': 'Add Expense',
-      'step1Title': 'Know where your money goes',
+      'step1Title': 'Take Control',
       'step1Desc':
-          'Log income and expenses in seconds. Real-time balance, always in your pocket.',
-      'step1Badge': 'Full Control',
-      'step2Title': 'Your progress, always visible',
+          'Track every cent. Record income and expenses automatically and see where your money goes.',
+      'step1Badge': 'Total Control',
+      'step1Pill1': 'Auto Sync',
+      'step1Pill2': 'Real-time Insights',
+      'step2Title': 'Say Goodbye to Debt',
       'step2Desc':
-          'Analyze by day, week, or month. Spot patterns and make smarter financial decisions.',
-      'step2Badge': 'Smart Analytics',
-      'step3Title': "Goals you'll actually reach",
+          'Break the debt cycle. Learn to manage your credit and keep your finances free of burdens.',
+      'step2Badge': 'Debt Free',
+      'step3Title': 'Your Path to Freedom',
       'step3Desc':
-          'Set targets for 3, 6 months or 1 year. We show you exactly how much to save each week.',
-      'step3Badge': 'Strategic Saving',
+          'Build your future. Save, invest and reach the financial freedom you deserve with clear goals.',
+      'step3Badge': 'Financial Freedom',
+      'step3Achievement': 'Goal Reached',
+      'getStartedNow': 'Start Now',
+      'alreadyHaveAccount': 'Already have an account? Sign in',
       'skip': 'Skip',
       'step4Title': 'How will you use the app?',
       'step4Desc': 'Choose the profile that best fits you.',
@@ -82,18 +87,23 @@ class AppLocalizations {
       'add': 'Agregar',
       'addIncome': 'Agregar Ingreso',
       'addExpense': 'Agregar Gasto',
-      'step1Title': 'Sabe a dónde va tu dinero',
+      'step1Title': 'Toma el Control',
       'step1Desc':
-          'Registra ingresos y gastos en segundos. Tu balance real, siempre en tu bolsillo.',
-      'step1Badge': 'Control total',
-      'step2Title': 'Tu progreso, siempre visible',
+          'Controla cada centavo. Registra tus gastos e ingresos de forma automática y visualiza a dónde va tu dinero.',
+      'step1Badge': 'Control Total',
+      'step1Pill1': 'Sincronización Automática',
+      'step1Pill2': 'Insights en Tiempo Real',
+      'step2Title': 'Dile Adiós a las Deudas',
       'step2Desc':
-          'Analiza por día, semana o mes. Detecta patrones y toma mejores decisiones financieras.',
-      'step2Badge': 'Análisis inteligente',
-      'step3Title': 'Metas que sí se cumplen',
+          'Evita el ciclo de la deuda. Aprende a gestionar tus créditos y mantén tu salud financiera libre de compromisos.',
+      'step2Badge': 'Vida sin Deudas',
+      'step3Title': 'Tu Camino a la Libertad',
       'step3Desc':
-          'Define objetivos a 3, 6 meses o 1 año. Te mostramos cuánto ahorrar cada semana para lograrlo.',
-      'step3Badge': 'Ahorro estratégico',
+          'Construye tu futuro. Ahorra, invierte y alcanza la libertad financiera que mereces con metas claras.',
+      'step3Badge': 'Libertad Financiera',
+      'step3Achievement': 'Meta alcanzada',
+      'getStartedNow': 'Comenzar Ahora',
+      'alreadyHaveAccount': '¿Ya tienes una cuenta? Iniciar sesión',
       'skip': 'Saltar',
       'step4Title': '¿Para qué usarás la app?',
       'step4Desc': 'Elige el perfil que mejor se adapte a ti.',
@@ -146,6 +156,11 @@ class AppLocalizations {
   String get step2Desc => _text('step2Desc');
   String get step3Title => _text('step3Title');
   String get step3Desc => _text('step3Desc');
+  String get step1Pill1 => _text('step1Pill1');
+  String get step1Pill2 => _text('step1Pill2');
+  String get step3Achievement => _text('step3Achievement');
+  String get getStartedNow => _text('getStartedNow');
+  String get alreadyHaveAccount => _text('alreadyHaveAccount');
   String get step4Title => _text('step4Title');
   String get step4Desc => _text('step4Desc');
   String get usagePersonal => _text('usagePersonal');
