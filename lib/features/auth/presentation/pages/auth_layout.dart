@@ -103,9 +103,9 @@ class _AuthLayoutState extends State<AuthLayout> {
         child: ElevatedButton(
           onPressed: auth.isLoading ? null : () => _handleGoogle(context, auth),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF1F1F1F),
-            disabledBackgroundColor: Colors.white.withValues(alpha: 0.7),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            disabledBackgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
             elevation: 0,
             shadowColor: Colors.transparent,
             shape: RoundedRectangleBorder(
@@ -114,7 +114,7 @@ class _AuthLayoutState extends State<AuthLayout> {
           ).copyWith(
             // Sombra ligera sin usar elevation para evitar el tinte de color
             overlayColor: WidgetStateProperty.all(
-              Colors.grey.withValues(alpha: 0.08),
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
             ),
           ),
           child: DecoratedBox(
@@ -122,7 +122,7 @@ class _AuthLayoutState extends State<AuthLayout> {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.10),
+                  color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.10),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -130,13 +130,13 @@ class _AuthLayoutState extends State<AuthLayout> {
             ),
             child:
                 auth.isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                       height: 22,
                       width: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF1F1F1F),
+                          Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     )
@@ -146,12 +146,12 @@ class _AuthLayoutState extends State<AuthLayout> {
                         // Icono Google con colores reales (sin ColorFilter)
                         SvgPicture.asset('assets/icons/google.svg', height: 22),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           'Continuar con Google',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F1F1F),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -180,7 +180,7 @@ class _AuthLayoutState extends State<AuthLayout> {
   // ── Divider ───────────────────────────────────────────────────────────────
 
   Widget _buildDivider(BuildContext context) {
-    final lineColor = Colors.white.withValues(alpha: 0.12);
+    final lineColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12 * 0.5);
     return Row(
       children: [
         Expanded(child: Divider(color: lineColor, thickness: 1)),
@@ -513,9 +513,9 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: const Color(0xFF1A1F2E),
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08 * 0.5)),
     ),
     child: Padding(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -537,10 +537,10 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Verifica tu correo electrónico',
             style: TextStyle(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
@@ -551,7 +551,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             textAlign: TextAlign.center,
             text: TextSpan(
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65 * 0.5),
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -561,8 +561,8 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
                 ),
                 TextSpan(
                   text: widget.email,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -612,13 +612,13 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
               onPressed: (_resending || _resent) ? null : _resendEmail,
               icon:
                   _resending
-                      ? const SizedBox(
+                      ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white54,
+                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54 * 0.5),
                           ),
                         ),
                       )
@@ -638,12 +638,12 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor:
-                    _resent ? _kGreen : Colors.white.withValues(alpha: 0.85),
+                    _resent ? _kGreen : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85 * 0.5),
                 side: BorderSide(
                   color:
                       _resent
                           ? _kGreen.withValues(alpha: 0.4)
-                          : Colors.white.withValues(alpha: 0.15),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15 * 0.5),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -661,7 +661,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             child: TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                foregroundColor: Colors.white.withValues(alpha: 0.5),
+                foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5 * 0.5),
               ),
               child: const Text('Entendido'),
             ),
