@@ -385,7 +385,7 @@ class _DashboardContent extends StatelessWidget {
   Widget _buildHeader(BuildContext context, DashboardLogic logic) {
     final primaryColor = Theme.of(context).colorScheme.primary;
     // Crear variantes del color primario verde para el gradiente
-    final lightGreen = Color.lerp(primaryColor, Colors.white, 0.2)!;
+    final lightGreen = Color.lerp(primaryColor, Theme.of(context).colorScheme.surface, 0.2)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -631,7 +631,7 @@ class _DashboardContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 // Balance total
-                _buildBalanceHeader(logic),
+                _buildBalanceHeader(context, logic),
                 const SizedBox(
                   height: 30,
                 ), // Extra padding for the overlay effect
@@ -808,7 +808,7 @@ class _DashboardContent extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.blueAccent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
                       ),
                     ),
                   ),
@@ -850,11 +850,11 @@ class _DashboardContent extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
+                          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -894,9 +894,9 @@ class _DashboardContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildBalanceHeader(DashboardLogic logic) {
+  Widget _buildBalanceHeader(BuildContext context, DashboardLogic logic) {
     final bool isPositive = logic.balance >= 0;
-    final Color balanceColor = isPositive ? Colors.white : Colors.red.shade200;
+    final Color balanceColor = isPositive ? Colors.white : Theme.of(context).colorScheme.error.withValues(alpha: 0.7);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1223,7 +1223,7 @@ class _DashboardContent extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1271,7 +1271,7 @@ class _DashboardContent extends StatelessWidget {
                         CircularProgressIndicator(
                           value: (score?.score ?? 0) / 100,
                           strokeWidth: 6,
-                          backgroundColor: Colors.grey.withValues(alpha: 0.15),
+                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             scoreColor(score?.score ?? 0),
                           ),
@@ -1572,7 +1572,7 @@ class _DashboardContent extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.outline,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
