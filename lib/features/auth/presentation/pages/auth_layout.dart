@@ -180,7 +180,7 @@ class _AuthLayoutState extends State<AuthLayout> {
   // ── Divider ───────────────────────────────────────────────────────────────
 
   Widget _buildDivider(BuildContext context) {
-    final lineColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12 * 0.5);
+    final lineColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
     return Row(
       children: [
         Expanded(child: Divider(color: lineColor, thickness: 1)),
@@ -515,7 +515,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08 * 0.5)),
+      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
     ),
     child: Padding(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -551,7 +551,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             textAlign: TextAlign.center,
             text: TextSpan(
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65 * 0.5),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -618,7 +618,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54 * 0.5),
+                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                           ),
                         ),
                       )
@@ -638,12 +638,12 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor:
-                    _resent ? _kGreen : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85 * 0.5),
+                    _resent ? _kGreen : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
                 side: BorderSide(
                   color:
                       _resent
                           ? _kGreen.withValues(alpha: 0.4)
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15 * 0.5),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -661,7 +661,7 @@ class _VerificationBottomSheetState extends State<_VerificationBottomSheet> {
             child: TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5 * 0.5),
+                foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               child: const Text('Entendido'),
             ),
