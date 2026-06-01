@@ -150,41 +150,28 @@ class AuthProvider extends ChangeNotifier {
 
   /// Fetches the current user from the repository and updates [_currentUser].
   /// Does NOT touch [_isLoading] — callers manage loading state themselves.
+  /// Callers are responsible for calling [syncSessionFromFirebase] before this.
   Future<Either<AuthFailure, CurrentUserResponse>> _fetchUserData() async {
-    _errorMessage = null;
-
     try {
-      final bool restored = await syncSessionFromFirebase();
-      if (!restored) {
-        _errorMessage =
-            'Tu sesión no está disponible. Inicia sesión nuevamente.';
-        notifyListeners();
-        return const Left(
-          AuthFailure(
-            message: 'Tu sesión no está disponible. Inicia sesión nuevamente.',
-          ),
-        );
-      }
-
       final Either<AuthFailure, CurrentUserResponse> result =
           await authRepository.getCurrentUser();
-      return result.fold(
-        (AuthFailure failure) {
-          _errorMessage = _localizeAuthMessage(failure.message);
-          if (failure.message.toLowerCase().contains('expired') ||
-              failure.message.toLowerCase().contains('invalid')) {
-            _clearAuthData();
-          }
-          notifyListeners();
-          return Left(AuthFailure(message: _errorMessage!));
-        },
-        (CurrentUserResponse user) {
-          _currentUser = user;
-          _saveAuthData();
-          notifyListeners();
-          return Right(user);
-        },
-      );
+
+      if (result.isLeft()) {
+        final failure = (result as Left<AuthFailure, CurrentUserResponse>).value;
+        _errorMessage = _localizeAuthMessage(failure.message);
+        if (failure.message.toLowerCase().contains('expired') ||
+            failure.message.toLowerCase().contains('invalid')) {
+          await _clearAuthData();
+        }
+        notifyListeners();
+        return Left(AuthFailure(message: _errorMessage!));
+      } else {
+        final user = (result as Right<AuthFailure, CurrentUserResponse>).value;
+        _currentUser = user;
+        _saveAuthData();
+        notifyListeners();
+        return Right(user);
+      }
     } catch (e) {
       _errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
       await _clearAuthData();
@@ -211,10 +198,7 @@ class AuthProvider extends ChangeNotifier {
 
   // Expone un manejador para eventos de reanudación de la app (foreground)
   Future<void> onAppResumed() async {
-    final bool ok = await syncSessionFromFirebase();
-    if (ok) {
-      await loadCurrentUser();
-    }
+    await loadCurrentUser();
   }
 
   Future<bool> syncSessionFromFirebase({
@@ -454,13 +438,22 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<Either<AuthFailure, CurrentUserResponse>> loadCurrentUser() async {
-    _isLoading = true;
-    notifyListeners();
+    _setLoading(true);
     try {
+      final bool restored = await syncSessionFromFirebase();
+      if (!restored) {
+        _errorMessage =
+            'Tu sesión no está disponible. Inicia sesión nuevamente.';
+        notifyListeners();
+        return const Left(
+          AuthFailure(
+            message: 'Tu sesión no está disponible. Inicia sesión nuevamente.',
+          ),
+        );
+      }
       return await _fetchUserData();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
