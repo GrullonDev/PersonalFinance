@@ -329,7 +329,7 @@ class _GoalsViewState extends State<_GoalsView> {
                     ),
                     confirmDismiss: (_) => _confirmDelete(context),
                     onDismissed:
-                        (_) => context.read<GoalsBloc>().add(GoalDelete(g.id!)),
+                        (_) => context.read<GoalsBloc>().add(GoalDelete(g.id ?? '')),
                     child: Card(
                       clipBehavior: Clip.antiAlias,
                       color:
