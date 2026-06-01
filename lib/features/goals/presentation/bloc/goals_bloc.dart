@@ -195,7 +195,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     if (event.id.isEmpty) {
       emit(
         state.copyWith(
-          items: state.items.where((Goal e) => e.id != event.id).toList(),
+          items: state.items.where((Goal e) => (e.id ?? '').isNotEmpty).toList(),
         ),
       );
       return;
