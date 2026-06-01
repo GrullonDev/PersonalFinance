@@ -177,7 +177,7 @@ class _DateTile extends StatelessWidget {
             context: context,
             initialDate: value,
             firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
+            lastDate: DateTime(DateTime.now().year + 6, 12, 31),
           );
           if (picked != null) onPick(picked);
         },
