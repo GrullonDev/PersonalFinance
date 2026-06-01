@@ -50,7 +50,7 @@ class DebtRemoteDataSourceImpl extends BaseFirestoreService<DebtModel>
   @override
   Future<void> deleteDebt(String id) async {
     try {
-      await softDelete(id);
+      await hardDelete(id);
     } catch (e) {
       throw ApiException(message: e.toString(), statusCode: 500);
     }
