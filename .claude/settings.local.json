@@ -9,7 +9,12 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && ls {} 2>/dev/null | head -5')",
-      "Bash(grep -v \":0$\")"
+      "Bash(grep -v \":0$\")",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(git commit:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(git checkout:*)",
+      "Bash(grep -r import.*budget/ /Users/jorgegrullon/Dev/PersonalFinance/lib/)"
     ]
   }
 }
