@@ -79,7 +79,7 @@ class AuthProvider extends ChangeNotifier {
             _setLoading(false);
             return false;
           }
-          await loadCurrentUser();
+          await _fetchUserData();
           await LocalAuthService().login();
           _setLoading(false);
           _setError(null);
@@ -112,7 +112,7 @@ class AuthProvider extends ChangeNotifier {
             _setLoading(false);
             return false;
           }
-          await loadCurrentUser();
+          await _fetchUserData();
           await LocalAuthService().login();
           _setLoading(false);
           _setError(null);
@@ -146,6 +146,53 @@ class AuthProvider extends ChangeNotifier {
     await _saveAuthData();
     // We already have current user data, so notify
     notifyListeners();
+  }
+
+  /// Fetches the current user from the repository and updates [_currentUser].
+  /// Does NOT touch [_isLoading] — callers manage loading state themselves.
+  Future<Either<AuthFailure, CurrentUserResponse>> _fetchUserData() async {
+    _errorMessage = null;
+
+    try {
+      final bool restored = await syncSessionFromFirebase();
+      if (!restored) {
+        _errorMessage =
+            'Tu sesión no está disponible. Inicia sesión nuevamente.';
+        notifyListeners();
+        return const Left(
+          AuthFailure(
+            message: 'Tu sesión no está disponible. Inicia sesión nuevamente.',
+          ),
+        );
+      }
+
+      final Either<AuthFailure, CurrentUserResponse> result =
+          await authRepository.getCurrentUser();
+      return result.fold(
+        (AuthFailure failure) {
+          _errorMessage = _localizeAuthMessage(failure.message);
+          if (failure.message.toLowerCase().contains('expired') ||
+              failure.message.toLowerCase().contains('invalid')) {
+            _clearAuthData();
+          }
+          notifyListeners();
+          return Left(AuthFailure(message: _errorMessage!));
+        },
+        (CurrentUserResponse user) {
+          _currentUser = user;
+          _saveAuthData();
+          notifyListeners();
+          return Right(user);
+        },
+      );
+    } catch (e) {
+      _errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
+      await _clearAuthData();
+      notifyListeners();
+      return const Left(
+        AuthFailure(message: 'Ocurrió un error inesperado. Intenta de nuevo.'),
+      );
+    }
   }
 
   Future<void> logout() async {
@@ -408,48 +455,9 @@ class AuthProvider extends ChangeNotifier {
 
   Future<Either<AuthFailure, CurrentUserResponse>> loadCurrentUser() async {
     _isLoading = true;
-    _errorMessage = null;
     notifyListeners();
-
     try {
-      final bool restored = await syncSessionFromFirebase();
-      if (!restored) {
-        _errorMessage =
-            'Tu sesión no está disponible. Inicia sesión nuevamente.';
-        notifyListeners();
-        return const Left(
-          AuthFailure(
-            message: 'Tu sesión no está disponible. Inicia sesión nuevamente.',
-          ),
-        );
-      }
-
-      final Either<AuthFailure, CurrentUserResponse> result =
-          await authRepository.getCurrentUser();
-      return result.fold(
-        (AuthFailure failure) {
-          _errorMessage = _localizeAuthMessage(failure.message);
-          if (failure.message.toLowerCase().contains('expired') ||
-              failure.message.toLowerCase().contains('invalid')) {
-            _clearAuthData();
-          }
-          notifyListeners();
-          return Left(AuthFailure(message: _errorMessage!));
-        },
-        (CurrentUserResponse user) {
-          _currentUser = user;
-          _saveAuthData();
-          notifyListeners();
-          return Right(user);
-        },
-      );
-    } catch (e) {
-      _errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
-      await _clearAuthData();
-      notifyListeners();
-      return const Left(
-        AuthFailure(message: 'Ocurrió un error inesperado. Intenta de nuevo.'),
-      );
+      return await _fetchUserData();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -538,7 +546,7 @@ class AuthProvider extends ChangeNotifier {
             );
           }
           await LocalAuthService().login();
-          await loadCurrentUser();
+          await _fetchUserData();
           return const Right(null);
         },
       );
