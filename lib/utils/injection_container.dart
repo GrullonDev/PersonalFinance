@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart' show RouteObserver, ModalRoute;
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -72,6 +73,7 @@ import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
 import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
 import 'package:personal_finance/core/services/vertex_ai_service.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -220,6 +222,17 @@ Future<void> initDependencies() async {
     getIt.registerLazySingleton<backend_tx_repo.TransactionBackendRepository>(
       () => backend_tx_repo_impl.TransactionBackendRepositoryImpl(
         getIt<backend_tx_ds.TransactionBackendRemoteDataSource>(),
+      ),
+    );
+  }
+
+  // TransactionLinkingService
+  if (!getIt.isRegistered<TransactionLinkingService>()) {
+    getIt.registerLazySingleton<TransactionLinkingService>(
+      () => TransactionLinkingService(
+        transactionRepo: getIt<backend_tx_repo.TransactionBackendRepository>(),
+        goalRepo: getIt<GoalRepository>(),
+        debtRepo: getIt<DebtRepository>(),
       ),
     );
   }
@@ -387,6 +400,13 @@ Future<void> initDependencies() async {
 
   if (!getIt.isRegistered<NavigationService>()) {
     getIt.registerLazySingleton<NavigationService>(() => NavigationService());
+  }
+
+  // RouteObserver — used by DashboardPage to auto-refresh on navigation return
+  if (!getIt.isRegistered<RouteObserver<ModalRoute<dynamic>>>()) {
+    getIt.registerSingleton<RouteObserver<ModalRoute<dynamic>>>(
+      RouteObserver<ModalRoute<dynamic>>(),
+    );
   }
 
   if (!getIt.isRegistered<notif_inbox_repo.NotificationInboxRepository>()) {

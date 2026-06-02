@@ -4,6 +4,7 @@ import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/theme.dart';
 
 enum _Period { today, week, month }
 
@@ -89,13 +90,14 @@ class _BalanceCardState extends State<BalanceCard> {
     }
   }
 
-  Color get _insightColor {
+  Color _insightColor(BuildContext context) {
+    final neutral = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
     switch (_period) {
       case _Period.today:
       case _Period.week:
-        return _expenses > 0 ? const Color(0xFFFF9500) : Colors.grey.shade400;
+        return _expenses > 0 ? const Color(0xFFFF9500) : neutral;
       case _Period.month:
-        return _balance < 0 ? const Color(0xFFFF3B30) : Colors.grey.shade400;
+        return _balance < 0 ? const Color(0xFFFF3B30) : neutral;
     }
   }
 
@@ -141,12 +143,11 @@ class _BalanceCardState extends State<BalanceCard> {
     final effectiveHidden = widget.forceHidden || _hidden;
     final accent = Theme.of(context).primaryColor;
     final balance = _balance;
+    final financeColors = Theme.of(context).extension<FinanceColors>()!;
     final balanceColor =
         effectiveHidden
             ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)
-            : (balance >= 0
-                ? const Color(0xFF34C759)
-                : const Color(0xFFFF3B30));
+            : (balance >= 0 ? financeColors.income : financeColors.expense);
 
     final periodLabel = switch (_period) {
       _Period.today => 'hoy',
@@ -162,7 +163,7 @@ class _BalanceCardState extends State<BalanceCard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -188,7 +189,7 @@ class _BalanceCardState extends State<BalanceCard> {
                       : effectiveHidden
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: Colors.grey.shade400,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   size: 18,
                 ),
               ),
@@ -201,7 +202,7 @@ class _BalanceCardState extends State<BalanceCard> {
             'Balance $periodLabel',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade500,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,
             ),
@@ -226,11 +227,11 @@ class _BalanceCardState extends State<BalanceCard> {
           // Insight accionable
           Row(
             children: [
-              Icon(_insightIcon, size: 13, color: _insightColor),
+              Icon(_insightIcon, size: 13, color: _insightColor(context)),
               const SizedBox(width: 5),
               Text(
                 _insightText,
-                style: TextStyle(fontSize: 12, color: _insightColor),
+                style: TextStyle(fontSize: 12, color: _insightColor(context)),
               ),
             ],
           ),
@@ -238,7 +239,7 @@ class _BalanceCardState extends State<BalanceCard> {
             const SizedBox(height: 10),
             Text(
               'Private mode activo: los montos permanecen ocultos en toda la app.',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
             ),
           ],
 
@@ -283,19 +284,19 @@ class _BalanceCardState extends State<BalanceCard> {
                 Icon(
                   Icons.bar_chart_rounded,
                   size: 13,
-                  color: Colors.grey.shade500,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 5),
                 Text(
                   'Mayor gasto: ',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                 ),
                 Text(
                   '${top.label} (${top.pct}%)',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -413,7 +414,7 @@ class _PeriodSelector extends StatelessWidget {
                       isSelected
                           ? [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
+                              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
@@ -425,7 +426,7 @@ class _PeriodSelector extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? accent : Colors.grey.shade500,
+                    color: isSelected ? accent : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ),
@@ -472,7 +473,7 @@ class _StatRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
             ),
             Text(
               hidden ? '••' : CurrencyHelper.format(amount),

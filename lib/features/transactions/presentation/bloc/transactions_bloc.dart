@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:personal_finance/core/error/failures.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart';
@@ -139,12 +141,18 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     final Either<Failure, TransactionBackend> r = await _repo.create(e.payload);
     r.fold(
       (Failure l) => emit(state.copyWith(loading: false, error: l.message)),
-      (TransactionBackend t) => emit(
-        state.copyWith(
-          loading: false,
-          items: <TransactionBackend>[t, ...state.items],
-        ),
-      ),
+      (TransactionBackend t) {
+        emit(
+          state.copyWith(
+            loading: false,
+            items: <TransactionBackend>[t, ...state.items],
+          ),
+        );
+        // Non-blocking: link transaction to matching goals/debts
+        GetIt.instance<TransactionLinkingService>()
+            .processTransaction(t)
+            .ignore();
+      },
     );
   }
 
