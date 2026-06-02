@@ -449,10 +449,16 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   Future<Goal?> _findGoalByName(String name) async {
     final res = await goalRepository.getGoals();
     return res.fold((_) => null, (goals) {
-      final searchName = name.trim().toLowerCase();
+      final query = name.trim().toLowerCase();
       for (final goal in goals) {
-        if (goal.nombre.trim().toLowerCase() == searchName) {
-          return goal;
+        if (goal.nombre.trim().toLowerCase() == query) return goal;
+      }
+      if (query.length >= 3) {
+        for (final goal in goals) {
+          final goalName = goal.nombre.trim().toLowerCase();
+          if (goalName.contains(query) || query.contains(goalName)) {
+            return goal;
+          }
         }
       }
       return null;
@@ -462,10 +468,16 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   Future<Debt?> _findDebtByName(String name) async {
     final res = await debtRepository.getDebts();
     return res.fold((_) => null, (debts) {
-      final searchName = name.trim().toLowerCase();
+      final query = name.trim().toLowerCase();
       for (final debt in debts) {
-        if (debt.name.trim().toLowerCase() == searchName) {
-          return debt;
+        if (debt.name.trim().toLowerCase() == query) return debt;
+      }
+      if (query.length >= 3) {
+        for (final debt in debts) {
+          final debtName = debt.name.trim().toLowerCase();
+          if (debtName.contains(query) || query.contains(debtName)) {
+            return debt;
+          }
         }
       }
       return null;
