@@ -191,6 +191,15 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
   }
 
   Future<void> _onDelete(GoalDelete event, Emitter<GoalsState> emit) async {
+    // If ID is null/empty the goal was never persisted in Firestore — skip remote delete.
+    if (event.id.isEmpty) {
+      emit(
+        state.copyWith(
+          items: state.items.where((Goal e) => (e.id ?? '').isNotEmpty).toList(),
+        ),
+      );
+      return;
+    }
     emit(state.copyWith(loading: true));
     final Either<Failure, void> r = await _repo.deleteGoal(event.id);
     r.fold(
