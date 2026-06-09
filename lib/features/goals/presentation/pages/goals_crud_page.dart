@@ -7,6 +7,7 @@ import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
 import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
@@ -307,7 +308,7 @@ class _GoalsViewState extends State<_GoalsView> {
                     ),
                     confirmDismiss: (_) => _confirmDelete(context),
                     onDismissed:
-                        (_) => context.read<GoalsBloc>().add(GoalDelete(g.id!)),
+                        (_) => context.read<GoalsBloc>().add(GoalDelete(g.id ?? '')),
                     child: Card(
                       clipBehavior: Clip.antiAlias,
                       color:
@@ -458,6 +459,7 @@ class _GoalsViewState extends State<_GoalsView> {
     final TextEditingController currentCtrl = TextEditingController(
       text: goal?.actualAsDouble.toStringAsFixed(2) ?? '0',
     );
+    bool isDetecting = false;
     final TextEditingController iconCtrl = TextEditingController(
       text: goal?.icono ?? 'flag',
     );
@@ -708,6 +710,7 @@ class _GoalsViewState extends State<_GoalsView> {
               );
             },
           ),
+        ),
     );
 
     if (saved == true && context.mounted) {

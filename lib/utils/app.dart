@@ -159,6 +159,7 @@ class MyApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             navigatorObservers: <NavigatorObserver>[
+              getIt<RouteObserver<ModalRoute<dynamic>>>(),
               if (Firebase.apps.isNotEmpty)
                 FirebaseAnalyticsObserver(
                   analytics: FirebaseAnalytics.instance,
