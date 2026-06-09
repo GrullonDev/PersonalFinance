@@ -46,16 +46,30 @@ class TransactionBackendRemoteDataSourceImpl
         results = results.where((tx) => tx.profileType == profileType).toList();
       }
 
-      if (fechaDesde != null) {
-        final DateTime start = DateUtils.dateOnly(fechaDesde);
-        results = results.where((tx) => !tx.fecha.isBefore(start)).toList();
-      }
+      if (fechaDesde != null || fechaHasta != null) {
+        final DateTime? start =
+            fechaDesde != null ? DateUtils.dateOnly(fechaDesde) : null;
+        final DateTime? end =
+            fechaHasta != null
+                ? DateUtils.dateOnly(fechaHasta)
+                    .add(const Duration(days: 1))
+                    .subtract(const Duration(milliseconds: 1))
+                : null;
 
-      if (fechaHasta != null) {
-        final DateTime end = DateUtils.dateOnly(fechaHasta)
-            .add(const Duration(days: 1))
-            .subtract(const Duration(milliseconds: 1));
-        results = results.where((tx) => !tx.fecha.isAfter(end)).toList();
+        results = results.where((tx) {
+          // A transaction belongs to the period if either its user-entered
+          // date (fecha) or its Firestore recording timestamp (createdAt)
+          // falls within the range — covers backdated and forward-dated entries.
+          final bool fechaInRange =
+              (start == null ||
+                  !DateUtils.dateOnly(tx.fecha).isBefore(start)) &&
+              (end == null || !tx.fecha.isAfter(end));
+          final bool createdAtInRange =
+              (start == null ||
+                  !DateUtils.dateOnly(tx.createdAt).isBefore(start)) &&
+              (end == null || !tx.createdAt.isAfter(end));
+          return fechaInRange || createdAtInRange;
+        }).toList();
       }
 
       if (categoriaId != null && categoriaId != '0' && categoriaId.isNotEmpty) {

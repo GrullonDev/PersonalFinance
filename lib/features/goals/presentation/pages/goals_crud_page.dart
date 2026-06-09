@@ -36,8 +36,32 @@ Future<bool> _confirmDelete(BuildContext context) async {
   return confirm ?? false;
 }
 
-String _fmt(DateTime d) =>
-    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String _fmtReadable(DateTime d) {
+  const List<String> months = [
+    'ene',
+    'feb',
+    'mar',
+    'abr',
+    'may',
+    'jun',
+    'jul',
+    'ago',
+    'sep',
+    'oct',
+    'nov',
+    'dic',
+  ];
+  return '${d.day} ${months[d.month - 1]}. ${d.year}';
+}
+
+const List<String> _kPresetLabels = <String>[
+  '1 mes',
+  '3 meses',
+  '6 meses',
+  '1 año',
+  '2 años',
+];
+const List<int> _kPresetDays = <int>[30, 90, 180, 365, 730];
 
 // Helpers for icon picking/rendering
 IconData _iconFromName(String name) {
@@ -152,51 +176,6 @@ class GoalsCrudPage extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider<GoalsBloc>.value(
     value: getIt<GoalsBloc>()..add(GoalsLoad()),
     child: _GoalsView(showAppBar: showAppBar),
-  );
-}
-
-class _DateTile extends StatelessWidget {
-  final String label;
-  final DateTime value;
-  final ValueChanged<DateTime> onPick;
-  const _DateTile({
-    required this.label,
-    required this.value,
-    required this.onPick,
-  });
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      Text(label, style: Theme.of(context).textTheme.bodySmall),
-      const SizedBox(height: 4),
-      InkWell(
-        onTap: () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: value,
-            firstDate: DateTime(2000),
-            lastDate: DateTime(DateTime.now().year + 6, 12, 31),
-          );
-          if (picked != null) onPick(picked);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.date_range, size: 18),
-              const SizedBox(width: 8),
-              Text(_fmt(value)),
-            ],
-          ),
-        ),
-      ),
-    ],
   );
 }
 
@@ -367,7 +346,7 @@ class _GoalsViewState extends State<_GoalsView> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Meta: ${_fmt(g.fechaLimite)}',
+                                          'Meta: ${_fmtReadable(g.fechaLimite)}',
                                           style:
                                               Theme.of(
                                                 context,
@@ -486,185 +465,250 @@ class _GoalsViewState extends State<_GoalsView> {
     );
     DateTime limit =
         goal?.fechaLimite ?? DateTime.now().add(const Duration(days: 90));
+    String? selectedPreset = goal == null ? '3 meses' : null;
 
     final bool? saved = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setDialogState) => AlertDialog(
-            title: Text(goal == null ? 'Crear meta' : 'Editar meta'),
-            content: Form(
-              key: key,
-              child: SizedBox(
-                width: 360,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      TextFormField(
-                        controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: 'Nombre'),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
-                          LengthLimitingTextInputFormatter(120),
-                        ],
-                        validator:
-                            (String? v) => InputSanitizer.validateName(v ?? ''),
-                      ),
-                      if (goal == null) // Only show for new goals
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: isDetecting
-                                ? null
-                                : () async {
-                                    final name = nameCtrl.text.trim();
-                                    if (name.length < 3) return;
-                                    setDialogState(() => isDetecting = true);
-                                    try {
-                                      final matched = await getIt<TransactionLinkingService>()
-                                          .sumMatchingTransactions(name, 'ingreso');
-                                      if (matched > 0) {
-                                        currentCtrl.text = matched.toStringAsFixed(2);
-                                      }
-                                    } finally {
-                                      setDialogState(() => isDetecting = false);
-                                    }
-                                  },
-                            icon: isDetecting
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.search, size: 16),
-                            label: const Text('Detectar transacciones', style: TextStyle(fontSize: 12)),
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: targetCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Monto objetivo',
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d+\.?\d{0,2}'),
-                          ),
-                          LengthLimitingTextInputFormatter(15),
-                        ],
-                        validator:
-                            (String? v) =>
-                                InputSanitizer.validateAmount(v ?? ''),
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: currentCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Monto actual',
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d+\.?\d{0,2}'),
-                          ),
-                          LengthLimitingTextInputFormatter(15),
-                        ],
-                        validator: (String? v) {
-                          if (v == null || v.isEmpty) return 'Requerido';
-                          final val = double.tryParse(v);
-                          if (val == null || val < 0) return 'Monto inválido';
-                          if (val > 999999999) return 'Monto demasiado grande';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _DateTile(
-                        label: 'Fecha límite',
-                        value: limit,
-                        onPick: (DateTime d) => limit = d,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
+      builder:
+          (BuildContext dlgCtx) => StatefulBuilder(
+            builder: (BuildContext dlgCtx, StateSetter setDialogState) {
+              final DateTime now = DateTime.now();
+              final int daysLeft = limit.difference(now).inDays;
+              return AlertDialog(
+                title: Text(goal == null ? 'Crear meta' : 'Editar meta'),
+                content: Form(
+                  key: key,
+                  child: SizedBox(
+                    width: 360,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Expanded(
-                            child: TextFormField(
-                              controller: iconCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Icono (nombre Material)',
-                              ),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'[a-zA-Z0-9_\-\.]'),
-                                ),
-                                LengthLimitingTextInputFormatter(50),
-                              ],
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return 'Requerido';
-                                }
-                                if (!RegExp(
-                                  r'^[a-zA-Z0-9_\-\.]+$',
-                                ).hasMatch(v.trim())) {
-                                  return 'Icono inválido';
-                                }
-                                return null;
-                              },
+                          TextFormField(
+                            controller: nameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Nombre',
                             ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                              LengthLimitingTextInputFormatter(120),
+                            ],
+                            validator:
+                                (String? v) =>
+                                    InputSanitizer.validateName(v ?? ''),
                           ),
-                          const SizedBox(width: 8),
-                          IconButton.filledTonal(
-                            onPressed: () async {
-                              final String? picked = await _pickIcon(
-                                context,
-                                iconCtrl.text,
-                              );
-                              if (picked != null) {
-                                iconCtrl.text = picked;
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: targetCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Monto objetivo',
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d+\.?\d{0,2}'),
+                              ),
+                              LengthLimitingTextInputFormatter(15),
+                            ],
+                            validator:
+                                (String? v) =>
+                                    InputSanitizer.validateAmount(v ?? ''),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: currentCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Monto actual',
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d+\.?\d{0,2}'),
+                              ),
+                              LengthLimitingTextInputFormatter(15),
+                            ],
+                            validator: (String? v) {
+                              if (v == null || v.isEmpty) return 'Requerido';
+                              final val = double.tryParse(v);
+                              if (val == null || val < 0) {
+                                return 'Monto inválido';
                               }
+                              if (val > 999999999) {
+                                return 'Monto demasiado grande';
+                              }
+                              return null;
                             },
-                            icon: const Icon(Icons.collections),
-                            tooltip: 'Elegir icono',
+                          ),
+                          const SizedBox(height: 16),
+                          // ── Plazo / duration picker ──────────────────────
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                'Plazo',
+                                style: Theme.of(dlgCtx).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: <Widget>[
+                                  for (
+                                    int i = 0;
+                                    i < _kPresetLabels.length;
+                                    i++
+                                  )
+                                    ChoiceChip(
+                                      label: Text(_kPresetLabels[i]),
+                                      selected:
+                                          selectedPreset == _kPresetLabels[i],
+                                      onSelected: (bool v) {
+                                        if (!v) return;
+                                        setDialogState(() {
+                                          selectedPreset = _kPresetLabels[i];
+                                          limit = now.add(
+                                            Duration(days: _kPresetDays[i]),
+                                          );
+                                        });
+                                      },
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Text(
+                                      daysLeft > 0
+                                          ? '${_fmtReadable(limit)}  ·  $daysLeft días'
+                                          : _fmtReadable(limit),
+                                      style: Theme.of(
+                                        dlgCtx,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              dlgCtx,
+                                            ).colorScheme.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () async {
+                                      final DateTime? picked =
+                                          await showDatePicker(
+                                            context: dlgCtx,
+                                            initialDate:
+                                                limit.isAfter(now)
+                                                    ? limit
+                                                    : now.add(
+                                                      const Duration(days: 30),
+                                                    ),
+                                            firstDate: now,
+                                            lastDate: now.add(
+                                              const Duration(days: 3650),
+                                            ),
+                                          );
+                                      if (picked != null) {
+                                        setDialogState(() {
+                                          limit = picked;
+                                          selectedPreset = null;
+                                        });
+                                      }
+                                    },
+                                    icon: const Icon(
+                                      Icons.edit_calendar,
+                                      size: 16,
+                                    ),
+                                    label: const Text('Fecha exacta'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: TextFormField(
+                                  controller: iconCtrl,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Icono (nombre Material)',
+                                  ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[a-zA-Z0-9_\-\.]'),
+                                    ),
+                                    LengthLimitingTextInputFormatter(50),
+                                  ],
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty) {
+                                      return 'Requerido';
+                                    }
+                                    if (!RegExp(
+                                      r'^[a-zA-Z0-9_\-\.]+$',
+                                    ).hasMatch(v.trim())) {
+                                      return 'Icono inválido';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton.filledTonal(
+                                onPressed: () async {
+                                  final String? picked = await _pickIcon(
+                                    dlgCtx,
+                                    iconCtrl.text,
+                                  );
+                                  if (picked != null) {
+                                    iconCtrl.text = picked;
+                                  }
+                                },
+                                icon: const Icon(Icons.collections),
+                                tooltip: 'Elegir icono',
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (!key.currentState!.validate()) return;
-                  final Goal payload = Goal(
-                    id: goal?.id,
-                    nombre: nameCtrl.text.trim(),
-                    montoObjetivo:
-                        (double.parse(targetCtrl.text.trim())).toString(),
-                    montoActual:
-                        (double.parse(currentCtrl.text.trim())).toString(),
-                    fechaLimite: limit,
-                    icono: iconCtrl.text.trim(),
-                  );
-                  if (goal == null) {
-                    parentBloc.add(GoalCreate(payload));
-                  } else {
-                    parentBloc.add(GoalUpdate(payload));
-                  }
-                  if (context.mounted) Navigator.pop(context, true);
-                },
-                child: const Text('Guardar'),
-              ),
-            ],
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.pop(dlgCtx, false),
+                    child: const Text('Cancelar'),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      if (!key.currentState!.validate()) return;
+                      final Goal payload = Goal(
+                        id: goal?.id,
+                        nombre: nameCtrl.text.trim(),
+                        montoObjetivo:
+                            (double.parse(targetCtrl.text.trim())).toString(),
+                        montoActual:
+                            (double.parse(currentCtrl.text.trim())).toString(),
+                        fechaLimite: limit,
+                        icono: iconCtrl.text.trim(),
+                      );
+                      if (goal == null) {
+                        parentBloc.add(GoalCreate(payload));
+                      } else {
+                        parentBloc.add(GoalUpdate(payload));
+                      }
+                      if (dlgCtx.mounted) Navigator.pop(dlgCtx, true);
+                    },
+                    child: const Text('Guardar'),
+                  ),
+                ],
+              );
+            },
           ),
         ),
     );

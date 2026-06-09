@@ -115,7 +115,6 @@ class _BalanceCardState extends State<BalanceCard> {
     }
   }
 
-  // Returns the top expense category and its share (%), or null if not enough data.
   ({String label, int pct})? get _topCategory {
     if (widget.forceHidden || _hidden) return null;
     final expenses =
@@ -156,10 +155,7 @@ class _BalanceCardState extends State<BalanceCard> {
     };
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -193,10 +189,34 @@ class _BalanceCardState extends State<BalanceCard> {
                   size: 18,
                 ),
               ),
-            ],
-          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Period selector + visibility toggle
+                  Row(
+                    children: [
+                      _PeriodSelector(
+                        selected: _period,
+                        onChanged: (p) => setState(() => _period = p),
+                        onDark: true,
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: _toggleVisibility,
+                        child: Icon(
+                          widget.forceHidden
+                              ? Icons.privacy_tip_outlined
+                              : effectiveHidden
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.white.withValues(alpha: 0.75),
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
 
-          const SizedBox(height: 20),
+                  const SizedBox(height: 22),
 
           Text(
             'Balance $periodLabel',
@@ -222,7 +242,45 @@ class _BalanceCardState extends State<BalanceCard> {
             ),
           ),
 
-          const SizedBox(height: 8),
+                  const SizedBox(height: 12),
+
+                  // Insight como pill de vidrio (estilo onboarding)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.28),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _insightIcon,
+                          size: 12,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            _insightText,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
           // Insight accionable
           Row(
@@ -241,7 +299,6 @@ class _BalanceCardState extends State<BalanceCard> {
               'Private mode activo: los montos permanecen ocultos en toda la app.',
               style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
             ),
-          ],
 
           const SizedBox(height: 16),
           const Divider(height: 1),
@@ -298,17 +355,53 @@ class _BalanceCardState extends State<BalanceCard> {
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
-                ),
-              ],
+
+                  if (!effectiveHidden && _income > 0) ...[
+                    const SizedBox(height: 12),
+                    _RatioBar(income: _income, expenses: _expenses),
+                  ],
+
+                  if (_topCategory case final top?) ...[
+                    const SizedBox(height: 10),
+                    const Divider(height: 1),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.bar_chart_rounded,
+                          size: 13,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Mayor gasto: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        Text(
+                          '${top.label} (${top.pct}%)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
-// ── Category inference (for top-category computation) ────────────────────────
+// ── Category inference ────────────────────────────────────────────────────────
 
 bool _kw(String text, List<String> kw) => kw.any(text.contains);
 
@@ -340,7 +433,6 @@ String _inferCat(TransactionEntity t) {
   if (_kw(text, ['venta', 'ventas', 'negocio', 'comercio', 'producto'])) {
     return 'negocio';
   }
-
   if (_kw(text, [
     'servicio',
     'luz',
@@ -364,23 +456,79 @@ String _inferCat(TransactionEntity t) {
   return t.categoryId ?? 'otros';
 }
 
+// ── Expense / income ratio bar ────────────────────────────────────────────────
+
+class _RatioBar extends StatelessWidget {
+  final double income;
+  final double expenses;
+
+  const _RatioBar({required this.income, required this.expenses});
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = (expenses / income).clamp(0.0, 1.0);
+    final Color barColor = ratio > 0.9
+        ? const Color(0xFFFF3B30)
+        : ratio > 0.7
+        ? const Color(0xFFFF9500)
+        : const Color(0xFF34C759);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Gastos vs ingresos',
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+            ),
+            Text(
+              '${(ratio * 100).round()}%',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: barColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: ratio,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.08),
+            valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            minHeight: 5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ── Period selector ───────────────────────────────────────────────────────────
 
 class _PeriodSelector extends StatelessWidget {
   final _Period selected;
-  final Color accent;
   final ValueChanged<_Period> onChanged;
+  final bool onDark;
 
   const _PeriodSelector({
     required this.selected,
-    required this.accent,
     required this.onChanged,
+    this.onDark = false,
   });
 
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+      color: onDark
+          ? Colors.white.withValues(alpha: 0.15)
+          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(10),
     ),
     padding: const EdgeInsets.all(3),
@@ -430,8 +578,10 @@ class _PeriodSelector extends StatelessWidget {
                   ),
                 ),
               ),
-            );
-          }).toList(),
+            ),
+          ),
+        );
+      }).toList(),
     ),
   );
 }
