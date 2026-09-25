@@ -27,6 +27,7 @@ import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dar
 import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/features/quick_finance/data/services/spending_alert_service.dart';
 
 class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final AddTransaction addTransaction;
@@ -157,6 +158,19 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
         status: QuickFinanceStatus.success,
         transactions: event.transactions,
         clearError: true,
+      ),
+    );
+    _checkSpendingDeviations(event.transactions);
+  }
+
+  /// Lanza (sin bloquear la UI) la detección de desvíos de gasto; el servicio
+  /// notifica cada desvío una sola vez por mes.
+  void _checkSpendingDeviations(List<TransactionEntity> transactions) {
+    if (!GetIt.instance.isRegistered<SpendingAlertService>()) return;
+    unawaited(
+      GetIt.instance<SpendingAlertService>().evaluate(
+        transactions,
+        currencySymbol: CurrencyHelper.symbol,
       ),
     );
   }

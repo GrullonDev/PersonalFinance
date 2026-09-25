@@ -42,6 +42,20 @@ class NotificationService {
     );
   }
 
+  /// Advierte que el dinero se está desviando (gasto fuera de lo habitual).
+  Future<void> notifySpendingDeviation({
+    required String key,
+    required String title,
+    required String body,
+  }) async {
+    await local.showNotification(
+      id: 'spending_$key'.hashCode,
+      title: title,
+      body: body,
+      payload: RoutePath.notificationsInbox,
+    );
+  }
+
   /// Programa recordatorio para una deuda con pago en los próximos 7 días.
   /// Recibe datos primitivos para no crear dependencia core → features.
   Future<void> scheduleDebtPaymentReminder({
