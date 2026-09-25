@@ -45,6 +45,19 @@
                 <data android:scheme="com.grullondev.personal_finance"/>
             </intent-filter>
         </activity>
+
+        <!-- Registro automático de pagos: lee notificaciones de Google Wallet,
+             bancos y SMS bancarios. El usuario concede el acceso en
+             Ajustes > Acceso a notificaciones. -->
+        <service
+            android:name=".PaymentNotificationListener"
+            android:label="@string/app_name"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 
     <!-- Para queries de PROCESS_TEXT y URL Launcher -->

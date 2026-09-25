@@ -28,6 +28,7 @@ import 'package:personal_finance/features/debts/presentation/bloc/debts_event.da
 import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/quick_finance/data/services/spending_alert_service.dart';
+import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
 
 class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final AddTransaction addTransaction;
@@ -47,8 +48,10 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   StreamSubscription<SyncResult>? _syncSubscription;
   StreamSubscription<String?>? _authSubscription;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  StreamSubscription<AutoCapturedTransaction>? _autoCaptureSubscription;
 
   static const _parser = QuickEntryParser();
+  int _autoSeq = 0;
 
   QuickFinanceBloc({
     required this.addTransaction,
@@ -140,6 +143,30 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _balanceSubscription = watchBalance(
       userId: userId,
     ).listen((balance) => add(BalanceObserved(balance)));
+
+    _subscribeAutoCapture();
+  }
+
+  /// Registra los pagos detectados automáticamente (Google Wallet, bancos,
+  /// atajos de Apple Pay) como si el usuario los hubiera escrito.
+  void _subscribeAutoCapture() {
+    if (!GetIt.instance.isRegistered<AutoCaptureService>()) return;
+    final service = GetIt.instance<AutoCaptureService>();
+    _autoCaptureSubscription?.cancel();
+    _autoCaptureSubscription = service.captured.listen(
+      (tx) => add(
+        AddTransactionRequested(
+          amount: tx.amount,
+          type: tx.type,
+          note: tx.note,
+          category: tx.category,
+          occurredAt: tx.occurredAt,
+          autoSourceLabel: tx.sourceLabel,
+        ),
+      ),
+    );
+    service.start();
+    unawaited(service.processPending());
   }
 
   void _cancelDataStreams() {
@@ -147,6 +174,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _transactionsSubscription = null;
     _balanceSubscription?.cancel();
     _balanceSubscription = null;
+    _autoCaptureSubscription?.cancel();
+    _autoCaptureSubscription = null;
   }
 
   void _onTransactionsObserved(
@@ -258,8 +287,13 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       return;
     }
 
+    final isAuto = event.autoSourceLabel != null;
     final transaction = TransactionEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      // Las capturas automáticas pueden llegar varias en el mismo milisegundo.
+      id:
+          isAuto
+              ? '${DateTime.now().millisecondsSinceEpoch}-${_autoSeq++}'
+              : DateTime.now().millisecondsSinceEpoch.toString(),
       userId: uid,
       type: event.type,
       amount: event.amount,
@@ -268,7 +302,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
           event.category != null
               ? InputSanitizer.sanitizeText(event.category!, maxLength: 50)
               : null,
-      createdAt: DateTime.now(),
+      createdAt: event.occurredAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
       syncStatus: SyncStatus.pending,
       version: 1,
@@ -277,6 +311,10 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
 
     try {
       await addTransaction(transaction);
+      if (isAuto) {
+        await _notifyAutoCaptured(transaction, event.autoSourceLabel!);
+        return;
+      }
       await _updateGoalOrDebtIfMatching(transaction, event.rawInput);
     } catch (e) {
       emit(
@@ -286,6 +324,27 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
         ),
       );
     }
+  }
+
+  Future<void> _notifyAutoCaptured(
+    TransactionEntity transaction,
+    String sourceLabel,
+  ) async {
+    try {
+      final isIncome = transaction.type == TransactionType.income;
+      final amount =
+          '${CurrencyHelper.symbol}${transaction.amount.toStringAsFixed(2)}';
+      final category =
+          transaction.categoryId != null ? ' · #${transaction.categoryId}' : '';
+      await GetIt.instance<NotificationService>().local.showNotification(
+        id: 'auto_${transaction.id}'.hashCode,
+        title: isIncome ? '💰 Ingreso registrado' : '💳 Gasto registrado',
+        body:
+            '$amount${isIncome ? ' ·' : ' en'} ${transaction.note}$category ($sourceLabel). '
+            'Toca para revisarlo o corregirlo.',
+        payload: RoutePath.dashboard,
+      );
+    } catch (_) {}
   }
 
   Future<void> _updateGoalOrDebtIfMatching(
@@ -652,6 +711,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _syncSubscription?.cancel();
     _authSubscription?.cancel();
     _connectivitySubscription?.cancel();
+    _autoCaptureSubscription?.cancel();
     syncManager.stopConnectivityListener();
     return super.close();
   }

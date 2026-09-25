@@ -50,6 +50,16 @@
 				<string>com.googleusercontent.apps.116411792004-ockrenvueh05dn5l54rvdjphh4hjj7el</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>PaymentCapture</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>personalfinance</string>
+			</array>
+		</dict>
 	</array>
 
 	<!-- ───────────────────────── Export Compliance ─────────────────────────

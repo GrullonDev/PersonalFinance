@@ -40,16 +40,33 @@ class AddTransactionRequested extends QuickFinanceEvent {
   final String? category;
   final String? rawInput;
 
+  /// Fecha real del pago cuando se detectó automáticamente.
+  final DateTime? occurredAt;
+
+  /// Origen de un registro automático (p. ej. "Google Wallet"); `null` si
+  /// lo escribió el usuario.
+  final String? autoSourceLabel;
+
   const AddTransactionRequested({
     required this.amount,
     required this.type,
     required this.note,
     this.category,
     this.rawInput,
+    this.occurredAt,
+    this.autoSourceLabel,
   });
 
   @override
-  List<Object?> get props => [amount, type, note, category, rawInput];
+  List<Object?> get props => [
+    amount,
+    type,
+    note,
+    category,
+    rawInput,
+    occurredAt,
+    autoSourceLabel,
+  ];
 }
 
 /// Solicita eliminar (soft-delete) una transacción por su id.

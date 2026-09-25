@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
 import 'package:personal_finance/features/notifications/domain/entities/notification_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
@@ -68,6 +72,17 @@ class NotificationsDetailPage extends StatelessWidget {
                 ),
               ),
             ),
+            _buildSwitchTile(
+              title: 'Alertas de desvío de gasto',
+              subtitle:
+                  'Te avisamos cuando gastas más de lo habitual, más de lo que '
+                  'ganas o cuando se acumulan gastos hormiga',
+              value: prefs.budgetAlertsEnabled,
+              onChanged: (bool value) async {
+                final bool ok = await provider.save(budgetAlertsEnabled: value);
+                _feedback(context, ok, provider.error);
+              },
+            ),
             // Marketing as example extra alerts toggle
             _buildSwitchTile(
               title: 'Marketing',
@@ -78,6 +93,10 @@ class NotificationsDetailPage extends StatelessWidget {
                 _feedback(context, ok, provider.error);
               },
             ),
+            if (GetIt.instance.isRegistered<AutoCaptureService>()) ...[
+              const Divider(),
+              const _AutoCaptureSection(),
+            ],
           ],
         );
       },
@@ -183,6 +202,126 @@ class _NotificationsPermissionBannerState
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Registro automático de pagos: Google Wallet / bancos en Android y
+/// Apple Pay (vía Atajos) en iOS.
+class _AutoCaptureSection extends StatefulWidget {
+  const _AutoCaptureSection();
+
+  @override
+  State<_AutoCaptureSection> createState() => _AutoCaptureSectionState();
+}
+
+class _AutoCaptureSectionState extends State<_AutoCaptureSection>
+    with WidgetsBindingObserver {
+  final AutoCaptureService _service = GetIt.instance<AutoCaptureService>();
+  bool _enabled = true;
+  bool _granted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Al volver de Ajustes del sistema se revisa si ya se concedió el acceso.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final bool granted = await _service.isAccessGranted();
+    if (!mounted) return;
+    setState(() {
+      _enabled = _service.isEnabled;
+      _granted = granted;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isIOS = Platform.isIOS;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Text(
+            'REGISTRO AUTOMÁTICO DE PAGOS',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+        SwitchListTile(
+          title: Text(
+            isIOS
+                ? 'Registrar pagos con Apple Pay'
+                : 'Registrar pagos automáticamente',
+          ),
+          subtitle: Text(
+            isIOS
+                ? 'Cada pago con Apple Pay se registra como gasto con su comercio y categoría.'
+                : 'Detecta pagos e ingresos en las notificaciones de Google Wallet, '
+                    'tu banco o SMS bancarios y los registra con su categoría.',
+          ),
+          value: _enabled,
+          activeThumbColor: Colors.blue,
+          onChanged: (bool value) async {
+            await _service.setEnabled(enabled: value);
+            await _refresh();
+          },
+        ),
+        if (_enabled && !isIOS && !_granted)
+          ListTile(
+            leading: const Icon(Icons.lock_open, color: Colors.amber),
+            title: const Text('Falta dar acceso a las notificaciones'),
+            subtitle: const Text(
+              'Android pide que lo autorices manualmente. Sólo leemos '
+              'notificaciones con montos de dinero y nunca salen de tu teléfono.',
+            ),
+            trailing: TextButton(
+              onPressed: _service.openAccessSettings,
+              child: const Text('Permitir'),
+            ),
+          ),
+        if (_enabled && !isIOS && _granted)
+          const ListTile(
+            leading: Icon(Icons.check_circle, color: Colors.green),
+            title: Text('Acceso concedido'),
+            subtitle: Text('Si un pago no se detecta, regístralo manualmente.'),
+          ),
+        if (_enabled && isIOS)
+          ListTile(
+            leading: const Icon(Icons.bolt, color: Colors.amber),
+            title: const Text('Configura el atajo (una sola vez)'),
+            subtitle: const Text(
+              'Atajos → Automatización → Nueva → Transacción → elige tus '
+              'tarjetas → acción "Abrir URL":\n'
+              'personalfinance://pago?monto=[Importe]&comercio=[Comercio]\n'
+              'y marca "Ejecutar inmediatamente". Los ingresos se registran '
+              'manualmente.',
+            ),
+            isThreeLine: true,
+            trailing: TextButton(
+              onPressed: _service.openAccessSettings,
+              child: const Text('Abrir Atajos'),
+            ),
+          ),
+      ],
     );
   }
 }
