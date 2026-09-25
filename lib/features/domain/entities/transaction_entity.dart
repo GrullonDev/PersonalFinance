@@ -46,7 +46,8 @@ abstract class TransactionEntity extends SyncableEntity {
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
   /// Formatea el monto para mostrar
-  String get formattedAmount => '${CurrencyHelper.symbol}${amount.toStringAsFixed(2)}';
+  String get formattedAmount =>
+      '${CurrencyHelper.symbol}${amount.toStringAsFixed(2)}';
 
   /// Verifica si la transacción es reciente (últimos 7 días)
   bool get isRecent {

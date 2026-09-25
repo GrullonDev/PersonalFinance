@@ -161,9 +161,7 @@ class CustomDrawer extends StatelessWidget {
     NumberFormat currencyFormat,
   ) => Container(
     height: 220,
-    decoration: BoxDecoration(
-      color: primaryColor,
-    ),
+    decoration: BoxDecoration(color: primaryColor),
     padding: EdgeInsets.only(
       top:
           MediaQuery.of(context).padding.top +
@@ -218,20 +216,23 @@ class CustomDrawer extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              const Text(
+              Text(
                 'Balance Total:',
-                style: TextStyle(color: Colors.black, fontSize: 16),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                ),
               ),
               Text(
                 currencyFormat.format(currentBalance),
-                style: const TextStyle(
-                  color: Colors.black,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -265,10 +266,7 @@ class CustomDrawer extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: color ?? CupertinoColors.activeBlue,
-        ),
+        leading: Icon(icon, color: color ?? CupertinoColors.activeBlue),
         title: Text(
           title,
           style: theme.textTheme.bodyLarge?.copyWith(
@@ -314,7 +312,10 @@ class CustomDrawer extends StatelessWidget {
     padding: const EdgeInsets.all(16),
     child: Text(
       '${AppLocalizations.of(context)!.appTitle} v1.0',
-      style: const TextStyle(fontSize: 12, color: Colors.grey),
+      style: TextStyle(
+        fontSize: 12,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+      ),
     ),
   );
 

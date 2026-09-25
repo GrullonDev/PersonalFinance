@@ -8,10 +8,13 @@ import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 import 'package:uuid/uuid.dart';
 
 class AddDebtDialog extends StatefulWidget {
-  const AddDebtDialog({super.key});
+  const AddDebtDialog({super.key, this.initialDebt});
+
+  final Debt? initialDebt;
 
   @override
   State<AddDebtDialog> createState() => _AddDebtDialogState();
@@ -26,6 +29,41 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
   final _minimumController = TextEditingController();
 
   DateTime? _nextPaymentDate;
+  double? _detectedPaymentAmount;
+  bool _isDetecting = false;
+
+  bool get _isEditing => widget.initialDebt != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.initialDebt;
+    if (d != null) {
+      _nameController.text = d.name;
+      _amountController.text = d.originalAmount.toStringAsFixed(2);
+      _balanceController.text = d.currentBalance.toStringAsFixed(2);
+      _interestController.text = d.interestRate.toStringAsFixed(2);
+      _minimumController.text = d.minimumPayment.toStringAsFixed(2);
+      _nextPaymentDate = d.nextPaymentDate;
+    }
+  }
+
+  Future<void> _detectMatchingTransactions() async {
+    final name = _nameController.text.trim();
+    final original = double.tryParse(_amountController.text.trim());
+    if (name.length < 3 || original == null || original <= 0) return;
+
+    setState(() => _isDetecting = true);
+    try {
+      final matched = await getIt<TransactionLinkingService>()
+          .sumMatchingTransactions(name, 'gasto');
+      if (matched > 0 && mounted) {
+        setState(() => _detectedPaymentAmount = matched);
+      }
+    } finally {
+      if (mounted) setState(() => _isDetecting = false);
+    }
+  }
 
   void _submit() {
     if (_formKey.currentState!.validate() && _nextPaymentDate != null) {
@@ -35,21 +73,34 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
       final interest = double.parse(_interestController.text.trim());
       final minimum = double.parse(_minimumController.text.trim());
 
-      final newDebt = Debt(
-        id: const Uuid().v4(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        deviceId: getIt<DeviceService>().deviceId,
-        version: 1,
-        name: name,
-        originalAmount: amount,
-        currentBalance: balance,
-        interestRate: interest,
-        minimumPayment: minimum,
-        nextPaymentDate: _nextPaymentDate!,
-      );
-
-      context.read<DebtsBloc>().add(DebtCreate(newDebt));
+      if (_isEditing) {
+        final updated = widget.initialDebt!.copyWith(
+          name: name,
+          originalAmount: amount,
+          currentBalance: balance,
+          interestRate: interest,
+          minimumPayment: minimum,
+          nextPaymentDate: _nextPaymentDate!,
+          updatedAt: DateTime.now(),
+          version: widget.initialDebt!.version + 1,
+        );
+        context.read<DebtsBloc>().add(DebtUpdate(updated));
+      } else {
+        final newDebt = Debt(
+          id: const Uuid().v4(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          deviceId: getIt<DeviceService>().deviceId,
+          version: 1,
+          name: name,
+          originalAmount: amount,
+          currentBalance: balance,
+          interestRate: interest,
+          minimumPayment: minimum,
+          nextPaymentDate: _nextPaymentDate!,
+        );
+        context.read<DebtsBloc>().add(DebtCreate(newDebt));
+      }
       Navigator.of(context).pop();
     } else if (_nextPaymentDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -58,6 +109,16 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    _balanceController.dispose();
+    _interestController.dispose();
+    _minimumController.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,7 +134,7 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Agregar Nueva Deuda',
+                _isEditing ? 'Editar Deuda' : 'Agregar Nueva Deuda',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -92,19 +153,25 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                 validator: (value) => InputSanitizer.validateName(value ?? ''),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Monto Original (Deuda Inicial)',
-                  border: OutlineInputBorder(),
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                  LengthLimitingTextInputFormatter(15),
-                ],
-                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
-              ),
+              Focus(
+                onFocusChange: (hasFocus) {
+                  if (!hasFocus && !_isEditing) _detectMatchingTransactions();
+                },
+                child: TextFormField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Monto Original (Deuda Inicial)',
+                    border: OutlineInputBorder(),
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                    LengthLimitingTextInputFormatter(15),
+                  ],
+                  validator:
+                      (value) => InputSanitizer.validateAmount(value ?? ''),
+                ),  // close TextFormField
+              ),    // close Focus
               const SizedBox(height: 16),
               TextFormField(
                 controller: _balanceController,
@@ -117,8 +184,72 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   LengthLimitingTextInputFormatter(15),
                 ],
-                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
+              if (_isDetecting)
+                const Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Buscando transacciones...',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              if (!_isDetecting &&
+                  _detectedPaymentAmount != null &&
+                  _detectedPaymentAmount! > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Se detectaron \$${_detectedPaymentAmount!.toStringAsFixed(2)} en transacciones relacionadas.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final original =
+                              double.tryParse(_amountController.text.trim()) ??
+                              0;
+                          final balance =
+                              (original - _detectedPaymentAmount!).clamp(
+                                0.0,
+                                double.infinity,
+                              );
+                          _balanceController.text = balance.toStringAsFixed(2);
+                          setState(() => _detectedPaymentAmount = null);
+                        },
+                        child: const Text('Usar', style: TextStyle(fontSize: 12)),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            setState(() => _detectedPaymentAmount = null),
+                        child: const Text(
+                          'Ignorar',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _interestController,
@@ -134,7 +265,9 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Requerido';
                   final val = double.tryParse(value);
-                  if (val == null || val < 0 || val > 100) return 'Tasa inválida (0-100)';
+                  if (val == null || val < 0 || val > 100) {
+                    return 'Tasa inválida (0-100)';
+                  }
                   return null;
                 },
               ),
@@ -150,7 +283,8 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   LengthLimitingTextInputFormatter(15),
                 ],
-                validator: (value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
@@ -187,7 +321,7 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                   const SizedBox(width: 16),
                   FilledButton(
                     onPressed: _submit,
-                    child: const Text('Guardar'),
+                    child: Text(_isEditing ? 'Guardar Cambios' : 'Guardar'),
                   ),
                 ],
               ),

@@ -18,6 +18,8 @@ import 'package:personal_finance/core/security/hive_encryption_service.dart';
 import 'package:personal_finance/core/security/device_integrity_service.dart';
 import 'package:personal_finance/core/security/device_compromised_screen.dart';
 import 'package:personal_finance/core/services/security_logger.dart';
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
+import 'package:personal_finance/features/notifications/domain/entities/notification_item.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 import 'package:personal_finance/features/data/model/expense.dart';
 import 'package:personal_finance/features/data/model/income.dart';
@@ -28,6 +30,7 @@ import 'package:personal_finance/injection_container.dart' as mvp_di;
 import 'package:personal_finance/utils/app.dart';
 import 'package:personal_finance/utils/injection_container.dart' as old_di;
 import 'package:personal_finance/utils/offline_sync_service.dart';
+import 'package:personal_finance/features/subscription/data/datasources/revenue_cat_service.dart';
 import 'package:personal_finance/utils/pending_action.dart';
 
 Future<void> main() async {
@@ -83,6 +86,14 @@ Future<void> main() async {
           hiveCipher,
         );
 
+        if (!Hive.isAdapterRegistered(NotificationItemAdapter().typeId)) {
+          Hive.registerAdapter(NotificationItemAdapter());
+        }
+        await HiveEncryptionService.openBoxSafe<NotificationItem>(
+          'notifications_inbox',
+          hiveCipher,
+        );
+
         if (!Hive.isAdapterRegistered(0)) {
           Hive.registerAdapter(PendingActionAdapter());
         }
@@ -105,7 +116,7 @@ Future<void> main() async {
           Hive.registerAdapter(SyncOperationModelAdapter());
         }
 
-        // ── Firebase + Crashlytics + Analytics ─────────────────────────────
+        // ── Firebase + Crashlytics + Analytics ───────────────────────────────
         // Cualquier error aquí se loggea pero NO impide arrancar la UI.
         try {
           if (Firebase.apps.isEmpty) {
@@ -133,13 +144,33 @@ Future<void> main() async {
 
           unawaited(FirebaseAnalytics.instance.logAppOpen());
         } catch (e, st) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint('[init] Firebase error (continuing offline): $e\n$st');
+          }
         }
 
         // ── Dependency Injection ───────────────────────────────────────────
         await old_di.initDependencies();
         await mvp_di.init(hiveCipher);
+
+        // ── RevenueCat ────────────────────────────────────────────────────
+        try {
+          await RevenueCatService.initialize();
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('[init] RevenueCat error (continuing): $e\n$st');
+          }
+        }
+
+        // ── Initialize Notifications ──────────────────────────────────────
+        try {
+          final notifService = old_di.getIt<NotificationService>();
+          await notifService.init();
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('[init] NotificationService error: $e\n$st');
+          }
+        }
 
         // ── Device Integrity Check ────────────────────────────────────────
         final isSafe = await DeviceIntegrityService().isDeviceSafe();

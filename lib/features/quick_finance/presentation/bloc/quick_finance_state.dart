@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/transaction_entity.dart';
-import '../../domain/entities/balance_summary_entity.dart';
+import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/features/quick_finance/domain/entities/balance_summary_entity.dart';
 
 enum QuickFinanceStatus { initial, loading, success, failure }
 
@@ -48,18 +48,16 @@ class QuickFinanceState extends Equatable {
     DateTime? lastSyncAt,
     String? syncError,
     bool clearSyncError = false,
-  }) {
-    return QuickFinanceState(
-      status: status ?? this.status,
-      transactions: transactions ?? this.transactions,
-      balance: balance ?? this.balance,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      isSyncing: isSyncing ?? this.isSyncing,
-      isOffline: isOffline ?? this.isOffline,
-      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-      syncError: clearSyncError ? null : (syncError ?? this.syncError),
-    );
-  }
+  }) => QuickFinanceState(
+    status: status ?? this.status,
+    transactions: transactions ?? this.transactions,
+    balance: balance ?? this.balance,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    isSyncing: isSyncing ?? this.isSyncing,
+    isOffline: isOffline ?? this.isOffline,
+    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+    syncError: clearSyncError ? null : (syncError ?? this.syncError),
+  );
 
   @override
   List<Object?> get props => [

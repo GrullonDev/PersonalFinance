@@ -63,14 +63,23 @@ android {
 
     buildTypes {
         getByName("release") {
-            if (keystoreProperties["keyAlias"] != null) {
-                signingConfig = signingConfigs.getByName("release")
+            // Use production keystore when available; fall back to debug for local APK testing.
+            signingConfig = if (keystoreProperties["keyAlias"] != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
 }

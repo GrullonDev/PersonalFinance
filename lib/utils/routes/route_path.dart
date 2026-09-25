@@ -15,4 +15,5 @@ class RoutePath {
   static const String forceUpdate = '/force-update';
   static const String notificationsInbox = '/notifications-inbox';
   static const String debts = '/debts';
+  static const String aiChat = '/ai-chat';
 }

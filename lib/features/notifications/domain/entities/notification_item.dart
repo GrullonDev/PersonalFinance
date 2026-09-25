@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 
 part 'notification_item.g.dart';
 
-@HiveType(typeId: 4) // Assuming next available typeId
+@HiveType(typeId: 8) // Assuming next available typeId
 class NotificationItem extends Equatable {
   @HiveField(0)
   final String id;

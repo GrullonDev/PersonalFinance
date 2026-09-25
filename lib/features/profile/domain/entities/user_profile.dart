@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:personal_finance/features/subscription/domain/entities/subscription_entity.dart';
 
 class UserProfile {
   final String id;
@@ -10,6 +11,7 @@ class UserProfile {
   final String? photoUrl;
   final String? phoneNumber;
   final String? address;
+  final SubscriptionEntity subscription;
 
   UserProfile({
     required this.id,
@@ -21,6 +23,7 @@ class UserProfile {
     this.photoUrl,
     this.phoneNumber,
     this.address,
+    this.subscription = SubscriptionEntity.free,
   });
 
   String get name => '$firstName $lastName'.trim();
@@ -68,6 +71,7 @@ class UserProfile {
     String? photoUrl,
     String? phoneNumber,
     String? address,
+    SubscriptionEntity? subscription,
   }) => UserProfile(
     id: id,
     firstName: firstName ?? this.firstName,
@@ -78,5 +82,6 @@ class UserProfile {
     photoUrl: photoUrl ?? this.photoUrl,
     phoneNumber: phoneNumber ?? this.phoneNumber,
     address: address ?? this.address,
+    subscription: subscription ?? this.subscription,
   );
 }

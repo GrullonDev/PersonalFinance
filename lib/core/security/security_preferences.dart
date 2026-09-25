@@ -31,8 +31,10 @@ class SecurityPreferences {
     return v == 'true';
   }
 
-  static Future<void> setBiometricEnabled(bool value) =>
-      _storage.write(key: _keyBiometric, value: value.toString());
+  static Future<void> setBiometricEnabled({
+    required bool bool,
+    required bool value,
+  }) => _storage.write(key: _keyBiometric, value: value.toString());
 
   // ── App lock ──────────────────────────────────────────────────────────────
 
@@ -41,7 +43,7 @@ class SecurityPreferences {
     return v == 'true';
   }
 
-  static Future<void> setAppLockEnabled(bool value) =>
+  static Future<void> setAppLockEnabled({required bool value}) =>
       _storage.write(key: _keyAppLock, value: value.toString());
 
   // ── Auth session state ────────────────────────────────────────────────────
@@ -54,7 +56,7 @@ class SecurityPreferences {
     return v == 'true';
   }
 
-  static Future<void> setLoggedIn(bool value) =>
+  static Future<void> setLoggedIn({required bool value}) =>
       _storage.write(key: _keyLoggedIn, value: value.toString());
 
   // ── Onboarding ────────────────────────────────────────────────────────────
@@ -69,7 +71,10 @@ class SecurityPreferences {
 
   // ── Biometrics Lockout ───────────────────────────────────────────────────
 
-  static Future<void> saveBiometricLockout(int count, DateTime? lockTime) async {
+  static Future<void> saveBiometricLockout(
+    int count,
+    DateTime? lockTime,
+  ) async {
     await _storage.write(key: _keyBiometricFails, value: count.toString());
     if (lockTime != null) {
       await _storage.write(
@@ -85,9 +90,10 @@ class SecurityPreferences {
     final countStr = await _storage.read(key: _keyBiometricFails);
     final timeStr = await _storage.read(key: _keyBiometricLockTime);
     final count = int.tryParse(countStr ?? '0') ?? 0;
-    final time = timeStr != null
-        ? DateTime.fromMillisecondsSinceEpoch(int.parse(timeStr))
-        : null;
+    final time =
+        timeStr != null
+            ? DateTime.fromMillisecondsSinceEpoch(int.parse(timeStr))
+            : null;
     return (count, time);
   }
 }

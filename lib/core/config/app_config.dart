@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Runtime environment configuration resolved from --dart-define at build time.
 ///
 /// Usage:
@@ -22,10 +24,14 @@ class AppConfig {
 
   /// Current environment. Defaults to 'development' so that running
   /// `flutter run` without any flags works out-of-the-box.
-  static const String _env =
-      String.fromEnvironment('APP_ENV', defaultValue: 'development');
+  static const String _env = String.fromEnvironment(
+    'APP_ENV',
+    defaultValue: 'development',
+  );
 
-  static bool get isProduction => _env == 'production';
+  /// If APP_ENV is explicitly set to production, or we are building in release mode,
+  /// we run in production.
+  static bool get isProduction => _env == 'production' || kReleaseMode;
   static bool get isDevelopment => !isProduction;
 
   /// Human-readable label shown in debug banners and log tags.
@@ -33,10 +39,8 @@ class AppConfig {
       isProduction ? 'Production' : 'Development';
 
   /// Firebase project ID resolved for the active environment.
-  /// Both environments currently point to `personalfinancedev-e972f`.
-  /// When a dedicated prod project is created, replace the production value:
-  ///   static const String _prodProjectId = 'personalfinance-prod';
-  static const String firebaseProjectId = 'personalfinancedev-e972f';
+  static String get firebaseProjectId =>
+      isProduction ? 'personalfinance-prod' : 'personalfinancedev-e972f';
 
   /// When true, verbose logging and debug overlays are enabled.
   /// In production this is always false regardless of kDebugMode.

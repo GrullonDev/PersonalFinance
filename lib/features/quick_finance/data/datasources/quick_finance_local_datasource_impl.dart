@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:hive/hive.dart';
-import '../models/transaction_model.dart';
-import '../models/sync_operation_model.dart';
-import 'quick_finance_local_datasource.dart';
+import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
+import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
+import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_local_datasource.dart';
 
 class QuickFinanceLocalDataSourceImpl implements QuickFinanceLocalDataSource {
   final Box<TransactionModel> transactionBox;
@@ -67,32 +67,29 @@ class QuickFinanceLocalDataSourceImpl implements QuickFinanceLocalDataSource {
   }
 
   @override
-  Future<bool> hasCachedTransactions(String userId) async {
-    return transactionBox.values.any(
-      (t) => t.userId == userId && t.deletedAt == null,
-    );
-  }
+  Future<bool> hasCachedTransactions(String userId) async => transactionBox
+      .values
+      .any((t) => t.userId == userId && t.deletedAt == null);
 
   @override
-  Future<List<TransactionModel>> getTransactions() async {
-    return _activeTransactions();
-  }
+  Future<List<TransactionModel>> getTransactions() async =>
+      _activeTransactions();
 
   @override
   Future<List<TransactionModel>> getAllTransactions() async {
     // Incluye soft-deleted; necesario para el pipeline de sync push.
     // Filtra por userId para que el push no envíe datos de otro usuario.
     final uid = _userId;
-    final all = uid == null
-        ? <TransactionModel>[]
-        : transactionBox.values.where((t) => t.userId == uid).toList();
+    final all =
+        uid == null
+            ? <TransactionModel>[]
+            : transactionBox.values.where((t) => t.userId == uid).toList();
     return _sortedByDateDesc(all);
   }
 
   @override
-  Future<TransactionModel?> getTransaction(String id) async {
-    return transactionBox.get(id);
-  }
+  Future<TransactionModel?> getTransaction(String id) async =>
+      transactionBox.get(id);
 
   @override
   Future<void> deleteTransaction(String id) async {
@@ -109,10 +106,9 @@ class QuickFinanceLocalDataSourceImpl implements QuickFinanceLocalDataSource {
   @override
   Future<List<SyncOperationModel>> getPendingSyncOperations() async {
     // Orden FIFO: las más antiguas se procesan primero
-    final pending = syncOperationBox.values
-        .where((op) => !op.processed)
-        .toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final pending =
+        syncOperationBox.values.where((op) => !op.processed).toList()
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return pending;
   }
 
@@ -125,10 +121,11 @@ class QuickFinanceLocalDataSourceImpl implements QuickFinanceLocalDataSource {
 
   @override
   Future<void> deleteProcessedSyncOperations() async {
-    final processedKeys = syncOperationBox.values
-        .where((op) => op.processed)
-        .map((op) => op.id)
-        .toList();
+    final processedKeys =
+        syncOperationBox.values
+            .where((op) => op.processed)
+            .map((op) => op.id)
+            .toList();
     await syncOperationBox.deleteAll(processedKeys);
   }
 
@@ -136,13 +133,12 @@ class QuickFinanceLocalDataSourceImpl implements QuickFinanceLocalDataSource {
 
   /// Transacciones activas del [userId] explícito (sin soft-delete),
   /// ordenadas por createdAt desc. Usado por [watchTransactions].
-  List<TransactionModel> _activeTransactionsFor(String userId) {
-    return _sortedByDateDesc(
-      transactionBox.values
-          .where((t) => t.deletedAt == null && t.userId == userId)
-          .toList(),
-    );
-  }
+  List<TransactionModel> _activeTransactionsFor(String userId) =>
+      _sortedByDateDesc(
+        transactionBox.values
+            .where((t) => t.deletedAt == null && t.userId == userId)
+            .toList(),
+      );
 
   /// Igual que [_activeTransactionsFor] pero usa [_userId] interno.
   /// Solo para métodos legacy que dependen de [setUserId] (getTransactions).
@@ -154,8 +150,7 @@ class QuickFinanceLocalDataSourceImpl implements QuickFinanceLocalDataSource {
 
   /// Ordena una lista de transacciones por `createdAt` descendente (más
   /// reciente primero). Devuelve una nueva lista; no muta la original.
-  List<TransactionModel> _sortedByDateDesc(List<TransactionModel> list) {
-    return List<TransactionModel>.from(list)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-  }
+  List<TransactionModel> _sortedByDateDesc(List<TransactionModel> list) =>
+      List<TransactionModel>.from(list)
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 }

@@ -78,7 +78,9 @@ class _QuickAddCategoryContentState extends State<_QuickAddCategoryContent> {
                             FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
                             LengthLimitingTextInputFormatter(120),
                           ],
-                          validator: (String? v) => InputSanitizer.validateName(v ?? ''),
+                          validator:
+                              (String? v) =>
+                                  InputSanitizer.validateName(v ?? ''),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -175,7 +177,8 @@ class _QuickAddCategoryContentState extends State<_QuickAddCategoryContent> {
                         FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
                         LengthLimitingTextInputFormatter(120),
                       ],
-                      validator: (String? v) => InputSanitizer.validateName(v ?? ''),
+                      validator:
+                          (String? v) => InputSanitizer.validateName(v ?? ''),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(

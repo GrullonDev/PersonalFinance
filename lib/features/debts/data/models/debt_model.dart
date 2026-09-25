@@ -39,13 +39,17 @@ class DebtModel extends SyncableModel {
     deviceId: json['deviceId'] as String? ?? 'unknown',
     version: json['version'] as int? ?? 1,
     name: json['name']?.toString() ?? '',
-    currentBalance: double.tryParse(json['current_balance']?.toString() ?? '0') ?? 0.0,
-    originalAmount: double.tryParse(json['original_amount']?.toString() ?? '0') ?? 0.0,
-    interestRate: double.tryParse(json['interest_rate']?.toString() ?? '0') ?? 0.0,
+    currentBalance:
+        double.tryParse(json['current_balance']?.toString() ?? '0') ?? 0.0,
+    originalAmount:
+        double.tryParse(json['original_amount']?.toString() ?? '0') ?? 0.0,
+    interestRate:
+        double.tryParse(json['interest_rate']?.toString() ?? '0') ?? 0.0,
     nextPaymentDate:
         DateTime.tryParse(json['next_payment_date']?.toString() ?? '') ??
         DateTime.now(),
-    minimumPayment: double.tryParse(json['minimum_payment']?.toString() ?? '0') ?? 0.0,
+    minimumPayment:
+        double.tryParse(json['minimum_payment']?.toString() ?? '0') ?? 0.0,
     profileId: json['profile_id']?.toString(),
   );
 

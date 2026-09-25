@@ -41,7 +41,7 @@ class TransactionBackendRemoteDataSourceImpl
       if (tipo != null && tipo.isNotEmpty) {
         results = results.where((tx) => tx.tipo == tipo).toList();
       }
-      
+
       if (profileType != null && profileType.isNotEmpty) {
         results = results.where((tx) => tx.profileType == profileType).toList();
       }

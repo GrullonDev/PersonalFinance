@@ -81,18 +81,26 @@ class _HomePageState extends State<HomePage>
   final List<bool> _showAppBar = <bool>[false, false, false, false];
 
   @override
-  Widget build(BuildContext context) => BlocProvider<TransactionsBloc>(
-    create:
-        (BuildContext ctx) => TransactionsBloc(
-          ctx.read<tx_backend.TransactionBackendRepository>(),
-        )..add(TransactionsLoad(
-          profileType:
-              ctx.read<SettingsProvider>().isBusinessMode
-                  ? 'negocio'
-                  : 'personal',
-        )),
-    child: Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+  Widget build(BuildContext context) {
+    // Watching SettingsProvider ensures this subtree rebuilds whenever the
+    // selected theme changes, guaranteeing the IndexedStack children (dashboard,
+    // budgets, profile…) all receive the updated ThemeData.
+    context.watch<SettingsProvider>();
+
+    return BlocProvider<TransactionsBloc>(
+      create:
+          (BuildContext ctx) => TransactionsBloc(
+            ctx.read<tx_backend.TransactionBackendRepository>(),
+          )..add(
+            TransactionsLoad(
+              profileType:
+                  ctx.read<SettingsProvider>().isBusinessMode
+                      ? 'negocio'
+                      : 'personal',
+            ),
+          ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
       appBar:
           context.isMobile && _showAppBar[_currentIndex]
               ? PreferredSize(
@@ -171,8 +179,9 @@ class _HomePageState extends State<HomePage>
               )
               : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    ),
-  );
+      ),
+    );
+  }
 
   Widget _buildResponsiveAppBar(BuildContext context) => Container(
     color: Colors.transparent,
@@ -221,42 +230,42 @@ class _HomePageState extends State<HomePage>
   );
 
   Widget _buildNavigationRail(BuildContext context) => NavigationRail(
-      selectedIndex: _currentIndex,
-      onDestinationSelected: _onNavTap,
-      labelType: NavigationRailLabelType.all,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      elevation: 5,
-      leading: Column(
-        children: [
-          const SizedBox(height: 20),
-          FloatingActionButton(
-            heroTag: null,
-            onPressed: () => _onAddPressed(context),
-            elevation: 2,
-            child: const Icon(Icons.add),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-      destinations: [
-        NavigationRailDestination(
-          icon: Icon(_getIconForIndex(0)),
-          label: Text(_titles[0]),
+    selectedIndex: _currentIndex,
+    onDestinationSelected: _onNavTap,
+    labelType: NavigationRailLabelType.all,
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    elevation: 5,
+    leading: Column(
+      children: [
+        const SizedBox(height: 20),
+        FloatingActionButton(
+          heroTag: null,
+          onPressed: () => _onAddPressed(context),
+          elevation: 2,
+          child: const Icon(Icons.add),
         ),
-        NavigationRailDestination(
-          icon: Icon(_getIconForIndex(1)),
-          label: Text(_titles[1]),
-        ),
-        NavigationRailDestination(
-          icon: Icon(_getIconForIndex(2)),
-          label: Text(_titles[2]),
-        ),
-        NavigationRailDestination(
-          icon: Icon(_getIconForIndex(3)),
-          label: Text(_titles[3]),
-        ),
+        const SizedBox(height: 20),
       ],
-    );
+    ),
+    destinations: [
+      NavigationRailDestination(
+        icon: Icon(_getIconForIndex(0)),
+        label: Text(_titles[0]),
+      ),
+      NavigationRailDestination(
+        icon: Icon(_getIconForIndex(1)),
+        label: Text(_titles[1]),
+      ),
+      NavigationRailDestination(
+        icon: Icon(_getIconForIndex(2)),
+        label: Text(_titles[2]),
+      ),
+      NavigationRailDestination(
+        icon: Icon(_getIconForIndex(3)),
+        label: Text(_titles[3]),
+      ),
+    ],
+  );
 
   IconData _getIconForIndex(int index) {
     switch (index) {
@@ -372,7 +381,7 @@ class _FadeIndexedStackState extends State<_FadeIndexedStack>
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-      opacity: _controller,
-      child: IndexedStack(index: widget.index, children: widget.children),
-    );
+    opacity: _controller,
+    child: IndexedStack(index: widget.index, children: widget.children),
+  );
 }

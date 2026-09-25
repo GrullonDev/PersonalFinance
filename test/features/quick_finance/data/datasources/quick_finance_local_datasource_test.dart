@@ -16,9 +16,7 @@ class MockTransactionBox extends Mock implements Box<TransactionModel> {}
 
 class MockSyncOperationBox extends Mock implements Box<SyncOperationModel> {}
 
-class FakeSyncOperationModel extends Fake implements SyncOperationModel {}
-
-class FakeTransactionModel extends Fake implements TransactionModel {}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Builders
@@ -33,10 +31,10 @@ TransactionModel _tx({
   id: id,
   userId: 'user1',
   type: TransactionType.expense,
-  amount: 50.0,
+  amount: 50,
   note: 'test',
-  createdAt: createdAt ?? DateTime(2026, 1, 1),
-  updatedAt: DateTime(2026, 1, 1),
+  createdAt: createdAt ?? DateTime(2026),
+  updatedAt: DateTime(2026),
   deletedAt: deletedAt,
   syncStatus: syncStatus,
   version: 1,
@@ -52,7 +50,7 @@ SyncOperationModel _op({
   id: id,
   transactionId: transactionId,
   action: action,
-  createdAt: DateTime(2026, 1, 1),
+  createdAt: DateTime(2026),
   processed: processed,
 );
 
@@ -66,8 +64,8 @@ void main() {
   late QuickFinanceLocalDataSourceImpl ds;
 
   setUpAll(() {
-    registerFallbackValue(FakeSyncOperationModel());
-    registerFallbackValue(FakeTransactionModel());
+    registerFallbackValue(_op());
+    registerFallbackValue(_tx());
   });
 
   setUp(() {
@@ -97,7 +95,7 @@ void main() {
 
   group('saveTransactions', () {
     test('llama box.putAll con mapa id→model', () async {
-      final t1 = _tx(id: 'tx1');
+      final t1 = _tx();
       final t2 = _tx(id: 'tx2');
       when(() => txBox.putAll(any())).thenAnswer((_) async {});
 
@@ -117,7 +115,7 @@ void main() {
 
   group('getTransactions', () {
     test('excluye soft-deleted (deletedAt != null)', () async {
-      final active = _tx(id: 'tx1');
+      final active = _tx();
       final deleted = _tx(id: 'tx2', deletedAt: DateTime(2026, 1, 2));
       when(() => txBox.values).thenReturn([active, deleted]);
 
@@ -128,8 +126,8 @@ void main() {
     });
 
     test('ordena por createdAt descendente', () async {
-      final older = _tx(id: 'tx_old', createdAt: DateTime(2026, 1, 1));
-      final newer = _tx(id: 'tx_new', createdAt: DateTime(2026, 3, 1));
+      final older = _tx(id: 'tx_old', createdAt: DateTime(2026));
+      final newer = _tx(id: 'tx_new', createdAt: DateTime(2026, 3));
       when(() => txBox.values).thenReturn([older, newer]);
 
       final result = await ds.getTransactions();
@@ -148,7 +146,7 @@ void main() {
 
   group('getAllTransactions', () {
     test('incluye transacciones con deletedAt', () async {
-      final active = _tx(id: 'tx1');
+      final active = _tx();
       final deleted = _tx(id: 'tx2', deletedAt: DateTime(2026, 1, 2));
       when(() => txBox.values).thenReturn([active, deleted]);
 
@@ -159,8 +157,8 @@ void main() {
     });
 
     test('ordena por createdAt descendente', () async {
-      final older = _tx(id: 'a', createdAt: DateTime(2026, 1, 1));
-      final newer = _tx(id: 'b', createdAt: DateTime(2026, 6, 1));
+      final older = _tx(id: 'a', createdAt: DateTime(2026));
+      final newer = _tx(id: 'b', createdAt: DateTime(2026, 6));
       when(() => txBox.values).thenReturn([older, newer]);
 
       final result = await ds.getAllTransactions();
@@ -218,7 +216,7 @@ void main() {
     });
 
     test('excluye soft-deleted del estado inicial', () async {
-      final active = _tx(id: 'tx1');
+      final active = _tx();
       final deleted = _tx(id: 'tx2', deletedAt: DateTime(2026, 1, 2));
       final ctrl = StreamController<BoxEvent>.broadcast();
       when(() => txBox.values).thenReturn([active, deleted]);
@@ -232,8 +230,8 @@ void main() {
     });
 
     test('emite lista actualizada tras evento del box', () async {
-      final t1 = _tx(id: 'tx1', createdAt: DateTime(2026, 1, 1));
-      final t2 = _tx(id: 'tx2', createdAt: DateTime(2026, 2, 1));
+      final t1 = _tx(createdAt: DateTime(2026));
+      final t2 = _tx(id: 'tx2', createdAt: DateTime(2026, 2));
       final ctrl = StreamController<BoxEvent>();
       var callCount = 0;
 
@@ -261,7 +259,7 @@ void main() {
     });
 
     test('no emite transacciones soft-deleted tras evento del box', () async {
-      final active = _tx(id: 'tx1');
+      final active = _tx();
       final deleted = _tx(id: 'tx2', deletedAt: DateTime(2026, 1, 2));
       final ctrl = StreamController<BoxEvent>();
       var callCount = 0;
@@ -305,7 +303,7 @@ void main() {
 
   group('getPendingSyncOperations', () {
     test('retorna solo las operaciones con processed=false', () async {
-      final pending = _op(id: 'op1', processed: false);
+      final pending = _op();
       final done = _op(id: 'op2', processed: true);
       when(() => opBox.values).thenReturn([pending, done]);
 
@@ -319,7 +317,7 @@ void main() {
         id: 'op1',
         transactionId: 'tx1',
         action: SyncAction.create,
-        createdAt: DateTime(2026, 1, 1),
+        createdAt: DateTime(2026),
         processed: false,
       );
       final second = SyncOperationModel(
@@ -348,7 +346,7 @@ void main() {
 
   group('markSyncOperationAsProcessed', () {
     test('guarda copia con processed=true usando copyWith', () async {
-      final op = _op(processed: false);
+      final op = _op();
       when(() => opBox.get('op1')).thenReturn(op);
       when(() => opBox.put('op1', any())).thenAnswer((_) async {});
 
@@ -369,7 +367,7 @@ void main() {
 
       await ds.markSyncOperationAsProcessed('missing');
 
-      verifyNever(() => opBox.put(any(), any()));
+      verifyNever(() => opBox.put(any<String>(), any<SyncOperationModel>()));
     });
   });
 
@@ -377,7 +375,7 @@ void main() {
 
   group('deleteProcessedSyncOperations', () {
     test('elimina solo operaciones con processed=true', () async {
-      final pending = _op(id: 'op1', processed: false);
+      final pending = _op();
       final done1 = _op(id: 'op2', processed: true);
       final done2 = _op(id: 'op3', processed: true);
       when(() => opBox.values).thenReturn([pending, done1, done2]);
@@ -393,7 +391,7 @@ void main() {
     });
 
     test('no llama deleteAll si no hay operaciones procesadas', () async {
-      when(() => opBox.values).thenReturn([_op(processed: false)]);
+      when(() => opBox.values).thenReturn([_op()]);
       when(() => opBox.deleteAll(any())).thenAnswer((_) async {});
 
       await ds.deleteProcessedSyncOperations();
@@ -417,7 +415,7 @@ void main() {
 
   group('SyncOperationModel.copyWith', () {
     test('copia con processed=true, mantiene resto', () {
-      final original = _op(processed: false);
+      final original = _op();
       final copy = original.copyWith(processed: true);
 
       expect(copy.processed, isTrue);
@@ -435,7 +433,7 @@ void main() {
     });
 
     test('puede cambiar múltiples campos a la vez', () {
-      final original = _op(id: 'op1', processed: false);
+      final original = _op();
       final copy = original.copyWith(
         id: 'op_new',
         action: SyncAction.delete,

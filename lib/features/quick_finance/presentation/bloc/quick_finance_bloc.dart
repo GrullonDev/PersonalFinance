@@ -15,6 +15,19 @@ import 'package:personal_finance/features/quick_finance/domain/usecases/watch_tr
 import 'package:personal_finance/features/quick_finance/domain/usecases/update_transaction.dart';
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_event.dart';
 import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_finance_state.dart';
+import 'package:personal_finance/features/goals/domain/entities/goal.dart';
+import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
+import 'package:personal_finance/features/debts/domain/entities/debt.dart';
+import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
+import 'package:get_it/get_it.dart';
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
+import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/features/quick_finance/data/services/spending_alert_service.dart';
 
 class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final AddTransaction addTransaction;
@@ -25,6 +38,9 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final UpdateTransaction updateTransaction;
   final SyncManager syncManager;
   final AuthDataSource authDataSource;
+  final GoalRepository goalRepository;
+  final DebtRepository debtRepository;
+  final DeviceService deviceService;
 
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
   StreamSubscription<dynamic>? _balanceSubscription;
@@ -43,6 +59,9 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     required this.updateTransaction,
     required this.syncManager,
     required this.authDataSource,
+    required this.goalRepository,
+    required this.debtRepository,
+    required this.deviceService,
   }) : super(const QuickFinanceState()) {
     on<WatchDataRequested>(_onWatchDataRequested);
     on<TransactionsObserved>(_onTransactionsObserved);
@@ -83,7 +102,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
       List<ConnectivityResult> results,
     ) {
-      final isOnline = results.isNotEmpty &&
+      final isOnline =
+          results.isNotEmpty &&
           results.any((r) => r != ConnectivityResult.none);
       add(ConnectivityChanged(isOnline));
     });
@@ -110,15 +130,16 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _transactionsSubscription?.cancel();
     _transactionsSubscription = watchTransactions(userId: userId).listen(
       (transactions) => add(TransactionsObserved(transactions)),
-      onError: (Object error, _) => add(
-        SyncStateChanged(isSyncing: false, errorMessage: error.toString()),
-      ),
+      onError:
+          (Object error, _) => add(
+            SyncStateChanged(isSyncing: false, errorMessage: error.toString()),
+          ),
     );
 
     _balanceSubscription?.cancel();
-    _balanceSubscription = watchBalance(userId: userId).listen(
-      (balance) => add(BalanceObserved(balance)),
-    );
+    _balanceSubscription = watchBalance(
+      userId: userId,
+    ).listen((balance) => add(BalanceObserved(balance)));
   }
 
   void _cancelDataStreams() {
@@ -137,6 +158,19 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
         status: QuickFinanceStatus.success,
         transactions: event.transactions,
         clearError: true,
+      ),
+    );
+    _checkSpendingDeviations(event.transactions);
+  }
+
+  /// Lanza (sin bloquear la UI) la detección de desvíos de gasto; el servicio
+  /// notifica cada desvío una sola vez por mes.
+  void _checkSpendingDeviations(List<TransactionEntity> transactions) {
+    if (!GetIt.instance.isRegistered<SpendingAlertService>()) return;
+    unawaited(
+      GetIt.instance<SpendingAlertService>().evaluate(
+        transactions,
+        currencySymbol: CurrencyHelper.symbol,
       ),
     );
   }
@@ -189,7 +223,14 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
             amount: entry.amount,
             type: entry.type,
             note: InputSanitizer.sanitizeText(entry.note),
-            category: entry.category != null ? InputSanitizer.sanitizeText(entry.category!, maxLength: 50) : null,
+            category:
+                entry.category != null
+                    ? InputSanitizer.sanitizeText(
+                      entry.category!,
+                      maxLength: 50,
+                    )
+                    : null,
+            rawInput: event.rawInput,
           ),
         );
       case ParseFailure(:final reason):
@@ -208,10 +249,12 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   ) async {
     final uid = authDataSource.currentUserId;
     if (uid == null) {
-      emit(state.copyWith(
-        status: QuickFinanceStatus.failure,
-        errorMessage: 'Sesión no disponible. Inicia sesión de nuevo.',
-      ));
+      emit(
+        state.copyWith(
+          status: QuickFinanceStatus.failure,
+          errorMessage: 'Sesión no disponible. Inicia sesión de nuevo.',
+        ),
+      );
       return;
     }
 
@@ -221,16 +264,20 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       type: event.type,
       amount: event.amount,
       note: InputSanitizer.sanitizeText(event.note),
-      categoryId: event.category != null ? InputSanitizer.sanitizeText(event.category!, maxLength: 50) : null,
+      categoryId:
+          event.category != null
+              ? InputSanitizer.sanitizeText(event.category!, maxLength: 50)
+              : null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       syncStatus: SyncStatus.pending,
       version: 1,
-      deviceId: 'device', // TODO: inject from DeviceInfoService
+      deviceId: deviceService.deviceId,
     );
 
     try {
       await addTransaction(transaction);
+      await _updateGoalOrDebtIfMatching(transaction, event.rawInput);
     } catch (e) {
       emit(
         state.copyWith(
@@ -239,6 +286,317 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
         ),
       );
     }
+  }
+
+  Future<void> _updateGoalOrDebtIfMatching(
+    TransactionEntity transaction,
+    String? rawInput,
+  ) async {
+    final note = transaction.note;
+    final amount = transaction.amount;
+    if (note.trim().isEmpty || amount <= 0) return;
+
+    final isNegative = rawInput != null && rawInput.trim().startsWith('-');
+    final noteLower = note.trim().toLowerCase();
+
+    final cleanedGoalName = _extractGoalName(note);
+    final cleanedDebtName = _extractDebtName(note);
+
+    final isMetaOnly = noteLower.startsWith('meta') && cleanedGoalName == null;
+    final isDeudaOnly =
+        noteLower.startsWith('deuda') && cleanedDebtName == null;
+
+    bool updated = false;
+
+    if (isMetaOnly) {
+      final res = await goalRepository.getGoals();
+      await res.fold((_) async {}, (goals) async {
+        if (goals.length == 1) {
+          await _updateGoalEntity(goals.first, amount, isNegative);
+          updated = true;
+        }
+      });
+    } else if (isDeudaOnly) {
+      final res = await debtRepository.getDebts();
+      await res.fold((_) async {}, (debts) async {
+        if (debts.length == 1) {
+          await _updateDebtEntity(debts.first, amount, isNegative);
+          updated = true;
+        }
+      });
+    } else {
+      if (cleanedGoalName != null) {
+        final goal = await _findGoalByName(cleanedGoalName);
+        if (goal != null) {
+          await _updateGoalEntity(goal, amount, isNegative);
+          updated = true;
+        }
+      }
+      if (!updated && cleanedDebtName != null) {
+        final debt = await _findDebtByName(cleanedDebtName);
+        if (debt != null) {
+          await _updateDebtEntity(debt, amount, isNegative);
+          updated = true;
+        }
+      }
+    }
+
+    if (!updated) {
+      // Fallback: search if the entire note matches a goal or a debt name (case-insensitive)
+      final matchedGoal = await _findGoalByName(note);
+      if (matchedGoal != null) {
+        await _updateGoalEntity(matchedGoal, amount, isNegative);
+      } else {
+        final matchedDebt = await _findDebtByName(note);
+        if (matchedDebt != null) {
+          await _updateDebtEntity(matchedDebt, amount, isNegative);
+        }
+      }
+    }
+  }
+
+  String? _extractGoalName(String note) {
+    final trimmed = note.trim();
+    final lowercase = trimmed.toLowerCase();
+    final keywords = ['meta', 'ahorro'];
+    for (final keyword in keywords) {
+      if (lowercase.startsWith(keyword)) {
+        var rest = trimmed.substring(keyword.length).trim();
+        rest = rest.replaceFirst(RegExp(r'^[-:\s]+'), '').trim();
+
+        bool cleaned;
+        do {
+          cleaned = false;
+          final restLower = rest.toLowerCase();
+          final fillers = [
+            'para la',
+            'para mi',
+            'para',
+            'de la',
+            'de las',
+            'de los',
+            'de',
+            'a la',
+            'a las',
+            'a los',
+            'a',
+            'mi',
+            'mis',
+          ];
+          for (final filler in fillers) {
+            if (restLower.startsWith(filler)) {
+              final pattern = RegExp(
+                '^${RegExp.escape(filler)}(\\s+|\$)',
+                caseSensitive: false,
+              );
+              if (pattern.hasMatch(rest)) {
+                rest = rest.replaceFirst(pattern, '').trim();
+                rest = rest.replaceFirst(RegExp(r'^[-:\s]+'), '').trim();
+                cleaned = true;
+                break;
+              }
+            }
+          }
+        } while (cleaned && rest.isNotEmpty);
+
+        if (rest.isNotEmpty) {
+          return rest;
+        }
+      }
+    }
+    return null;
+  }
+
+  String? _extractDebtName(String note) {
+    final trimmed = note.trim();
+    final lowercase = trimmed.toLowerCase();
+    final keywords = ['deuda', 'pago', 'abono', 'cuota'];
+    for (final keyword in keywords) {
+      if (lowercase.startsWith(keyword)) {
+        var rest = trimmed.substring(keyword.length).trim();
+        rest = rest.replaceFirst(RegExp(r'^[-:\s]+'), '').trim();
+
+        bool cleaned;
+        do {
+          cleaned = false;
+          final restLower = rest.toLowerCase();
+          final fillers = [
+            'minimo',
+            'mínimo',
+            'minima',
+            'mínima',
+            'de la',
+            'de las',
+            'de los',
+            'de',
+            'a la',
+            'a las',
+            'a los',
+            'a',
+            'mi',
+            'mis',
+          ];
+          for (final filler in fillers) {
+            if (restLower.startsWith(filler)) {
+              final pattern = RegExp(
+                '^${RegExp.escape(filler)}(\\s+|\$)',
+                caseSensitive: false,
+              );
+              if (pattern.hasMatch(rest)) {
+                rest = rest.replaceFirst(pattern, '').trim();
+                rest = rest.replaceFirst(RegExp(r'^[-:\s]+'), '').trim();
+                cleaned = true;
+                break;
+              }
+            }
+          }
+        } while (cleaned && rest.isNotEmpty);
+
+        if (rest.isNotEmpty) {
+          return rest;
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<Goal?> _findGoalByName(String name) async {
+    final res = await goalRepository.getGoals();
+    return res.fold((_) => null, (goals) {
+      final searchName = name.trim().toLowerCase();
+      for (final goal in goals) {
+        if (goal.nombre.trim().toLowerCase() == searchName) {
+          return goal;
+        }
+      }
+      return null;
+    });
+  }
+
+  Future<Debt?> _findDebtByName(String name) async {
+    final res = await debtRepository.getDebts();
+    return res.fold((_) => null, (debts) {
+      final searchName = name.trim().toLowerCase();
+      for (final debt in debts) {
+        if (debt.name.trim().toLowerCase() == searchName) {
+          return debt;
+        }
+      }
+      return null;
+    });
+  }
+
+  /*   Future<void> _updateGoalByName(
+    String name,
+    double amount,
+    bool isNegative,
+  ) async {
+    final goal = await _findGoalByName(name);
+    if (goal != null) {
+      await _updateGoalEntity(goal, amount, isNegative);
+    }
+  }
+
+  Future<void> _updateDebtByName(
+    String name,
+    double amount,
+    bool isNegative,
+  ) async {
+    final debt = await _findDebtByName(name);
+    if (debt != null) {
+      await _updateDebtEntity(debt, amount, isNegative);
+    }
+  } */
+
+  Future<void> _updateGoalEntity(
+    Goal goal,
+    double amount,
+    bool isNegative,
+  ) async {
+    final currentAmount = goal.actualAsDouble;
+    final newAmount =
+        isNegative ? (currentAmount - amount) : (currentAmount + amount);
+    final finalAmount = newAmount < 0 ? 0.0 : newAmount;
+
+    final updatedGoal = goal.copyWith(montoActual: finalAmount.toString());
+
+    await goalRepository.updateGoal(updatedGoal);
+
+    // Trigger Notification
+    try {
+      final notif = GetIt.instance<NotificationService>();
+      final double target = double.tryParse(goal.montoObjetivo) ?? 0.0;
+      final double oldPct = target > 0 ? (currentAmount / target) * 100 : 0;
+      final double newPct = target > 0 ? (finalAmount / target) * 100 : 0;
+
+      if (oldPct < 100 && newPct >= 100) {
+        await notif.local.showNotification(
+          id: goal.id.hashCode,
+          title: '🏆 ¡Meta Completada!',
+          body:
+              '¡Felicidades! Completaste tu meta "${goal.nombre}" (${CurrencyHelper.symbol}${finalAmount.toStringAsFixed(0)}). ¡Lo lograste! 🎉',
+          payload: RoutePath.goalsCrud,
+        );
+      }
+    } catch (_) {}
+
+    // Reload GoalsBloc
+    try {
+      if (GetIt.instance.isRegistered<GoalsBloc>()) {
+        GetIt.instance<GoalsBloc>().add(GoalsLoad());
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _updateDebtEntity(
+    Debt debt,
+    double amount,
+    bool isNegative,
+  ) async {
+    final currentBalance = debt.currentBalance;
+    // isNegative = transaction starts with '-' (expense/payment) → reduces debt balance
+    // isNegative = false ('+' or unsigned = new debt added) → increases debt balance
+    final newBalance =
+        isNegative ? (currentBalance - amount) : (currentBalance + amount);
+    final finalBalance = newBalance < 0 ? 0.0 : newBalance;
+
+    final updatedDebt = debt.copyWith(
+      currentBalance: finalBalance,
+      updatedAt: DateTime.now(),
+    );
+
+    await debtRepository.updateDebt(updatedDebt);
+
+    // Trigger Notification
+    try {
+      final notif = GetIt.instance<NotificationService>();
+      final double oldPaidPct =
+          debt.originalAmount > 0
+              ? (1 - currentBalance / debt.originalAmount) * 100
+              : 0;
+      final double newPaidPct =
+          debt.originalAmount > 0
+              ? (1 - finalBalance / debt.originalAmount) * 100
+              : 0;
+
+      if (oldPaidPct < 100 && newPaidPct >= 100) {
+        await notif.local.showNotification(
+          id: debt.id.hashCode,
+          title: '🎉 ¡Deuda Liquidada!',
+          body:
+              '¡Felicidades! Liquidaste completamente la deuda "${debt.name}" (${CurrencyHelper.symbol}${debt.originalAmount.toStringAsFixed(0)}). ¡Eres libre! 🎊',
+          payload: RoutePath.debts,
+        );
+      }
+    } catch (_) {}
+
+    // Update DebtsBloc state directly — avoids a full Firestore re-fetch and
+    // race conditions that caused the completed state not to appear visually.
+    try {
+      if (GetIt.instance.isRegistered<DebtsBloc>()) {
+        GetIt.instance<DebtsBloc>().add(DebtStateUpdated(updatedDebt));
+      }
+    } catch (_) {}
   }
 
   Future<void> _onDeleteTransactionRequested(

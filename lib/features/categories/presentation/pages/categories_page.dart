@@ -329,7 +329,9 @@ class CategoriesPage extends StatelessWidget {
                               FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
                               LengthLimitingTextInputFormatter(120),
                             ],
-                            validator: (String? v) => InputSanitizer.validateName(v ?? ''),
+                            validator:
+                                (String? v) =>
+                                    InputSanitizer.validateName(v ?? ''),
                           ),
                           const SizedBox(height: 24),
                           Row(

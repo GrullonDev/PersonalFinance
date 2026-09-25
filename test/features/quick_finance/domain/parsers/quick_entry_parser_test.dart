@@ -12,16 +12,22 @@ void main() {
   /// Extrae el [ParsedEntry] o falla el test si el resultado no es [ParseSuccess].
   ParsedEntry success(String input) {
     final result = parser.parse(input);
-    expect(result, isA<ParseSuccess>(),
-        reason: 'Se esperaba ParseSuccess para: "$input"');
+    expect(
+      result,
+      isA<ParseSuccess>(),
+      reason: 'Se esperaba ParseSuccess para: "$input"',
+    );
     return (result as ParseSuccess).entry;
   }
 
   /// Verifica que el parse falla y devuelve la [ParseFailure].
   ParseFailure failure(String input) {
     final result = parser.parse(input);
-    expect(result, isA<ParseFailure>(),
-        reason: 'Se esperaba ParseFailure para: "$input"');
+    expect(
+      result,
+      isA<ParseFailure>(),
+      reason: 'Se esperaba ParseFailure para: "$input"',
+    );
     return result as ParseFailure;
   }
 
@@ -275,12 +281,12 @@ void main() {
       test('dos entradas iguales son iguales', () {
         const a = ParsedEntry(
           type: TransactionType.expense,
-          amount: 35.0,
+          amount: 35,
           note: 'cena',
         );
         const b = ParsedEntry(
           type: TransactionType.expense,
-          amount: 35.0,
+          amount: 35,
           note: 'cena',
         );
         expect(a, equals(b));
@@ -290,13 +296,13 @@ void main() {
       test('category distinta → no iguales', () {
         const a = ParsedEntry(
           type: TransactionType.expense,
-          amount: 35.0,
+          amount: 35,
           note: 'cena',
           category: 'food',
         );
         const b = ParsedEntry(
           type: TransactionType.expense,
-          amount: 35.0,
+          amount: 35,
           note: 'cena',
         );
         expect(a, isNot(equals(b)));
@@ -305,7 +311,7 @@ void main() {
       test('toString contiene todos los campos', () {
         const entry = ParsedEntry(
           type: TransactionType.income,
-          amount: 100.0,
+          amount: 100,
           note: 'salario',
           category: 'trabajo',
         );

@@ -28,21 +28,26 @@ class ProfileView extends StatelessWidget {
       }
 
       if (state.error != null) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(state.error!, style: TextStyle(color: Colors.grey[600])),
-            ],
-          ),
+        debugPrint(
+          'ProfileBloc load error (falling back to AuthProvider): ${state.error}',
         );
       }
 
-      final String fullName = state.info?.fullName ?? 'Usuario';
-      final String email = state.info?.email ?? '';
-      final String? photoUrl = state.info?.photoUrl;
+      final authUser = context.watch<AuthProvider>().currentUser;
+      final String fullName =
+          (state.info?.fullName != null && state.info!.fullName.isNotEmpty)
+              ? state.info!.fullName
+              : (authUser?.fullName != null && authUser!.fullName.isNotEmpty
+                  ? authUser.fullName
+                  : 'Usuario');
+      final String email =
+          (state.info?.email != null && state.info!.email.isNotEmpty)
+              ? state.info!.email
+              : (authUser?.email ?? '');
+      final String? photoUrl =
+          (state.info?.photoUrl != null && state.info!.photoUrl!.isNotEmpty)
+              ? state.info!.photoUrl
+              : authUser?.photoUrl;
       final String initials = _getInitials(fullName);
 
       return CustomScrollView(
@@ -99,7 +104,9 @@ class ProfileView extends StatelessWidget {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Sincronización completada'),
+                                      content: Text(
+                                        'Sincronización completada',
+                                      ),
                                     ),
                                   );
                                 }
@@ -139,9 +146,9 @@ class ProfileView extends StatelessWidget {
                               icon: Icons.notifications_none_rounded,
                               title: 'Notificaciones',
                               onTap: () {
-                                Navigator.of(context).pushNamed(
-                                  RoutePath.notificationsInbox,
-                                );
+                                Navigator.of(
+                                  context,
+                                ).pushNamed(RoutePath.notificationsInbox);
                               },
                             ),
                             ProfileMenuItem(
@@ -150,7 +157,8 @@ class ProfileView extends StatelessWidget {
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute<void>(
-                                    builder: (_) => const NotificationsDetailPage(),
+                                    builder:
+                                        (_) => const NotificationsDetailPage(),
                                   ),
                                 );
                               },

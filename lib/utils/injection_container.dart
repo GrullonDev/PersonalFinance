@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart' show RouteObserver, ModalRoute;
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -11,7 +13,7 @@ import 'package:personal_finance/features/accounts/data/repositories/account_rep
 import 'package:personal_finance/features/accounts/domain/repositories/account_repository.dart';
 import 'package:personal_finance/features/alerts/domain/entities/alert_item.dart';
 
-import 'package:personal_finance/features/auth/data/firebase_auth_service.dart';
+import 'package:personal_finance/features/auth/data/datasources/firebase_auth_service.dart';
 import 'package:personal_finance/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
@@ -59,6 +61,8 @@ import 'package:personal_finance/core/services/notifications/local_notification_
 import 'package:personal_finance/core/services/notifications/push_notification_service.dart';
 import 'package:personal_finance/core/services/notifications/notification_service.dart';
 import 'package:personal_finance/core/services/notifications/notification_permission_service.dart';
+import 'package:personal_finance/features/goals/presentation/bloc/goals_bloc.dart';
+import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
 import 'package:personal_finance/core/services/notifications/push_token_manager.dart';
 import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart'
     as notif_inbox_repo;
@@ -68,6 +72,8 @@ import 'package:personal_finance/features/notifications/domain/entities/notifica
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/recommendations/domain/services/trend_analyzer_service.dart';
 import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -86,7 +92,10 @@ Future<void> initDependencies() async {
   // AuthRepository
   if (!getIt.isRegistered<AuthRepository>()) {
     getIt.registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(getIt<AuthDataSource>()),
+      () => AuthRepositoryImpl(
+        getIt<AuthDataSource>(),
+        FirebaseFirestore.instance,
+      ),
     );
   }
 
@@ -217,6 +226,17 @@ Future<void> initDependencies() async {
     );
   }
 
+  // TransactionLinkingService
+  if (!getIt.isRegistered<TransactionLinkingService>()) {
+    getIt.registerLazySingleton<TransactionLinkingService>(
+      () => TransactionLinkingService(
+        transactionRepo: getIt<backend_tx_repo.TransactionBackendRepository>(),
+        goalRepo: getIt<GoalRepository>(),
+        debtRepo: getIt<DebtRepository>(),
+      ),
+    );
+  }
+
   // Notifications Remote Data Source
   if (!getIt.isRegistered<notif_ds.NotificationRemoteDataSource>()) {
     getIt.registerLazySingleton<notif_ds.NotificationRemoteDataSource>(
@@ -299,6 +319,11 @@ Future<void> initDependencies() async {
     );
   }
 
+  // Vertex AI Service
+  if (!getIt.isRegistered<VertexAiService>()) {
+    getIt.registerLazySingleton<VertexAiService>(() => VertexAiService());
+  }
+
   // Dashboard Logic
   if (!getIt.isRegistered<DashboardLogic>()) {
     getIt.registerFactory<DashboardLogic>(
@@ -310,8 +335,20 @@ Future<void> initDependencies() async {
       ),
     );
   }
+  if (!getIt.isRegistered<GoalsBloc>()) {
+    getIt.registerLazySingleton<GoalsBloc>(
+      () => GoalsBloc(getIt<GoalRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<DebtsBloc>()) {
+    getIt.registerLazySingleton<DebtsBloc>(
+      () => DebtsBloc(getIt<DebtRepository>()),
+    );
+  }
   if (!getIt.isRegistered<VersionService>()) {
-    getIt.registerLazySingleton<VersionService>(() => VersionService());
+    final VersionService versionService = VersionService();
+    await versionService.init();
+    getIt.registerLazySingleton<VersionService>(() => versionService);
   }
 
   // Device Service
@@ -363,6 +400,13 @@ Future<void> initDependencies() async {
 
   if (!getIt.isRegistered<NavigationService>()) {
     getIt.registerLazySingleton<NavigationService>(() => NavigationService());
+  }
+
+  // RouteObserver — used by DashboardPage to auto-refresh on navigation return
+  if (!getIt.isRegistered<RouteObserver<ModalRoute<dynamic>>>()) {
+    getIt.registerSingleton<RouteObserver<ModalRoute<dynamic>>>(
+      RouteObserver<ModalRoute<dynamic>>(),
+    );
   }
 
   if (!getIt.isRegistered<notif_inbox_repo.NotificationInboxRepository>()) {

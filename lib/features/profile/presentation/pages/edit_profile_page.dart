@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:personal_finance/features/profile/domain/entities/profile_info.dart';
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
@@ -28,7 +29,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _isTappingAvatar = false;
   ProfileInfo? _initialInfo;
 
-  String _selectedCountryCode = '+504';
+  String _selectedCountryCode = '+502';
   final List<String> _centralAmericanCodes = [
     '+501',
     '+502',
@@ -83,12 +84,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String initialFirstName = _initialInfo?.firstName ?? '';
     String initialLastName = _initialInfo?.lastName ?? '';
 
+    final authUser = context.read<AuthProvider>().currentUser;
+    final String fullName =
+        (_initialInfo?.fullName != null && _initialInfo!.fullName.isNotEmpty)
+            ? _initialInfo!.fullName
+            : (authUser?.fullName ?? '');
+    final String email =
+        (_initialInfo?.email != null && _initialInfo!.email.isNotEmpty)
+            ? _initialInfo!.email
+            : (authUser?.email ?? '');
+
     // If firstName/lastName are empty but fullName exists
     if (initialFirstName.isEmpty &&
         initialLastName.isEmpty &&
-        _initialInfo?.fullName != null &&
-        _initialInfo!.fullName.isNotEmpty) {
-      final names = _initialInfo!.fullName.trim().split(' ');
+        fullName.isNotEmpty) {
+      final names = fullName.trim().split(' ');
       if (names.isNotEmpty) {
         initialFirstName = names[0];
         if (names.length > 1) {
@@ -103,7 +113,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _usernameController = TextEditingController(
       text: _initialInfo?.username ?? '',
     );
-    _emailController = TextEditingController(text: _initialInfo?.email ?? '');
+    _emailController = TextEditingController(text: email);
 
     // Parse phone number to extract country code
     String initialPhone = _initialInfo?.phoneNumber ?? '';
@@ -564,18 +574,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     }
                   },
                   items:
-                      _centralAmericanCodes.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) => DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(
-                            value,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                      _centralAmericanCodes
+                          .map<DropdownMenuItem<String>>(
+                            (String value) => DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                          ),
-                        )).toList(),
+                          )
+                          .toList(),
                 ),
                 Container(
                   height: 24,

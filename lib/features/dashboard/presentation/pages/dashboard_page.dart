@@ -15,20 +15,62 @@ import 'package:personal_finance/features/transactions/presentation/bloc/transac
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart'
+    show FinancialHealthScore;
 import 'package:personal_finance/utils/routes/route_path.dart';
+import 'package:personal_finance/features/alerts/presentation/widgets/add_alert_modal.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) => ChangeNotifierProvider<DashboardLogic>(
-    create: (context) {
-      final logic = getIt<DashboardLogic>();
-      logic.loadDashboardData();
-      return logic;
-    },
-    child: const _DashboardContent(),
-  );
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> with RouteAware {
+  late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
+
+  @override
+  void initState() {
+    super.initState();
+    _routeObserver = getIt<RouteObserver<ModalRoute<dynamic>>>();
+    // Schedule initial load after first frame so context.read is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<DashboardLogic>().loadDashboardData();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      _routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    _routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  /// Called when the route is first pushed onto the navigator.
+  @override
+  void didPush() {
+    context.read<DashboardLogic>().loadDashboardData();
+  }
+
+  /// Called when the user pops a route on top of this one (returns to dashboard).
+  @override
+  void didPopNext() {
+    context.read<DashboardLogic>().loadDashboardData();
+  }
+
+  @override
+  Widget build(BuildContext context) => const _DashboardContent();
 }
 
 class _DashboardContent extends StatelessWidget {
@@ -79,8 +121,15 @@ class _DashboardContent extends StatelessWidget {
                             : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                if (logic.insightMessage != null) ...[
+                                if (logic.insightMessage != null ||
+                                    logic.personalizedTip != null ||
+                                    logic.isLoadingTip) ...[
                                   _buildInsightsCard(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                if (logic.healthScore != null ||
+                                    logic.isLoadingHealthScore) ...[
+                                  _buildHealthScoreCard(context, logic),
                                   const SizedBox(height: 24),
                                 ],
                                 GestureDetector(
@@ -115,6 +164,11 @@ class _DashboardContent extends StatelessWidget {
                                 ],
                                 if (logic.shouldShowIncomesList) ...<Widget>[
                                   _buildIncomeList(context, logic),
+                                  const SizedBox(height: 24),
+                                ],
+                                if (logic.spendingPrediction != null ||
+                                    logic.isLoadingPrediction) ...[
+                                  _buildSpendingPredictionCard(context, logic),
                                   const SizedBox(height: 24),
                                 ],
                                 _buildRecommendationsSection(context, logic),
@@ -164,8 +218,15 @@ class _DashboardContent extends StatelessWidget {
                                 flex: 5,
                                 child: Column(
                                   children: <Widget>[
-                                    if (logic.insightMessage != null) ...[
+                                    if (logic.insightMessage != null ||
+                                        logic.personalizedTip != null ||
+                                        logic.isLoadingTip) ...[
                                       _buildInsightsCard(context, logic),
+                                      const SizedBox(height: 32),
+                                    ],
+                                    if (logic.healthScore != null ||
+                                        logic.isLoadingHealthScore) ...[
+                                      _buildHealthScoreCard(context, logic),
                                       const SizedBox(height: 32),
                                     ],
                                     GestureDetector(
@@ -221,6 +282,14 @@ class _DashboardContent extends StatelessWidget {
                                       _buildIncomeList(context, logic),
                                       const SizedBox(height: 32),
                                     ],
+                                    if (logic.spendingPrediction != null ||
+                                        logic.isLoadingPrediction) ...[
+                                      _buildSpendingPredictionCard(
+                                        context,
+                                        logic,
+                                      ),
+                                      const SizedBox(height: 32),
+                                    ],
                                     _buildRecommendationsSection(
                                       context,
                                       logic,
@@ -239,58 +308,84 @@ class _DashboardContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) =>
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+  Widget _buildInsightsCard(BuildContext context, DashboardLogic logic) {
+    final String tipText = logic.personalizedTip ?? logic.insightMessage ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.auto_awesome,
+            color: Theme.of(context).colorScheme.primary,
+            size: 28,
           ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.tips_and_updates,
-              color: Theme.of(context).colorScheme.primary,
-              size: 28,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Insight',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                      letterSpacing: 0.5,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Asesor Financiero IA ✨',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                        letterSpacing: 0.5,
+                      ),
                     ),
+                    if (logic.isLoadingTip) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.green,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  logic.isLoadingTip
+                      ? 'Generando consejos financieros a tu medida...'
+                      : tipText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.4,
+                    fontStyle:
+                        logic.isLoadingTip
+                            ? FontStyle.italic
+                            : FontStyle.normal,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    logic.insightMessage!,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildHeader(BuildContext context, DashboardLogic logic) {
     final primaryColor = Theme.of(context).colorScheme.primary;
     // Crear variantes del color primario verde para el gradiente
-    final lightGreen = Color.lerp(primaryColor, Colors.white, 0.2)!;
+    final lightGreen = Color.lerp(primaryColor, Theme.of(context).colorScheme.surface, 0.2)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -445,12 +540,48 @@ class _DashboardContent extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'Así van tus finanzas hoy',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
+                          Row(
+                            children: [
+                              const Text(
+                                'Así van tus finanzas hoy',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              if (logic.savingsStreak > 0) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.local_fire_department,
+                                        color: Colors.orange,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Racha: ${logic.savingsStreak} d',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
@@ -500,7 +631,7 @@ class _DashboardContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 // Balance total
-                _buildBalanceHeader(logic),
+                _buildBalanceHeader(context, logic),
                 const SizedBox(
                   height: 30,
                 ), // Extra padding for the overlay effect
@@ -677,7 +808,7 @@ class _DashboardContent extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.blueAccent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
                       ),
                     ),
                   ),
@@ -719,11 +850,11 @@ class _DashboardContent extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
+                          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -763,9 +894,9 @@ class _DashboardContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildBalanceHeader(DashboardLogic logic) {
+  Widget _buildBalanceHeader(BuildContext context, DashboardLogic logic) {
     final bool isPositive = logic.balance >= 0;
-    final Color balanceColor = isPositive ? Colors.white : Colors.red.shade200;
+    final Color balanceColor = isPositive ? Colors.white : Theme.of(context).colorScheme.error.withValues(alpha: 0.7);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1070,6 +1201,207 @@ class _DashboardContent extends StatelessWidget {
     return 'Compras';
   }
 
+  Widget _buildHealthScoreCard(BuildContext context, DashboardLogic logic) {
+    final FinancialHealthScore? score = logic.healthScore;
+
+    Color scoreColor(int s) {
+      if (s >= 75) return Colors.green;
+      if (s >= 60) return Colors.orange;
+      return Colors.red;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child:
+          logic.isLoadingHealthScore
+              ? const Row(
+                children: [
+                  SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: CircularProgressIndicator(strokeWidth: 4),
+                  ),
+                  SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Salud Financiera',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Calculando tu puntaje...',
+                          style: TextStyle(fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+              : Row(
+                children: [
+                  SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: (score?.score ?? 0) / 100,
+                          strokeWidth: 6,
+                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            scoreColor(score?.score ?? 0),
+                          ),
+                        ),
+                        Text(
+                          score?.grade ?? '-',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: scoreColor(score?.score ?? 0),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Salud Financiera',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${score?.score ?? 0}/100',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: scoreColor(score?.score ?? 0),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          score?.summary ?? '',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+    );
+  }
+
+  Widget _buildSpendingPredictionCard(
+    BuildContext context,
+    DashboardLogic logic,
+  ) {
+    const color = Colors.indigo;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.trending_up, color: color, size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Predicción Próxima Semana',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    if (logic.isLoadingPrediction) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  logic.isLoadingPrediction
+                      ? 'Analizando tus patrones de gasto...'
+                      : logic.spendingPrediction ?? '',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.4,
+                    fontStyle:
+                        logic.isLoadingPrediction
+                            ? FontStyle.italic
+                            : FontStyle.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRecommendationsSection(
     BuildContext context,
     DashboardLogic logic,
@@ -1115,8 +1447,12 @@ class _DashboardContent extends StatelessWidget {
                     // No action
                     break;
                   case RecommendationActionType.createBudgetAlert:
-                    // TODO: Handle this case.
-                    throw UnimplementedError();
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const AddAlertModal(),
+                    );
                 }
               },
             );
@@ -1236,7 +1572,7 @@ class _DashboardContent extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.outline,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),

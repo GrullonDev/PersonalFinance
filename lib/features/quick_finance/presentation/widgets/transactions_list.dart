@@ -171,7 +171,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             'Empieza con tu último gasto',
             style: TextStyle(
-              color: Colors.grey.shade700,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
               fontSize: 16,
             ),
@@ -204,7 +204,7 @@ class _EmptyState extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -219,7 +219,7 @@ class _EmptyState extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),

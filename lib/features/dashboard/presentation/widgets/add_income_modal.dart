@@ -84,7 +84,9 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                         FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
                         LengthLimitingTextInputFormatter(120),
                       ],
-                      validator: (String? value) => InputSanitizer.validateName(value ?? ''),
+                      validator:
+                          (String? value) =>
+                              InputSanitizer.validateName(value ?? ''),
                     ),
               ),
               const SizedBox(height: 16),
@@ -100,7 +102,9 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                   border: OutlineInputBorder(),
                   prefixText: 'Q ',
                 ),
-                validator: (String? value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (String? value) =>
+                        InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -156,7 +160,9 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       await logic.addIncome(
-                        title: InputSanitizer.sanitizeText(_titleController.text.trim()),
+                        title: InputSanitizer.sanitizeText(
+                          _titleController.text.trim(),
+                        ),
                         amount: _amountController.text.trim(),
                         date: _selectedDate,
                         source: _selectedCategory,

@@ -36,7 +36,7 @@ import 'package:personal_finance/features/notifications/domain/repositories/noti
 import 'package:personal_finance/features/notifications/domain/repositories/notification_inbox_repository.dart'
     as notif_inbox_repo;
 import 'package:personal_finance/core/services/navigation_service.dart';
-import 'package:personal_finance/utils/theme.dart';
+import 'package:personal_finance/utils/app_theme_preset.dart';
 import 'package:personal_finance/utils/widgets/app_lifecycle_listener.dart';
 import 'package:personal_finance/features/splash/splash_screen.dart';
 
@@ -80,8 +80,7 @@ class MyApp extends StatelessWidget {
             (_) => BudgetsBloc(getIt<BudgetRepository>())..add(BudgetsLoad()),
       ),
       BlocProvider<DebtsBloc>(
-        create:
-            (_) => DebtsBloc(getIt<DebtRepository>())..add(DebtsLoad()),
+        create: (_) => getIt<DebtsBloc>()..add(DebtsLoad()),
       ),
       ChangeNotifierProvider<NotificationInboxProvider>(
         create:
@@ -105,9 +104,12 @@ class MyApp extends StatelessWidget {
             _,
           ) => MaterialApp(
             navigatorKey: getIt<NavigationService>().navigatorKey,
-            themeMode: settingsProvider.themeMode,
-            theme: AppTheme.light(primaryColor: settingsProvider.primaryColor),
-            darkTheme: AppTheme.dark(primaryColor: settingsProvider.primaryColor),
+            // ThemeMode.light means "always use theme, never darkTheme".
+            // The app owns its brightness — the OS dark-mode switch has no effect.
+            themeMode: ThemeMode.light,
+            theme: AppThemePreset.getById(
+              settingsProvider.selectedThemeId,
+            ).themeData,
             onGenerateTitle:
                 (BuildContext context) =>
                     AppLocalizations.of(context)?.appTitle ??
@@ -116,8 +118,8 @@ class MyApp extends StatelessWidget {
             // Global builder to clamp text scale and handle App Locking
             builder: (BuildContext context, Widget? child) {
               final MediaQueryData mq = MediaQuery.of(context);
-              
-              double textScale = 1.0;
+
+              double textScale = 1;
               switch (settingsProvider.textSize) {
                 case 'Pequeño':
                   textScale = 0.85;
@@ -140,8 +142,10 @@ class MyApp extends StatelessWidget {
               upgrader: Upgrader(
                 debugLogging: true,
                 durationUntilAlertAgain: const Duration(seconds: 30),
-                minAppVersion: getIt<VersionService>().minAppVersion, // Use min version from Remote Config
-                countryCode: 'es', 
+                minAppVersion:
+                    getIt<VersionService>()
+                        .minAppVersion, // Use min version from Remote Config
+                countryCode: 'es',
                 messages: UpgraderMessages(code: 'es'),
                 // Ensure the iOS store ID or URL is correctly provided if available
               ),
@@ -155,6 +159,7 @@ class MyApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             navigatorObservers: <NavigatorObserver>[
+              getIt<RouteObserver<ModalRoute<dynamic>>>(),
               if (Firebase.apps.isNotEmpty)
                 FirebaseAnalyticsObserver(
                   analytics: FirebaseAnalytics.instance,

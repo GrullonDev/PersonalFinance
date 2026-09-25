@@ -307,7 +307,7 @@ class _IncomeExpensesCard extends StatelessWidget {
                 Text('Gastos', style: Theme.of(context).textTheme.titleMedium),
                 AnimatedCounter(
                   value: gastos,
-                  prefix: '\$',
+                  prefix: CurrencyHelper.symbol,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.red,

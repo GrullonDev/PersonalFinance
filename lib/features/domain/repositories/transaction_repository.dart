@@ -7,7 +7,9 @@ import 'package:personal_finance/features/domain/entities/income_entity.dart';
 /// Sigue el principio de inversión de dependencias (DIP)
 abstract class TransactionRepository {
   /// Obtiene todos los gastos
-  Future<Either<Failure, List<ExpenseEntity>>> getExpenses({String? profileType});
+  Future<Either<Failure, List<ExpenseEntity>>> getExpenses({
+    String? profileType,
+  });
 
   /// Obtiene todos los ingresos
   Future<Either<Failure, List<IncomeEntity>>> getIncomes({String? profileType});

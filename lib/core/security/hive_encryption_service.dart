@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 /// Manages the AES-256 cipher key used to encrypt every Hive box.
@@ -27,11 +28,10 @@ class HiveEncryptionService {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     // iOS: key survives app restarts but not device restore without iCloud
     // Keychain backup (acceptable for an encryption key — users re-login).
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock,
-    ),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
+  // ignore: comment_references
   /// Returns the [HiveAesCipher] to pass to every [Hive.openBox] call.
   /// Creates and persists the key on the very first call.
   static Future<HiveAesCipher> getCipher() async {
@@ -42,10 +42,7 @@ class HiveEncryptionService {
       keyBytes = base64Url.decode(encoded);
     } else {
       keyBytes = Hive.generateSecureKey();
-      await _storage.write(
-        key: _keyAlias,
-        value: base64Url.encode(keyBytes),
-      );
+      await _storage.write(key: _keyAlias, value: base64Url.encode(keyBytes));
     }
 
     return HiveAesCipher(keyBytes);

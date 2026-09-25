@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 import 'package:personal_finance/features/transactions/presentation/providers/transaction_detail_logic.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_detail.dart';
 import 'package:provider/provider.dart';
@@ -31,9 +32,10 @@ class _TransactionDetailView extends StatelessWidget {
     final Color amountColor = transaction.isExpense ? Colors.red : Colors.green;
     final DateFormat dateFormatter = DateFormat("dd 'de' MMMM, yyyy", 'es');
     final DateFormat timeFormatter = DateFormat('hh:mm a', 'es');
+    final String symbol = CurrencyHelper.symbol;
     final NumberFormat currencyFormatter = NumberFormat.currency(
       locale: 'en_US',
-      symbol: 'Q',
+      symbol: symbol,
       decimalDigits: 2,
     );
 

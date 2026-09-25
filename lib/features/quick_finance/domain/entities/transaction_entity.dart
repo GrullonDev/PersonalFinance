@@ -21,12 +21,12 @@ class TransactionEntity extends Equatable {
     required this.type,
     required this.amount,
     required this.note,
-    this.categoryId,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
     required this.version,
     required this.deviceId,
+    this.categoryId,
     this.deletedAt,
   });
 

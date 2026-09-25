@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 
-enum PeriodFilter { 
-  dia, 
-  semana, 
-  mes, 
-  anio, 
-  personalizado, 
-  historico 
-}
+enum PeriodFilter { dia, semana, mes, anio, personalizado, historico }
 
 extension PeriodFilterExtension on PeriodFilter {
   String get label {
     switch (this) {
-      case PeriodFilter.dia: return 'Hoy';
-      case PeriodFilter.semana: return 'Esta Semana';
-      case PeriodFilter.mes: return 'Este Mes';
-      case PeriodFilter.anio: return 'Este Año';
-      case PeriodFilter.personalizado: return 'Personalizado';
-      case PeriodFilter.historico: return 'Histórico';
+      case PeriodFilter.dia:
+        return 'Hoy';
+      case PeriodFilter.semana:
+        return 'Esta Semana';
+      case PeriodFilter.mes:
+        return 'Este Mes';
+      case PeriodFilter.anio:
+        return 'Este Año';
+      case PeriodFilter.personalizado:
+        return 'Personalizado';
+      case PeriodFilter.historico:
+        return 'Histórico';
     }
   }
 }

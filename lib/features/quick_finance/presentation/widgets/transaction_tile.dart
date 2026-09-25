@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
 
 class TransactionTile extends StatelessWidget {
   final TransactionEntity transaction;
@@ -68,7 +69,6 @@ class _TileBody extends StatelessWidget {
   final bool hideAmounts;
 
   static final _dateFmt = DateFormat('d MMM  HH:mm', 'es');
-  static final _currFmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
 
   const _TileBody({required this.transaction, required this.hideAmounts});
 
@@ -84,11 +84,11 @@ class _TileBody extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -128,7 +128,7 @@ class _TileBody extends StatelessWidget {
                     Text(
                       _dateFmt.format(transaction.createdAt),
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                         fontSize: 12,
                       ),
                     ),
@@ -150,7 +150,7 @@ class _TileBody extends StatelessWidget {
               Text(
                 hideAmounts
                     ? '${isIncome ? '+' : '-'}••••'
-                    : '${isIncome ? '+' : '-'}${_currFmt.format(transaction.amount)}',
+                    : '${isIncome ? '+' : '-'}${CurrencyHelper.format(transaction.amount)}',
                 style: TextStyle(
                   color: amountColor,
                   fontWeight: FontWeight.bold,
@@ -316,6 +316,15 @@ _CatInfo _categorize(TransactionEntity t) {
       iconBg: Color(0xFFE3F2FD),
       iconColor: Color(0xFF007AFF),
       inferredCategory: 'transporte',
+    );
+  }
+
+  if (_has(text, ['venta', 'ventas', 'negocio', 'comercio', 'producto'])) {
+    return const _CatInfo(
+      icon: Icons.storefront_rounded,
+      iconBg: Color(0xFFE8F5E9),
+      iconColor: Color(0xFF2E7D32),
+      inferredCategory: 'negocio',
     );
   }
 

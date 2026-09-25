@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
+import 'package:personal_finance/utils/currency_helper.dart';
+import 'package:personal_finance/utils/theme.dart';
 
 enum _Period { today, week, month }
 
@@ -24,8 +25,6 @@ class BalanceCard extends StatefulWidget {
 class _BalanceCardState extends State<BalanceCard> {
   bool _hidden = false;
   _Period _period = _Period.today;
-
-  static final _fmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
 
   void _toggleVisibility() {
     if (widget.forceHidden) return;
@@ -76,28 +75,29 @@ class _BalanceCardState extends State<BalanceCard> {
         if (expenses == 0 && income == 0) return 'Sin movimientos hoy';
         if (expenses == 0) return 'Sin gastos hoy';
         if (effectiveHidden) return 'Tienes gastos registrados hoy';
-        return 'Gastaste ${_fmt.format(expenses)} hoy';
+        return 'Gastaste ${CurrencyHelper.format(expenses)} hoy';
       case _Period.week:
         if (expenses == 0 && income == 0) return 'Sin movimientos esta semana';
         if (expenses == 0) return 'Sin gastos esta semana';
         if (effectiveHidden) return 'Tienes gastos esta semana';
-        return 'Gastaste ${_fmt.format(expenses)} esta semana';
+        return 'Gastaste ${CurrencyHelper.format(expenses)} esta semana';
       case _Period.month:
         if (expenses == 0 && income == 0) return 'Sin movimientos este mes';
         if (balance < 0) return 'Balance negativo este mes';
         if (balance == 0) return 'Sin ganancias ni pérdidas';
         if (effectiveHidden) return 'Balance positivo este mes';
-        return 'Ahorraste ${_fmt.format(balance)} este mes';
+        return 'Ahorraste ${CurrencyHelper.format(balance)} este mes';
     }
   }
 
-  Color get _insightColor {
+  Color _insightColor(BuildContext context) {
+    final neutral = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
     switch (_period) {
       case _Period.today:
       case _Period.week:
-        return _expenses > 0 ? const Color(0xFFFF9500) : Colors.grey.shade400;
+        return _expenses > 0 ? const Color(0xFFFF9500) : neutral;
       case _Period.month:
-        return _balance < 0 ? const Color(0xFFFF3B30) : Colors.grey.shade400;
+        return _balance < 0 ? const Color(0xFFFF3B30) : neutral;
     }
   }
 
@@ -143,12 +143,11 @@ class _BalanceCardState extends State<BalanceCard> {
     final effectiveHidden = widget.forceHidden || _hidden;
     final accent = Theme.of(context).primaryColor;
     final balance = _balance;
+    final financeColors = Theme.of(context).extension<FinanceColors>()!;
     final balanceColor =
         effectiveHidden
-            ? Colors.grey.shade700
-            : (balance >= 0
-                ? const Color(0xFF34C759)
-                : const Color(0xFFFF3B30));
+            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)
+            : (balance >= 0 ? financeColors.income : financeColors.expense);
 
     final periodLabel = switch (_period) {
       _Period.today => 'hoy',
@@ -160,11 +159,11 @@ class _BalanceCardState extends State<BalanceCard> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -190,7 +189,7 @@ class _BalanceCardState extends State<BalanceCard> {
                       : effectiveHidden
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: Colors.grey.shade400,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   size: 18,
                 ),
               ),
@@ -203,7 +202,7 @@ class _BalanceCardState extends State<BalanceCard> {
             'Balance $periodLabel',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade500,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,
             ),
@@ -213,7 +212,7 @@ class _BalanceCardState extends State<BalanceCard> {
             duration: const Duration(milliseconds: 200),
             child: Text(
               key: ValueKey('$effectiveHidden$_period$balance'),
-              effectiveHidden ? '••••' : _fmt.format(balance),
+              effectiveHidden ? '••••' : CurrencyHelper.format(balance),
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -228,11 +227,11 @@ class _BalanceCardState extends State<BalanceCard> {
           // Insight accionable
           Row(
             children: [
-              Icon(_insightIcon, size: 13, color: _insightColor),
+              Icon(_insightIcon, size: 13, color: _insightColor(context)),
               const SizedBox(width: 5),
               Text(
                 _insightText,
-                style: TextStyle(fontSize: 12, color: _insightColor),
+                style: TextStyle(fontSize: 12, color: _insightColor(context)),
               ),
             ],
           ),
@@ -240,12 +239,12 @@ class _BalanceCardState extends State<BalanceCard> {
             const SizedBox(height: 10),
             Text(
               'Private mode activo: los montos permanecen ocultos en toda la app.',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
             ),
           ],
 
           const SizedBox(height: 16),
-          Divider(color: Colors.grey.shade100, height: 1),
+          const Divider(height: 1),
           const SizedBox(height: 16),
 
           // Fila ingresos / gastos
@@ -278,26 +277,26 @@ class _BalanceCardState extends State<BalanceCard> {
           // Top category (only when data is meaningful)
           if (_topCategory case final top?) ...[
             const SizedBox(height: 10),
-            Divider(color: Colors.grey.shade100, height: 1),
+            const Divider(height: 1),
             const SizedBox(height: 10),
             Row(
               children: [
                 Icon(
                   Icons.bar_chart_rounded,
                   size: 13,
-                  color: Colors.grey.shade500,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 5),
                 Text(
                   'Mayor gasto: ',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                 ),
                 Text(
                   '${top.label} (${top.pct}%)',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -324,8 +323,9 @@ String _inferCat(TransactionEntity t) {
     'restaurante',
     'super',
     'mercado',
-  ]))
+  ])) {
     return 'comida';
+  }
   if (_kw(text, [
     'transporte',
     'taxi',
@@ -334,8 +334,13 @@ String _inferCat(TransactionEntity t) {
     'metro',
     'gasolina',
     'coche',
-  ]))
+  ])) {
     return 'transporte';
+  }
+  if (_kw(text, ['venta', 'ventas', 'negocio', 'comercio', 'producto'])) {
+    return 'negocio';
+  }
+
   if (_kw(text, [
     'servicio',
     'luz',
@@ -344,14 +349,18 @@ String _inferCat(TransactionEntity t) {
     'internet',
     'renta',
     'alquiler',
-  ]))
+  ])) {
     return 'servicios';
-  if (_kw(text, ['compra', 'tienda', 'ropa', 'amazon', 'mall', 'shopping']))
+  }
+  if (_kw(text, ['compra', 'tienda', 'ropa', 'amazon', 'mall', 'shopping'])) {
     return 'compras';
-  if (_kw(text, ['salud', 'medico', 'farmacia', 'gym', 'deporte']))
+  }
+  if (_kw(text, ['salud', 'medico', 'farmacia', 'gym', 'deporte'])) {
     return 'salud';
-  if (_kw(text, ['cine', 'netflix', 'spotify', 'streaming']))
+  }
+  if (_kw(text, ['cine', 'netflix', 'spotify', 'streaming'])) {
     return 'entretenimiento';
+  }
   return t.categoryId ?? 'otros';
 }
 
@@ -371,7 +380,7 @@ class _PeriodSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: Colors.grey.shade100,
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(10),
     ),
     padding: const EdgeInsets.all(3),
@@ -397,13 +406,15 @@ class _PeriodSelector extends StatelessWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.surface
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(7),
                   boxShadow:
                       isSelected
                           ? [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
+                              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
@@ -415,7 +426,7 @@ class _PeriodSelector extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? accent : Colors.grey.shade500,
+                    color: isSelected ? accent : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ),
@@ -435,8 +446,6 @@ class _StatRow extends StatelessWidget {
   final double amount;
   final bool hidden;
   final bool alignRight;
-
-  static final _fmt = NumberFormat.currency(locale: 'en_US', symbol: 'Q', decimalDigits: 2);
 
   const _StatRow({
     required this.icon,
@@ -464,14 +473,14 @@ class _StatRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
             ),
             Text(
-              hidden ? '••' : _fmt.format(amount),
+              hidden ? '••' : CurrencyHelper.format(amount),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],

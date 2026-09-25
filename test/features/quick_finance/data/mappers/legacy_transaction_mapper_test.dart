@@ -36,9 +36,18 @@ void main() {
     test('type income', () => expect(result.type, TransactionType.income));
     test('amount', () => expect(result.amount, 1500.0));
     test('note', () => expect(result.note, 'salario'));
-    test('createdAt ISO8601', () => expect(result.createdAt, DateTime(2026, 4, 11, 10, 0)));
-    test('updatedAt ISO8601', () => expect(result.updatedAt, DateTime(2026, 4, 11, 11, 0)));
-    test('syncStatus synced', () => expect(result.syncStatus, SyncStatus.synced));
+    test(
+      'createdAt ISO8601',
+      () => expect(result.createdAt, DateTime(2026, 4, 11, 10)),
+    );
+    test(
+      'updatedAt ISO8601',
+      () => expect(result.updatedAt, DateTime(2026, 4, 11, 11)),
+    );
+    test(
+      'syncStatus synced',
+      () => expect(result.syncStatus, SyncStatus.synced),
+    );
     test('version', () => expect(result.version, 3));
     test('deviceId', () => expect(result.deviceId, 'pixel_9'));
     test('categoryId', () => expect(result.categoryId, 'cat_salary'));
@@ -60,7 +69,10 @@ void main() {
       });
     });
 
-    test('tipo ingreso → income', () => expect(result.type, TransactionType.income));
+    test(
+      'tipo ingreso → income',
+      () => expect(result.type, TransactionType.income),
+    );
     test('monto mapeado', () => expect(result.amount, 800.0));
     test('descripcion → note', () => expect(result.note, 'freelance'));
     test('fecha YYYY-MM-DD → createdAt', () {
@@ -68,8 +80,14 @@ void main() {
       expect(result.createdAt.month, 4);
       expect(result.createdAt.day, 1);
     });
-    test('updatedAt fallback = createdAt', () => expect(result.updatedAt, result.createdAt));
-    test('categoria_id → categoryId', () => expect(result.categoryId, 'cat_work'));
+    test(
+      'updatedAt fallback = createdAt',
+      () => expect(result.updatedAt, result.createdAt),
+    );
+    test(
+      'categoria_id → categoryId',
+      () => expect(result.categoryId, 'cat_work'),
+    );
   });
 
   // ── 3. Alias "gasto" → expense ────────────────────────────────────────────
@@ -161,12 +179,19 @@ void main() {
     });
 
     test('"title" legacy', () {
-      expect(_map({'amount': 10.0, 'title': 'suscripción'}).note, 'suscripción');
+      expect(
+        _map({'amount': 10.0, 'title': 'suscripción'}).note,
+        'suscripción',
+      );
     });
 
     test('"note" tiene prioridad sobre "descripcion"', () {
       expect(
-        _map({'amount': 10.0, 'note': 'prioritario', 'descripcion': 'otro'}).note,
+        _map({
+          'amount': 10.0,
+          'note': 'prioritario',
+          'descripcion': 'otro',
+        }).note,
         'prioritario',
       );
     });
@@ -214,7 +239,7 @@ void main() {
 
   group('Escenario 12 — createdAt como int (ms desde epoch)', () {
     test('int epoch → DateTime correcto', () {
-      final dt = DateTime(2026, 4, 11, 12, 0);
+      final dt = DateTime(2026, 4, 11, 12);
       final ms = dt.millisecondsSinceEpoch;
       final r = _map({'createdAt': ms});
       expect(r.createdAt.year, 2026);
@@ -227,7 +252,7 @@ void main() {
 
   group('Escenario 13 — createdAt como Firestore Timestamp', () {
     test('Timestamp parseado correctamente', () {
-      final dt = DateTime(2026, 4, 11, 15, 0);
+      final dt = DateTime(2026, 4, 11, 15);
       final ts = Timestamp.fromDate(dt);
       final r = _map({'createdAt': ts});
       expect(r.createdAt.year, 2026);
@@ -250,7 +275,7 @@ void main() {
         'createdAt': '2026-04-01T09:00:00.000',
         'fecha_actualizacion': '2026-04-02T10:00:00.000',
       });
-      expect(r.updatedAt, DateTime(2026, 4, 2, 10, 0));
+      expect(r.updatedAt, DateTime(2026, 4, 2, 10));
     });
   });
 
@@ -343,7 +368,10 @@ void main() {
     });
 
     test('valor desconocido → synced', () {
-      expect(_map({'syncStatus': 'UNKNOWN_VALUE'}).syncStatus, SyncStatus.synced);
+      expect(
+        _map({'syncStatus': 'UNKNOWN_VALUE'}).syncStatus,
+        SyncStatus.synced,
+      );
     });
   });
 
@@ -356,10 +384,16 @@ void main() {
 
     test('type → expense', () => expect(result.type, TransactionType.expense));
     test('amount → 0.0', () => expect(result.amount, 0.0));
-    test('note → "Sin descripción"', () => expect(result.note, 'Sin descripción'));
+    test(
+      'note → "Sin descripción"',
+      () => expect(result.note, 'Sin descripción'),
+    );
     test('version → 1', () => expect(result.version, 1));
     test('deviceId → vacío', () => expect(result.deviceId, ''));
-    test('syncStatus → synced', () => expect(result.syncStatus, SyncStatus.synced));
+    test(
+      'syncStatus → synced',
+      () => expect(result.syncStatus, SyncStatus.synced),
+    );
     test('categoryId → null', () => expect(result.categoryId, isNull));
     test('deletedAt → null', () => expect(result.deletedAt, isNull));
   });

@@ -57,8 +57,8 @@ class LegacyTransactionMapper {
   /// [userId] es obligatorio porque el legacy a veces no lo almacena.
   static TransactionModel fromMap(
     Map<String, dynamic> json, {
-    String? documentId,
     required String userId,
+    String? documentId,
   }) {
     // ── id ──────────────────────────────────────────────────────────────────
     // Prefiere campo "id" del documento; si falta usa docId del snapshot
@@ -92,7 +92,8 @@ class LegacyTransactionMapper {
     // ── createdAt ─────────────────────────────────────────────────────────────
     // Aliases: createdAt / fecha / date / fecha_creacion
     // Tipos: ISO8601 String, YYYY-MM-DD String, Timestamp, int (ms)
-    final createdAt = _parseDateTime(
+    final createdAt =
+        _parseDateTime(
           json['createdAt'] ??
               json['fecha'] ??
               json['date'] ??
@@ -104,12 +105,13 @@ class LegacyTransactionMapper {
     // Aliases: updatedAt / fecha_actualizacion. Fallback: createdAt
     final updatedAt =
         _parseDateTime(json['updatedAt'] ?? json['fecha_actualizacion']) ??
-            createdAt;
+        createdAt;
 
     // ── deletedAt ────────────────────────────────────────────────────────────
     // Aliases: deletedAt / fecha_eliminacion. Nullable
-    final deletedAt =
-        _parseDateTime(json['deletedAt'] ?? json['fecha_eliminacion']);
+    final deletedAt = _parseDateTime(
+      json['deletedAt'] ?? json['fecha_eliminacion'],
+    );
 
     // ── version ──────────────────────────────────────────────────────────────
     final version = _parseInt(json['version']) ?? 1;
@@ -158,7 +160,7 @@ class LegacyTransactionMapper {
       return double.tryParse(raw.replaceAll(',', '.')) ?? 0.0;
     }
     // nulo o tipo inesperado → fallback 0.0
-    return 0.0;
+    return 0;
   }
 
   /// Devuelve el texto recortado o "Sin descripción" si está vacío/nulo.
@@ -211,5 +213,6 @@ class LegacyTransactionMapper {
   }
 
   /// ID generado solo cuando el documento no tiene campo `id` ni `documentId`.
-  static String _generateId() => DateTime.now().millisecondsSinceEpoch.toString();
+  static String _generateId() =>
+      DateTime.now().millisecondsSinceEpoch.toString();
 }

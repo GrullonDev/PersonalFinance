@@ -9,7 +9,7 @@ import 'package:personal_finance/core/services/app_data_cleanup_service.dart';
 import 'package:personal_finance/core/security/auth_session_storage.dart';
 import 'package:personal_finance/core/services/security_logger.dart';
 
-import 'package:personal_finance/features/auth/data/local_auth_service.dart';
+import 'package:personal_finance/features/auth/data/datasources/local_auth_service.dart';
 import 'package:personal_finance/features/auth/data/models/request/login_user_request.dart';
 import 'package:personal_finance/features/auth/data/models/request/register_user_request.dart';
 import 'package:personal_finance/features/auth/data/models/response/current_user_response.dart';
@@ -55,17 +55,8 @@ class AuthProvider extends ChangeNotifier {
     return user != null && user.emailVerified;
   }
 
-  ThemeMode _themeMode = ThemeMode.system;
-
-  ThemeMode get themeMode => _themeMode;
-
   void togglePasswordVisibility() {
     _obscurePassword = !_obscurePassword;
-    notifyListeners();
-  }
-
-  void setThemeMode(ThemeMode mode) {
-    _themeMode = mode;
     notifyListeners();
   }
 
@@ -88,7 +79,7 @@ class AuthProvider extends ChangeNotifier {
             _setLoading(false);
             return false;
           }
-          await loadCurrentUser();
+          await _fetchUserData();
           await LocalAuthService().login();
           _setLoading(false);
           _setError(null);
@@ -121,7 +112,7 @@ class AuthProvider extends ChangeNotifier {
             _setLoading(false);
             return false;
           }
-          await loadCurrentUser();
+          await _fetchUserData();
           await LocalAuthService().login();
           _setLoading(false);
           _setError(null);
@@ -157,13 +148,49 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Fetches the current user from the repository and updates [_currentUser].
+  /// Does NOT touch [_isLoading] — callers manage loading state themselves.
+  /// Callers are responsible for calling [syncSessionFromFirebase] before this.
+  Future<Either<AuthFailure, CurrentUserResponse>> _fetchUserData() async {
+    try {
+      final Either<AuthFailure, CurrentUserResponse> result =
+          await authRepository.getCurrentUser();
+
+      if (result.isLeft()) {
+        final failure = (result as Left<AuthFailure, CurrentUserResponse>).value;
+        _errorMessage = _localizeAuthMessage(failure.message);
+        if (failure.message.toLowerCase().contains('expired') ||
+            failure.message.toLowerCase().contains('invalid')) {
+          await _clearAuthData();
+        }
+        notifyListeners();
+        return Left(AuthFailure(message: _errorMessage!));
+      } else {
+        final user = (result as Right<AuthFailure, CurrentUserResponse>).value;
+        _currentUser = user;
+        _saveAuthData();
+        notifyListeners();
+        return Right(user);
+      }
+    } catch (e) {
+      _errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
+      await _clearAuthData();
+      notifyListeners();
+      return const Left(
+        AuthFailure(message: 'Ocurrió un error inesperado. Intenta de nuevo.'),
+      );
+    }
+  }
+
   Future<void> logout() async {
     final String? userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
     try {
       await LocalAuthService().logout();
       await authRepository.logout();
+    } catch (_) {
+      // Si falla el logout remoto, continuamos limpiando estado local.
     } finally {
-      await _clearAuthData();
+      await _clearAuthData(notify: false);
       await AppDataCleanupService.clearUserScopedData(userId: userId);
     }
     notifyListeners();
@@ -171,10 +198,7 @@ class AuthProvider extends ChangeNotifier {
 
   // Expone un manejador para eventos de reanudación de la app (foreground)
   Future<void> onAppResumed() async {
-    final bool ok = await syncSessionFromFirebase();
-    if (ok) {
-      await loadCurrentUser();
-    }
+    await loadCurrentUser();
   }
 
   Future<bool> syncSessionFromFirebase({
@@ -214,7 +238,28 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
-    final String? token = await user.getIdToken(forceRefresh);
+    String? token;
+    try {
+      token = await user.getIdToken(forceRefresh);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'channel-error' &&
+          _accessToken != null &&
+          _accessToken!.isNotEmpty) {
+        // Canal Pigeon no disponible (hot-restart). Reutilizar token en caché.
+        if (notify) notifyListeners();
+        return true;
+      }
+      await _clearAuthData(notify: notify);
+      return false;
+    } catch (_) {
+      if (_accessToken != null && _accessToken!.isNotEmpty) {
+        if (notify) notifyListeners();
+        return true;
+      }
+      await _clearAuthData(notify: notify);
+      return false;
+    }
+
     if (token == null || token.isEmpty) {
       await _clearAuthData(notify: notify);
       return false;
@@ -393,10 +438,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<Either<AuthFailure, CurrentUserResponse>> loadCurrentUser() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       final bool restored = await syncSessionFromFirebase();
       if (!restored) {
@@ -409,36 +451,9 @@ class AuthProvider extends ChangeNotifier {
           ),
         );
       }
-
-      final Either<AuthFailure, CurrentUserResponse> result =
-          await authRepository.getCurrentUser();
-      return result.fold(
-        (AuthFailure failure) {
-          _errorMessage = _localizeAuthMessage(failure.message);
-          if (failure.message.toLowerCase().contains('expired') ||
-              failure.message.toLowerCase().contains('invalid')) {
-            _clearAuthData();
-          }
-          notifyListeners();
-          return Left(AuthFailure(message: _errorMessage!));
-        },
-        (CurrentUserResponse user) {
-          _currentUser = user;
-          _saveAuthData();
-          notifyListeners();
-          return Right(user);
-        },
-      );
-    } catch (e) {
-      _errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
-      await _clearAuthData();
-      notifyListeners();
-      return const Left(
-        AuthFailure(message: 'Ocurrió un error inesperado. Intenta de nuevo.'),
-      );
+      return await _fetchUserData();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
@@ -496,6 +511,8 @@ class AuthProvider extends ChangeNotifier {
           }
 
           _setError(errorMessage);
+          emailController.clear();
+          passwordController.clear();
           return Left(
             AuthFailure(
               message: errorMessage,
@@ -506,6 +523,8 @@ class AuthProvider extends ChangeNotifier {
         },
         (LoginUserResponse response) async {
           _setError(null);
+          emailController.clear();
+          passwordController.clear();
           await _handleSuccessfulLogin(response);
           final bool restored = await syncSessionFromFirebase(
             forceRefresh: true,
@@ -520,7 +539,7 @@ class AuthProvider extends ChangeNotifier {
             );
           }
           await LocalAuthService().login();
-          await loadCurrentUser();
+          await _fetchUserData();
           return const Right(null);
         },
       );

@@ -17,14 +17,17 @@ class BalanceCard extends StatelessWidget {
       height: 200,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E1E2C), Color(0xFF2D2D44)],
+          colors: [
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+          ],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

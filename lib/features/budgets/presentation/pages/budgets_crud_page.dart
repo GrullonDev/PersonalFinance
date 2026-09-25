@@ -24,6 +24,8 @@ import 'package:personal_finance/utils/widgets/empty_state.dart';
 import 'package:personal_finance/utils/widgets/error_widget.dart' as ew;
 import 'package:personal_finance/utils/widgets/loading_widget.dart';
 import 'package:personal_finance/utils/dashboard_budget_prefs.dart';
+import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
+import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
 
 class BudgetsCrudPage extends StatelessWidget {
   final bool showAppBar;
@@ -233,6 +235,16 @@ class BudgetsCrudPage extends StatelessWidget {
     BuildContext context, {
     Budget? budget,
   }) async {
+    // Feature gate: solo se comprueba al crear, no al editar.
+    if (budget == null) {
+      final subscriptionService = getIt<SubscriptionService>();
+      final currentCount = context.read<BudgetsBloc>().state.items.length;
+      if (subscriptionService.isAtBudgetLimit(currentCount)) {
+        await PaywallPage.show(context);
+        return;
+      }
+    }
+
     final BudgetsBloc parentBloc = context.read<BudgetsBloc>();
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final TextEditingController nameCtrl = TextEditingController(
@@ -322,10 +334,14 @@ class BudgetsCrudPage extends StatelessWidget {
                                     .withValues(alpha: 0.3),
                               ),
                               inputFormatters: [
-                                FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                                FilteringTextInputFormatter.deny(
+                                  RegExp(r'[<>]'),
+                                ),
                                 LengthLimitingTextInputFormatter(120),
                               ],
-                              validator: (String? v) => InputSanitizer.validateName(v ?? ''),
+                              validator:
+                                  (String? v) =>
+                                      InputSanitizer.validateName(v ?? ''),
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -347,10 +363,14 @@ class BudgetsCrudPage extends StatelessWidget {
                                     .withValues(alpha: 0.3),
                               ),
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d+\.?\d{0,2}'),
+                                ),
                                 LengthLimitingTextInputFormatter(15),
                               ],
-                              validator: (String? v) => InputSanitizer.validateAmount(v ?? ''),
+                              validator:
+                                  (String? v) =>
+                                      InputSanitizer.validateAmount(v ?? ''),
                             ),
                             const SizedBox(height: 16),
                             Row(

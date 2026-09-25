@@ -30,10 +30,16 @@ class AccountModel extends Equatable {
     final map = _$AccountModelToJson(this);
     map['name'] = InputSanitizer.sanitizeText(name, maxLength: 120);
     if (map['icon'] != null) {
-      map['icon'] = InputSanitizer.sanitizeText(map['icon'] as String, maxLength: 50);
+      map['icon'] = InputSanitizer.sanitizeText(
+        map['icon'] as String,
+        maxLength: 50,
+      );
     }
     if (map['color'] != null) {
-      map['color'] = InputSanitizer.sanitizeText(map['color'] as String, maxLength: 7);
+      map['color'] = InputSanitizer.sanitizeText(
+        map['color'] as String,
+        maxLength: 7,
+      );
     }
     return map;
   }

@@ -6,6 +6,7 @@ import 'package:personal_finance/features/navigation/navigation_provider.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/features/transactions/domain/services/receipt_scanner_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
 import 'package:provider/provider.dart';
 
 class AddExpenseModal extends StatefulWidget {
@@ -21,6 +22,45 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'Otros';
+  final FocusNode _titleFocusNode = FocusNode();
+  bool _isCategorizing = false;
+  bool _hasBeenAutoCategorized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleFocusNode.addListener(_onTitleFocusChange);
+  }
+
+  void _onTitleFocusChange() {
+    if (!_titleFocusNode.hasFocus) {
+      _autoCategorizeExpense();
+    }
+  }
+
+  Future<void> _autoCategorizeExpense() async {
+    final String title = _titleController.text.trim();
+    if (title.isEmpty) return;
+
+    setState(() => _isCategorizing = true);
+
+    try {
+      final aiService = getIt<VertexAiService>();
+      final String category = await aiService.getCategoryForExpense(title);
+      if (mounted && _categorySuggestions.contains(category)) {
+        setState(() {
+          _selectedCategory = category;
+          _hasBeenAutoCategorized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error auto-categorizing: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isCategorizing = false);
+      }
+    }
+  }
 
   final List<String> _categorySuggestions = <String>[
     'Alimentación',
@@ -42,8 +82,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
       final result = await scanner.scanReceipt();
       if (result != null) {
         if (result.title != null) _titleController.text = result.title!;
-        if (result.amount != null)
+        if (result.amount != null) {
           _amountController.text = result.amount!.toStringAsFixed(2);
+        }
         if (result.category != null &&
             _categorySuggestions.contains(result.category)) {
           setState(() => _selectedCategory = result.category!);
@@ -108,6 +149,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   ),
                 ),
               Autocomplete<String>(
+                focusNode: _titleFocusNode,
                 optionsBuilder: (TextEditingValue value) {
                   if (value.text.isEmpty) return const Iterable<String>.empty();
                   return _categorySuggestions.where(
@@ -135,7 +177,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                         FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
                         LengthLimitingTextInputFormatter(120),
                       ],
-                      validator: (String? value) => InputSanitizer.validateName(value ?? ''),
+                      validator:
+                          (String? value) =>
+                              InputSanitizer.validateName(value ?? ''),
                     ),
               ),
               const SizedBox(height: 16),
@@ -151,7 +195,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   border: OutlineInputBorder(),
                   prefixText: 'Q ',
                 ),
-                validator: (String? value) => InputSanitizer.validateAmount(value ?? ''),
+                validator:
+                    (String? value) =>
+                        InputSanitizer.validateAmount(value ?? ''),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -165,13 +211,26 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                           ),
                         )
                         .toList(),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Categoría',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  helperText:
+                      _isCategorizing
+                          ? '✨ Gemini está clasificando el gasto...'
+                          : (_hasBeenAutoCategorized
+                              ? 'Categorizado por Gemini IA ✨'
+                              : null),
+                  helperStyle: TextStyle(
+                    color: _isCategorizing ? Colors.blue : Colors.purple,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 onChanged: (String? value) {
                   if (value != null) {
-                    setState(() => _selectedCategory = value);
+                    setState(() {
+                      _selectedCategory = value;
+                      _hasBeenAutoCategorized = false;
+                    });
                   }
                 },
               ),
@@ -208,7 +267,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     if (_formKey.currentState!.validate()) {
                       // Agregar el gasto
                       await dashboardLogic.addExpense(
-                        title: InputSanitizer.sanitizeText(_titleController.text.trim()),
+                        title: InputSanitizer.sanitizeText(
+                          _titleController.text.trim(),
+                        ),
                         amount: _amountController.text.trim(),
                         date: _selectedDate,
                         category: _selectedCategory,
@@ -341,6 +402,8 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
 
   @override
   void dispose() {
+    _titleFocusNode.removeListener(_onTitleFocusChange);
+    _titleFocusNode.dispose();
     _titleController.dispose();
     _amountController.dispose();
     super.dispose();
