@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
 import 'package:personal_finance/features/quick_finance/domain/parsers/quick_entry_parser.dart'
     show QuickEntryParser;
 import 'package:personal_finance/core/constants/enums.dart';
@@ -138,4 +139,42 @@ class ConnectivityChanged extends QuickFinanceEvent {
 
   @override
   List<Object?> get props => [isOnline];
+}
+
+// ---------------------------------------------------------------------------
+// Auto-capture events
+// ---------------------------------------------------------------------------
+
+/// Emitido cuando el AutoCaptureService detecta un pago; lo encola para
+/// revisión del usuario antes de persistir.
+class AutoCaptureReceived extends QuickFinanceEvent {
+  const AutoCaptureReceived(this.capture);
+  final AutoCapturedTransaction capture;
+
+  @override
+  List<Object?> get props => [capture];
+}
+
+/// El usuario confirmó (y opcionalmente editó) un pago auto-capturado.
+class AutoCaptureConfirmed extends QuickFinanceEvent {
+  const AutoCaptureConfirmed(
+    this.capture, {
+    this.editedNote,
+    this.editedCategoryId,
+  });
+  final AutoCapturedTransaction capture;
+  final String? editedNote;
+  final String? editedCategoryId;
+
+  @override
+  List<Object?> get props => [capture, editedNote, editedCategoryId];
+}
+
+/// El usuario descartó un pago auto-capturado; no se persiste.
+class AutoCaptureDismissed extends QuickFinanceEvent {
+  const AutoCaptureDismissed(this.capture);
+  final AutoCapturedTransaction capture;
+
+  @override
+  List<Object?> get props => [capture];
 }
