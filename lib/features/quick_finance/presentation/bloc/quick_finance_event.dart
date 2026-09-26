@@ -178,3 +178,17 @@ class AutoCaptureDismissed extends QuickFinanceEvent {
   @override
   List<Object?> get props => [capture];
 }
+
+/// Evento interno: resultado de la verificación de permisos en la plataforma.
+/// No debe ser despachado desde fuera del BLoC.
+class AutoCapturePermissionFlags extends QuickFinanceEvent {
+  const AutoCapturePermissionFlags({
+    required this.needsNotificationAccess,
+    required this.needsShortcutsSetup,
+  });
+  final bool needsNotificationAccess;
+  final bool needsShortcutsSetup;
+
+  @override
+  List<Object?> get props => [needsNotificationAccess, needsShortcutsSetup];
+}

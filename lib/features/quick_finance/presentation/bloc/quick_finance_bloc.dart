@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
@@ -76,6 +79,10 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     on<SyncTransactionsRequested>(_onSyncTransactionsRequested);
     on<SyncStateChanged>(_onSyncStateChanged);
     on<ConnectivityChanged>(_onConnectivityChanged);
+    on<AutoCaptureReceived>(_onAutoCaptureReceived);
+    on<AutoCaptureConfirmed>(_onAutoCaptureConfirmed);
+    on<AutoCaptureDismissed>(_onAutoCaptureDismissed);
+    on<AutoCapturePermissionFlags>(_onAutoCapturePermissionFlags);
   }
 
   // ---------------------------------------------------------------------------
@@ -148,25 +155,70 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   }
 
   /// Registra los pagos detectados automáticamente (Google Wallet, bancos,
-  /// atajos de Apple Pay) como si el usuario los hubiera escrito.
+  /// atajos de Apple Pay) en la cola pendiente para revisión del usuario.
   void _subscribeAutoCapture() {
     if (!GetIt.instance.isRegistered<AutoCaptureService>()) return;
     final service = GetIt.instance<AutoCaptureService>();
     _autoCaptureSubscription?.cancel();
     _autoCaptureSubscription = service.captured.listen(
-      (tx) => add(
-        AddTransactionRequested(
-          amount: tx.amount,
-          type: tx.type,
-          note: tx.note,
-          category: tx.category,
-          occurredAt: tx.occurredAt,
-          autoSourceLabel: tx.sourceLabel,
-        ),
-      ),
+      (tx) => add(AutoCaptureReceived(tx)),
     );
     service.start();
     unawaited(service.processPending());
+    unawaited(_checkCapturePlatformSetup(service));
+  }
+
+  Future<void> _checkCapturePlatformSetup(AutoCaptureService service) async {
+    try {
+      bool needsNotif = false;
+      bool needsShortcuts = false;
+
+      if (_isAndroid()) {
+        final granted = await service.isAccessGranted();
+        if (!granted && GetIt.instance.isRegistered<SharedPreferences>()) {
+          final prefs = GetIt.instance<SharedPreferences>();
+          final suppressUntil = prefs.getInt(
+            'auto_capture_notification_suppress_until',
+          );
+          final now = DateTime.now().millisecondsSinceEpoch;
+          if (suppressUntil == null || now > suppressUntil) {
+            needsNotif = true;
+          }
+        }
+      } else if (_isIOS()) {
+        if (GetIt.instance.isRegistered<SharedPreferences>()) {
+          final prefs = GetIt.instance<SharedPreferences>();
+          final done =
+              prefs.getBool('auto_capture_shortcuts_setup_done') ?? false;
+          if (!done) needsShortcuts = true;
+        }
+      }
+
+      if (needsNotif || needsShortcuts) {
+        add(
+          AutoCapturePermissionFlags(
+            needsNotificationAccess: needsNotif,
+            needsShortcutsSetup: needsShortcuts,
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+
+  bool _isAndroid() {
+    try {
+      return Platform.isAndroid;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _isIOS() {
+    try {
+      return Platform.isIOS;
+    } catch (_) {
+      return false;
+    }
   }
 
   void _cancelDataStreams() {
@@ -176,6 +228,63 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _balanceSubscription = null;
     _autoCaptureSubscription?.cancel();
     _autoCaptureSubscription = null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Auto-capture handlers
+  // ---------------------------------------------------------------------------
+
+  void _onAutoCaptureReceived(
+    AutoCaptureReceived event,
+    Emitter<QuickFinanceState> emit,
+  ) {
+    emit(state.copyWith(
+      pendingCaptures: [...state.pendingCaptures, event.capture],
+    ));
+  }
+
+  Future<void> _onAutoCaptureConfirmed(
+    AutoCaptureConfirmed event,
+    Emitter<QuickFinanceState> emit,
+  ) async {
+    final capture = event.capture;
+    final note = event.editedNote ?? capture.note;
+    final category = event.editedCategoryId ?? capture.category;
+
+    // Remove from queue immediately so UI updates without waiting for save
+    emit(state.copyWith(
+      pendingCaptures:
+          state.pendingCaptures.where((c) => c != capture).toList(),
+    ));
+
+    add(AddTransactionRequested(
+      amount: capture.amount,
+      type: capture.type,
+      note: note,
+      category: category,
+      occurredAt: capture.occurredAt,
+      autoSourceLabel: capture.sourceLabel,
+    ));
+  }
+
+  void _onAutoCaptureDismissed(
+    AutoCaptureDismissed event,
+    Emitter<QuickFinanceState> emit,
+  ) {
+    emit(state.copyWith(
+      pendingCaptures:
+          state.pendingCaptures.where((c) => c != event.capture).toList(),
+    ));
+  }
+
+  void _onAutoCapturePermissionFlags(
+    AutoCapturePermissionFlags event,
+    Emitter<QuickFinanceState> emit,
+  ) {
+    emit(state.copyWith(
+      needsNotificationAccess: event.needsNotificationAccess,
+      needsShortcutsSetup: event.needsShortcutsSetup,
+    ));
   }
 
   void _onTransactionsObserved(
