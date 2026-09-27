@@ -40,6 +40,15 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
 
+    # RevenueCat 5.32.0 has a Swift 6 memberwise-init conflict in PaywallColor.swift
+    # and CustomerCenterConfigData.swift. Pinning it to Swift 5 avoids the issue
+    # without requiring a breaking purchases_flutter upgrade.
+    if target.name == 'RevenueCat'
+      target.build_configurations.each do |config|
+        config.build_settings['SWIFT_VERSION'] = '5.9'
+      end
+    end
+
     target.build_configurations.each do |config|
       # iOS deployment target consistente con Runner (16.0).
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
