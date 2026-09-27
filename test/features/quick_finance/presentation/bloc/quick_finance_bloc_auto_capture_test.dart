@@ -283,5 +283,20 @@ void main() {
 
       expect(savedEntity?.note, 'KFC');
     });
+
+    test('AutoCaptureConfirmed with editedAmount passes edited amount to addTransaction', () async {
+      TransactionEntity? savedEntity;
+      when(() => mockAdd.call(any())).thenAnswer((inv) async {
+        savedEntity = inv.positionalArguments.first as TransactionEntity;
+      });
+
+      bloc.add(AutoCaptureReceived(capture));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      bloc.add(AutoCaptureConfirmed(capture, editedAmount: 99.99));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(savedEntity?.amount, 99.99);
+    });
   });
 }

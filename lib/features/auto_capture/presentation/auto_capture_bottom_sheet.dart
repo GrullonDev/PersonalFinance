@@ -38,12 +38,18 @@ class _AutoCaptureBottomSheetState extends State<AutoCaptureBottomSheet> {
   void _confirm() {
     final editedNote = _noteController.text.trim();
     final editedCategory = _selectedCategory;
+    final parsedAmount = double.tryParse(_amountController.text.trim());
+    final editedAmount =
+        parsedAmount != null && parsedAmount != widget.capture.amount
+            ? parsedAmount
+            : null;
     context.read<QuickFinanceBloc>().add(
       AutoCaptureConfirmed(
         widget.capture,
         editedNote: editedNote != widget.capture.note ? editedNote : null,
         editedCategoryId:
             editedCategory != widget.capture.category ? editedCategory : null,
+        editedAmount: editedAmount,
       ),
     );
     Navigator.of(context).pop();

@@ -99,6 +99,16 @@ void main() {
     expect(confirmed.editedNote, 'Uber Eats');
   });
 
+  testWidgets('edited amount is included in AutoCaptureConfirmed', (tester) async {
+    final bloc = _FakeBloc();
+    await tester.pumpWidget(buildSheet(bloc));
+    await tester.enterText(find.widgetWithText(TextFormField, '75.50'), '99.99');
+    await tester.tap(find.text('Confirmar'));
+    await tester.pump();
+    final confirmed = bloc.events.whereType<AutoCaptureConfirmed>().first;
+    expect(confirmed.editedAmount, 99.99);
+  });
+
   testWidgets('dismiss does not dispatch AutoCaptureConfirmed', (tester) async {
     final bloc = _FakeBloc();
     await tester.pumpWidget(buildSheet(bloc));

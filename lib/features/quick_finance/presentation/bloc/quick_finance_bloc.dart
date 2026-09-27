@@ -250,6 +250,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     final capture = event.capture;
     final note = event.editedNote ?? capture.note;
     final category = event.editedCategoryId ?? capture.category;
+    final amount = event.editedAmount ?? capture.amount;
 
     // Remove from queue immediately so UI updates without waiting for save
     emit(state.copyWith(
@@ -258,7 +259,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     ));
 
     add(AddTransactionRequested(
-      amount: capture.amount,
+      amount: amount,
       type: capture.type,
       note: note,
       category: category,

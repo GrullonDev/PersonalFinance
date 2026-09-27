@@ -161,13 +161,15 @@ class AutoCaptureConfirmed extends QuickFinanceEvent {
     this.capture, {
     this.editedNote,
     this.editedCategoryId,
+    this.editedAmount,
   });
   final AutoCapturedTransaction capture;
   final String? editedNote;
   final String? editedCategoryId;
+  final double? editedAmount;
 
   @override
-  List<Object?> get props => [capture, editedNote, editedCategoryId];
+  List<Object?> get props => [capture, editedNote, editedCategoryId, editedAmount];
 }
 
 /// El usuario descartó un pago auto-capturado; no se persiste.
