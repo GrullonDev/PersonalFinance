@@ -1,10 +1,16 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/core/services/haptic_feedback_service.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
+import 'package:personal_finance/features/auto_capture/presentation/auto_capture_bottom_sheet.dart';
+import 'package:personal_finance/features/auto_capture/presentation/notification_access_bottom_sheet.dart';
+import 'package:personal_finance/features/auto_capture/presentation/shortcuts_setup_bottom_sheet.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
@@ -31,6 +37,10 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _syncAnim;
   final _entryKey = GlobalKey<QuickEntryInputState>();
+
+  /// Prevents stacking multiple bottom sheets when several state changes
+  /// arrive in quick succession.
+  bool _sheetOpen = false;
 
   @override
   void initState() {
@@ -119,7 +129,11 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
                   (curr.status == QuickFinanceStatus.failure &&
                       curr.errorMessage != null &&
                       prev.errorMessage != curr.errorMessage) ||
-                  (prev.isSyncing != curr.isSyncing),
+                  (prev.isSyncing != curr.isSyncing) ||
+                  (prev.pendingCaptures != curr.pendingCaptures) ||
+                  (prev.needsNotificationAccess !=
+                      curr.needsNotificationAccess) ||
+                  (prev.needsShortcutsSetup != curr.needsShortcutsSetup),
           listener: (context, state) {
             if (state.status == QuickFinanceStatus.failure &&
                 state.errorMessage != null) {
@@ -144,6 +158,107 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
               _syncAnim
                 ..stop()
                 ..reset();
+            }
+
+            // ── Auto-capture confirmation ──────────────────────────────────
+            if (state.pendingCaptures.isNotEmpty && !_sheetOpen) {
+              _sheetOpen = true;
+              final capture = state.pendingCaptures.first;
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder:
+                    (_) => BlocProvider<QuickFinanceBloc>.value(
+                      value: context.read<QuickFinanceBloc>(),
+                      child: AutoCaptureBottomSheet(capture: capture),
+                    ),
+              ).whenComplete(() => _sheetOpen = false);
+            }
+
+            // ── Android notification access ────────────────────────────────
+            if (state.needsNotificationAccess &&
+                Platform.isAndroid &&
+                !_sheetOpen) {
+              _sheetOpen = true;
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder:
+                    (_) => NotificationAccessBottomSheet(
+                      onEnable: () async {
+                        Navigator.of(context).pop();
+                        if (getIt.isRegistered<AutoCaptureService>()) {
+                          await getIt<AutoCaptureService>().openAccessSettings();
+                        }
+                        if (context.mounted) {
+                          context.read<QuickFinanceBloc>().add(
+                            const AutoCapturePermissionFlags(
+                              needsNotificationAccess: false,
+                              needsShortcutsSetup: false,
+                            ),
+                          );
+                        }
+                      },
+                      onNotNow: () async {
+                        Navigator.of(context).pop();
+                        final prefs = await SharedPreferences.getInstance();
+                        final suppress = DateTime.now()
+                            .add(const Duration(days: 7))
+                            .millisecondsSinceEpoch;
+                        await prefs.setInt(
+                          'auto_capture_notification_suppress_until',
+                          suppress,
+                        );
+                        if (context.mounted) {
+                          context.read<QuickFinanceBloc>().add(
+                            const AutoCapturePermissionFlags(
+                              needsNotificationAccess: false,
+                              needsShortcutsSetup: false,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+              ).whenComplete(() => _sheetOpen = false);
+            }
+
+            // ── iOS Shortcuts setup ────────────────────────────────────────
+            if (state.needsShortcutsSetup && Platform.isIOS && !_sheetOpen) {
+              _sheetOpen = true;
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder:
+                    (_) => ShortcutsSetupBottomSheet(
+                      onGotIt: () async {
+                        Navigator.of(context).pop();
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool(
+                          'auto_capture_shortcuts_setup_done',
+                          true,
+                        );
+                        if (context.mounted) {
+                          context.read<QuickFinanceBloc>().add(
+                            const AutoCapturePermissionFlags(
+                              needsNotificationAccess: false,
+                              needsShortcutsSetup: false,
+                            ),
+                          );
+                        }
+                      },
+                      onRemindLater: () {
+                        Navigator.of(context).pop();
+                        if (context.mounted) {
+                          context.read<QuickFinanceBloc>().add(
+                            const AutoCapturePermissionFlags(
+                              needsNotificationAccess: false,
+                              needsShortcutsSetup: false,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+              ).whenComplete(() => _sheetOpen = false);
             }
           },
           child: BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
