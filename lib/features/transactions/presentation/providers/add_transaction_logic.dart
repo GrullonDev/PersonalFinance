@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/transactions/domain/entities/transaction_backend.dart';
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 
 class TransactionType {
   static const String expense = 'expense';
@@ -67,7 +68,15 @@ class AddTransactionLogic extends ChangeNotifier {
 
       final repo = GetIt.instance<TransactionBackendRepository>();
       final result = await repo.create(entity);
-      result.fold((failure) => throw Exception(failure.message), (_) => null);
+      result.fold(
+        (failure) => throw Exception(failure.message),
+        (saved) {
+          // Non-blocking: link transaction to matching goals/debts
+          GetIt.instance<TransactionLinkingService>()
+              .processTransaction(saved)
+              .ignore();
+        },
+      );
 
       notifyListeners();
     } catch (e) {

@@ -195,7 +195,7 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
               Icon(
                 _isLockedOut ? Icons.gpp_bad_outlined : Icons.lock_outline,
                 size: 80,
-                color: _isLockedOut ? Colors.redAccent : Colors.white,
+                color: _isLockedOut ? Theme.of(context).colorScheme.error : Colors.white,
               ),
               const SizedBox(height: 24),
               Text(
@@ -278,7 +278,7 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: ColoredBox(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.4),
                 child: const Center(
                   child: Icon(
                     Icons.lock_outline,

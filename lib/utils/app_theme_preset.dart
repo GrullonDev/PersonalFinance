@@ -63,6 +63,28 @@ class AppThemePreset {
       isPremium: false,
     ),
 
+    // Electric green on near-black — clean, productivity
+    AppThemePreset(
+      id: 'carbon',
+      name: 'Carbón',
+      primary: Color(0xFF00C853),
+      isDark: true,
+      isPremium: false,
+      background: Color(0xFF1A1A1A),
+      surface: Color(0xFF242424),
+    ),
+
+    // Indigo-blue on deep dark — cool, focused
+    AppThemePreset(
+      id: 'indigo_dark',
+      name: 'Índigo',
+      primary: Color(0xFF536DFE),
+      isDark: true,
+      isPremium: false,
+      background: Color(0xFF1C1B2E),
+      surface: Color(0xFF252438),
+    ),
+
     // ── Premium themes (6) ─────────────────────────────────────────────────
 
     // Deep navy with indigo accent — AMOLED-friendly
@@ -118,6 +140,39 @@ class AppThemePreset {
       isPremium: true,
       background: Color(0xFF020B12),
       surface: Color(0xFF0B1E2A),
+    ),
+
+    // Ruby red on very dark — bold, premium
+    AppThemePreset(
+      id: 'ruby',
+      name: 'Rubí',
+      primary: Color(0xFFEF5350),
+      isDark: true,
+      isPremium: true,
+      background: Color(0xFF1A0A0A),
+      surface: Color(0xFF2A1010),
+    ),
+
+    // Amber/gold on dark warm — luxurious
+    AppThemePreset(
+      id: 'amber_dark',
+      name: 'Ámbar',
+      primary: Color(0xFFFFB300),
+      isDark: true,
+      isPremium: true,
+      background: Color(0xFF1C1400),
+      surface: Color(0xFF2A1E00),
+    ),
+
+    // Forest green on deep dark — earthy, calm
+    AppThemePreset(
+      id: 'bosque',
+      name: 'Bosque',
+      primary: Color(0xFF43A047),
+      isDark: true,
+      isPremium: true,
+      background: Color(0xFF0A1A0A),
+      surface: Color(0xFF122012),
     ),
 
     // Warm earth tones — sandy natural palette

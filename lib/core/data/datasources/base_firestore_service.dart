@@ -52,6 +52,10 @@ abstract class BaseFirestoreService<T extends SyncableModel> {
     });
   }
 
+  Future<void> hardDelete(String id) async {
+    await _userCollection.doc(id).delete();
+  }
+
   Stream<List<T>> watchAll() => _userCollection
       .where('deletedAt', isNull: true)
       .snapshots()

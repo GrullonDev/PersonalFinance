@@ -141,6 +141,9 @@ dist/
 *.keystore
 *.jks
 
+# Android signing — never commit to git
+android/key.properties
+
 # iOS specific
 *.ipa
 *.dSYM

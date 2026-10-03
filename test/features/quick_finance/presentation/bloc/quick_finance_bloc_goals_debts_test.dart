@@ -119,6 +119,7 @@ void main() {
       mockGoalRepository = MockGoalRepository();
       mockDebtRepository = MockDebtRepository();
       mockDeviceService = MockDeviceService();
+      when(() => mockDeviceService.deviceId).thenReturn('test-device');
 
       bloc = QuickFinanceBloc(
         addTransaction: mockAddTransaction,
@@ -234,7 +235,7 @@ void main() {
     );
 
     test(
-      'should subtract amount from debt (abono) when "100 deuda Tarjeta" is submitted',
+      'should add amount to debt (new debt) when unsigned "100 deuda Tarjeta" is submitted',
       () async {
         // Arrange
         final debt = Debt(
@@ -269,12 +270,12 @@ void main() {
                   () => mockDebtRepository.updateDebt(captureAny()),
                 ).captured.single
                 as Debt;
-        expect(capturedDebt.currentBalance, 400.0);
+        expect(capturedDebt.currentBalance, 600.0);
       },
     );
 
     test(
-      'should add amount to debt (increase debt) when "-100 deuda Tarjeta" is submitted',
+      'should subtract amount from debt (payment) when "-100 deuda Tarjeta" is submitted',
       () async {
         // Arrange
         final debt = Debt(
@@ -309,7 +310,7 @@ void main() {
                   () => mockDebtRepository.updateDebt(captureAny()),
                 ).captured.single
                 as Debt;
-        expect(capturedDebt.currentBalance, 600.0);
+        expect(capturedDebt.currentBalance, 400.0);
       },
     );
 
@@ -415,7 +416,7 @@ void main() {
     );
 
     test(
-      'should fallback to single debt when "100 deuda" is submitted and there is exactly one debt',
+      'should fallback to single debt when "-100 deuda" is submitted and there is exactly one debt',
       () async {
         // Arrange
         final debt = Debt(
@@ -439,7 +440,7 @@ void main() {
         ).thenAnswer((_) async => Right(debt));
 
         // Act
-        bloc.add(const RawEntrySubmitted('100 deuda'));
+        bloc.add(const RawEntrySubmitted('-100 deuda'));
 
         // Wait
         await untilCalled(() => mockDebtRepository.updateDebt(any()));
@@ -562,7 +563,7 @@ void main() {
         ).thenAnswer((_) async => Right(debt));
 
         // Act
-        bloc.add(const RawEntrySubmitted('100 deuda'));
+        bloc.add(const RawEntrySubmitted('-100 deuda'));
 
         // Wait
         await untilCalled(() => mockDebtRepository.updateDebt(any()));
@@ -606,7 +607,7 @@ void main() {
         ).thenAnswer((_) async => Right(debt));
 
         // Act
-        bloc.add(const RawEntrySubmitted('100 deuda Tarjeta'));
+        bloc.add(const RawEntrySubmitted('-100 deuda Tarjeta'));
 
         // Wait
         await untilCalled(() => mockDebtRepository.updateDebt(any()));
@@ -646,7 +647,7 @@ void main() {
         ).thenAnswer((_) async => Right(debt));
 
         // Act
-        bloc.add(const RawEntrySubmitted('300 deuda Tarjeta'));
+        bloc.add(const RawEntrySubmitted('-300 deuda Tarjeta'));
 
         // Wait
         await untilCalled(() => mockDebtRepository.updateDebt(any()));
@@ -662,13 +663,13 @@ void main() {
     );
 
     test(
-      'should match and discount debt when using variations like "cuota Tarjeta", "pago de la Tarjeta", "abono a mi Tarjeta", "cuota minima de Tarjeta"',
+      'should match and discount debt when using variations like "-300 cuota Tarjeta", "-300 pago de la Tarjeta", "-300 abono a mi Tarjeta", "-300 cuota minima de Tarjeta"',
       () async {
         final variations = [
-          '300 cuota Tarjeta',
-          '300 pago de la Tarjeta',
-          '300 abono a mi Tarjeta',
-          '300 cuota minima de Tarjeta',
+          '-300 cuota Tarjeta',
+          '-300 pago de la Tarjeta',
+          '-300 abono a mi Tarjeta',
+          '-300 cuota minima de Tarjeta',
         ];
 
         for (final input in variations) {

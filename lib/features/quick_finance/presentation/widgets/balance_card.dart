@@ -147,7 +147,7 @@ class _BalanceCardState extends State<BalanceCard> {
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.07),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -330,14 +330,14 @@ class _BalanceCardState extends State<BalanceCard> {
                         Icon(
                           Icons.bar_chart_rounded,
                           size: 13,
-                          color: Colors.grey.shade500,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                         ),
                         const SizedBox(width: 5),
                         Text(
                           'Mayor gasto: ',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade500,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ),
                         Text(
@@ -345,7 +345,7 @@ class _BalanceCardState extends State<BalanceCard> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -441,7 +441,7 @@ class _RatioBar extends StatelessWidget {
           children: [
             Text(
               'Gastos vs ingresos',
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
             ),
             Text(
               '${(ratio * 100).round()}%',
@@ -519,7 +519,7 @@ class _PeriodSelector extends StatelessWidget {
               boxShadow: isSelected && !onDark
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
+                        color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -535,7 +535,7 @@ class _PeriodSelector extends StatelessWidget {
                     ? (onDark ? Colors.white : Theme.of(context).primaryColor)
                     : (onDark
                           ? Colors.white.withValues(alpha: 0.6)
-                          : Colors.grey.shade500),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
               ),
             ),
           ),
@@ -582,7 +582,7 @@ class _StatRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
             ),
             Text(
               hidden ? '••' : CurrencyHelper.format(amount),

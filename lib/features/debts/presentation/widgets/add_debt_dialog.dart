@@ -8,6 +8,7 @@ import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_bloc.dart';
 import 'package:personal_finance/features/debts/presentation/bloc/debts_event.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/core/services/transaction_linking_service.dart';
 import 'package:uuid/uuid.dart';
 
 class AddDebtDialog extends StatefulWidget {
@@ -28,6 +29,8 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
   final _minimumController = TextEditingController();
 
   DateTime? _nextPaymentDate;
+  double? _detectedPaymentAmount;
+  bool _isDetecting = false;
 
   bool get _isEditing => widget.initialDebt != null;
 
@@ -42,6 +45,23 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
       _interestController.text = d.interestRate.toStringAsFixed(2);
       _minimumController.text = d.minimumPayment.toStringAsFixed(2);
       _nextPaymentDate = d.nextPaymentDate;
+    }
+  }
+
+  Future<void> _detectMatchingTransactions() async {
+    final name = _nameController.text.trim();
+    final original = double.tryParse(_amountController.text.trim());
+    if (name.length < 3 || original == null || original <= 0) return;
+
+    setState(() => _isDetecting = true);
+    try {
+      final matched = await getIt<TransactionLinkingService>()
+          .sumMatchingTransactions(name, 'gasto');
+      if (matched > 0 && mounted) {
+        setState(() => _detectedPaymentAmount = matched);
+      }
+    } finally {
+      if (mounted) setState(() => _isDetecting = false);
     }
   }
 
@@ -133,20 +153,25 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                 validator: (value) => InputSanitizer.validateName(value ?? ''),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Monto Original (Deuda Inicial)',
-                  border: OutlineInputBorder(),
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                  LengthLimitingTextInputFormatter(15),
-                ],
-                validator:
-                    (value) => InputSanitizer.validateAmount(value ?? ''),
-              ),
+              Focus(
+                onFocusChange: (hasFocus) {
+                  if (!hasFocus && !_isEditing) _detectMatchingTransactions();
+                },
+                child: TextFormField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Monto Original (Deuda Inicial)',
+                    border: OutlineInputBorder(),
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                    LengthLimitingTextInputFormatter(15),
+                  ],
+                  validator:
+                      (value) => InputSanitizer.validateAmount(value ?? ''),
+                ),  // close TextFormField
+              ),    // close Focus
               const SizedBox(height: 16),
               TextFormField(
                 controller: _balanceController,
@@ -162,6 +187,69 @@ class _AddDebtDialogState extends State<AddDebtDialog> {
                 validator:
                     (value) => InputSanitizer.validateAmount(value ?? ''),
               ),
+              if (_isDetecting)
+                const Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Buscando transacciones...',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              if (!_isDetecting &&
+                  _detectedPaymentAmount != null &&
+                  _detectedPaymentAmount! > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Se detectaron \$${_detectedPaymentAmount!.toStringAsFixed(2)} en transacciones relacionadas.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final original =
+                              double.tryParse(_amountController.text.trim()) ??
+                              0;
+                          final balance =
+                              (original - _detectedPaymentAmount!).clamp(
+                                0.0,
+                                double.infinity,
+                              );
+                          _balanceController.text = balance.toStringAsFixed(2);
+                          setState(() => _detectedPaymentAmount = null);
+                        },
+                        child: const Text('Usar', style: TextStyle(fontSize: 12)),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            setState(() => _detectedPaymentAmount = null),
+                        child: const Text(
+                          'Ignorar',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _interestController,

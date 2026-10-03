@@ -88,7 +88,7 @@ class _TileBody extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -128,7 +128,7 @@ class _TileBody extends StatelessWidget {
                     Text(
                       _dateFmt.format(transaction.createdAt),
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                         fontSize: 12,
                       ),
                     ),

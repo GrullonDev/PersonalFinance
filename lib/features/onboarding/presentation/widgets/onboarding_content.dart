@@ -13,44 +13,51 @@ class OnboardingContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 24),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        // Image or Icon
-        if (page.showImage)
-          _buildIllustration()
-        else if (page.icon != null)
-          _buildIconSection(),
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          // Image or Icon
+          if (page.showImage)
+            _buildIllustration()
+          else if (page.icon != null)
+            _buildIconSection(context),
 
-        const SizedBox(height: 40),
+          const SizedBox(height: 40),
 
-        // Title
-        Text(
-          page.title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-            height: 1.3,
+          // Title
+          Text(
+            page.title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+              height: 1.3,
+            ),
           ),
-        ),
 
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Description
-        Text(
-          page.description,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 15, color: Colors.grey[600], height: 1.5),
-        ),
+          // Description
+          Text(
+            page.description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              height: 1.5,
+            ),
+          ),
 
-        const SizedBox(height: 40),
-      ],
-    ),
-  );
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
 
   Widget _buildIllustration() => Container(
     width: 240,
@@ -88,56 +95,59 @@ class OnboardingContent extends StatelessWidget {
     ),
   );
 
-  Widget _buildIconSection() => Column(
-    children: <Widget>[
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+  Widget _buildIconSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      children: <Widget>[
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withAlpha(10),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withAlpha(20),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  page.icon ?? '💰',
+                  style: const TextStyle(fontSize: 48),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Controla tus Gastos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Registra cada transacción para saber a\ndónde va tu dinero.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          children: <Widget>[
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.blue.withAlpha(20),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                page.icon ?? '💰',
-                style: const TextStyle(fontSize: 48),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Controla tus Gastos',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Registra cada transacción para saber a\ndónde va tu dinero.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
 import 'package:personal_finance/features/quick_finance/domain/parsers/quick_entry_parser.dart'
     show QuickEntryParser;
 import 'package:personal_finance/core/constants/enums.dart';
@@ -40,16 +41,33 @@ class AddTransactionRequested extends QuickFinanceEvent {
   final String? category;
   final String? rawInput;
 
+  /// Fecha real del pago cuando se detectó automáticamente.
+  final DateTime? occurredAt;
+
+  /// Origen de un registro automático (p. ej. "Google Wallet"); `null` si
+  /// lo escribió el usuario.
+  final String? autoSourceLabel;
+
   const AddTransactionRequested({
     required this.amount,
     required this.type,
     required this.note,
     this.category,
     this.rawInput,
+    this.occurredAt,
+    this.autoSourceLabel,
   });
 
   @override
-  List<Object?> get props => [amount, type, note, category, rawInput];
+  List<Object?> get props => [
+    amount,
+    type,
+    note,
+    category,
+    rawInput,
+    occurredAt,
+    autoSourceLabel,
+  ];
 }
 
 /// Solicita eliminar (soft-delete) una transacción por su id.
@@ -121,4 +139,58 @@ class ConnectivityChanged extends QuickFinanceEvent {
 
   @override
   List<Object?> get props => [isOnline];
+}
+
+// ---------------------------------------------------------------------------
+// Auto-capture events
+// ---------------------------------------------------------------------------
+
+/// Emitido cuando el AutoCaptureService detecta un pago; lo encola para
+/// revisión del usuario antes de persistir.
+class AutoCaptureReceived extends QuickFinanceEvent {
+  const AutoCaptureReceived(this.capture);
+  final AutoCapturedTransaction capture;
+
+  @override
+  List<Object?> get props => [capture];
+}
+
+/// El usuario confirmó (y opcionalmente editó) un pago auto-capturado.
+class AutoCaptureConfirmed extends QuickFinanceEvent {
+  const AutoCaptureConfirmed(
+    this.capture, {
+    this.editedNote,
+    this.editedCategoryId,
+    this.editedAmount,
+  });
+  final AutoCapturedTransaction capture;
+  final String? editedNote;
+  final String? editedCategoryId;
+  final double? editedAmount;
+
+  @override
+  List<Object?> get props => [capture, editedNote, editedCategoryId, editedAmount];
+}
+
+/// El usuario descartó un pago auto-capturado; no se persiste.
+class AutoCaptureDismissed extends QuickFinanceEvent {
+  const AutoCaptureDismissed(this.capture);
+  final AutoCapturedTransaction capture;
+
+  @override
+  List<Object?> get props => [capture];
+}
+
+/// Evento interno: resultado de la verificación de permisos en la plataforma.
+/// No debe ser despachado desde fuera del BLoC.
+class AutoCapturePermissionFlags extends QuickFinanceEvent {
+  const AutoCapturePermissionFlags({
+    required this.needsNotificationAccess,
+    required this.needsShortcutsSetup,
+  });
+  final bool needsNotificationAccess;
+  final bool needsShortcutsSetup;
+
+  @override
+  List<Object?> get props => [needsNotificationAccess, needsShortcutsSetup];
 }

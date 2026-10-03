@@ -26,6 +26,13 @@ import 'package:personal_finance/features/quick_finance/presentation/bloc/quick_
 import 'package:personal_finance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:personal_finance/features/debts/domain/repositories/debt_repository.dart';
 import 'package:personal_finance/core/services/device_service.dart';
+import 'package:personal_finance/core/services/notifications/notification_service.dart';
+import 'package:personal_finance/features/notifications/domain/repositories/notification_repository.dart';
+import 'package:personal_finance/features/quick_finance/data/services/spending_alert_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personal_finance/core/services/vertex_ai_service.dart';
+import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
+import 'package:personal_finance/features/auto_capture/data/payment_capture_channel.dart';
 
 final sl = GetIt.instance;
 
@@ -108,6 +115,34 @@ Future<void> init(HiveAesCipher hiveCipher) async {
   sl.registerLazySingleton(() => WatchBalance(sl()));
   sl.registerLazySingleton(() => WatchTransactions(sl()));
   sl.registerLazySingleton(() => UpdateTransaction(sl()));
+
+  // Alertas de desvío de gasto (dependencias registradas por old_di).
+  if (!sl.isRegistered<SpendingAlertService>()) {
+    sl.registerLazySingleton(
+      () => SpendingAlertService(
+        prefs: sl<SharedPreferences>(),
+        notificationService: sl<NotificationService>(),
+        notificationRepository:
+            sl.isRegistered<NotificationRepository>()
+                ? sl<NotificationRepository>()
+                : null,
+      ),
+    );
+  }
+
+  // Registro automático de pagos (Google Wallet / bancos / Apple Pay).
+  if (!sl.isRegistered<AutoCaptureService>()) {
+    sl.registerLazySingleton(
+      () => AutoCaptureService(
+        channel: PaymentCaptureChannel(),
+        prefs: sl<SharedPreferences>(),
+        aiCategorizer:
+            sl.isRegistered<VertexAiService>()
+                ? sl<VertexAiService>().getCategoryForExpense
+                : null,
+      ),
+    );
+  }
 
   // -------------------------------------------------------------------------
   // Bloc
