@@ -24,6 +24,7 @@ class AuthLayout extends StatefulWidget {
 
 class _AuthLayoutState extends State<AuthLayout> {
   final _formKey = GlobalKey<FormState>();
+  bool _navigating = false;
 
   @override
   Widget build(BuildContext context) => Consumer<AuthProvider>(
@@ -275,44 +276,49 @@ class _AuthLayoutState extends State<AuthLayout> {
 
   // ── Botón "Iniciar sesión" ─────────────────────────────────────────────────
 
-  Widget _buildLoginButton(BuildContext context, AuthProvider auth) => SizedBox(
-    height: 52,
-    child: ElevatedButton(
-      onPressed: auth.isLoading ? null : () => _handleLogin(context, auth),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _kGreen,
-        disabledBackgroundColor: _kGreen.withValues(alpha: 0.4),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      child:
-          auth.isLoading
-              ? const SizedBox(
-                height: 22,
-                width: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-              : const Text(
-                'Iniciar sesión',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+  Widget _buildLoginButton(BuildContext context, AuthProvider auth) {
+    final bool busy = auth.isLoading || _navigating;
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton(
+        onPressed: busy ? null : () => _handleLogin(context, auth),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _kGreen,
+          disabledBackgroundColor: _kGreen.withValues(alpha: 0.4),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        child: busy
+            ? const SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
-    ),
-  );
+            )
+            : const Text(
+              'Iniciar sesión',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+      ),
+    );
+  }
 
   Future<void> _handleLogin(BuildContext context, AuthProvider auth) async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     await HapticFeedbackService.selection();
+    setState(() => _navigating = true);
     final Either<AuthFailure, void> result = await auth.login();
     if (!context.mounted) return;
     await result.fold<Future<void>>(
       (failure) async {
+        setState(() => _navigating = false);
         await HapticFeedbackService.error();
         if (failure.statusCode == 403) {
-          // Cuenta no verificada — mostrar bottom sheet informativo
           _showVerificationSheet(context);
         } else if (failure.shouldNavigateToRegister) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -337,6 +343,10 @@ class _AuthLayoutState extends State<AuthLayout> {
         }
       },
       (_) async {
+        // Fields already cleared by provider; hold the loading indicator
+        // for a brief beat so the transition feels intentional.
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        if (!context.mounted) return;
         await HapticFeedbackService.success();
         Navigator.of(
           context,

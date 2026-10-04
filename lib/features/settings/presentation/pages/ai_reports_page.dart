@@ -51,6 +51,8 @@ class _AiReportsPageState extends State<AiReportsPage> {
       _reportText = null;
       _totalIncome = 0;
       _totalExpenses = 0;
+      _expenseCount = 0;
+      _incomeCount = 0;
       _hasData = false;
       _expenses = [];
       _incomes = [];
@@ -75,7 +77,11 @@ class _AiReportsPageState extends State<AiReportsPage> {
     );
 
     incomesResult.fold(
-      (_) {},
+      (_) {
+        _incomes = [];
+        _totalIncome = 0;
+        _incomeCount = 0;
+      },
       (incomes) {
         _incomes = incomes;
         _totalIncome = incomes.fold(0, (s, i) => s + i.amount);

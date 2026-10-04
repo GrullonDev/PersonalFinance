@@ -33,12 +33,24 @@ class AppLocalizations {
       'add': 'Add',
       'addIncome': 'Add Income',
       'addExpense': 'Add Expense',
-      'step1Title': 'Track your expenses',
-      'step1Desc': 'Add transactions quickly and easily.',
-      'step2Title': 'See your progress',
-      'step2Desc': 'Check your daily, weekly or monthly balance.',
-      'step3Title': 'Learn tips',
-      'step3Desc': 'Get personalized financial advice every day.',
+      'step1Title': 'Take Control',
+      'step1Desc':
+          'Track every cent. Record income and expenses automatically and see where your money goes.',
+      'step1Badge': 'Total Control',
+      'step1Pill1': 'Auto Sync',
+      'step1Pill2': 'Real-time Insights',
+      'step2Title': 'Say Goodbye to Debt',
+      'step2Desc':
+          'Break the debt cycle. Learn to manage your credit and keep your finances free of burdens.',
+      'step2Badge': 'Debt Free',
+      'step3Title': 'Your Path to Freedom',
+      'step3Desc':
+          'Build your future. Save, invest and reach the financial freedom you deserve with clear goals.',
+      'step3Badge': 'Financial Freedom',
+      'step3Achievement': 'Goal Reached',
+      'getStartedNow': 'Start Now',
+      'alreadyHaveAccount': 'Already have an account? Sign in',
+      'skip': 'Skip',
       'step4Title': 'How will you use the app?',
       'step4Desc': 'Choose the profile that best fits you.',
       'usagePersonal': 'Personal Finance',
@@ -75,12 +87,24 @@ class AppLocalizations {
       'add': 'Agregar',
       'addIncome': 'Agregar Ingreso',
       'addExpense': 'Agregar Gasto',
-      'step1Title': 'Registra tus gastos',
-      'step1Desc': 'Añade transacciones de forma rápida y sencilla.',
-      'step2Title': 'Visualiza tu progreso',
-      'step2Desc': 'Consulta tu balance diario, semanal o mensual.',
-      'step3Title': 'Aprende consejos',
-      'step3Desc': 'Recibe tips financieros personalizados cada día.',
+      'step1Title': 'Toma el Control',
+      'step1Desc':
+          'Controla cada centavo. Registra tus gastos e ingresos de forma automática y visualiza a dónde va tu dinero.',
+      'step1Badge': 'Control Total',
+      'step1Pill1': 'Sincronización Automática',
+      'step1Pill2': 'Insights en Tiempo Real',
+      'step2Title': 'Dile Adiós a las Deudas',
+      'step2Desc':
+          'Evita el ciclo de la deuda. Aprende a gestionar tus créditos y mantén tu salud financiera libre de compromisos.',
+      'step2Badge': 'Vida sin Deudas',
+      'step3Title': 'Tu Camino a la Libertad',
+      'step3Desc':
+          'Construye tu futuro. Ahorra, invierte y alcanza la libertad financiera que mereces con metas claras.',
+      'step3Badge': 'Libertad Financiera',
+      'step3Achievement': 'Meta alcanzada',
+      'getStartedNow': 'Comenzar Ahora',
+      'alreadyHaveAccount': '¿Ya tienes una cuenta? Iniciar sesión',
+      'skip': 'Saltar',
       'step4Title': '¿Para qué usarás la app?',
       'step4Desc': 'Elige el perfil que mejor se adapte a ti.',
       'usagePersonal': 'Finanzas Personales',
@@ -132,6 +156,11 @@ class AppLocalizations {
   String get step2Desc => _text('step2Desc');
   String get step3Title => _text('step3Title');
   String get step3Desc => _text('step3Desc');
+  String get step1Pill1 => _text('step1Pill1');
+  String get step1Pill2 => _text('step1Pill2');
+  String get step3Achievement => _text('step3Achievement');
+  String get getStartedNow => _text('getStartedNow');
+  String get alreadyHaveAccount => _text('alreadyHaveAccount');
   String get step4Title => _text('step4Title');
   String get step4Desc => _text('step4Desc');
   String get usagePersonal => _text('usagePersonal');

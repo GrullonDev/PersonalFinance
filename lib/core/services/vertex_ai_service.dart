@@ -93,7 +93,7 @@ class VertexAiService {
     : _client =
           client ??
           FirebaseGeminiClient(
-            FirebaseAI.vertexAI().generativeModel(model: 'gemini-2.5-flash'),
+            FirebaseAI.googleAI().generativeModel(model: 'gemini-2.5-flash'),
           );
 
   /// Categoriza automáticamente un gasto según su título/descripción
@@ -339,13 +339,32 @@ Sé específico: menciona el monto estimado total y las categorías principales.
         .map((e) => '- ${e.key}: Q${e.value.toStringAsFixed(2)}')
         .join('\n');
 
-    final incomesSummary =
-        incomes.isEmpty
-            ? 'Sin ingresos registrados.'
-            : incomes
-                .take(8)
-                .map((i) => '- ${i.title}: Q${i.amount.toStringAsFixed(2)}')
-                .join('\n');
+    String fmtDate(DateTime dt) => dt.toIso8601String().split('T').first;
+
+    final incomeDetails = incomes.isEmpty
+        ? 'Sin ingresos registrados.'
+        : incomes
+            .map(
+              (i) =>
+                  '- ${i.title}: Q${i.amount.toStringAsFixed(2)}'
+                  ' | Fecha: ${fmtDate(i.date)}'
+                  ' | Registrado: ${fmtDate(i.createdAt)}'
+                  ' | Actualizado: ${fmtDate(i.updatedAt)}',
+            )
+            .join('\n');
+
+    final expenseDetails = expenses.isEmpty
+        ? 'Sin gastos registrados.'
+        : expenses
+            .map(
+              (e) =>
+                  '- ${e.title}: Q${e.amount.toStringAsFixed(2)}'
+                  ' | Cat: ${e.category}'
+                  ' | Fecha: ${fmtDate(e.date)}'
+                  ' | Registrado: ${fmtDate(e.createdAt)}'
+                  ' | Actualizado: ${fmtDate(e.updatedAt)}',
+            )
+            .join('\n');
 
     final prompt = '''
 Eres un asesor financiero personal experto en finanzas para Guatemala. Genera un reporte mensual financiero detallado, profesional y motivador para el mes de $monthLabel.
@@ -356,8 +375,11 @@ DATOS FINANCIEROS:
 - Balance neto: Q${savings.toStringAsFixed(2)}
 - Tasa de ahorro: ${savingsRate.toStringAsFixed(1)}%
 
-DETALLE DE INGRESOS:
-$incomesSummary
+DETALLE DE INGRESOS (Fecha = fecha del movimiento, Registrado = cuándo se ingresó al sistema):
+$incomeDetails
+
+DETALLE DE GASTOS (Fecha = fecha del movimiento, Registrado = cuándo se ingresó al sistema):
+$expenseDetails
 
 TOP CATEGORÍAS DE GASTOS:
 $topCategories
