@@ -90,4 +90,16 @@ cd "$REPO_ROOT/ios"
 log "pod install --repo-update…"
 pod install --repo-update
 
-log "✅ Setup completo: Flutter + Pods listos para Archive."
+# ── 5. Resolver paquetes de Swift Package Manager ─────────────────────────────
+# Flutter (stable) integra con SwiftPM los plugins que lo soportan; por ejemplo
+# google_sign_in_ios agrega GoogleSignIn-iOS a FlutterGeneratedPluginSwiftPackage.
+# Xcode Cloud desactiva la resolución automática de paquetes y exige
+# ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved. Como ese archivo
+# no está versionado, lo generamos aquí; sin este paso el Archive falla con
+# "a resolved file is required when automatic dependency resolution is disabled".
+log "Resolviendo paquetes Swift (Package.resolved)…"
+xcodebuild -resolvePackageDependencies \
+  -workspace "$REPO_ROOT/ios/Runner.xcworkspace" \
+  -scheme Runner || fail "No se pudieron resolver los paquetes de Swift Package Manager."
+
+log "✅ Setup completo: Flutter + Pods + paquetes Swift listos para Archive."
