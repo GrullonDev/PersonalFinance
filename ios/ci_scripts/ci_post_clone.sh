@@ -98,6 +98,15 @@ export PATH="$GEM_USER_DIR/bin:$PATH"
 
 cd "$REPO_ROOT/ios"
 log "pod install --repo-update…"
-pod install --repo-update
+if ! pod install --repo-update; then
+  # Si un plugin cambia la versión exacta de un pod transitivo (p. ej.
+  # purchases_flutter 10.x exige PurchasesHybridCommon/RevenueCat más nuevos
+  # que los fijados en Podfile.lock), CocoaPods se niega a instalar y pide
+  # `pod update <pod>`. Esas versiones las fija el propio plugin, así que
+  # actualizarlas aquí sigue siendo determinista. Lo ideal es regenerar
+  # Podfile.lock en una Mac (`pod install`) y versionarlo.
+  log "pod install falló; actualizando los pods de RevenueCat fijados en Podfile.lock…"
+  pod update PurchasesHybridCommon RevenueCat || fail "pod update de RevenueCat falló."
+fi
 
 log "✅ Setup completo: Flutter + Pods listos para Archive."
