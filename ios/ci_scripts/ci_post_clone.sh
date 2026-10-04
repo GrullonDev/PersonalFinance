@@ -109,4 +109,16 @@ if ! pod install --repo-update; then
   pod update PurchasesHybridCommon RevenueCat || fail "pod update de RevenueCat falló."
 fi
 
+# ── 5. Número de build único para App Store Connect ───────────────────────────
+# Info.plist toma CFBundleVersion de $(FLUTTER_BUILD_NUMBER), que por defecto
+# sale del "+N" de pubspec.yaml. Si ese número ya se subió a TestFlight, el
+# paso "Preparing build for App Store Connect" falla. Usamos el número de build
+# de Xcode Cloud (CI_BUILD_NUMBER), que siempre crece.
+if [ -n "${CI_BUILD_NUMBER:-}" ]; then
+  log "Usando CI_BUILD_NUMBER=$CI_BUILD_NUMBER como número de build…"
+  cd "$REPO_ROOT"
+  flutter build ios --config-only --release --no-codesign \
+    --build-number="$CI_BUILD_NUMBER" || fail "flutter build ios --config-only falló."
+fi
+
 log "✅ Setup completo: Flutter + Pods listos para Archive."
