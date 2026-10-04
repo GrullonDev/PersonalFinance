@@ -36,8 +36,8 @@ class RevenueCatService {
     if (package == null) {
       throw Exception('No hay paquete mensual disponible');
     }
-    final customerInfo = await Purchases.purchasePackage(package);
-    return _toEntity(customerInfo);
+    final result = await Purchases.purchasePackage(package);
+    return _toEntity(result.customerInfo);
   }
 
   /// Restaura compras anteriores en este dispositivo / cuenta.
