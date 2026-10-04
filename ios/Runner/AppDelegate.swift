@@ -2,17 +2,21 @@ import Flutter
 import UIKit
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Patrón estándar de Flutter: registrar todos los plugins generados aquí.
-    // Compatible con todas las versiones de Flutter en el canal stable.
-    GeneratedPluginRegistrant.register(with: self)
-    setUpPaymentCaptureChannel()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // Ciclo de vida UIScene (obligatorio desde iOS 27 al compilar con el SDK
+  // actual; sin él la app se cierra al abrir). El engine lo crea
+  // SceneDelegate y aquí se registran los plugins cuando ya existe.
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    setUpPaymentCaptureChannel(registry: engineBridge.pluginRegistry)
   }
 
   // MARK: - Registro automático de pagos (Apple Pay vía Atajos)
@@ -26,8 +30,8 @@ import UIKit
   private let paymentCaptureQueueKey = "payment_capture_queue"
   private var paymentCaptureChannel: FlutterMethodChannel?
 
-  private func setUpPaymentCaptureChannel() {
-    guard let registrar = self.registrar(forPlugin: "PaymentCapture") else { return }
+  private func setUpPaymentCaptureChannel(registry: FlutterPluginRegistry) {
+    guard let registrar = registry.registrar(forPlugin: "PaymentCapture") else { return }
     let channel = FlutterMethodChannel(
       name: "personal_finance/payment_capture",
       binaryMessenger: registrar.messenger()
@@ -51,12 +55,15 @@ import UIKit
     paymentCaptureChannel = channel
   }
 
-  private func handlePaymentURL(_ url: URL) {
+  /// Devuelve `true` si el URL era un pago del atajo (`personalfinance://`).
+  @discardableResult
+  func handlePaymentURL(_ url: URL) -> Bool {
+    guard url.scheme?.lowercased() == "personalfinance" else { return false }
     let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
     func value(_ names: [String]) -> String? {
       items.first { names.contains($0.name.lowercased()) }?.value
     }
-    guard let amount = value(["monto", "amount"]), !amount.isEmpty else { return }
+    guard let amount = value(["monto", "amount"]), !amount.isEmpty else { return true }
 
     let kind = url.host?.lowercased() == "ingreso" ? "ingreso" : (value(["tipo", "type"]) ?? "gasto")
     let capture: [String: Any] = [
@@ -74,6 +81,7 @@ import UIKit
     if queue.count > 100 { queue.removeFirst(queue.count - 100) }
     UserDefaults.standard.set(queue, forKey: paymentCaptureQueueKey)
     paymentCaptureChannel?.invokeMethod("onPaymentCaptured", arguments: nil)
+    return true
   }
 
   private func drainPaymentCaptures() -> [[String: Any]] {
@@ -84,19 +92,14 @@ import UIKit
 
   // MARK: - URL callback handling
   //
-  // El plugin `google_sign_in` en iOS responde al callback OAuth a través del
-  // URL scheme declarado en Info.plist (CFBundleURLSchemes). `FlutterAppDelegate`
-  // reenvía automáticamente el URL a los plugins registrados; este override
-  // garantiza que se llame a `super` (compatibilidad defensiva).
+  // Con UIScene, iOS entrega los URLs a SceneDelegate. Este override queda
+  // por compatibilidad; el resto de URLs (p. ej. OAuth) siguen a `super`.
   override func application(
     _ app: UIApplication,
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
-    if url.scheme?.lowercased() == "personalfinance" {
-      handlePaymentURL(url)
-      return true
-    }
+    if handlePaymentURL(url) { return true }
     return super.application(app, open: url, options: options)
   }
 }
