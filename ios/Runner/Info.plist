@@ -109,13 +109,28 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
-	<!--
-	NOTA: NO declaramos `UIApplicationSceneManifest`. El template estándar de
-	Flutter usa `UIMainStoryboardFile = Main` (App lifecycle clásico) y deja que
-	`FlutterAppDelegate` cree el `FlutterViewController` desde Main.storyboard.
-	`FlutterSceneDelegate` solo existe en versiones muy recientes del framework
-	y declararlo cuando no está disponible deja a iOS sin escena para presentar:
-	resultado = launch screen blanco indefinido y ningún log de Flutter.
-	-->
+	<!-- Ciclo de vida UIScene: obligatorio desde iOS 27 para apps compiladas
+	     con el SDK actual (sin esto la app se cierra al abrir). -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 </dict>
 </plist>
