@@ -7,6 +7,7 @@ import 'package:personal_finance/core/services/biometric_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:personal_finance/core/services/security_logger.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_finance/utils/widgets/app_lock_policy.dart';
 
 class AppLifecycleWrapper extends StatefulWidget {
   const AppLifecycleWrapper({required this.child, super.key});
@@ -20,6 +21,7 @@ class AppLifecycleWrapper extends StatefulWidget {
 class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
     with WidgetsBindingObserver {
   final _biometricService = BiometricService();
+  final _lockPolicy = AppLockPolicy();
   bool _isLocking = false;
   bool _isAuthenticating = false;
   // True while the app is in the background / app-switcher — hides content.
@@ -71,6 +73,8 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
     // ya que el diálogo nativo causa transiciones de pausa/resumen.
     if (_isAuthenticating) return;
 
+    final bool shouldLock = _lockPolicy.shouldLockOn(state);
+
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       // App is about to be backgrounded — obscure financial content before
@@ -80,7 +84,9 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
       setState(() => _isObscured = false);
       final AuthProvider auth = context.read<AuthProvider>();
       auth.onAppResumed();
-      _checkLock();
+      // Sólo se bloquea si la app estuvo de verdad en segundo plano; el
+      // diálogo de Face ID (inactive → resumed) no debe volver a bloquearla.
+      if (shouldLock) _checkLock();
     }
   }
 
@@ -141,6 +147,7 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper>
         );
 
         if (authenticated) {
+          _lockPolicy.markUnlocked();
           setState(() {
             _isLocking = false;
             _biometricFailCount = 0;
