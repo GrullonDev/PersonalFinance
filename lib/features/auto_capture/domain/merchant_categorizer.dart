@@ -8,6 +8,13 @@ class MerchantCategorizer {
 
   static const Map<String, List<String>> _rules = {
     'comida': [
+      'comida',
+      'almuerzo',
+      'cena',
+      'desayuno',
+      'refaccion',
+      'refacción',
+      'helado',
       'restaurante',
       'restaurant',
       'cafe',
@@ -57,6 +64,8 @@ class MerchantCategorizer {
       'tienda',
     ],
     'transporte': [
+      'transporte',
+      'pasaje',
       'uber',
       'didi',
       'indriver',
@@ -71,6 +80,8 @@ class MerchantCategorizer {
       'lyft',
     ],
     'gasolina': [
+      'gasolina',
+      'diesel',
       'gasolinera',
       'shell',
       'texaco',
@@ -126,6 +137,9 @@ class MerchantCategorizer {
       'cemaco',
     ],
     'salud': [
+      'doctor',
+      'medicina',
+      'consulta',
       'farmacia',
       'pharmacy',
       'cruz verde',
@@ -172,6 +186,8 @@ class MerchantCategorizer {
       'museo',
     ],
     'educacion': [
+      'curso',
+      'colegiatura',
       'universidad',
       'colegio',
       'escuela',
@@ -182,7 +198,16 @@ class MerchantCategorizer {
       'librería',
       'duolingo',
     ],
-    'hogar': ['home depot', 'ferreteria', 'ferretería', 'ikea', 'novex'],
+    'hogar': [
+      'home depot',
+      'ferreteria',
+      'ferretería',
+      'ikea',
+      'novex',
+      'renta',
+      'alquiler',
+      'muebles',
+    ],
   };
 
   static const Map<String, List<String>> _incomeRules = {
