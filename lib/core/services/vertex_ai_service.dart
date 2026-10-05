@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
 import 'package:personal_finance/features/domain/entities/income_entity.dart';
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
@@ -68,33 +70,144 @@ abstract class GeminiClient {
   Future<String?> generateMultiTurn(List<Content> contents);
 }
 
-/// Implementación real utilizando la clase final GenerativeModel de Firebase.
+/// Implementación real con Firebase AI Logic (Gemini Developer API).
+///
+/// Prueba varios modelos en orden: si uno falla (p. ej. Google lo retiró o
+/// no está habilitado en el proyecto) usa el siguiente y recuerda el que
+/// funcionó. El primero se puede cambiar sin publicar la app con la clave
+/// `ai_model` de Remote Config.
 class FirebaseGeminiClient implements GeminiClient {
-  final GenerativeModel _model;
-  FirebaseGeminiClient(this._model);
+  FirebaseGeminiClient({List<String>? models})
+    : _modelNames = models ?? defaultModels();
 
-  @override
-  Future<String?> generate(String prompt) async {
-    final response = await _model.generateContent([Content.text(prompt)]);
-    return response.text;
+  static const List<String> _fallbackModels = <String>[
+    'gemini-2.5-flash',
+    'gemini-flash-latest',
+    'gemini-2.5-flash-lite',
+  ];
+
+  static List<String> defaultModels() {
+    String configured = '';
+    try {
+      configured = FirebaseRemoteConfig.instance.getString('ai_model').trim();
+    } catch (_) {}
+    return <String>{
+      if (configured.isNotEmpty) configured,
+      ..._fallbackModels,
+    }.toList();
+  }
+
+  final List<String> _modelNames;
+  final Map<String, GenerativeModel> _models = <String, GenerativeModel>{};
+  int _working = 0;
+
+  GenerativeModel _model(String name) => _models.putIfAbsent(
+    name,
+    () => FirebaseAI.googleAI().generativeModel(model: name),
+  );
+
+  Future<String?> _run(
+    Future<GenerateContentResponse> Function(GenerativeModel model) call,
+  ) async {
+    Object? lastError;
+    StackTrace? lastStack;
+    for (var i = 0; i < _modelNames.length; i++) {
+      final index = (_working + i) % _modelNames.length;
+      final name = _modelNames[index];
+      try {
+        final response = await call(_model(name));
+        _working = index;
+        return response.text;
+      } catch (e, st) {
+        developer.log('Gemini "$name" falló: $e', error: e);
+        lastError = e;
+        lastStack = st;
+        // Sin conexión no tiene sentido probar otro modelo.
+        if (AiErrorReason.of(e) == AiErrorReason.network) break;
+      }
+    }
+    Error.throwWithStackTrace(lastError!, lastStack!);
   }
 
   @override
-  Future<String?> generateMultiTurn(List<Content> contents) async {
-    final response = await _model.generateContent(contents);
-    return response.text;
+  Future<String?> generate(String prompt) =>
+      _run((model) => model.generateContent([Content.text(prompt)]));
+
+  @override
+  Future<String?> generateMultiTurn(List<Content> contents) =>
+      _run((model) => model.generateContent(contents));
+}
+
+/// Motivo legible de un error de la IA, para mostrarlo al usuario y
+/// registrarlo en Crashlytics.
+enum AiErrorReason {
+  network('Sin conexión a internet.'),
+  appCheck(
+    'La verificación de la app (App Check) bloqueó la solicitud. '
+    'Revisa la configuración de App Check en Firebase.',
+  ),
+  notEnabled(
+    'El servicio de IA no está habilitado en Firebase (AI Logic / Gemini API).',
+  ),
+  quota('Se alcanzó el límite de uso de la IA. Intenta más tarde.'),
+  model('El modelo de IA no está disponible.'),
+  unknown('Error inesperado del servicio de IA.');
+
+  const AiErrorReason(this.message);
+  final String message;
+
+  static AiErrorReason of(Object error) {
+    final text = error.toString().toLowerCase();
+    bool has(List<String> words) => words.any(text.contains);
+    if (has([
+      'socketexception',
+      'failed host lookup',
+      'network',
+      'timed out',
+      'connection',
+    ])) {
+      return AiErrorReason.network;
+    }
+    if (has(['app check', 'app-check', 'appcheck']))
+      return AiErrorReason.appCheck;
+    if (has(['quota', 'resource_exhausted', '429', 'rate limit'])) {
+      return AiErrorReason.quota;
+    }
+    if (has([
+      'not found',
+      '404',
+      'is not supported',
+      'unsupported model',
+      'deprecated',
+    ])) {
+      return AiErrorReason.model;
+    }
+    if (has([
+      'permission',
+      '403',
+      'has not been used',
+      'disabled',
+      'api key',
+      'billing',
+    ])) {
+      return AiErrorReason.notEnabled;
+    }
+    return AiErrorReason.unknown;
   }
+}
+
+/// Respuesta del chat: texto a mostrar y si fue un error.
+class AiChatReply {
+  const AiChatReply(this.text, {this.isError = false});
+  final String text;
+  final bool isError;
 }
 
 class VertexAiService {
   final GeminiClient _client;
 
   VertexAiService({GeminiClient? client})
-    : _client =
-          client ??
-          FirebaseGeminiClient(
-            FirebaseAI.googleAI().generativeModel(model: 'gemini-2.5-flash'),
-          );
+    : _client = client ?? FirebaseGeminiClient();
 
   /// Categoriza automáticamente un gasto según su título/descripción
   Future<String> getCategoryForExpense(String title) async {
@@ -341,30 +454,32 @@ Sé específico: menciona el monto estimado total y las categorías principales.
 
     String fmtDate(DateTime dt) => dt.toIso8601String().split('T').first;
 
-    final incomeDetails = incomes.isEmpty
-        ? 'Sin ingresos registrados.'
-        : incomes
-            .map(
-              (i) =>
-                  '- ${i.title}: Q${i.amount.toStringAsFixed(2)}'
-                  ' | Fecha: ${fmtDate(i.date)}'
-                  ' | Registrado: ${fmtDate(i.createdAt)}'
-                  ' | Actualizado: ${fmtDate(i.updatedAt)}',
-            )
-            .join('\n');
+    final incomeDetails =
+        incomes.isEmpty
+            ? 'Sin ingresos registrados.'
+            : incomes
+                .map(
+                  (i) =>
+                      '- ${i.title}: Q${i.amount.toStringAsFixed(2)}'
+                      ' | Fecha: ${fmtDate(i.date)}'
+                      ' | Registrado: ${fmtDate(i.createdAt)}'
+                      ' | Actualizado: ${fmtDate(i.updatedAt)}',
+                )
+                .join('\n');
 
-    final expenseDetails = expenses.isEmpty
-        ? 'Sin gastos registrados.'
-        : expenses
-            .map(
-              (e) =>
-                  '- ${e.title}: Q${e.amount.toStringAsFixed(2)}'
-                  ' | Cat: ${e.category}'
-                  ' | Fecha: ${fmtDate(e.date)}'
-                  ' | Registrado: ${fmtDate(e.createdAt)}'
-                  ' | Actualizado: ${fmtDate(e.updatedAt)}',
-            )
-            .join('\n');
+    final expenseDetails =
+        expenses.isEmpty
+            ? 'Sin gastos registrados.'
+            : expenses
+                .map(
+                  (e) =>
+                      '- ${e.title}: Q${e.amount.toStringAsFixed(2)}'
+                      ' | Cat: ${e.category}'
+                      ' | Fecha: ${fmtDate(e.date)}'
+                      ' | Registrado: ${fmtDate(e.createdAt)}'
+                      ' | Actualizado: ${fmtDate(e.updatedAt)}',
+                )
+                .join('\n');
 
     final prompt = '''
 Eres un asesor financiero personal experto en finanzas para Guatemala. Genera un reporte mensual financiero detallado, profesional y motivador para el mes de $monthLabel.
@@ -412,6 +527,19 @@ Sé específico con los montos en quetzales (Q). Usa un tono profesional pero am
     String userMessage,
     List<({String role, String text})> history, {
     String? financialContext,
+  }) async =>
+      (await chat(
+        userMessage,
+        history,
+        financialContext: financialContext,
+      )).text;
+
+  /// Igual que [sendChatMessage] pero indica si la respuesta es un error,
+  /// para no cobrar la pregunta gratis y mostrar el motivo.
+  Future<AiChatReply> chat(
+    String userMessage,
+    List<({String role, String text})> history, {
+    String? financialContext,
   }) async {
     final systemContext =
         'Eres un asesor financiero personal experto, amigable y empático, '
@@ -437,12 +565,29 @@ Sé específico con los montos en quetzales (Q). Usa un tono profesional pero am
     ];
 
     try {
-      final responseText = await _client.generateMultiTurn(contents);
-      return responseText?.trim() ??
-          'No pude procesar tu consulta. Por favor, intenta de nuevo.';
-    } catch (e) {
+      final responseText = (await _client.generateMultiTurn(contents))?.trim();
+      if (responseText == null || responseText.isEmpty) {
+        return const AiChatReply(
+          'No pude procesar tu consulta. Por favor, intenta de nuevo.',
+          isError: true,
+        );
+      }
+      return AiChatReply(responseText);
+    } catch (e, st) {
       developer.log('Error en chat financiero con Gemini: $e', error: e);
-      return 'Ocurrió un error al conectar con el asistente. Verifica tu conexión e intenta de nuevo.';
+      final reason = AiErrorReason.of(e);
+      try {
+        await FirebaseCrashlytics.instance.recordError(
+          e,
+          st,
+          reason: 'AI chat failed (${reason.name})',
+        );
+      } catch (_) {}
+      return AiChatReply(
+        'No pude responder en este momento. Intenta de nuevo en unos minutos.\n\n'
+        'Motivo: ${reason.message}',
+        isError: true,
+      );
     }
   }
 
