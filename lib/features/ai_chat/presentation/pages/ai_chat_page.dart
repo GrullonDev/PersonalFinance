@@ -90,19 +90,27 @@ class _AiChatPageState extends State<AiChatPage> {
       _messages.add(_ChatMessage(isAi: false, text: text));
       _isLoading = true;
     });
-    _history.add((role: 'user', text: text));
     _scrollToBottom();
-    if (!_isPremium) await _quota.consume();
 
     try {
-      final response = await _aiService.sendChatMessage(
+      final reply = await _aiService.chat(
         text,
         historySnapshot,
         financialContext: _financialContext,
       );
       if (!mounted) return;
-      setState(() => _messages.add(_ChatMessage(isAi: true, text: response)));
-      _history.add((role: 'model', text: response));
+      setState(
+        () => _messages.add(
+          _ChatMessage(isAi: true, text: reply.text, isError: reply.isError),
+        ),
+      );
+      // Los errores no cuentan como pregunta ni entran al historial.
+      if (!reply.isError) {
+        _history
+          ..add((role: 'user', text: text))
+          ..add((role: 'model', text: reply.text));
+        if (!_isPremium) await _quota.consume();
+      }
       _scrollToBottom();
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -609,7 +617,12 @@ class _MessageBubble extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: message.isAi ? scheme.surfaceContainerHigh : primary,
+        color:
+            message.isError
+                ? scheme.errorContainer
+                : message.isAi
+                ? scheme.surfaceContainerHigh
+                : primary,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
@@ -628,7 +641,10 @@ class _MessageBubble extends StatelessWidget {
           message.isAi
               ? AiMessageText(
                 text: message.text,
-                color: scheme.onSurface,
+                color:
+                    message.isError
+                        ? scheme.onErrorContainer
+                        : scheme.onSurface,
                 accent: primary,
               )
               : Text(
@@ -667,7 +683,12 @@ class _MessageBubble extends StatelessWidget {
 }
 
 class _ChatMessage {
-  const _ChatMessage({required this.isAi, required this.text});
+  const _ChatMessage({
+    required this.isAi,
+    required this.text,
+    this.isError = false,
+  });
   final bool isAi;
   final String text;
+  final bool isError;
 }
