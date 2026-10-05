@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:personal_finance/core/services/update_policy.dart';
+import 'package:personal_finance/core/services/version_service.dart';
 
 void main() {
   AppVersion v(String s) => AppVersion.parse(s);
@@ -47,5 +48,10 @@ void main() {
       evaluateUpdate(installed: v('1.2.2+3'), latest: v(''), minimum: v('')),
       UpdateKind.none,
     );
+  });
+
+  test('el versionCode de Android vuelve al build del pubspec', () {
+    expect(VersionService.androidBuildToPubspec(1000007), 7);
+    expect(VersionService.androidBuildToPubspec(7), 7);
   });
 }

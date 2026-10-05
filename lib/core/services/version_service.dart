@@ -150,7 +150,7 @@ class VersionService {
       final String platform = Platform.isIOS ? 'ios' : 'android';
       final AppVersion installed = AppVersion.parse(
         _packageInfo.version,
-        _packageInfo.buildNumber,
+        androidBuildToPubspec(int.tryParse(_packageInfo.buildNumber) ?? 0),
       );
       final AppVersion latest = AppVersion.parse(
         _remoteConfig.getString('update_latest_$platform'),
@@ -179,6 +179,12 @@ class VersionService {
       return UpdateCheck.none;
     }
   }
+
+  /// En Android el versionCode es 1.000.000 + build del pubspec (ver
+  /// android/app/build.gradle.kts); se convierte de vuelta para comparar
+  /// con lo publicado en Remote Config ("1.2.3+4").
+  static int androidBuildToPubspec(int versionCode) =>
+      versionCode >= 1000000 ? versionCode - 1000000 : versionCode;
 
   /// Enlace para actualizar en la plataforma actual.
   String get updateUrl {
