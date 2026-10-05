@@ -9,12 +9,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// 2) Carga tu key.properties
-val keystorePropertiesFile = rootProject.file("key.properties")
+// 2) Datos de firma: se leen de `.env` en la raíz del proyecto (o de
+//    android/key.properties). Ninguno de los dos se sube a git.
+//    Claves: storePassword, keyPassword, keyAlias, storeFile.
 val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.exists()) {
-        load(FileInputStream(keystorePropertiesFile))
-    }
+    listOf(rootProject.file("../.env"), rootProject.file("key.properties"))
+        .filter { it.exists() }
+        .forEach { file -> FileInputStream(file).use { load(it) } }
 }
 
 android {
