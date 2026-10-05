@@ -32,6 +32,8 @@ import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/quick_finance/data/services/spending_alert_service.dart';
 import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
+import 'package:personal_finance/features/categories/data/services/category_auto_creator.dart';
+import 'package:personal_finance/features/quick_finance/domain/services/transaction_categorizer.dart';
 
 class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final AddTransaction addTransaction;
@@ -45,6 +47,12 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final GoalRepository goalRepository;
   final DebtRepository debtRepository;
   final DeviceService deviceService;
+
+  /// Detecta la categoría cuando el usuario sólo escribe el lugar del gasto.
+  final TransactionCategorizer? categorizer;
+
+  /// Crea en "Categorías" las categorías detectadas automáticamente.
+  final CategoryAutoCreator? categoryAutoCreator;
 
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
   StreamSubscription<dynamic>? _balanceSubscription;
@@ -68,6 +76,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     required this.goalRepository,
     required this.debtRepository,
     required this.deviceService,
+    this.categorizer,
+    this.categoryAutoCreator,
   }) : super(const QuickFinanceState()) {
     on<WatchDataRequested>(_onWatchDataRequested);
     on<TransactionsObserved>(_onTransactionsObserved);
@@ -238,9 +248,11 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     AutoCaptureReceived event,
     Emitter<QuickFinanceState> emit,
   ) {
-    emit(state.copyWith(
-      pendingCaptures: [...state.pendingCaptures, event.capture],
-    ));
+    emit(
+      state.copyWith(
+        pendingCaptures: [...state.pendingCaptures, event.capture],
+      ),
+    );
   }
 
   Future<void> _onAutoCaptureConfirmed(
@@ -253,39 +265,47 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     final amount = event.editedAmount ?? capture.amount;
 
     // Remove from queue immediately so UI updates without waiting for save
-    emit(state.copyWith(
-      pendingCaptures:
-          state.pendingCaptures.where((c) => c != capture).toList(),
-    ));
+    emit(
+      state.copyWith(
+        pendingCaptures:
+            state.pendingCaptures.where((c) => c != capture).toList(),
+      ),
+    );
 
-    add(AddTransactionRequested(
-      amount: amount,
-      type: capture.type,
-      note: note,
-      category: category,
-      occurredAt: capture.occurredAt,
-      autoSourceLabel: capture.sourceLabel,
-    ));
+    add(
+      AddTransactionRequested(
+        amount: amount,
+        type: capture.type,
+        note: note,
+        category: category,
+        occurredAt: capture.occurredAt,
+        autoSourceLabel: capture.sourceLabel,
+      ),
+    );
   }
 
   void _onAutoCaptureDismissed(
     AutoCaptureDismissed event,
     Emitter<QuickFinanceState> emit,
   ) {
-    emit(state.copyWith(
-      pendingCaptures:
-          state.pendingCaptures.where((c) => c != event.capture).toList(),
-    ));
+    emit(
+      state.copyWith(
+        pendingCaptures:
+            state.pendingCaptures.where((c) => c != event.capture).toList(),
+      ),
+    );
   }
 
   void _onAutoCapturePermissionFlags(
     AutoCapturePermissionFlags event,
     Emitter<QuickFinanceState> emit,
   ) {
-    emit(state.copyWith(
-      needsNotificationAccess: event.needsNotificationAccess,
-      needsShortcutsSetup: event.needsShortcutsSetup,
-    ));
+    emit(
+      state.copyWith(
+        needsNotificationAccess: event.needsNotificationAccess,
+        needsShortcutsSetup: event.needsShortcutsSetup,
+      ),
+    );
   }
 
   void _onTransactionsObserved(
@@ -300,6 +320,60 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       ),
     );
     _checkSpendingDeviations(event.transactions);
+    unawaited(_backfillCategories(event.transactions));
+  }
+
+  /// Movimientos ya revisados por [_backfillCategories] en esta sesión.
+  final Set<String> _backfilled = <String>{};
+
+  /// Máximo de consultas a la IA por sesión al completar movimientos viejos.
+  static const int _maxBackfillAiCalls = 10;
+  int _backfillAiCalls = 0;
+
+  /// Completa la categoría de los movimientos que se guardaron sin ella
+  /// (p. ej. sólo con el nombre del lugar), usando primero las reglas
+  /// locales y, con un límite, la IA.
+  Future<void> _backfillCategories(List<TransactionEntity> transactions) async {
+    final categorizer = this.categorizer;
+    if (categorizer == null) return;
+    for (final t in transactions) {
+      if (isClosed) return;
+      if (t.deletedAt != null || _backfilled.contains(t.id)) continue;
+      if (t.categoryId != null && t.categoryId!.trim().isNotEmpty) continue;
+      _backfilled.add(t.id);
+
+      String? category = categorizer.categorizeLocally(
+        note: t.note,
+        type: t.type,
+        history: transactions,
+      );
+      if (category == null &&
+          categorizer.hasAi &&
+          _backfillAiCalls < _maxBackfillAiCalls) {
+        _backfillAiCalls++;
+        category = await categorizer.categorizeWithAi(t.note);
+      }
+      if (category == null || isClosed) continue;
+
+      try {
+        await updateTransaction(
+          TransactionEntity(
+            id: t.id,
+            userId: t.userId,
+            type: t.type,
+            amount: t.amount,
+            note: t.note,
+            categoryId: category,
+            createdAt: t.createdAt,
+            updatedAt: DateTime.now(),
+            syncStatus: SyncStatus.pending,
+            version: t.version + 1,
+            deviceId: t.deviceId,
+          ),
+        );
+        await _ensureCategory(category, t.type);
+      } catch (_) {}
+    }
   }
 
   /// Lanza (sin bloquear la UI) la detección de desvíos de gasto; el servicio
@@ -398,6 +472,22 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     }
 
     final isAuto = event.autoSourceLabel != null;
+    final note = InputSanitizer.sanitizeText(event.note);
+    String? category =
+        event.category != null
+            ? InputSanitizer.sanitizeText(event.category!, maxLength: 50)
+            : null;
+    // Las capturas automáticas pueden traer el nombre de la IA ("Alimentación").
+    if (isAuto && category != null) {
+      category = TransactionCategorizer.normalize(category);
+    }
+    // El usuario sólo escribió el lugar ("Starbucks"): se detecta la categoría.
+    category ??= categorizer?.categorizeLocally(
+      note: note,
+      type: event.type,
+      history: state.transactions,
+    );
+
     final transaction = TransactionEntity(
       // Las capturas automáticas pueden llegar varias en el mismo milisegundo.
       id:
@@ -407,11 +497,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       userId: uid,
       type: event.type,
       amount: event.amount,
-      note: InputSanitizer.sanitizeText(event.note),
-      categoryId:
-          event.category != null
-              ? InputSanitizer.sanitizeText(event.category!, maxLength: 50)
-              : null,
+      note: note,
+      categoryId: category,
       createdAt: event.occurredAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
       syncStatus: SyncStatus.pending,
@@ -419,8 +506,16 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       deviceId: deviceService.deviceId,
     );
 
+    // Evita que el completado de categorías vuelva a consultar este movimiento.
+    _backfilled.add(transaction.id);
     try {
       await addTransaction(transaction);
+      if (category != null) {
+        unawaited(_ensureCategory(category, transaction.type));
+      } else {
+        // Sin coincidencia local: se pregunta a la IA sin frenar el registro.
+        unawaited(_categorizeWithAi(transaction));
+      }
       if (isAuto) {
         await _notifyAutoCaptured(transaction, event.autoSourceLabel!);
         return;
@@ -434,6 +529,38 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
         ),
       );
     }
+  }
+
+  Future<void> _ensureCategory(String category, TransactionType type) async {
+    try {
+      await categoryAutoCreator?.ensure(category, type);
+    } catch (_) {}
+  }
+
+  /// Asigna la categoría sugerida por la IA a un movimiento ya guardado.
+  Future<void> _categorizeWithAi(TransactionEntity transaction) async {
+    final categorizer = this.categorizer;
+    if (categorizer == null || !categorizer.hasAi) return;
+    try {
+      final category = await categorizer.categorizeWithAi(transaction.note);
+      if (category == null || isClosed) return;
+      await updateTransaction(
+        TransactionEntity(
+          id: transaction.id,
+          userId: transaction.userId,
+          type: transaction.type,
+          amount: transaction.amount,
+          note: transaction.note,
+          categoryId: category,
+          createdAt: transaction.createdAt,
+          updatedAt: DateTime.now(),
+          syncStatus: SyncStatus.pending,
+          version: transaction.version + 1,
+          deviceId: transaction.deviceId,
+        ),
+      );
+      await _ensureCategory(category, transaction.type);
+    } catch (_) {}
   }
 
   Future<void> _notifyAutoCaptured(

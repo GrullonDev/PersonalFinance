@@ -16,6 +16,8 @@ import 'package:personal_finance/features/transactions/domain/entities/transacti
 import 'package:personal_finance/features/transactions/domain/repositories/transaction_backend_repository.dart'
     as tx_backend;
 import 'package:personal_finance/utils/budget_category_prefs.dart';
+import 'package:personal_finance/core/constants/enums.dart';
+import 'package:personal_finance/features/quick_finance/domain/services/transaction_categorizer.dart';
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/utils/theme.dart';
 import 'package:personal_finance/utils/premium_modals.dart';
@@ -752,7 +754,10 @@ class _BudgetCardState extends State<_BudgetCard> {
                                       orElse:
                                           () => cat_entity.Category(
                                             id: id,
-                                            nombre: 'Cat #$id',
+                                            nombre:
+                                                TransactionCategorizer.displayName(
+                                                  id,
+                                                ),
                                             tipo: 'gasto',
                                             createdAt: DateTime.now(),
                                             updatedAt: DateTime.now(),
@@ -904,8 +909,40 @@ class _BudgetCardState extends State<_BudgetCard> {
   String _fmt2(DateTime d) => '${d.day}/${d.month}';
 
   Future<void> _loadCategories() async {
-    final List<String> ids = await BudgetCategoryPrefs.load(widget.budget.id);
+    List<String> ids = await BudgetCategoryPrefs.load(widget.budget.id);
+    if (ids.isEmpty) {
+      // Presupuesto sin categorías elegidas: si su nombre corresponde a una
+      // categoría ("Comida", "Gasolina", "Supermercado") se vincula solo, para
+      // que sume únicamente esos gastos. Nombres genéricos ("Mensual") siguen
+      // sumando todos los gastos.
+      final String? detected = TransactionCategorizer().categorizeLocally(
+        note: widget.budget.nombre,
+        type: TransactionType.expense,
+      );
+      if (detected != null) {
+        ids = <String>[detected];
+        await BudgetCategoryPrefs.save(widget.budget.id, ids);
+      }
+    }
     if (mounted) setState(() => _categoryIds = ids);
+  }
+
+  /// Claves con las que se reconocen los gastos de las categorías elegidas:
+  /// el id de la categoría y su nombre normalizado ("Comida" → `comida`), ya
+  /// que los gastos rápidos guardan la categoría por nombre.
+  Set<String> _categoryKeys() {
+    final List<cat_entity.Category> all =
+        context.read<CategoriesBloc>().state.items;
+    final Set<String> keys = <String>{};
+    for (final String id in _categoryIds) {
+      keys.add(TransactionCategorizer.normalize(id) ?? id);
+      for (final cat_entity.Category c in all) {
+        if (c.id != id) continue;
+        final String? byName = TransactionCategorizer.normalize(c.nombre);
+        if (byName != null) keys.add(byName);
+      }
+    }
+    return keys;
   }
 
   Future<double> _spent(tx_backend.TransactionBackendRepository repo) async =>
@@ -921,6 +958,8 @@ class _BudgetCardState extends State<_BudgetCard> {
       fechaHasta: hasta,
       tipo: 'gasto',
     );
+    if (!mounted) return 0.0;
+    final Set<String> keys = _categoryKeys();
     return res.fold<double>((Failure l) => 0.0, (List<TransactionBackend> r) {
       final List<TransactionBackend> filtered =
           _categoryIds.isEmpty
@@ -928,7 +967,10 @@ class _BudgetCardState extends State<_BudgetCard> {
               : r
                   .where(
                     (TransactionBackend e) =>
-                        _categoryIds.contains(e.categoriaId),
+                        _categoryIds.contains(e.categoriaId) ||
+                        keys.contains(
+                          TransactionCategorizer.normalize(e.categoriaId),
+                        ),
                   )
                   .toList();
       return filtered.fold<double>(
