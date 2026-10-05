@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:personal_finance/features/domain/entities/expense_entity.dart';
@@ -103,7 +104,10 @@ class FirebaseGeminiClient implements GeminiClient {
 
   GenerativeModel _model(String name) => _models.putIfAbsent(
     name,
-    () => FirebaseAI.googleAI().generativeModel(model: name),
+    () => FirebaseAI.googleAI(
+      // ignore: deprecated_member_use
+      appCheck: _FailSafeAppCheck.wrap(),
+    ).generativeModel(model: name),
   );
 
   Future<String?> _run(
@@ -138,6 +142,50 @@ class FirebaseGeminiClient implements GeminiClient {
       _run((model) => model.generateContent(contents));
 }
 
+/// App Check que nunca hace fallar la llamada a la IA.
+///
+/// firebase_ai pide un token de App Check antes de cada solicitud y, si el
+/// proveedor aún no está registrado en Firebase (p. ej. DeviceCheck en iOS),
+/// esa excepción tumbaba la pregunta aunque App Check no esté "Aplicado".
+/// Aquí el error se registra y la solicitud sigue sin token; cuando App
+/// Check esté configurado los tokens se envían normalmente.
+class _FailSafeAppCheck implements FirebaseAppCheck {
+  _FailSafeAppCheck(this._inner);
+
+  static FirebaseAppCheck? wrap() {
+    try {
+      return _FailSafeAppCheck(FirebaseAppCheck.instance);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  final FirebaseAppCheck _inner;
+
+  @override
+  Future<String?> getToken([bool? forceRefresh]) async {
+    try {
+      return await _inner.getToken(forceRefresh);
+    } catch (e) {
+      developer.log('App Check sin token (se continúa): $e', error: e);
+      return null;
+    }
+  }
+
+  @override
+  Future<String> getLimitedUseToken() async {
+    try {
+      return await _inner.getLimitedUseToken();
+    } catch (e) {
+      developer.log('App Check sin token limitado (se continúa): $e', error: e);
+      return '';
+    }
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// Motivo legible de un error de la IA, para mostrarlo al usuario y
 /// registrarlo en Crashlytics.
 enum AiErrorReason {
@@ -168,8 +216,16 @@ enum AiErrorReason {
     ])) {
       return AiErrorReason.network;
     }
-    if (has(['app check', 'app-check', 'appcheck']))
+    if (has([
+      'app check',
+      'app-check',
+      'appcheck',
+      'app_check',
+      'attestation',
+      'devicecheck',
+    ])) {
       return AiErrorReason.appCheck;
+    }
     if (has(['quota', 'resource_exhausted', '429', 'rate limit'])) {
       return AiErrorReason.quota;
     }
@@ -583,9 +639,11 @@ Sé específico con los montos en quetzales (Q). Usa un tono profesional pero am
           reason: 'AI chat failed (${reason.name})',
         );
       } catch (_) {}
+      final detail = e.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
       return AiChatReply(
         'No pude responder en este momento. Intenta de nuevo en unos minutos.\n\n'
-        'Motivo: ${reason.message}',
+        'Motivo: ${reason.message}\n\n'
+        'Detalle técnico: ${detail.length > 220 ? '${detail.substring(0, 220)}…' : detail}',
         isError: true,
       );
     }
