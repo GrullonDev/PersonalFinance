@@ -31,6 +31,15 @@ void main() {
       ),
       AiErrorReason.notEnabled,
     );
+    expect(
+      AiErrorReason.of(
+        Exception(
+          'Your prepayment credits are depleted. Please go to AI Studio '
+          'to manage your project and billing.',
+        ),
+      ),
+      AiErrorReason.billing,
+    );
   });
 
   test('detecta el modelo que Google recomienda al retirar uno', () {

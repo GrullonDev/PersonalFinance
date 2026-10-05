@@ -111,13 +111,30 @@ class FirebaseGeminiClient implements GeminiClient {
   final Map<String, GenerativeModel> _models = <String, GenerativeModel>{};
   int _working = 0;
 
-  GenerativeModel _model(String name) => _models.putIfAbsent(
-    name,
-    () => FirebaseAI.googleAI(
-      // ignore: deprecated_member_use
-      appCheck: _FailSafeAppCheck.wrap(),
-    ).generativeModel(model: name),
-  );
+  /// Proveedor de Gemini según Remote Config (`ai_backend`):
+  /// - `google` (por defecto): Gemini Developer API, se paga con créditos
+  ///   prepagados en AI Studio.
+  /// - `vertex`: Vertex AI, se cobra a la cuenta de facturación de Google
+  ///   Cloud del proyecto (plan Blaze). Región en `ai_vertex_location`.
+  static FirebaseAI _backend() {
+    String backend = 'google';
+    String location = 'global';
+    try {
+      final rc = FirebaseRemoteConfig.instance;
+      backend = rc.getString('ai_backend').trim().toLowerCase();
+      final loc = rc.getString('ai_vertex_location').trim();
+      if (loc.isNotEmpty) location = loc;
+    } catch (_) {}
+    final appCheck = _FailSafeAppCheck.wrap();
+    return backend == 'vertex'
+        // ignore: deprecated_member_use
+        ? FirebaseAI.vertexAI(appCheck: appCheck, location: location)
+        // ignore: deprecated_member_use
+        : FirebaseAI.googleAI(appCheck: appCheck);
+  }
+
+  GenerativeModel _model(String name) =>
+      _models.putIfAbsent(name, () => _backend().generativeModel(model: name));
 
   Future<String?> _run(
     Future<GenerateContentResponse> Function(GenerativeModel model) call,
@@ -140,7 +157,11 @@ class FirebaseGeminiClient implements GeminiClient {
         lastError = e;
         lastStack = st;
         // Sin conexión no tiene sentido probar otro modelo.
-        if (AiErrorReason.of(e) == AiErrorReason.network) break;
+        final reason = AiErrorReason.of(e);
+        if (reason == AiErrorReason.network ||
+            reason == AiErrorReason.billing) {
+          break;
+        }
         final suggested = suggestedModel(e);
         if (suggested != null && !_modelNames.contains(suggested)) {
           _modelNames.add(suggested);
@@ -215,6 +236,10 @@ enum AiErrorReason {
     'El servicio de IA no está habilitado en Firebase (AI Logic / Gemini API).',
   ),
   quota('Se alcanzó el límite de uso de la IA. Intenta más tarde.'),
+  billing(
+    'La cuenta de IA no tiene saldo. Recarga créditos en Google AI Studio '
+    '(o cambia ai_backend a "vertex" en Remote Config).',
+  ),
   model('El modelo de IA no está disponible.'),
   unknown('Error inesperado del servicio de IA.');
 
@@ -242,6 +267,9 @@ enum AiErrorReason {
       'devicecheck',
     ])) {
       return AiErrorReason.appCheck;
+    }
+    if (has(['prepayment', 'credits are depleted', 'billing'])) {
+      return AiErrorReason.billing;
     }
     if (has(['quota', 'resource_exhausted', '429', 'rate limit'])) {
       return AiErrorReason.quota;
