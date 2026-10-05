@@ -410,18 +410,23 @@ Sé específico con los montos en quetzales (Q). Usa un tono profesional pero am
   /// [history]: lista de mensajes previos, cada uno con `role` ('user' | 'model') y `text`.
   Future<String> sendChatMessage(
     String userMessage,
-    List<({String role, String text})> history,
-  ) async {
-    const systemContext =
+    List<({String role, String text})> history, {
+    String? financialContext,
+  }) async {
+    final systemContext =
         'Eres un asesor financiero personal experto, amigable y empático, '
         'especializado en finanzas personales para Guatemala. '
         'Ayudas a los usuarios a entender sus gastos, presupuestos, metas de ahorro y deudas. '
         'Usas quetzales (Q) como moneda y referencias locales de Guatemala cuando sea relevante. '
-        'Responde siempre en español, de forma clara y concisa. '
-        'No repitas los datos que el usuario ya conoce; ve directo al consejo o análisis.';
+        'Responde siempre en español, con un tono cercano y motivador. '
+        'Sé breve (máximo 120 palabras): una frase inicial, luego 2 a 4 viñetas '
+        'con "- " y cierra con un paso concreto que pueda hacer hoy. '
+        'Usa **negritas** sólo para cifras o ideas clave y no uses tablas. '
+        'No repitas los datos que el usuario ya conoce; ve directo al consejo o análisis.'
+        '${financialContext != null ? '\n\n$financialContext\nUsa estos datos cuando ayuden a responder.' : ''}';
 
     final contents = <Content>[
-      Content('user', [const TextPart(systemContext)]),
+      Content('user', [TextPart(systemContext)]),
       Content('model', [
         const TextPart(
           'Entendido. Soy tu asesor financiero personal para Guatemala. ¿En qué te puedo ayudar hoy?',
