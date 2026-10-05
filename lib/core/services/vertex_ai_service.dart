@@ -237,8 +237,8 @@ enum AiErrorReason {
   ),
   quota('Se alcanzó el límite de uso de la IA. Intenta más tarde.'),
   billing(
-    'La cuenta de IA no tiene saldo. Recarga créditos en Google AI Studio '
-    '(o cambia ai_backend a "vertex" en Remote Config).',
+    'La facturación de la IA está bloqueada o sin saldo. Revisa la cuenta '
+    'de facturación en Google Cloud o los créditos en Google AI Studio.',
   ),
   model('El modelo de IA no está disponible.'),
   unknown('Error inesperado del servicio de IA.');
@@ -268,7 +268,7 @@ enum AiErrorReason {
     ])) {
       return AiErrorReason.appCheck;
     }
-    if (has(['prepayment', 'credits are depleted', 'billing'])) {
+    if (has(['prepayment', 'credits are depleted', 'billing', 'dunning'])) {
       return AiErrorReason.billing;
     }
     if (has(['quota', 'resource_exhausted', '429', 'rate limit'])) {

@@ -40,6 +40,12 @@ void main() {
       ),
       AiErrorReason.billing,
     );
+    expect(
+      AiErrorReason.of(
+        Exception('Lightning dunning decision is deny for project: projects/1'),
+      ),
+      AiErrorReason.billing,
+    );
   });
 
   test('detecta el modelo que Google recomienda al retirar uno', () {
