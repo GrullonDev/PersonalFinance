@@ -33,6 +33,17 @@ void main() {
     );
   });
 
+  test('detecta el modelo que Google recomienda al retirar uno', () {
+    final error = Exception(
+      'This model models/gemini-2.5-flash-lite is no longer available to new '
+      'users. Please update your code to use models/gemini-3.5-flash-lite for '
+      'the latest features and improvements.',
+    );
+    expect(FirebaseGeminiClient.suggestedModel(error), 'gemini-3.5-flash-lite');
+    expect(AiErrorReason.of(error), AiErrorReason.model);
+    expect(FirebaseGeminiClient.suggestedModel(Exception('boom')), isNull);
+  });
+
   test('el chat marca el error y explica el motivo', () async {
     final client = _Client();
     when(

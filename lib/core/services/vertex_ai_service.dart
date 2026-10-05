@@ -79,12 +79,15 @@ abstract class GeminiClient {
 /// `ai_model` de Remote Config.
 class FirebaseGeminiClient implements GeminiClient {
   FirebaseGeminiClient({List<String>? models})
-    : _modelNames = models ?? defaultModels();
+    : _modelNames = List<String>.of(models ?? defaultModels());
 
+  // Google retira modelos con el tiempo (2.5 ya no está disponible para
+  // proyectos nuevos); se prueban del más nuevo al alias genérico.
   static const List<String> _fallbackModels = <String>[
-    'gemini-2.5-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
     'gemini-flash-latest',
-    'gemini-2.5-flash-lite',
+    'gemini-flash-lite-latest',
   ];
 
   static List<String> defaultModels() {
@@ -97,6 +100,12 @@ class FirebaseGeminiClient implements GeminiClient {
       ..._fallbackModels,
     }.toList();
   }
+
+  /// Cuando Google retira un modelo, el error sugiere el reemplazo
+  /// ("Please update your code to use models/gemini-3.5-flash-lite").
+  static String? suggestedModel(Object error) => RegExp(
+    r'use models/([A-Za-z0-9._-]+)',
+  ).firstMatch(error.toString())?.group(1)?.replaceFirst(RegExp(r'[.]+$'), '');
 
   final List<String> _modelNames;
   final Map<String, GenerativeModel> _models = <String, GenerativeModel>{};
@@ -115,9 +124,13 @@ class FirebaseGeminiClient implements GeminiClient {
   ) async {
     Object? lastError;
     StackTrace? lastStack;
-    for (var i = 0; i < _modelNames.length; i++) {
+    final tried = <String>{};
+    var i = 0;
+    while (i < _modelNames.length) {
       final index = (_working + i) % _modelNames.length;
       final name = _modelNames[index];
+      i++;
+      if (!tried.add(name)) continue;
       try {
         final response = await call(_model(name));
         _working = index;
@@ -128,6 +141,10 @@ class FirebaseGeminiClient implements GeminiClient {
         lastStack = st;
         // Sin conexión no tiene sentido probar otro modelo.
         if (AiErrorReason.of(e) == AiErrorReason.network) break;
+        final suggested = suggestedModel(e);
+        if (suggested != null && !_modelNames.contains(suggested)) {
+          _modelNames.add(suggested);
+        }
       }
     }
     Error.throwWithStackTrace(lastError!, lastStack!);
@@ -234,6 +251,7 @@ enum AiErrorReason {
       '404',
       'is not supported',
       'unsupported model',
+      'no longer available',
       'deprecated',
     ])) {
       return AiErrorReason.model;
