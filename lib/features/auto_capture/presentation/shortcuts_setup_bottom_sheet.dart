@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class ShortcutsSetupBottomSheet extends StatelessWidget {
   const ShortcutsSetupBottomSheet({
@@ -10,9 +9,6 @@ class ShortcutsSetupBottomSheet extends StatelessWidget {
 
   final VoidCallback onGotIt;
   final VoidCallback onRemindLater;
-
-  static const _urlScheme =
-      'personalfinance://pago?monto=[Amount]&comercio=[Merchant Name]&tipo=gasto';
 
   @override
   Widget build(BuildContext context) {
@@ -33,55 +29,56 @@ class ShortcutsSetupBottomSheet extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Configurar Apple Pay con Shortcuts',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Los pagos con Apple Pay se detectan mediante una '
-            'automatización gratuita en la app Shortcuts de iOS.',
+            'Los pagos con Apple Pay se detectan con una automatización '
+            'gratuita en la app Atajos (Shortcuts) de iOS.',
           ),
           const SizedBox(height: 16),
-          const _Step(number: 1, text: 'Abre la app Shortcuts en tu iPhone.'),
-          const _Step(number: 2, text: 'Toca "+" → "Nueva automatización".'),
+          const _Step(
+            number: 1,
+            text:
+                'Abre Atajos → pestaña "Automatización" → "+" → '
+                '"Transacción".',
+          ),
+          const _Step(
+            number: 2,
+            text:
+                'Elige "Cualquier tarjeta", marca "Ejecutar inmediatamente" '
+                'y toca "Siguiente".',
+          ),
           const _Step(
             number: 3,
-            text: 'Selecciona "Apple Pay" como disparador.',
+            text:
+                'Toca "Nuevo atajo en blanco" y busca la acción '
+                '"Registrar pago" de esta app.',
           ),
           const _Step(
             number: 4,
-            text: 'Agrega la acción "Abrir URL".',
+            text:
+                'En "Monto" toca y elige la variable "Importe"; en "Comercio" '
+                'elige "Comerciante". No escribas el texto a mano.',
           ),
-          const _Step(number: 5, text: 'Pega la siguiente URL:'),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () {
-              Clipboard.setData(const ClipboardData(text: _urlScheme));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('URL copiada al portapapeles'),
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _urlScheme,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ),
-                  const Icon(Icons.copy, size: 16),
-                ],
-              ),
+          const _Step(
+            number: 5,
+            text:
+                'Listo: al pagar con Apple Pay el gasto se registra y se '
+                'categoriza solo, aunque la app esté cerrada.',
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              'No uses "Abrir URL" ni "Abrir en Chrome": la acción '
+              '"Registrar pago" no necesita abrir ningún enlace.',
             ),
           ),
           const SizedBox(height: 24),

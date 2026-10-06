@@ -17,17 +17,26 @@ import UIKit
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     setUpPaymentCaptureChannel(registry: engineBridge.pluginRegistry)
+    // La acción "Registrar pago" de Atajos puede ejecutarse con la app
+    // abierta: avisar a Flutter para que lo registre al instante.
+    NotificationCenter.default.addObserver(
+      forName: PaymentCaptureQueue.didEnqueue,
+      object: nil,
+      queue: .main
+    ) { [weak self] _ in
+      self?.paymentCaptureChannel?.invokeMethod("onPaymentCaptured", arguments: nil)
+    }
   }
 
   // MARK: - Registro automático de pagos (Apple Pay vía Atajos)
   //
   // iOS no permite leer notificaciones de otras apps. En su lugar, el usuario
   // crea en Atajos una automatización "Transacción" (se dispara al pagar con
-  // Apple Pay) que abre:
+  // Apple Pay) con la acción "Registrar pago" (RegisterPaymentIntent). Por
+  // compatibilidad también se acepta el URL
   //   personalfinance://pago?monto=<Importe>&comercio=<Comercio>
-  // Los pagos se encolan aquí y Flutter los lee con `drainPending`.
+  // Los pagos van a PaymentCaptureQueue y Flutter los lee con `drainPending`.
 
-  private let paymentCaptureQueueKey = "payment_capture_queue"
   private var paymentCaptureChannel: FlutterMethodChannel?
 
   private func setUpPaymentCaptureChannel(registry: FlutterPluginRegistry) {
@@ -36,10 +45,10 @@ import UIKit
       name: "personal_finance/payment_capture",
       binaryMessenger: registrar.messenger()
     )
-    channel.setMethodCallHandler { [weak self] call, result in
+    channel.setMethodCallHandler { call, result in
       switch call.method {
       case "drainPending":
-        result(self?.drainPaymentCaptures() ?? [])
+        result(PaymentCaptureQueue.drain())
       case "isAccessGranted":
         // No requiere permiso: depende de que el usuario configure el atajo.
         result(true)
@@ -66,28 +75,10 @@ import UIKit
     guard let amount = value(["monto", "amount"]), !amount.isEmpty else { return true }
 
     let kind = url.host?.lowercased() == "ingreso" ? "ingreso" : (value(["tipo", "type"]) ?? "gasto")
-    let capture: [String: Any] = [
-      "source": "shortcut",
-      "packageName": "apple_pay",
-      "title": "",
-      "text": "",
-      "amount": amount,
-      "merchant": value(["comercio", "merchant"]) ?? "",
-      "kind": kind,
-      "postedAt": Int64(Date().timeIntervalSince1970 * 1000),
-    ]
-    var queue = UserDefaults.standard.array(forKey: paymentCaptureQueueKey) as? [[String: Any]] ?? []
-    queue.append(capture)
-    if queue.count > 100 { queue.removeFirst(queue.count - 100) }
-    UserDefaults.standard.set(queue, forKey: paymentCaptureQueueKey)
-    paymentCaptureChannel?.invokeMethod("onPaymentCaptured", arguments: nil)
+    // "+" en la URL equivale a un espacio ("Super+La+Torre").
+    let merchant = (value(["comercio", "merchant"]) ?? "").replacingOccurrences(of: "+", with: " ")
+    PaymentCaptureQueue.enqueue(amount: amount, merchant: merchant, kind: kind)
     return true
-  }
-
-  private func drainPaymentCaptures() -> [[String: Any]] {
-    let queue = UserDefaults.standard.array(forKey: paymentCaptureQueueKey) as? [[String: Any]] ?? []
-    UserDefaults.standard.removeObject(forKey: paymentCaptureQueueKey)
-    return queue
   }
 
   // MARK: - URL callback handling
