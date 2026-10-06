@@ -20,9 +20,11 @@ void main() {
     expect(find.textContaining('Shortcuts'), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('shows URL scheme to copy', (tester) async {
+  testWidgets('explica la acción "Registrar pago" con variables', (tester) async {
     await tester.pumpWidget(buildSheet(onGotIt: () {}, onRemindLater: () {}));
-    expect(find.textContaining('personalfinance://pago'), findsOneWidget);
+    expect(find.textContaining('Registrar pago'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Importe'), findsOneWidget);
+    expect(find.textContaining('personalfinance://'), findsNothing);
   });
 
   testWidgets('Entendido button calls onGotIt', (tester) async {
