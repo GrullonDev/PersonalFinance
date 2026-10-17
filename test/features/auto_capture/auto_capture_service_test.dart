@@ -139,4 +139,50 @@ void main() {
     await service.processPending();
     expect(nativeQueue, hasLength(1));
   });
+
+  test(
+    'el mismo pago avisado por Wallet y por el banco se registra una vez',
+    () async {
+      final service = build();
+      final received = <AutoCapturedTransaction>[];
+      service.captured.listen(received.add);
+      nativeQueue.add(notification('Starbucks', 'Q45.00 con Visa ••1234'));
+      await service.processPending();
+
+      nativeQueue.add({
+        'source': 'notification',
+        'packageName': 'com.banco.app',
+        'title': 'Banco',
+        'text': 'Compra por Q45.00 en STARBUCKS con tarjeta ****1234',
+        'postedAt':
+            postedAt.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+      });
+      await service.processPending();
+
+      expect(received, hasLength(1));
+      expect(received.single.note, 'Starbucks');
+    },
+  );
+
+  test('mensaje bancario de iOS se interpreta como notificación', () async {
+    final service = build();
+    final received = <AutoCapturedTransaction>[];
+    service.captured.listen(received.add);
+    nativeQueue.add({
+      'source': 'notification',
+      'packageName': 'ios.sms',
+      'title': 'BI',
+      'text': 'Se debitó Q.120.00 de su cuenta por compra en FARMACIA GALENO',
+      'postedAt': postedAt.millisecondsSinceEpoch,
+    });
+
+    await service.processPending();
+
+    final tx = received.single;
+    expect(tx.type, TransactionType.expense);
+    expect(tx.amount, 120);
+    expect(tx.category, 'salud');
+    expect(tx.sourceLabel, 'SMS del banco');
+    expect(tx.rawText, contains('FARMACIA GALENO'));
+  });
 }

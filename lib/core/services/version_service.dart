@@ -4,6 +4,7 @@ import 'package:in_app_update/in_app_update.dart';
 import 'dart:io';
 import 'dart:developer' as developer;
 
+import 'package:personal_finance/core/services/app_version_registry.dart';
 import 'package:personal_finance/core/services/update_policy.dart';
 
 /// Resultado de la verificación de actualización.
@@ -33,8 +34,15 @@ class VersionService {
   static const String _playInternalTestUrl =
       'https://play.google.com/apps/internaltest/4701744229965287282';
 
+  VersionService({AppVersionRegistry? registry}) : _registry = registry;
+
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
+  AppVersionRegistry? _registry;
   late PackageInfo _packageInfo;
+
+  /// Se crea al usarse: Firestore necesita Firebase ya inicializado.
+  AppVersionRegistry get _versions => _registry ??= AppVersionRegistry();
+  bool _reported = false;
 
   PackageInfo get packageInfo => _packageInfo;
 
@@ -152,9 +160,16 @@ class VersionService {
         _packageInfo.version,
         androidBuildToPubspec(int.tryParse(_packageInfo.buildNumber) ?? 0),
       );
-      final AppVersion latest = AppVersion.parse(
-        _remoteConfig.getString('update_latest_$platform'),
-      );
+      // Una versión nueva instalada desde TestFlight/la tienda se anuncia
+      // para que el resto la reciba como actualización.
+      if (!_reported && isPublishedInstall(_packageInfo.installerStore)) {
+        _reported = true;
+        await _versions.report(platform, installed);
+      }
+      final AppVersion latest = newestOf([
+        AppVersion.parse(_remoteConfig.getString('update_latest_$platform')),
+        await _versions.latest(platform),
+      ]);
       AppVersion minimum = AppVersion.parse(
         _remoteConfig.getString('update_min_$platform'),
       );

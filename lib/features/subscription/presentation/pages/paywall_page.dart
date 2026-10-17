@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:personal_finance/features/subscription/data/datasources/revenue_cat_service.dart';
 import 'package:personal_finance/features/subscription/domain/entities/subscription_entity.dart';
 import 'package:personal_finance/features/subscription/domain/subscription_constants.dart';
 import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
@@ -91,7 +92,9 @@ class _PaywallContent extends StatelessWidget {
                       _buildHeader(context),
                       const SizedBox(height: 28),
                       _buildFeatureList(context),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
+                      const _ComparisonTable(),
+                      const SizedBox(height: 24),
                       _buildPriceCard(context),
                       const SizedBox(height: 24),
                       _buildActions(context),
@@ -194,32 +197,19 @@ class _PaywallContent extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  '\$',
-                  style: TextStyle(
+          FutureBuilder<String?>(
+            future: _price ??= _storePrice(),
+            builder:
+                (context, snap) => Text(
+                  snap.data ?? PlanPricing.proMonthlyFormatted,
+                  style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 48,
                     fontWeight: FontWeight.bold,
+                    height: 1,
+                    letterSpacing: -1.5,
                   ),
                 ),
-              ),
-              Text(
-                '5.99',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 52,
-                  fontWeight: FontWeight.bold,
-                  height: 1,
-                  letterSpacing: -2,
-                ),
-              ),
-            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -231,6 +221,17 @@ class _PaywallContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  static Future<String?>? _price;
+
+  /// Precio que cobrará la tienda en la moneda del usuario.
+  Future<String?> _storePrice() async {
+    if (!getIt.isRegistered<RevenueCatService>()) return null;
+    return getIt<RevenueCatService>().monthlyPriceString().timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => null,
     );
   }
 
@@ -399,6 +400,116 @@ class _FeatureTile extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Qué incluye cada plan, para que quede claro qué se gana con Pro.
+class _ComparisonTable extends StatelessWidget {
+  const _ComparisonTable();
+
+  @override
+  Widget build(BuildContext context) {
+    final languageCode =
+        AppLocalizations.of(context)?.locale.languageCode ?? 'es';
+    final isEs = languageCode == 'es';
+    final muted = Colors.white.withValues(alpha: 0.55);
+    final header = TextStyle(
+      color: muted,
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+    );
+
+    Widget cell(String? value, {required bool pro}) {
+      if (value == null) {
+        return Icon(
+          Icons.remove,
+          color: Colors.white.withValues(alpha: 0.3),
+          size: 16,
+        );
+      }
+      if (value.isEmpty) {
+        return Icon(
+          Icons.check_circle,
+          color: pro ? const Color(0xFFEC4899) : Colors.white70,
+          size: 18,
+        );
+      }
+      return Text(
+        value,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: pro ? Colors.white : muted,
+          fontSize: 12,
+          fontWeight: pro ? FontWeight.w600 : FontWeight.normal,
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  isEs ? 'Qué incluye' : 'What you get',
+                  style: header,
+                ),
+              ),
+              SizedBox(
+                width: 72,
+                child: Text(
+                  isEs ? 'Gratis' : 'Free',
+                  textAlign: TextAlign.center,
+                  style: header,
+                ),
+              ),
+              const SizedBox(
+                width: 84,
+                child: Text(
+                  'Pro',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFFEC4899),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          for (final row in PlanComparison.rows(languageCode))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      row.label,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 72,
+                    child: Center(child: cell(row.free, pro: false)),
+                  ),
+                  SizedBox(
+                    width: 84,
+                    child: Center(child: cell(row.pro, pro: true)),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

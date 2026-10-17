@@ -69,6 +69,44 @@ class ShortcutsSetupBottomSheet extends StatelessWidget {
                 'Listo: al pagar con Apple Pay el gasto se registra y se '
                 'categoriza solo, aunque la app esté cerrada.',
           ),
+          const SizedBox(height: 16),
+          Text(
+            'Mensajes de tu banco (SMS)',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'iOS no permite leer notificaciones de otras apps, pero sí los '
+            'SMS del banco con otra automatización:',
+          ),
+          const SizedBox(height: 8),
+          const _Step(
+            number: 1,
+            text:
+                'En Atajos → "Automatización" → "+" → "Mensaje". En '
+                '"Remitente" elige el número o nombre de tu banco, marca '
+                '"Ejecutar inmediatamente" y toca "Siguiente".',
+          ),
+          const _Step(
+            number: 2,
+            text:
+                'Toca "Nuevo atajo en blanco" y agrega la acción '
+                '"Registrar mensaje bancario" de esta app.',
+          ),
+          const _Step(
+            number: 3,
+            text:
+                'En "Mensaje" elige la variable "Entrada del atajo" '
+                '(Contenido) y en "Remitente" la variable "Remitente".',
+          ),
+          const _Step(
+            number: 4,
+            text:
+                'La app detecta si es gasto o ingreso, el monto, el comercio '
+                'y la categoría; si es el pago de una deuda, la abona.',
+          ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),

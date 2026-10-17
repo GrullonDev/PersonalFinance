@@ -19,6 +19,10 @@ class AutoCapturedTransaction {
   /// `Google Wallet`, `Apple Pay`, el banco, etc. Sólo informativo.
   final String sourceLabel;
 
+  /// Texto original de la notificación; sirve para reconocer pagos a una
+  /// deuda ("Pago a tarjeta Visa") aunque el comercio no se haya extraído.
+  final String rawText;
+
   const AutoCapturedTransaction({
     required this.type,
     required this.amount,
@@ -26,6 +30,7 @@ class AutoCapturedTransaction {
     required this.occurredAt,
     required this.sourceLabel,
     this.category,
+    this.rawText = '',
   });
 }
 
@@ -49,7 +54,12 @@ class AutoCaptureService {
 
   static const String enabledPref = 'auto_capture_enabled';
   static const String seenPref = 'auto_capture_seen_fingerprints';
+  static const String recentPref = 'auto_capture_recent_movements';
   static const int _maxSeen = 200;
+
+  /// Un mismo pago suele avisarse dos veces (Google Wallet y el banco, o la
+  /// notificación y el SMS). Dentro de esta ventana se registra una sola vez.
+  static const Duration duplicateWindow = Duration(minutes: 10);
 
   final PaymentCaptureChannel _channel;
   final SharedPreferences _prefs;
@@ -93,6 +103,7 @@ class AutoCaptureService {
       final raws = await _channel.drainPending();
       final seen =
           (_prefs.getStringList(seenPref) ?? const <String>[]).toList();
+      final recent = _loadRecent();
       final emitted = <AutoCapturedTransaction>[];
 
       for (final raw in raws) {
@@ -102,12 +113,15 @@ class AutoCaptureService {
 
         final tx = await _toTransaction(raw);
         if (tx == null) continue;
+        if (_isDuplicate(tx, raw.packageName, recent)) continue;
+        recent.add(_RecentMovement.from(tx, raw.packageName));
         _captured.add(tx);
         emitted.add(tx);
       }
 
       if (seen.length > _maxSeen) seen.removeRange(0, seen.length - _maxSeen);
       await _prefs.setStringList(seenPref, seen);
+      await _saveRecent(recent);
       return emitted;
     } catch (e) {
       debugPrint('AutoCaptureService: error procesando capturas: $e');
@@ -115,6 +129,37 @@ class AutoCaptureService {
     } finally {
       _processing = false;
     }
+  }
+
+  List<_RecentMovement> _loadRecent() =>
+      (_prefs.getStringList(recentPref) ?? const <String>[])
+          .map(_RecentMovement.tryParse)
+          .whereType<_RecentMovement>()
+          .toList();
+
+  Future<void> _saveRecent(List<_RecentMovement> recent) {
+    final kept =
+        recent.length > 30 ? recent.sublist(recent.length - 30) : recent;
+    return _prefs.setStringList(
+      recentPref,
+      kept.map((m) => m.encode()).toList(),
+    );
+  }
+
+  /// Mismo tipo y monto, de otra fuente, con pocos minutos de diferencia.
+  bool _isDuplicate(
+    AutoCapturedTransaction tx,
+    String packageName,
+    List<_RecentMovement> recent,
+  ) {
+    final cents = (tx.amount * 100).round();
+    return recent.any(
+      (m) =>
+          m.source != packageName &&
+          m.type == tx.type.name &&
+          m.cents == cents &&
+          m.at.difference(tx.occurredAt).abs() <= duplicateWindow,
+    );
   }
 
   Future<AutoCapturedTransaction?> _toTransaction(RawPaymentCapture raw) async {
@@ -158,6 +203,7 @@ class AutoCaptureService {
       category: category,
       occurredAt: raw.postedAt,
       sourceLabel: sourceLabel,
+      rawText: '${raw.title} ${raw.text}'.trim(),
     );
   }
 
@@ -193,6 +239,10 @@ class AutoCaptureService {
     'com.google.android.apps.walletnfcrel' => 'Google Wallet',
     'com.google.android.apps.nbu.paisa.user' => 'Google Pay',
     'com.samsung.android.spay' => 'Samsung Wallet',
+    'ios.sms' ||
+    'com.google.android.apps.messaging' ||
+    'com.samsung.android.messaging' ||
+    'com.android.mms' => 'SMS del banco',
     _ => 'tu banco',
   };
 
@@ -201,4 +251,43 @@ class AutoCaptureService {
     _lifecycle?.dispose();
     await _captured.close();
   }
+}
+
+/// Movimiento registrado hace poco, para descartar avisos repetidos.
+class _RecentMovement {
+  const _RecentMovement({
+    required this.at,
+    required this.type,
+    required this.cents,
+    required this.source,
+  });
+
+  factory _RecentMovement.from(AutoCapturedTransaction tx, String source) =>
+      _RecentMovement(
+        at: tx.occurredAt,
+        type: tx.type.name,
+        cents: (tx.amount * 100).round(),
+        source: source,
+      );
+
+  static _RecentMovement? tryParse(String value) {
+    final parts = value.split('|');
+    if (parts.length != 4) return null;
+    final millis = int.tryParse(parts[0]);
+    final cents = int.tryParse(parts[2]);
+    if (millis == null || cents == null) return null;
+    return _RecentMovement(
+      at: DateTime.fromMillisecondsSinceEpoch(millis),
+      type: parts[1],
+      cents: cents,
+      source: parts[3],
+    );
+  }
+
+  final DateTime at;
+  final String type;
+  final int cents;
+  final String source;
+
+  String encode() => '${at.millisecondsSinceEpoch}|$type|$cents|$source';
 }
