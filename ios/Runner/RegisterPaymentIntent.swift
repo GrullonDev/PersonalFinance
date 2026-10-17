@@ -41,12 +41,46 @@ struct RegisterPaymentIntent: AppIntent {
   }
 }
 
+/// Acción de Atajos "Registrar mensaje bancario".
+///
+/// iOS no deja que una app lea las notificaciones de otras. Con la
+/// automatización "Mensaje" (remitente = el banco) el usuario pasa el texto
+/// del SMS a esta acción y la app detecta si es gasto o ingreso, el monto,
+/// el comercio y la categoría.
+@available(iOS 16.0, *)
+struct RegisterBankMessageIntent: AppIntent {
+  static var title: LocalizedStringResource = "Registrar mensaje bancario"
+  static var description = IntentDescription(
+    "Lee un mensaje de tu banco y registra el gasto o ingreso que describe."
+  )
+  static var openAppWhenRun: Bool = false
+
+  @Parameter(title: "Mensaje", description: "Texto del mensaje del banco")
+  var mensaje: String
+
+  @Parameter(title: "Remitente", description: "Banco o número que envió el mensaje")
+  var remitente: String?
+
+  static var parameterSummary: some ParameterSummary {
+    Summary("Registrar \(\.$mensaje) de \(\.$remitente)")
+  }
+
+  func perform() async throws -> some IntentResult {
+    PaymentCaptureQueue.enqueueMessage(sender: remitente ?? "", text: mensaje)
+    return .result()
+  }
+}
+
 @available(iOS 16.0, *)
 struct PersonalFinanceShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
       intent: RegisterPaymentIntent(),
       phrases: ["Registrar pago en \(.applicationName)"]
+    )
+    AppShortcut(
+      intent: RegisterBankMessageIntent(),
+      phrases: ["Registrar mensaje bancario en \(.applicationName)"]
     )
   }
 }

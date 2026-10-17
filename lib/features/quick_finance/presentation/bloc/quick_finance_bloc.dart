@@ -34,6 +34,13 @@ import 'package:personal_finance/features/quick_finance/data/services/spending_a
 import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
 import 'package:personal_finance/features/categories/data/services/category_auto_creator.dart';
 import 'package:personal_finance/features/quick_finance/domain/services/transaction_categorizer.dart';
+import 'package:personal_finance/features/auto_capture/domain/debt_payment_matcher.dart';
+import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
+import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
+import 'package:personal_finance/features/budgets/domain/services/budget_alert_evaluator.dart';
+import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
+import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
+import 'package:personal_finance/utils/budget_category_prefs.dart';
 
 class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final AddTransaction addTransaction;
@@ -280,6 +287,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
         category: category,
         occurredAt: capture.occurredAt,
         autoSourceLabel: capture.sourceLabel,
+        autoRawText: capture.rawText,
       ),
     );
   }
@@ -517,10 +525,19 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
         unawaited(_categorizeWithAi(transaction));
       }
       if (isAuto) {
-        await _notifyAutoCaptured(transaction, event.autoSourceLabel!);
-        return;
+        final debt = await _applyAutoDebtPayment(
+          transaction,
+          event.autoRawText ?? '',
+        );
+        await _notifyAutoCaptured(
+          transaction,
+          event.autoSourceLabel!,
+          debtName: debt?.name,
+        );
+      } else {
+        await _updateGoalOrDebtIfMatching(transaction, event.rawInput);
       }
-      await _updateGoalOrDebtIfMatching(transaction, event.rawInput);
+      unawaited(_checkBudgetAlerts(transaction));
     } catch (e) {
       emit(
         state.copyWith(
@@ -563,21 +580,129 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     } catch (_) {}
   }
 
+  /// Un débito detectado que es el pago de una deuda ("Pago a tarjeta Visa")
+  /// reduce el saldo de esa deuda.
+  Future<Debt?> _applyAutoDebtPayment(
+    TransactionEntity transaction,
+    String rawText,
+  ) async {
+    if (transaction.type != TransactionType.expense) return null;
+    try {
+      final res = await debtRepository.getDebts();
+      final debts = res.fold((_) => const <Debt>[], (d) => d);
+      final debt = const DebtPaymentMatcher().match(
+        '${transaction.note} $rawText',
+        debts,
+      );
+      if (debt == null) return null;
+      await _updateDebtEntity(debt, transaction.amount, true);
+      return debt;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Claves de presupuestos ya avisados (presupuesto|umbral|periodo).
+  static const String _budgetAlertsPref = 'budget_alerts_notified';
+
+  /// Avisa cuando un gasto lleva un presupuesto al 100 % (y al 80 % con Pro).
+  Future<void> _checkBudgetAlerts(TransactionEntity transaction) async {
+    if (transaction.type != TransactionType.expense) return;
+    final getIt = GetIt.instance;
+    if (!getIt.isRegistered<BudgetRepository>() ||
+        !getIt.isRegistered<SharedPreferences>()) {
+      return;
+    }
+    try {
+      final res = await getIt<BudgetRepository>().getBudgets();
+      final budgets = res.fold((_) => const <Budget>[], (b) => b);
+      if (budgets.isEmpty) return;
+
+      final namesById = <String, String>{};
+      if (getIt.isRegistered<CategoryRepository>()) {
+        final cats = await getIt<CategoryRepository>().getCategories();
+        cats.fold((_) {}, (list) {
+          for (final c in list) {
+            namesById[c.id] = c.nombre;
+          }
+        });
+      }
+      final keysByBudget = <String, Set<String>>{};
+      for (final b in budgets) {
+        var linked = await BudgetCategoryPrefs.load(b.id);
+        if (linked.isEmpty) {
+          // Mismo criterio que la pantalla de presupuestos: "Comida" sólo
+          // suma comida; un nombre genérico suma todos los gastos.
+          final detected = TransactionCategorizer().categorizeLocally(
+            note: b.nombre,
+            type: TransactionType.expense,
+          );
+          if (detected != null) linked = [detected];
+        }
+        keysByBudget[b.id] = BudgetAlertEvaluator.keysFor(
+          linked,
+          categoryNamesById: namesById,
+        );
+      }
+
+      final isPro =
+          getIt.isRegistered<SubscriptionService>() &&
+          getIt<SubscriptionService>().isPremium;
+      final alerts = const BudgetAlertEvaluator().evaluate(
+        expense: transaction,
+        budgets: budgets,
+        categoryKeysByBudget: keysByBudget,
+        transactions: state.transactions,
+        thresholds: isPro ? const [80, 100] : const [100],
+      );
+      if (alerts.isEmpty) return;
+
+      final prefs = getIt<SharedPreferences>();
+      final notified =
+          (prefs.getStringList(_budgetAlertsPref) ?? const <String>[]).toList();
+      for (final alert in alerts) {
+        if (notified.contains(alert.key)) continue;
+        notified.add(alert.key);
+        final symbol = CurrencyHelper.symbol;
+        final spent = '$symbol${alert.spent.toStringAsFixed(2)}';
+        final limit = '$symbol${alert.limit.toStringAsFixed(2)}';
+        await getIt<NotificationService>().local.showNotification(
+          id: 'budget_${alert.key}'.hashCode,
+          title:
+              alert.exceeded
+                  ? '🚨 Presupuesto "${alert.budget.nombre}" superado'
+                  : '⚠️ Vas por el ${alert.percent.toStringAsFixed(0)} % de "${alert.budget.nombre}"',
+          body:
+              alert.exceeded
+                  ? 'Llevas $spent de $limit. Este gasto de $symbol${transaction.amount.toStringAsFixed(2)} lo pasó del límite.'
+                  : 'Llevas $spent de $limit. Aún te quedan $symbol${(alert.limit - alert.spent).toStringAsFixed(2)} para el resto del periodo.',
+          payload: RoutePath.budgetsCrud,
+        );
+      }
+      if (notified.length > 100) {
+        notified.removeRange(0, notified.length - 100);
+      }
+      await prefs.setStringList(_budgetAlertsPref, notified);
+    } catch (_) {}
+  }
+
   Future<void> _notifyAutoCaptured(
     TransactionEntity transaction,
-    String sourceLabel,
-  ) async {
+    String sourceLabel, {
+    String? debtName,
+  }) async {
     try {
       final isIncome = transaction.type == TransactionType.income;
       final amount =
           '${CurrencyHelper.symbol}${transaction.amount.toStringAsFixed(2)}';
       final category =
           transaction.categoryId != null ? ' · #${transaction.categoryId}' : '';
+      final debt = debtName != null ? ' Abonado a la deuda "$debtName".' : '';
       await GetIt.instance<NotificationService>().local.showNotification(
         id: 'auto_${transaction.id}'.hashCode,
         title: isIncome ? '💰 Ingreso registrado' : '💳 Gasto registrado',
         body:
-            '$amount${isIncome ? ' ·' : ' en'} ${transaction.note}$category ($sourceLabel). '
+            '$amount${isIncome ? ' ·' : ' en'} ${transaction.note}$category ($sourceLabel).$debt '
             'Toca para revisarlo o corregirlo.',
         payload: RoutePath.dashboard,
       );

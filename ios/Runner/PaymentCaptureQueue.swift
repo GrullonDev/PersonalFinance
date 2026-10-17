@@ -21,6 +21,26 @@ enum PaymentCaptureQueue {
       "kind": kind.lowercased(),
       "postedAt": Int64(Date().timeIntervalSince1970 * 1000),
     ]
+    append(capture)
+  }
+
+  /// Mensaje de texto del banco (automatización "Mensaje" de Atajos). Flutter
+  /// lo interpreta igual que una notificación de Android: gasto o ingreso,
+  /// monto, comercio y categoría.
+  static func enqueueMessage(sender: String, text: String) {
+    let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !body.isEmpty else { return }
+    let capture: [String: Any] = [
+      "source": "notification",
+      "packageName": "ios.sms",
+      "title": sender.trimmingCharacters(in: .whitespacesAndNewlines),
+      "text": body,
+      "postedAt": Int64(Date().timeIntervalSince1970 * 1000),
+    ]
+    append(capture)
+  }
+
+  private static func append(_ capture: [String: Any]) {
     let defaults = UserDefaults.standard
     var queue = defaults.array(forKey: key) as? [[String: Any]] ?? []
     queue.append(capture)

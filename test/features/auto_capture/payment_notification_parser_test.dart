@@ -96,7 +96,108 @@ void main() {
     });
   });
 
+  group('Bancos de Guatemala', () {
+    test('monto con punto después de la Q', () {
+      expect(PaymentNotificationParser.parseAmount('Q.150.00'), 150);
+      expect(PaymentNotificationParser.parseAmount('Q. 1,250.75'), 1250.75);
+    });
+
+    test('se debitó de la cuenta es gasto', () {
+      final p = parser.parse(
+        packageName: bank,
+        title: 'BI en Línea',
+        text: 'Se debitó Q.250.00 de su cuenta ****1234 por pago en PRICESMART',
+      );
+      expect(p!.type, TransactionType.expense);
+      expect(p.amount, 250);
+    });
+
+    test('transacción aprobada con tarjeta de crédito es gasto', () {
+      final p = parser.parse(
+        packageName: bank,
+        title: 'Banco Industrial',
+        text:
+            'Transacción aprobada por Q85.40 en POLLO CAMPERO con tarjeta de crédito ****9876',
+      );
+      expect(p!.type, TransactionType.expense);
+      expect(p.merchant, 'POLLO CAMPERO');
+    });
+
+    test('se acreditó a su cuenta es ingreso', () {
+      final p = parser.parse(
+        packageName: bank,
+        title: 'Banrural',
+        text: 'Se acreditó Q3,500.00 a su cuenta monetaria ****1111',
+      );
+      expect(p!.type, TransactionType.income);
+      expect(p.amount, 3500);
+    });
+
+    test('transferencia a tu cuenta es ingreso', () {
+      final p = parser.parse(
+        packageName: bank,
+        title: 'Banco',
+        text: 'Transferencia a tu cuenta por Q500.00 de MARIA LOPEZ',
+      );
+      expect(p!.type, TransactionType.income);
+    });
+
+    test('pago a tarjeta es gasto aunque diga "acreditó"', () {
+      final p = parser.parse(
+        packageName: bank,
+        title: 'Banco',
+        text: 'Se acreditó su pago a tarjeta de crédito ****4321 por Q1,000.00',
+      );
+      expect(p!.type, TransactionType.expense);
+      expect(p.amount, 1000);
+    });
+
+    test('pago de planilla es ingreso', () {
+      final p = parser.parse(
+        packageName: bank,
+        title: 'Banco',
+        text: 'Pago de planilla Q6,200.00 acreditado',
+      );
+      expect(p!.type, TransactionType.income);
+    });
+  });
+
   group('Se descarta si no hay certeza', () {
+    test('transacción rechazada', () {
+      expect(
+        parser.parse(
+          packageName: bank,
+          title: 'Banco',
+          text:
+              'Transacción rechazada por Q300.00 en AMAZON: fondos insuficientes',
+        ),
+        isNull,
+      );
+    });
+
+    test('recordatorio de pago mínimo', () {
+      expect(
+        parser.parse(
+          packageName: bank,
+          title: 'Banco',
+          text:
+              'Recuerda pagar tu tarjeta. Pago mínimo Q450.00, vence el 25/10',
+        ),
+        isNull,
+      );
+    });
+
+    test('código de verificación', () {
+      expect(
+        parser.parse(
+          packageName: bank,
+          title: 'Banco',
+          text: 'Tu código de verificación para la compra de Q99.00 es 123456',
+        ),
+        isNull,
+      );
+    });
+
     test('sin monto', () {
       expect(
         parser.parse(
