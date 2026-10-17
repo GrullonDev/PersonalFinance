@@ -54,4 +54,39 @@ void main() {
     expect(VersionService.androidBuildToPubspec(1000007), 7);
     expect(VersionService.androidBuildToPubspec(7), 7);
   });
+
+  group('versión publicada más nueva', () {
+    test('toma la mayor entre Remote Config y el registro', () {
+      expect(
+        newestOf([
+          AppVersion.parse('1.2.4+3'),
+          AppVersion.parse('1.2.3+9'),
+        ]).toString(),
+        '1.2.4 (3)',
+      );
+      expect(
+        newestOf([
+          AppVersion.parse(''),
+          AppVersion.parse('1.2.4+3'),
+        ]).toString(),
+        '1.2.4 (3)',
+      );
+      expect(newestOf([AppVersion.parse('')]).isEmpty, isTrue);
+    });
+
+    test('sólo anuncian versión las instalaciones de tienda o TestFlight', () {
+      expect(isPublishedInstall('com.apple.testflight'), isTrue);
+      expect(isPublishedInstall('com.apple'), isTrue);
+      expect(isPublishedInstall('com.android.vending'), isTrue);
+      expect(isPublishedInstall(null), isFalse);
+      expect(
+        isPublishedInstall('com.google.android.packageinstaller'),
+        isFalse,
+      );
+    });
+
+    test('formato de publicación', () {
+      expect(versionTag(AppVersion.parse('1.2.4+3')), '1.2.4+3');
+    });
+  });
 }

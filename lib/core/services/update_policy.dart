@@ -59,3 +59,20 @@ UpdateKind evaluateUpdate({
   if (!latest.isEmpty && installed < latest) return UpdateKind.optional;
   return UpdateKind.none;
 }
+
+/// La versión publicada más nueva entre las fuentes disponibles (Remote
+/// Config y el registro que escriben las propias instalaciones).
+AppVersion newestOf(Iterable<AppVersion> versions) => versions
+    .where((v) => !v.isEmpty)
+    .fold(const AppVersion('', 0), (a, b) => a.isEmpty || a < b ? b : a);
+
+/// Sólo las instalaciones hechas desde la tienda o TestFlight anuncian su
+/// versión: una compilación local (Xcode, `flutter run`) no está publicada.
+bool isPublishedInstall(String? installerStore) => const {
+  'com.apple.testflight',
+  'com.apple',
+  'com.android.vending',
+}.contains(installerStore);
+
+/// Formato con el que se guardan y publican las versiones ("1.2.4+3").
+String versionTag(AppVersion v) => '${v.name}+${v.build}';
