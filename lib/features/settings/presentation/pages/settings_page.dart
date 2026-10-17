@@ -288,7 +288,7 @@ class SettingsPage extends StatelessWidget {
       _ProToolData(
         icon: Icons.auto_awesome,
         color: const Color(0xFF6366F1),
-        label: 'AI Reports',
+        label: 'Reporte IA',
         onProTap: () => Navigator.push<void>(
           context,
           MaterialPageRoute<void>(builder: (_) => const AiReportsPage()),
@@ -297,24 +297,23 @@ class SettingsPage extends StatelessWidget {
       _ProToolData(
         icon: Icons.download_outlined,
         color: Colors.indigo,
-        label: 'Export data',
+        label: 'Exportar datos',
         onProTap: () => Navigator.push<void>(
           context,
           MaterialPageRoute<void>(builder: (_) => const ExportDataPage()),
         ),
       ),
       _ProToolData(
-        icon: Icons.notifications_active_outlined,
-        color: Colors.orange,
-        label: 'Predictive alerts',
-        onProTap: () => _showComingSoon(context, 'Alertas Predictivas'),
+        icon: Icons.chat_bubble_outline,
+        color: Colors.teal,
+        label: 'IA ilimitada',
+        onProTap: () => Navigator.of(context).pushNamed(RoutePath.aiChat),
       ),
       _ProToolData(
-        icon: Icons.repeat,
-        color: Colors.teal,
-        label: 'Recurring trans.',
-        onProTap: () =>
-            _showComingSoon(context, 'Transacciones Recurrentes'),
+        icon: Icons.notifications_active_outlined,
+        color: Colors.orange,
+        label: 'Alertas al 80 %',
+        onProTap: () => Navigator.of(context).pushNamed(RoutePath.budgetsCrud),
       ),
     ];
 
@@ -520,23 +519,6 @@ class SettingsPage extends StatelessWidget {
   );
 
   // ── Shared helpers ────────────────────────────────────────────────────────
-
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.construction, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Text('$feature disponible muy pronto'),
-          ],
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
 
   Widget _buildSectionTitle(BuildContext context, String title) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
