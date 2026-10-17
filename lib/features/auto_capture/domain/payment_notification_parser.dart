@@ -53,6 +53,35 @@ class PaymentNotificationParser {
     'devolución',
     'devolucion',
     'pago recibido',
+    'se acreditó',
+    'se acredito',
+    'acreditó',
+    'acredito a',
+    'acreditada',
+    'abono a su cuenta',
+    'abonado a tu cuenta',
+    'abonado a su cuenta',
+    'transferencia a tu cuenta',
+    'transferencia a su cuenta',
+    'pago de planilla',
+    'planilla',
+    'salario',
+    'sueldo',
+    'nómina',
+    'nomina',
+    'te depositaron',
+    'ingreso a tu cuenta',
+    'ingreso a su cuenta',
+    'crédito a tu cuenta',
+    'credito a tu cuenta',
+    'crédito a su cuenta',
+    'credito a su cuenta',
+    'nota de crédito',
+    'nota de credito',
+    'a tu favor',
+    'a su favor',
+    'transferencia entrante',
+    'remesa',
     'you received',
     'refund',
     'deposit',
@@ -70,8 +99,26 @@ class PaymentNotificationParser {
     'débito',
     'debito',
     'retiro',
+    'se debitó',
+    'se debito',
+    'debitó',
+    'debitado',
     'transferencia enviada',
+    'transferencia a ',
+    'transferencia saliente',
     'enviaste',
+    'pago de ',
+    'pago a ',
+    'pago por',
+    'pago de servicio',
+    'cobro',
+    'transacción aprobada',
+    'transaccion aprobada',
+    'transacción por',
+    'transaccion por',
+    'autorizada',
+    'autorizamos',
+    'aprobada por',
     'you paid',
     'paid',
     'purchase',
@@ -79,9 +126,56 @@ class PaymentNotificationParser {
     'spent',
   ];
 
+  /// Avisos que mencionan dinero pero no son un movimiento real: compras
+  /// rechazadas, promociones, códigos de seguridad o recordatorios.
+  static const List<String> _ignoredKeywords = [
+    'rechazad',
+    'declinad',
+    'no fue aprobad',
+    'no aprobad',
+    'no pudo',
+    'fallid',
+    'fondos insuficientes',
+    'código de verificación',
+    'codigo de verificacion',
+    'código de seguridad',
+    'codigo de seguridad',
+    'token',
+    'otp',
+    'promoción',
+    'promocion',
+    'obtén',
+    'obten ',
+    'oferta',
+    'aprovecha',
+    'preaprobad',
+    'pre-aprobad',
+    'pre aprobad',
+    'te prestamos',
+    'solicita tu',
+    'recuerda pagar',
+    'recordatorio',
+    'vence el',
+    'próximo pago',
+    'proximo pago',
+    'pago mínimo',
+    'pago minimo',
+    'fecha límite',
+    'fecha limite',
+    'declined',
+    'failed',
+  ];
+
+  /// "Pago/abono a tu tarjeta": sale dinero para pagar una deuda, aunque el
+  /// banco diga que "se acreditó" a la tarjeta.
+  static final RegExp _cardPayment = RegExp(
+    r'\b(?:pago|abono|abonado|abonó)s?\s+(?:a|de|en)\s+(?:tu\s+|su\s+|la\s+)?'
+    r'(?:tarjeta|tc\b|préstamo|prestamo|crédito|credito)',
+  );
+
   static final RegExp _amount = RegExp(
     // El símbolo no puede ir pegado a una letra: "el 25" no es "L 25".
-    r'(?<![A-Za-zÁÉÍÓÚÑáéíóúñ])(?:(?:GTQ|USD|MXN|EUR|COP|PEN|CLP|ARS|HNL|CRC|DOP|Q|\$|€|£|US\$|L|₡|S/)\s?)'
+    r'(?<![A-Za-zÁÉÍÓÚÑáéíóúñ])(?:(?:GTQ|USD|MXN|EUR|COP|PEN|CLP|ARS|HNL|CRC|DOP|Q|\$|€|£|US\$|L|₡|S/)\.?\s?)'
     r'(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)'
     r'|(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})|\d+[.,]\d{1,2})\s?(?:GTQ|USD|MXN|EUR|quetzales|dólares|dolares)',
     caseSensitive: false,
@@ -100,6 +194,11 @@ class PaymentNotificationParser {
   }) {
     final full = '$title. $text'.trim();
     final lower = full.toLowerCase();
+    if (_ignoredKeywords.any(
+      (k) => RegExp('(^|[^a-záéíóúñ])${RegExp.escape(k)}').hasMatch(lower),
+    )) {
+      return null;
+    }
     final amount = parseAmount(full);
     if (amount == null || amount <= 0) return null;
 
@@ -107,7 +206,9 @@ class PaymentNotificationParser {
     final isExpense = _expenseKeywords.any(lower.contains);
 
     final TransactionType type;
-    if (isIncome && !_startsWithExpense(lower)) {
+    if (_cardPayment.hasMatch(lower)) {
+      type = TransactionType.expense;
+    } else if (isIncome && !_startsWithExpense(lower)) {
       type = TransactionType.income;
     } else if (isExpense || walletPackages.contains(packageName)) {
       type = TransactionType.expense;

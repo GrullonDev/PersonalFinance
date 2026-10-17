@@ -13,8 +13,11 @@ class NotificationPermissionService {
     // Also trigger platform specific requests in services
     final localResult = await _local.requestPermissions();
 
-    return status.isGranted || localResult;
+    return status.isGranted || localResult || await isEnabled();
   }
+
+  /// `true` si el sistema permite mostrar notificaciones de la app.
+  Future<bool> isEnabled() => _local.areNotificationsEnabled();
 
   Future<PermissionStatus> getStatus() async =>
       await Permission.notification.status;

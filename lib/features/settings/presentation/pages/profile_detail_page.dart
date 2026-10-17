@@ -4,6 +4,7 @@ import 'package:personal_finance/features/auth/presentation/providers/auth_provi
 import 'package:personal_finance/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:personal_finance/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:personal_finance/features/profile/domain/repositories/profile_backend_repository.dart';
+import 'package:personal_finance/features/subscription/domain/subscription_constants.dart';
 import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
 import 'package:personal_finance/utils/app_localization.dart';
@@ -493,7 +494,9 @@ class _FreeCard extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.workspace_premium, size: 18),
                 label: Text(
-                  isEs ? 'Actualizar a Pro — \$5.99/mes' : 'Upgrade to Pro — \$5.99/mo',
+                  isEs
+                      ? 'Actualizar a Pro — ${PlanPricing.proMonthlyFormatted}/mes'
+                      : 'Upgrade to Pro — ${PlanPricing.proMonthlyFormatted}/mo',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 onPressed: () => PaywallPage.show(context),

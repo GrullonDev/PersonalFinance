@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
@@ -123,6 +124,25 @@ Future<void> main() async {
             await Firebase.initializeApp(
               options: DefaultFirebaseOptions.currentPlatform,
             );
+          }
+
+          // App Check: certifica que las llamadas (IA, Firestore…) vienen de
+          // la app real. Firebase AI Logic lo exige desde nov-2026.
+          // Debug → proveedor de depuración (registrar el token que imprime
+          // la consola en Firebase → App Check → Administrar tokens).
+          try {
+            await FirebaseAppCheck.instance.activate(
+              providerAndroid:
+                  kDebugMode
+                      ? const AndroidDebugProvider()
+                      : const AndroidPlayIntegrityProvider(),
+              providerApple:
+                  kDebugMode
+                      ? const AppleDebugProvider()
+                      : const AppleDeviceCheckProvider(),
+            );
+          } catch (e) {
+            if (kDebugMode) debugPrint('[init] App Check error: $e');
           }
 
           await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(

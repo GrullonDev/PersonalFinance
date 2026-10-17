@@ -11,9 +11,9 @@ class SyncStatusPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFFF6F7F9),
+    backgroundColor: Theme.of(context).colorScheme.surface,
     appBar: AppBar(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 1,
@@ -149,7 +149,7 @@ class _StatusCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -187,7 +187,7 @@ class _StatusCard extends StatelessWidget {
             subtitle,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
@@ -327,7 +327,7 @@ class _StatsCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
@@ -395,7 +395,12 @@ class _StatRow extends StatelessWidget {
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: count > 0 ? color : Colors.grey.shade400,
+          color:
+              count > 0
+                  ? color
+                  : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.35),
         ),
       ),
     ],
@@ -421,7 +426,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
@@ -443,7 +448,10 @@ class _InfoRow extends StatelessWidget {
         ),
         Text(
           value,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     ),

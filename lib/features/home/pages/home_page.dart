@@ -12,6 +12,7 @@ import 'package:personal_finance/features/transactions/presentation/bloc/transac
 import 'package:personal_finance/features/transactions/presentation/widgets/add_transaction_modal.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/utils/responsive.dart';
+import 'package:personal_finance/core/services/update_policy.dart';
 import 'package:personal_finance/core/services/version_service.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
@@ -56,9 +57,9 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _checkUpdate() async {
     final VersionService versionService = getIt<VersionService>();
-    final bool updateRequired = await versionService.isUpdateRequired();
+    final UpdateCheck update = await versionService.checkForUpdate();
 
-    if (updateRequired && mounted) {
+    if (update.kind == UpdateKind.required && mounted) {
       Navigator.of(context).pushReplacementNamed(RoutePath.forceUpdate);
     }
   }

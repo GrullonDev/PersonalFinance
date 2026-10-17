@@ -30,6 +30,16 @@ class RevenueCatService {
     return offerings.current?.monthly;
   }
 
+  /// Precio del plan tal como lo cobra la tienda ("US\$2.99", "Q23.00");
+  /// `null` si la tienda no responde.
+  Future<String?> monthlyPriceString() async {
+    try {
+      return (await getMonthlyPackage())?.storeProduct.priceString;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Compra el plan Pro. Lanza [PurchasesErrorCode] en caso de error.
   Future<SubscriptionEntity> purchasePro() async {
     final package = await getMonthlyPackage();

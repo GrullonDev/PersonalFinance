@@ -48,6 +48,9 @@ class AddTransactionRequested extends QuickFinanceEvent {
   /// lo escribió el usuario.
   final String? autoSourceLabel;
 
+  /// Texto original de la notificación, para reconocer pagos a deudas.
+  final String? autoRawText;
+
   const AddTransactionRequested({
     required this.amount,
     required this.type,
@@ -56,6 +59,7 @@ class AddTransactionRequested extends QuickFinanceEvent {
     this.rawInput,
     this.occurredAt,
     this.autoSourceLabel,
+    this.autoRawText,
   });
 
   @override
@@ -67,6 +71,7 @@ class AddTransactionRequested extends QuickFinanceEvent {
     rawInput,
     occurredAt,
     autoSourceLabel,
+    autoRawText,
   ];
 }
 
@@ -169,7 +174,12 @@ class AutoCaptureConfirmed extends QuickFinanceEvent {
   final double? editedAmount;
 
   @override
-  List<Object?> get props => [capture, editedNote, editedCategoryId, editedAmount];
+  List<Object?> get props => [
+    capture,
+    editedNote,
+    editedCategoryId,
+    editedAmount,
+  ];
 }
 
 /// El usuario descartó un pago auto-capturado; no se persiste.

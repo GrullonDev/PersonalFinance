@@ -7,6 +7,7 @@ import 'package:personal_finance/features/notifications/domain/entities/notifica
 import 'package:provider/provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:personal_finance/core/services/notifications/notification_permission_service.dart';
 import 'package:personal_finance/utils/widgets/empty_state.dart';
 
 class NotificationsDetailPage extends StatelessWidget {
@@ -138,25 +139,48 @@ class _NotificationsPermissionBanner extends StatefulWidget {
 }
 
 class _NotificationsPermissionBannerState
-    extends State<_NotificationsPermissionBanner> {
-  PermissionStatus? _status;
+    extends State<_NotificationsPermissionBanner>
+    with WidgetsBindingObserver {
+  final NotificationPermissionService _permissions =
+      GetIt.instance<NotificationPermissionService>();
+
+  /// `null` mientras se consulta; luego el estado real del sistema.
+  bool? _enabled;
+
+  /// Ya se pidió el permiso y el sistema lo negó: sólo queda ir a Ajustes.
+  bool _askedAndDenied = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _check();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Al volver de Ajustes del sistema se vuelve a consultar el permiso.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _check();
+  }
+
   Future<void> _check() async {
-    final PermissionStatus s = await Permission.notification.status;
-    if (mounted) setState(() => _status = s);
+    final bool enabled = await _permissions.isEnabled();
+    if (mounted) setState(() => _enabled = enabled);
   }
 
   Future<void> _request() async {
-    final PermissionStatus s = await Permission.notification.request();
-    if (mounted) setState(() => _status = s);
+    final bool granted = await _permissions.requestAll();
     if (!mounted) return;
-    final bool granted = s.isGranted || s.isLimited;
+    setState(() {
+      _enabled = granted;
+      _askedAndDenied = !granted;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(granted ? 'Permiso concedido' : 'Permiso denegado'),
@@ -166,10 +190,8 @@ class _NotificationsPermissionBannerState
 
   @override
   Widget build(BuildContext context) {
-    if (_status == null || _status!.isGranted || _status!.isLimited) {
-      return const SizedBox.shrink();
-    }
-    final bool permanentlyDenied = _status!.isPermanentlyDenied;
+    if (_enabled ?? true) return const SizedBox.shrink();
+    final bool permanentlyDenied = _askedAndDenied;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(12),

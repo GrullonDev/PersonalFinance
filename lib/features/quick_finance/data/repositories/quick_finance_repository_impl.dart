@@ -145,7 +145,10 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
 
   Future<void> _createSyncOp(String transactionId, SyncAction action) async {
     final syncOp = SyncOperationModel(
-      id: 'op_${DateTime.now().millisecondsSinceEpoch}',
+      // Incluye el movimiento y microsegundos: con sólo milisegundos, varias
+      // operaciones creadas a la vez (p. ej. al completar categorías) se
+      // pisaban en Hive y un movimiento quedaba pendiente para siempre.
+      id: 'op_${transactionId}_${DateTime.now().microsecondsSinceEpoch}',
       transactionId: transactionId,
       action: action,
       createdAt: DateTime.now(),

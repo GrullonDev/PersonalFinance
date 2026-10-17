@@ -32,6 +32,15 @@ import 'package:personal_finance/utils/routes/route_path.dart';
 import 'package:personal_finance/core/services/device_service.dart';
 import 'package:personal_finance/features/quick_finance/data/services/spending_alert_service.dart';
 import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
+import 'package:personal_finance/features/categories/data/services/category_auto_creator.dart';
+import 'package:personal_finance/features/quick_finance/domain/services/transaction_categorizer.dart';
+import 'package:personal_finance/features/auto_capture/domain/debt_payment_matcher.dart';
+import 'package:personal_finance/features/budgets/domain/entities/budget.dart';
+import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
+import 'package:personal_finance/features/budgets/domain/services/budget_alert_evaluator.dart';
+import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
+import 'package:personal_finance/features/subscription/domain/services/subscription_service.dart';
+import 'package:personal_finance/utils/budget_category_prefs.dart';
 
 class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final AddTransaction addTransaction;
@@ -45,6 +54,12 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   final GoalRepository goalRepository;
   final DebtRepository debtRepository;
   final DeviceService deviceService;
+
+  /// Detecta la categoría cuando el usuario sólo escribe el lugar del gasto.
+  final TransactionCategorizer? categorizer;
+
+  /// Crea en "Categorías" las categorías detectadas automáticamente.
+  final CategoryAutoCreator? categoryAutoCreator;
 
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
   StreamSubscription<dynamic>? _balanceSubscription;
@@ -68,6 +83,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     required this.goalRepository,
     required this.debtRepository,
     required this.deviceService,
+    this.categorizer,
+    this.categoryAutoCreator,
   }) : super(const QuickFinanceState()) {
     on<WatchDataRequested>(_onWatchDataRequested);
     on<TransactionsObserved>(_onTransactionsObserved);
@@ -238,9 +255,11 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     AutoCaptureReceived event,
     Emitter<QuickFinanceState> emit,
   ) {
-    emit(state.copyWith(
-      pendingCaptures: [...state.pendingCaptures, event.capture],
-    ));
+    emit(
+      state.copyWith(
+        pendingCaptures: [...state.pendingCaptures, event.capture],
+      ),
+    );
   }
 
   Future<void> _onAutoCaptureConfirmed(
@@ -253,39 +272,48 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     final amount = event.editedAmount ?? capture.amount;
 
     // Remove from queue immediately so UI updates without waiting for save
-    emit(state.copyWith(
-      pendingCaptures:
-          state.pendingCaptures.where((c) => c != capture).toList(),
-    ));
+    emit(
+      state.copyWith(
+        pendingCaptures:
+            state.pendingCaptures.where((c) => c != capture).toList(),
+      ),
+    );
 
-    add(AddTransactionRequested(
-      amount: amount,
-      type: capture.type,
-      note: note,
-      category: category,
-      occurredAt: capture.occurredAt,
-      autoSourceLabel: capture.sourceLabel,
-    ));
+    add(
+      AddTransactionRequested(
+        amount: amount,
+        type: capture.type,
+        note: note,
+        category: category,
+        occurredAt: capture.occurredAt,
+        autoSourceLabel: capture.sourceLabel,
+        autoRawText: capture.rawText,
+      ),
+    );
   }
 
   void _onAutoCaptureDismissed(
     AutoCaptureDismissed event,
     Emitter<QuickFinanceState> emit,
   ) {
-    emit(state.copyWith(
-      pendingCaptures:
-          state.pendingCaptures.where((c) => c != event.capture).toList(),
-    ));
+    emit(
+      state.copyWith(
+        pendingCaptures:
+            state.pendingCaptures.where((c) => c != event.capture).toList(),
+      ),
+    );
   }
 
   void _onAutoCapturePermissionFlags(
     AutoCapturePermissionFlags event,
     Emitter<QuickFinanceState> emit,
   ) {
-    emit(state.copyWith(
-      needsNotificationAccess: event.needsNotificationAccess,
-      needsShortcutsSetup: event.needsShortcutsSetup,
-    ));
+    emit(
+      state.copyWith(
+        needsNotificationAccess: event.needsNotificationAccess,
+        needsShortcutsSetup: event.needsShortcutsSetup,
+      ),
+    );
   }
 
   void _onTransactionsObserved(
@@ -300,6 +328,60 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       ),
     );
     _checkSpendingDeviations(event.transactions);
+    unawaited(_backfillCategories(event.transactions));
+  }
+
+  /// Movimientos ya revisados por [_backfillCategories] en esta sesión.
+  final Set<String> _backfilled = <String>{};
+
+  /// Máximo de consultas a la IA por sesión al completar movimientos viejos.
+  static const int _maxBackfillAiCalls = 10;
+  int _backfillAiCalls = 0;
+
+  /// Completa la categoría de los movimientos que se guardaron sin ella
+  /// (p. ej. sólo con el nombre del lugar), usando primero las reglas
+  /// locales y, con un límite, la IA.
+  Future<void> _backfillCategories(List<TransactionEntity> transactions) async {
+    final categorizer = this.categorizer;
+    if (categorizer == null) return;
+    for (final t in transactions) {
+      if (isClosed) return;
+      if (t.deletedAt != null || _backfilled.contains(t.id)) continue;
+      if (t.categoryId != null && t.categoryId!.trim().isNotEmpty) continue;
+      _backfilled.add(t.id);
+
+      String? category = categorizer.categorizeLocally(
+        note: t.note,
+        type: t.type,
+        history: transactions,
+      );
+      if (category == null &&
+          categorizer.hasAi &&
+          _backfillAiCalls < _maxBackfillAiCalls) {
+        _backfillAiCalls++;
+        category = await categorizer.categorizeWithAi(t.note);
+      }
+      if (category == null || isClosed) continue;
+
+      try {
+        await updateTransaction(
+          TransactionEntity(
+            id: t.id,
+            userId: t.userId,
+            type: t.type,
+            amount: t.amount,
+            note: t.note,
+            categoryId: category,
+            createdAt: t.createdAt,
+            updatedAt: DateTime.now(),
+            syncStatus: SyncStatus.pending,
+            version: t.version + 1,
+            deviceId: t.deviceId,
+          ),
+        );
+        await _ensureCategory(category, t.type);
+      } catch (_) {}
+    }
   }
 
   /// Lanza (sin bloquear la UI) la detección de desvíos de gasto; el servicio
@@ -398,6 +480,22 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     }
 
     final isAuto = event.autoSourceLabel != null;
+    final note = InputSanitizer.sanitizeText(event.note);
+    String? category =
+        event.category != null
+            ? InputSanitizer.sanitizeText(event.category!, maxLength: 50)
+            : null;
+    // Las capturas automáticas pueden traer el nombre de la IA ("Alimentación").
+    if (isAuto && category != null) {
+      category = TransactionCategorizer.normalize(category);
+    }
+    // El usuario sólo escribió el lugar ("Starbucks"): se detecta la categoría.
+    category ??= categorizer?.categorizeLocally(
+      note: note,
+      type: event.type,
+      history: state.transactions,
+    );
+
     final transaction = TransactionEntity(
       // Las capturas automáticas pueden llegar varias en el mismo milisegundo.
       id:
@@ -407,11 +505,8 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       userId: uid,
       type: event.type,
       amount: event.amount,
-      note: InputSanitizer.sanitizeText(event.note),
-      categoryId:
-          event.category != null
-              ? InputSanitizer.sanitizeText(event.category!, maxLength: 50)
-              : null,
+      note: note,
+      categoryId: category,
       createdAt: event.occurredAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
       syncStatus: SyncStatus.pending,
@@ -419,13 +514,30 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
       deviceId: deviceService.deviceId,
     );
 
+    // Evita que el completado de categorías vuelva a consultar este movimiento.
+    _backfilled.add(transaction.id);
     try {
       await addTransaction(transaction);
-      if (isAuto) {
-        await _notifyAutoCaptured(transaction, event.autoSourceLabel!);
-        return;
+      if (category != null) {
+        unawaited(_ensureCategory(category, transaction.type));
+      } else {
+        // Sin coincidencia local: se pregunta a la IA sin frenar el registro.
+        unawaited(_categorizeWithAi(transaction));
       }
-      await _updateGoalOrDebtIfMatching(transaction, event.rawInput);
+      if (isAuto) {
+        final debt = await _applyAutoDebtPayment(
+          transaction,
+          event.autoRawText ?? '',
+        );
+        await _notifyAutoCaptured(
+          transaction,
+          event.autoSourceLabel!,
+          debtName: debt?.name,
+        );
+      } else {
+        await _updateGoalOrDebtIfMatching(transaction, event.rawInput);
+      }
+      unawaited(_checkBudgetAlerts(transaction));
     } catch (e) {
       emit(
         state.copyWith(
@@ -436,21 +548,161 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     }
   }
 
+  Future<void> _ensureCategory(String category, TransactionType type) async {
+    try {
+      await categoryAutoCreator?.ensure(category, type);
+    } catch (_) {}
+  }
+
+  /// Asigna la categoría sugerida por la IA a un movimiento ya guardado.
+  Future<void> _categorizeWithAi(TransactionEntity transaction) async {
+    final categorizer = this.categorizer;
+    if (categorizer == null || !categorizer.hasAi) return;
+    try {
+      final category = await categorizer.categorizeWithAi(transaction.note);
+      if (category == null || isClosed) return;
+      await updateTransaction(
+        TransactionEntity(
+          id: transaction.id,
+          userId: transaction.userId,
+          type: transaction.type,
+          amount: transaction.amount,
+          note: transaction.note,
+          categoryId: category,
+          createdAt: transaction.createdAt,
+          updatedAt: DateTime.now(),
+          syncStatus: SyncStatus.pending,
+          version: transaction.version + 1,
+          deviceId: transaction.deviceId,
+        ),
+      );
+      await _ensureCategory(category, transaction.type);
+    } catch (_) {}
+  }
+
+  /// Un débito detectado que es el pago de una deuda ("Pago a tarjeta Visa")
+  /// reduce el saldo de esa deuda.
+  Future<Debt?> _applyAutoDebtPayment(
+    TransactionEntity transaction,
+    String rawText,
+  ) async {
+    if (transaction.type != TransactionType.expense) return null;
+    try {
+      final res = await debtRepository.getDebts();
+      final debts = res.fold((_) => const <Debt>[], (d) => d);
+      final debt = const DebtPaymentMatcher().match(
+        '${transaction.note} $rawText',
+        debts,
+      );
+      if (debt == null) return null;
+      await _updateDebtEntity(debt, transaction.amount, true);
+      return debt;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Claves de presupuestos ya avisados (presupuesto|umbral|periodo).
+  static const String _budgetAlertsPref = 'budget_alerts_notified';
+
+  /// Avisa cuando un gasto lleva un presupuesto al 100 % (y al 80 % con Pro).
+  Future<void> _checkBudgetAlerts(TransactionEntity transaction) async {
+    if (transaction.type != TransactionType.expense) return;
+    final getIt = GetIt.instance;
+    if (!getIt.isRegistered<BudgetRepository>() ||
+        !getIt.isRegistered<SharedPreferences>()) {
+      return;
+    }
+    try {
+      final res = await getIt<BudgetRepository>().getBudgets();
+      final budgets = res.fold((_) => const <Budget>[], (b) => b);
+      if (budgets.isEmpty) return;
+
+      final namesById = <String, String>{};
+      if (getIt.isRegistered<CategoryRepository>()) {
+        final cats = await getIt<CategoryRepository>().getCategories();
+        cats.fold((_) {}, (list) {
+          for (final c in list) {
+            namesById[c.id] = c.nombre;
+          }
+        });
+      }
+      final keysByBudget = <String, Set<String>>{};
+      for (final b in budgets) {
+        var linked = await BudgetCategoryPrefs.load(b.id);
+        if (linked.isEmpty) {
+          // Mismo criterio que la pantalla de presupuestos: "Comida" sólo
+          // suma comida; un nombre genérico suma todos los gastos.
+          final detected = TransactionCategorizer().categorizeLocally(
+            note: b.nombre,
+            type: TransactionType.expense,
+          );
+          if (detected != null) linked = [detected];
+        }
+        keysByBudget[b.id] = BudgetAlertEvaluator.keysFor(
+          linked,
+          categoryNamesById: namesById,
+        );
+      }
+
+      final isPro =
+          getIt.isRegistered<SubscriptionService>() &&
+          getIt<SubscriptionService>().isPremium;
+      final alerts = const BudgetAlertEvaluator().evaluate(
+        expense: transaction,
+        budgets: budgets,
+        categoryKeysByBudget: keysByBudget,
+        transactions: state.transactions,
+        thresholds: isPro ? const [80, 100] : const [100],
+      );
+      if (alerts.isEmpty) return;
+
+      final prefs = getIt<SharedPreferences>();
+      final notified =
+          (prefs.getStringList(_budgetAlertsPref) ?? const <String>[]).toList();
+      for (final alert in alerts) {
+        if (notified.contains(alert.key)) continue;
+        notified.add(alert.key);
+        final symbol = CurrencyHelper.symbol;
+        final spent = '$symbol${alert.spent.toStringAsFixed(2)}';
+        final limit = '$symbol${alert.limit.toStringAsFixed(2)}';
+        await getIt<NotificationService>().local.showNotification(
+          id: 'budget_${alert.key}'.hashCode,
+          title:
+              alert.exceeded
+                  ? '🚨 Presupuesto "${alert.budget.nombre}" superado'
+                  : '⚠️ Vas por el ${alert.percent.toStringAsFixed(0)} % de "${alert.budget.nombre}"',
+          body:
+              alert.exceeded
+                  ? 'Llevas $spent de $limit. Este gasto de $symbol${transaction.amount.toStringAsFixed(2)} lo pasó del límite.'
+                  : 'Llevas $spent de $limit. Aún te quedan $symbol${(alert.limit - alert.spent).toStringAsFixed(2)} para el resto del periodo.',
+          payload: RoutePath.budgetsCrud,
+        );
+      }
+      if (notified.length > 100) {
+        notified.removeRange(0, notified.length - 100);
+      }
+      await prefs.setStringList(_budgetAlertsPref, notified);
+    } catch (_) {}
+  }
+
   Future<void> _notifyAutoCaptured(
     TransactionEntity transaction,
-    String sourceLabel,
-  ) async {
+    String sourceLabel, {
+    String? debtName,
+  }) async {
     try {
       final isIncome = transaction.type == TransactionType.income;
       final amount =
           '${CurrencyHelper.symbol}${transaction.amount.toStringAsFixed(2)}';
       final category =
           transaction.categoryId != null ? ' · #${transaction.categoryId}' : '';
+      final debt = debtName != null ? ' Abonado a la deuda "$debtName".' : '';
       await GetIt.instance<NotificationService>().local.showNotification(
         id: 'auto_${transaction.id}'.hashCode,
         title: isIncome ? '💰 Ingreso registrado' : '💳 Gasto registrado',
         body:
-            '$amount${isIncome ? ' ·' : ' en'} ${transaction.note}$category ($sourceLabel). '
+            '$amount${isIncome ? ' ·' : ' en'} ${transaction.note}$category ($sourceLabel).$debt '
             'Toca para revisarlo o corregirlo.',
         payload: RoutePath.dashboard,
       );

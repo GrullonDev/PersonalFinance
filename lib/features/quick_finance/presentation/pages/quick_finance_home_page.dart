@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/core/services/haptic_feedback_service.dart';
+import 'package:personal_finance/features/ai_chat/domain/financial_context_builder.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
 import 'package:personal_finance/features/auto_capture/presentation/auto_capture_bottom_sheet.dart';
@@ -15,7 +16,6 @@ import 'package:personal_finance/features/auto_capture/presentation/shortcuts_se
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
-import 'package:personal_finance/features/subscription/presentation/pages/paywall_page.dart';
 import 'package:personal_finance/utils/injection_container.dart';
 import 'package:personal_finance/utils/routes/route_path.dart';
 
@@ -338,12 +338,19 @@ class _AIChatCard extends StatelessWidget {
           final primary = Theme.of(context).primaryColor;
 
           return GestureDetector(
+            // Sin Pro también se abre: el chat ofrece preguntas gratis al día
+            // y muestra los beneficios del plan.
             onTap: () {
-              if (isPremium) {
-                Navigator.of(context).pushNamed(RoutePath.aiChat);
-              } else {
-                PaywallPage.show(context);
-              }
+              String? financialContext;
+              try {
+                financialContext = const FinancialContextBuilder().build(
+                  context.read<QuickFinanceBloc>().state.transactions,
+                  currencySymbol: CurrencyHelper.symbol,
+                );
+              } catch (_) {}
+              Navigator.of(
+                context,
+              ).pushNamed(RoutePath.aiChat, arguments: financialContext);
             },
             child: Container(
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
@@ -416,7 +423,7 @@ class _AIChatCard extends StatelessWidget {
                         Text(
                           isPremium
                               ? 'Consulta tu situación financiera ahora'
-                              : 'Análisis y consejos personalizados con IA',
+                              : 'Prueba gratis: 3 preguntas al día',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.78),

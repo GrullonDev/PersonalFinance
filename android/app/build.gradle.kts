@@ -9,12 +9,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// 2) Carga tu key.properties
-val keystorePropertiesFile = rootProject.file("key.properties")
+// 2) Datos de firma: se leen de `.env` en la raíz del proyecto (o de
+//    android/key.properties). Ninguno de los dos se sube a git.
+//    Claves: storePassword, keyPassword, keyAlias, storeFile.
 val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.exists()) {
-        load(FileInputStream(keystorePropertiesFile))
-    }
+    listOf(rootProject.file("../.env"), rootProject.file("key.properties"))
+        .filter { it.exists() }
+        .forEach { file -> FileInputStream(file).use { load(it) } }
 }
 
 android {
@@ -27,10 +28,11 @@ android {
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         
-        // Genera un versionCode incremental automáticamente basado en el tiempo (minutos)
-        // Esto evita errores de "versionCode ya utilizado" en Google Play Console.
-        val timestampVersionCode = (System.currentTimeMillis() / 60000).toInt() - 29000000
-        versionCode = timestampVersionCode
+        // versionCode = 1.000.000 + número de build del pubspec (el "+N").
+        // Antes se usaba la hora (≈ 850.000 en 2026); la base de 1.000.000
+        // garantiza que los nuevos sigan siendo mayores en Google Play y que
+        // suban de uno en uno con scripts/release.sh.
+        versionCode = 1_000_000 + flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
     }

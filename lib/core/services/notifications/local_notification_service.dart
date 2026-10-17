@@ -65,6 +65,32 @@ class LocalNotificationService {
     );
   }
 
+  /// Estado real del permiso según el sistema (no según permission_handler,
+  /// que en iOS devuelve "denegado" si el Podfile no activa su macro).
+  Future<bool> areNotificationsEnabled() async {
+    try {
+      if (Platform.isIOS) {
+        final options =
+            await _notificationsPlugin
+                .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin
+                >()
+                ?.checkPermissions();
+        return (options?.isEnabled ?? false) ||
+            (options?.isProvisionalEnabled ?? false);
+      } else if (Platform.isAndroid) {
+        final enabled =
+            await _notificationsPlugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >()
+                ?.areNotificationsEnabled();
+        return enabled ?? false;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<bool> requestPermissions() async {
     if (Platform.isIOS) {
       final bool? result = await _notificationsPlugin

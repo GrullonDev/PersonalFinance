@@ -44,6 +44,13 @@ post_install do |installer|
       # iOS deployment target consistente con Runner (15.5).
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
 
+      # permission_handler sólo compila en iOS los permisos activados aquí;
+      # sin esta macro Permission.notification siempre responde "denegado"
+      # aunque el usuario haya dado el permiso.
+      definitions = Array(config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || '$(inherited)')
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] =
+        definitions | ['PERMISSION_NOTIFICATIONS=1']
+
       # PARCHE PARA RECURSOS / BUNDLES DE PRIVACIDAD
       # Algunos pods (Firebase, GoogleSignIn, MLKit) generan sub-bundles de
       # recursos (.bundle) que Xcode intenta firmar individualmente y falla

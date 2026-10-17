@@ -20,14 +20,21 @@ void main() {
     expect(find.textContaining('Shortcuts'), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('shows URL scheme to copy', (tester) async {
+  testWidgets('explica la acción "Registrar pago" con variables', (tester) async {
     await tester.pumpWidget(buildSheet(onGotIt: () {}, onRemindLater: () {}));
-    expect(find.textContaining('personalfinance://pago'), findsOneWidget);
+    expect(find.textContaining('Registrar pago'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Importe'), findsOneWidget);
+    expect(find.textContaining('personalfinance://'), findsNothing);
+    expect(
+      find.textContaining('Registrar mensaje bancario'),
+      findsAtLeastNWidgets(1),
+    );
   });
 
   testWidgets('Entendido button calls onGotIt', (tester) async {
     var called = false;
     await tester.pumpWidget(buildSheet(onGotIt: () => called = true, onRemindLater: () {}));
+    await tester.ensureVisible(find.text('Entendido'));
     await tester.tap(find.text('Entendido'));
     expect(called, isTrue);
   });
@@ -35,6 +42,7 @@ void main() {
   testWidgets('Recordarme después button calls onRemindLater', (tester) async {
     var called = false;
     await tester.pumpWidget(buildSheet(onGotIt: () {}, onRemindLater: () => called = true));
+    await tester.ensureVisible(find.text('Recordarme después'));
     await tester.tap(find.text('Recordarme después'));
     expect(called, isTrue);
   });
@@ -44,6 +52,7 @@ void main() {
     await tester.pumpWidget(
       buildSheet(onGotIt: () {}, onRemindLater: () => laterCalled = true),
     );
+    await tester.ensureVisible(find.text('Entendido'));
     await tester.tap(find.text('Entendido'));
     expect(laterCalled, isFalse);
   });

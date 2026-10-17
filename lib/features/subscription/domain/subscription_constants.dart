@@ -1,7 +1,9 @@
 import 'package:personal_finance/features/subscription/domain/entities/subscription_entity.dart';
 
 class PlanPricing {
-  static const double proMonthly = 5.99;
+  /// Precio de referencia. El cobro real lo define la tienda (App Store
+  /// Connect / Play Console) y el paywall muestra el precio que ella reporta.
+  static const double proMonthly = 2.99;
 
   static String get proMonthlyFormatted => '\$${proMonthly.toStringAsFixed(2)}';
 }
@@ -22,8 +24,8 @@ class PlanLimits {
   bool isUnlimited(int value) => value == unlimited;
 
   static const PlanLimits free = PlanLimits(
-    maxBudgets: 1,
-    maxGoals: 1,
+    maxBudgets: 2,
+    maxGoals: 2,
     maxAccounts: 1,
   );
 
@@ -40,17 +42,16 @@ class PlanLimits {
 class PlanFeatures {
   static const Set<PlanFeature> freeFeatures = {};
 
+  /// Lo que hoy entrega Pro. Las funciones aún no implementadas
+  /// (multi-cuenta, recurrentes, widget) no se ofrecen hasta que existan.
   static const Set<PlanFeature> proFeatures = {
-    PlanFeature.unlimitedBudgets,
-    PlanFeature.unlimitedGoals,
-    PlanFeature.unlimitedAccounts,
     PlanFeature.aiChat,
     PlanFeature.monthlyAiReports,
     PlanFeature.predictiveAlerts,
+    PlanFeature.unlimitedBudgets,
+    PlanFeature.unlimitedGoals,
     PlanFeature.exportCsvPdf,
-    PlanFeature.recurringTransactions,
     PlanFeature.premiumThemes,
-    PlanFeature.homeWidget,
   };
 
   static Set<PlanFeature> forTier(PlanTier tier) =>
@@ -72,20 +73,20 @@ class PlanFeatureLabels {
       description: 'Bank accounts, cash, and credit cards',
     ),
     PlanFeature.aiChat: (
-      title: 'AI financial assistant',
-      description: 'Ask questions in natural language',
+      title: 'Unlimited AI assistant',
+      description: 'Ask about your own spending, debts and budgets',
     ),
     PlanFeature.monthlyAiReports: (
-      title: 'Monthly AI reports',
-      description: 'PDF reports with analytics and recommendations',
+      title: 'Monthly AI report',
+      description: 'Where your money went and how to save more',
     ),
     PlanFeature.predictiveAlerts: (
-      title: 'Predictive budget alerts',
-      description: 'Know before you overspend — days in advance',
+      title: 'Early budget alerts',
+      description: 'Get warned at 80% before you overspend',
     ),
     PlanFeature.exportCsvPdf: (
-      title: 'Export CSV & PDF',
-      description: 'Download your financial data anytime',
+      title: 'Export your data',
+      description: 'Download your transactions as CSV anytime',
     ),
     PlanFeature.recurringTransactions: (
       title: 'Recurring transactions',
@@ -93,7 +94,7 @@ class PlanFeatureLabels {
     ),
     PlanFeature.premiumThemes: (
       title: 'Premium themes',
-      description: 'AMOLED dark mode and custom color palettes',
+      description: 'AMOLED dark mode and exclusive color palettes',
     ),
     PlanFeature.homeWidget: (
       title: 'Home screen widget',
@@ -115,20 +116,20 @@ class PlanFeatureLabels {
       description: 'Cuentas bancarias, efectivo y tarjetas de crédito',
     ),
     PlanFeature.aiChat: (
-      title: 'Asistente financiero con IA',
-      description: 'Haz preguntas en lenguaje natural',
+      title: 'Asistente con IA ilimitado',
+      description: 'Pregunta sobre tus gastos, deudas y presupuestos reales',
     ),
     PlanFeature.monthlyAiReports: (
-      title: 'Reportes mensuales con IA',
-      description: 'Informes PDF con análisis y recomendaciones',
+      title: 'Reporte mensual con IA',
+      description: 'En qué se fue tu dinero y cómo ahorrar más',
     ),
     PlanFeature.predictiveAlerts: (
-      title: 'Alertas predictivas de presupuesto',
-      description: 'Sabe antes de gastar de más — con días de anticipación',
+      title: 'Alertas anticipadas de presupuesto',
+      description: 'Aviso al llegar al 80 %, antes de pasarte',
     ),
     PlanFeature.exportCsvPdf: (
-      title: 'Exportar CSV y PDF',
-      description: 'Descarga tus datos financieros en cualquier momento',
+      title: 'Exporta tus datos',
+      description: 'Descarga tus movimientos en CSV cuando quieras',
     ),
     PlanFeature.recurringTransactions: (
       title: 'Transacciones recurrentes',
@@ -136,7 +137,7 @@ class PlanFeatureLabels {
     ),
     PlanFeature.premiumThemes: (
       title: 'Temas premium',
-      description: 'Modo oscuro AMOLED y paletas de colores personalizadas',
+      description: 'Modo oscuro AMOLED y paletas de colores exclusivas',
     ),
     PlanFeature.homeWidget: (
       title: 'Widget en pantalla de inicio',
@@ -151,4 +152,70 @@ class PlanFeatureLabels {
   static Map<PlanFeature, ({String title, String description})> labelsFor(
     String languageCode,
   ) => languageCode == 'es' ? _es : _en;
+}
+
+/// Fila de la comparación Gratis vs Pro del paywall.
+class PlanComparisonRow {
+  const PlanComparisonRow(this.label, this.free, this.pro);
+
+  final String label;
+
+  /// Texto de la columna; `null` = no incluido, `''` = incluido (✓).
+  final String? free;
+  final String? pro;
+}
+
+class PlanComparison {
+  static List<PlanComparisonRow> rows(String languageCode) {
+    final free = PlanLimits.free;
+    return languageCode == 'es'
+        ? [
+          const PlanComparisonRow(
+            'Registro rápido y categorías automáticas',
+            '',
+            '',
+          ),
+          const PlanComparisonRow(
+            'Captura automática de pagos (notificaciones, SMS, Apple Pay)',
+            '',
+            '',
+          ),
+          const PlanComparisonRow('Abono automático a tus deudas', '', ''),
+          PlanComparisonRow('Presupuestos', '${free.maxBudgets}', 'Ilimitados'),
+          PlanComparisonRow(
+            'Metas de ahorro',
+            '${free.maxGoals}',
+            'Ilimitadas',
+          ),
+          const PlanComparisonRow(
+            'Alertas de presupuesto',
+            'Al 100 %',
+            'Al 80 % y 100 %',
+          ),
+          const PlanComparisonRow('Asistente con IA', '3 al día', 'Ilimitado'),
+          const PlanComparisonRow('Reporte mensual con IA', null, ''),
+          const PlanComparisonRow('Exportar datos (CSV)', null, ''),
+          const PlanComparisonRow('Temas premium', null, ''),
+        ]
+        : [
+          const PlanComparisonRow(
+            'Quick entry and automatic categories',
+            '',
+            '',
+          ),
+          const PlanComparisonRow(
+            'Automatic payment capture (notifications, SMS, Apple Pay)',
+            '',
+            '',
+          ),
+          const PlanComparisonRow('Automatic debt payments', '', ''),
+          PlanComparisonRow('Budgets', '${free.maxBudgets}', 'Unlimited'),
+          PlanComparisonRow('Savings goals', '${free.maxGoals}', 'Unlimited'),
+          const PlanComparisonRow('Budget alerts', 'At 100%', 'At 80% & 100%'),
+          const PlanComparisonRow('AI assistant', '3 per day', 'Unlimited'),
+          const PlanComparisonRow('Monthly AI report', null, ''),
+          const PlanComparisonRow('Export data (CSV)', null, ''),
+          const PlanComparisonRow('Premium themes', null, ''),
+        ];
+  }
 }

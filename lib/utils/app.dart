@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:upgrader/upgrader.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_finance/features/budgets/presentation/bloc/budgets_bloc.dart';
@@ -14,7 +13,6 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import 'package:personal_finance/features/alerts/presentation/providers/alerts_provider.dart';
-import 'package:personal_finance/core/services/version_service.dart';
 import 'package:personal_finance/features/auth/domain/auth_repository.dart';
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/budgets/domain/repositories/budget_repository.dart';
@@ -28,6 +26,7 @@ import 'package:personal_finance/features/transactions/domain/repositories/trans
 import 'package:personal_finance/features/dashboard/presentation/providers/dashboard_logic.dart';
 import 'package:personal_finance/utils/app_localization.dart';
 import 'package:personal_finance/utils/injection_container.dart';
+import 'package:personal_finance/features/update/widgets/update_watcher.dart';
 import 'package:personal_finance/utils/routes/route_switch.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_inbox_provider.dart';
 import 'package:personal_finance/features/notifications/presentation/providers/notification_prefs_provider.dart';
@@ -133,24 +132,16 @@ class MyApp extends StatelessWidget {
               return MediaQuery(
                 data: mq.copyWith(textScaler: TextScaler.linear(textScale)),
                 child: AppLifecycleWrapper(
-                  child: child ?? const SizedBox.shrink(),
+                  child: UpdateWatcher(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               );
             },
-            home: UpgradeAlert(
-              navigatorKey: getIt<NavigationService>().navigatorKey,
-              upgrader: Upgrader(
-                debugLogging: true,
-                durationUntilAlertAgain: const Duration(seconds: 30),
-                minAppVersion:
-                    getIt<VersionService>()
-                        .minAppVersion, // Use min version from Remote Config
-                countryCode: 'es',
-                messages: UpgraderMessages(code: 'es'),
-                // Ensure the iOS store ID or URL is correctly provided if available
-              ),
-              child: const SplashScreen(),
-            ),
+            // El aviso de nueva versión lo maneja UpdateWatcher con Remote
+            // Config (funciona también en TestFlight y en la prueba interna
+            // de Google Play, donde la consulta a las tiendas no aplica).
+            home: const SplashScreen(),
             onGenerateRoute: RouteSwitch.generateRoute,
             localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
               AppLocalizations.delegate,

@@ -40,11 +40,13 @@ class PaymentNotificationListener : NotificationListenerService() {
             "recibiste", "has recibido", "te envi", "depósito", "deposito",
             "acreditado", "acreditamos", "abonamos", "reembolso", "devolución",
             "devolucion", "paid", "purchase", "payment", "spent", "received",
-            "refund", "deposit",
+            "refund", "deposit", "acredit", "abon", "debit", "debitó",
+            "transacci", "cobro", "autoriza", "aprobad", "ingreso", "planilla",
+            "salario", "nómina", "nomina", "remesa", "crédito a", "credito a",
         )
 
         private val AMOUNT = Regex(
-            """(?<![A-Za-z])(GTQ|USD|MXN|EUR|COP|PEN|CLP|ARS|HNL|CRC|DOP|US\$|Q|\$|€|£|₡|S/)\s?\d|\d[\d.,]*\s?(GTQ|USD|MXN|EUR|quetzales|dólares|dolares)""",
+            """(?<![A-Za-z])(GTQ|USD|MXN|EUR|COP|PEN|CLP|ARS|HNL|CRC|DOP|US\$|Q|\$|€|£|₡|S/)\.?\s?\d|\d[\d.,]*\s?(GTQ|USD|MXN|EUR|quetzales|dólares|dolares)""",
             RegexOption.IGNORE_CASE,
         )
     }

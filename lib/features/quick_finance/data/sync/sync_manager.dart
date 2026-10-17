@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:personal_finance/core/constants/enums.dart';
 import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_local_datasource.dart';
 import 'package:personal_finance/features/quick_finance/data/datasources/quick_finance_remote_datasource.dart';
+import 'package:personal_finance/features/quick_finance/data/models/sync_operation_model.dart';
 import 'package:personal_finance/features/quick_finance/data/models/transaction_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -245,18 +246,38 @@ class SyncManager {
 
   Future<int> _push() async {
     final pendingOps = await _localDataSource.getPendingSyncOperations();
-    if (pendingOps.isEmpty) return 0;
 
     // getAllTransactions incluye soft-deleted para que los DELETE ops puedan
     // actualizar el syncStatus antes de que la transacción sea purgada
     final allTransactions = await _localDataSource.getAllTransactions();
+
+    // Autocorrección: movimientos marcados como pendientes que no tienen
+    // operación en la cola (p. ej. por operaciones que se pisaron). Sin esto
+    // quedaban "1 pendiente" para siempre aunque se sincronizara.
+    final covered = {for (final op in pendingOps) op.transactionId};
+    final healOps = <SyncOperationModel>[
+      for (final t in allTransactions)
+        if (t.syncStatus != SyncStatus.synced &&
+            t.userId == _userId &&
+            !covered.contains(t.id))
+          SyncOperationModel(
+            id: '$_healPrefix${t.id}',
+            transactionId: t.id,
+            action: t.deletedAt != null ? SyncAction.delete : SyncAction.update,
+            createdAt: DateTime.now(),
+            processed: false,
+          ),
+    ];
+
+    final operations = [...pendingOps, ...healOps];
+    if (operations.isEmpty) return 0;
 
     // Retorna sólo los IDs de operaciones que se subieron con éxito.
     // Las que fallaron permanecen como pending y se reintentarán en el
     // próximo sync — sin bloquear a las demás.
     final pushedIds = await _remoteDataSource.pushPendingOperations(
       userId: _userId!,
-      operations: pendingOps,
+      operations: operations,
       transactions: allTransactions,
     );
 
@@ -265,22 +286,31 @@ class SyncManager {
     final txMap = {for (final t in allTransactions) t.id: t};
 
     // Marcar como procesadas sólo las operaciones que subieron con éxito
-    for (final op in pendingOps) {
+    for (final op in operations) {
       if (!pushedIds.contains(op.id)) continue;
 
-      await _localDataSource.markSyncOperationAsProcessed(op.id);
+      if (!op.id.startsWith(_healPrefix)) {
+        await _localDataSource.markSyncOperationAsProcessed(op.id);
+      }
 
-      // Actualizar syncStatus de la transacción a synced
-      final tx = txMap[op.transactionId];
-      if (tx != null) {
+      // Marcar el movimiento como sincronizado sólo si no cambió mientras se
+      // subía; si cambió, su versión nueva se sube en el próximo sync.
+      final pushed = txMap[op.transactionId];
+      final current = await _localDataSource.getTransaction(op.transactionId);
+      if (pushed != null &&
+          current != null &&
+          current.updatedAt == pushed.updatedAt &&
+          current.version == pushed.version) {
         await _localDataSource.saveTransaction(
-          tx.copyWith(syncStatus: SyncStatus.synced),
+          current.copyWith(syncStatus: SyncStatus.synced),
         );
       }
     }
 
     return pushedIds.length;
   }
+
+  static const _healPrefix = 'heal_';
 
   // ---------------------------------------------------------------------------
   // Hydration — descarga inicial completa (una sola vez por usuario)

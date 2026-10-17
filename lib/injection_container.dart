@@ -1,3 +1,6 @@
+import 'package:personal_finance/features/categories/data/services/category_auto_creator.dart';
+import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
+import 'package:personal_finance/features/quick_finance/domain/services/transaction_categorizer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 import 'package:personal_finance/features/subscription/data/datasources/revenue_cat_service.dart';
@@ -163,6 +166,19 @@ Future<void> init(HiveAesCipher hiveCipher) async {
       goalRepository: sl<GoalRepository>(),
       debtRepository: sl<DebtRepository>(),
       deviceService: sl<DeviceService>(),
+      categorizer: TransactionCategorizer(
+        ai:
+            sl.isRegistered<VertexAiService>()
+                ? sl<VertexAiService>().getCategoryForExpense
+                : null,
+      ),
+      categoryAutoCreator:
+          sl.isRegistered<CategoryRepository>()
+              ? CategoryAutoCreator(
+                sl<CategoryRepository>(),
+                deviceId: () => sl<DeviceService>().deviceId,
+              )
+              : null,
     ),
   );
 }
