@@ -10,7 +10,7 @@ import Foundation
 struct RegisterPaymentIntent: AppIntent {
   static var title: LocalizedStringResource = "Registrar pago"
   static var description = IntentDescription(
-    "Registra un gasto o ingreso en tus finanzas (por ejemplo, un pago con Apple Pay)."
+    "Registra un gasto o ingreso en tus finanzas (por ejemplo, un pago desde tu billetera digital)."
   )
   static var openAppWhenRun: Bool = false
 
