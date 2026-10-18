@@ -1,6 +1,6 @@
 import Foundation
 
-/// Cola de pagos capturados en iOS (atajo de Apple Pay / acción "Registrar
+/// Cola de pagos capturados en iOS (atajo de Wallet / acción "Registrar
 /// pago"). Se guarda en UserDefaults para no perder pagos aunque la app esté
 /// cerrada; Flutter la vacía con `drainPending`.
 enum PaymentCaptureQueue {

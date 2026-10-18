@@ -28,11 +28,11 @@ import UIKit
     }
   }
 
-  // MARK: - Registro automático de pagos (Apple Pay vía Atajos)
+  // MARK: - Registro automático de pagos (Wallet vía Atajos)
   //
   // iOS no permite leer notificaciones de otras apps. En su lugar, el usuario
   // crea en Atajos una automatización "Transacción" (se dispara al pagar con
-  // Apple Pay) con la acción "Registrar pago" (RegisterPaymentIntent). Por
+  // la billetera digital) con la acción "Registrar pago" (RegisterPaymentIntent). Por
   // compatibilidad también se acepta el URL
   //   personalfinance://pago?monto=<Importe>&comercio=<Comercio>
   // Los pagos van a PaymentCaptureQueue y Flutter los lee con `drainPending`.

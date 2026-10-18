@@ -3,7 +3,7 @@ import UIKit
 
 /// Escena principal (ciclo de vida UIScene). `FlutterSceneDelegate` crea la
 /// ventana y el engine; aquí sólo interceptamos los URLs del atajo de
-/// Apple Pay (`personalfinance://pago?...`) y dejamos el resto a Flutter.
+/// Wallet (`personalfinance://pago?...`) y dejamos el resto a Flutter.
 class SceneDelegate: FlutterSceneDelegate {
 
   override func scene(
