@@ -177,7 +177,7 @@ class AutoCaptureService {
         amount: amount,
         merchant: (raw.merchant ?? '').trim(),
       );
-      sourceLabel = 'Apple Pay';
+      sourceLabel = 'Wallet';
     } else {
       parsed = _parser.parse(
         packageName: raw.packageName,

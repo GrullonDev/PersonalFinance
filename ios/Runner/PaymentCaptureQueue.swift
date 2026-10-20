@@ -13,7 +13,7 @@ enum PaymentCaptureQueue {
     guard !trimmed.isEmpty else { return }
     let capture: [String: Any] = [
       "source": "shortcut",
-      "packageName": "apple_pay",
+      "packageName": "wallet_shortcut",
       "title": "",
       "text": "",
       "amount": trimmed,

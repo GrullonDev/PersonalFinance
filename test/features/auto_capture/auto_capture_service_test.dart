@@ -68,13 +68,13 @@ void main() {
     expect(tx.sourceLabel, 'Google Wallet');
   });
 
-  test('atajo de Apple Pay', () async {
+  test('atajo de Wallet', () async {
     final service = build();
     final received = <AutoCapturedTransaction>[];
     service.captured.listen(received.add);
     nativeQueue.add({
       'source': 'shortcut',
-      'packageName': 'apple_pay',
+      'packageName': 'wallet_shortcut',
       'amount': r'$12.30',
       'merchant': 'Uber',
       'kind': 'gasto',
@@ -85,7 +85,7 @@ void main() {
 
     expect(received.single.amount, 12.3);
     expect(received.single.category, 'transporte');
-    expect(received.single.sourceLabel, 'Apple Pay');
+    expect(received.single.sourceLabel, 'Wallet');
   });
 
   test('usa la IA cuando el comercio no es conocido', () async {
