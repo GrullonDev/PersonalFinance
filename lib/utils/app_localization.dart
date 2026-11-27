@@ -9,6 +9,9 @@ class AppLocalizations {
 
   AppLocalizations(this.locale);
 
+  static String captureText(BuildContext context, String key) =>
+      (of(context) ?? AppLocalizations(const Locale('es'))).translate(key);
+
   static AppLocalizations? of(BuildContext context) =>
       Localizations.of<AppLocalizations>(context, AppLocalizations);
 
@@ -18,6 +21,51 @@ class AppLocalizations {
   static const Map<String, Map<String, String>>
   _localizedValues = <String, Map<String, String>>{
     'en': <String, String>{
+      'captureSettlement': 'Enter the amount to record in',
+      'captureAddBank': 'Add bank app',
+      'captureBankPackage': 'Bank app package name',
+      'captureSampleAdded': 'Sample suggestion added to Home',
+      'configureApplePay': "Configure Apple Pay",
+      'captureNotNow': "Not now",
+      'captureIosIntro':
+          "Use a Shortcuts transaction automation to send payments to your inbox for review.",
+      'captureGuide': "Apple Pay with Shortcuts",
+      'captureStep1':
+          "Open Shortcuts. In Automation, tap + and select Transaction.",
+      'captureStep2': "Select your card and choose Run Immediately.",
+      'captureStep3':
+          "Create a blank automation and add the PersonalFinance action “Registrar pago”.",
+      'captureStep4':
+          "Assign the transaction Amount and Merchant variables to the corresponding fields.",
+      'captureSms':
+          "For bank SMS, create a Message automation for your bank’s sender and add “Registrar mensaje bancario”. Pass the message content and sender.",
+      'captureAwaiting': "Waiting for the first real Apple Pay callback",
+      'captureVerified': "Apple Pay automation verified",
+      'captureOpenShortcuts': "Open Shortcuts",
+      'captureLaunchFailed': "Open the Shortcuts app manually to continue.",
+      'captureClose': "Close",
+      'captureAndroidTitle': "Notification access",
+      'captureAndroidIntro':
+          "Android grants broad notification access. PersonalFinance processes only selected sources on this device. Coverage depends on the payment notifications your wallet or bank publishes. Review each suggestion before saving.",
+      'captureEnable': "Enable",
+      'captureSources': "Payment sources",
+      'captureEnabled': "Suggest payments",
+      'captureGranted': "Notification access granted",
+      'captureDenied': "Allow notification access",
+      'capturePending': "Pending suggestions",
+      'captureSample': "Try a sample suggestion",
+      'captureSampleNote':
+          "Demo only. This sample cannot create a transaction.",
+      'captureAmount': "Amount",
+      'captureNote': "Description",
+      'captureCategory': "Category",
+      'captureEdit': "Edit",
+      'captureDismiss': "Dismiss",
+      'captureConfirm': "Confirm",
+      'captureInvalid': "Enter an amount greater than zero.",
+      'captureDetected': "Suggested payment",
+      'captureSampleBadge': "Sample",
+      'captureSettings': "Payment suggestions",
       'welcome': 'Welcome to your personal finance app!',
       'start': 'Start',
       'appTitle': 'Personal Finance',
@@ -72,6 +120,51 @@ class AppLocalizations {
       'aiChatHint': 'Type your financial question…',
     },
     'es': <String, String>{
+      'captureSettlement': 'Ingresa el monto que deseas registrar en',
+      'captureAddBank': 'Agregar app bancaria',
+      'captureBankPackage': 'Nombre de paquete de la app bancaria',
+      'captureSampleAdded': 'Sugerencia de ejemplo disponible en Inicio',
+      'configureApplePay': "Configurar Apple Pay",
+      'captureNotNow': "Ahora no",
+      'captureIosIntro':
+          "Usa una automatización de transacciones en Atajos para enviar pagos a tu bandeja y revisarlos.",
+      'captureGuide': "Configurar Apple Pay con Shortcuts",
+      'captureStep1':
+          "Abre Atajos. En Automatización, toca + y selecciona Transacción.",
+      'captureStep2': "Elige tu tarjeta y selecciona Ejecutar inmediatamente.",
+      'captureStep3':
+          "Crea una automatización en blanco y agrega la acción «Registrar pago» de PersonalFinance.",
+      'captureStep4':
+          "Asigna las variables Importe y Comerciante a los campos Monto y Comercio.",
+      'captureSms':
+          "Para SMS bancarios, crea una automatización de Mensaje con el remitente de tu banco y agrega «Registrar mensaje bancario». Selecciona las variables de contenido y remitente.",
+      'captureAwaiting': "Esperando la primera transacción real de Apple Pay",
+      'captureVerified': "Automatización de Apple Pay verificada",
+      'captureOpenShortcuts': "Abrir Atajos",
+      'captureLaunchFailed': "Abre la app Atajos manualmente para continuar.",
+      'captureClose': "Cerrar",
+      'captureAndroidTitle': "Acceso a notificaciones",
+      'captureAndroidIntro':
+          "Android concede acceso amplio a las notificaciones. PersonalFinance procesa solo las fuentes seleccionadas en este dispositivo. La cobertura depende de las notificaciones de pago que publique tu billetera o banco. Revisa cada sugerencia antes de guardarla.",
+      'captureEnable': "Activar",
+      'captureSources': "Fuentes de pago",
+      'captureEnabled': "Sugerir pagos",
+      'captureGranted': "Acceso a notificaciones concedido",
+      'captureDenied': "Permitir acceso a notificaciones",
+      'capturePending': "Sugerencias pendientes",
+      'captureSample': "Probar una sugerencia de ejemplo",
+      'captureSampleNote':
+          "Ejemplo de prueba. Esta sugerencia no crea una transacción.",
+      'captureAmount': "Monto",
+      'captureNote': "Descripción",
+      'captureCategory': "Categoría",
+      'captureEdit': "Editar",
+      'captureDismiss': "Descartar",
+      'captureConfirm': "Confirmar",
+      'captureInvalid': "Ingresa un monto mayor que cero.",
+      'captureDetected': "Pago sugerido",
+      'captureSampleBadge': "Ejemplo",
+      'captureSettings': "Sugerencias de pago",
       'welcome': '¡Bienvenido a tu app de finanzas personales!',
       'start': 'Iniciar',
       'appTitle': 'Finanzas Personales',

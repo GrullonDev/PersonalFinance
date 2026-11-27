@@ -1,3 +1,4 @@
+import FirebaseCore
 import Flutter
 import UIKit
 
@@ -8,6 +9,7 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    if FirebaseApp.app() == nil { FirebaseApp.configure() }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -35,7 +37,7 @@ import UIKit
   // la billetera digital) con la acción "Registrar pago" (RegisterPaymentIntent). Por
   // compatibilidad también se acepta el URL
   //   personalfinance://pago?monto=<Importe>&comercio=<Comercio>
-  // Los pagos van a PaymentCaptureQueue y Flutter los lee con `drainPending`.
+  // Los pagos van a PaymentCaptureQueue y Flutter los lee con `peekPending`.
 
   private var paymentCaptureChannel: FlutterMethodChannel?
 
@@ -47,11 +49,31 @@ import UIKit
     )
     channel.setMethodCallHandler { call, result in
       switch call.method {
-      case "drainPending":
-        result(PaymentCaptureQueue.drain())
+      case "peekPending":
+        do { result(try PaymentCaptureQueue.peek()) }
+        catch { result(FlutterError(code: "queue_read", message: error.localizedDescription, details: nil)) }
+      case "acknowledge":
+        if let id = (call.arguments as? [String: Any])?["id"] as? String {
+          do { try PaymentCaptureQueue.acknowledge(id) }
+          catch {
+            result(FlutterError(code: "queue_write", message: error.localizedDescription, details: nil))
+            return
+          }
+        }
+        result(nil)
+      case "setCaptureOwner":
+        PaymentCaptureQueue.setOwner((call.arguments as? [String: Any])?["owner"] as? String)
+        result(nil)
+      case "isAutomationVerified":
+        result(PaymentCaptureQueue.isVerified())
+      case "setSources":
+        result(nil)
       case "isAccessGranted":
         // No requiere permiso: depende de que el usuario configure el atajo.
         result(true)
+      case "openShortcuts":
+        guard let url = URL(string: "shortcuts://") else { result(false); return }
+        UIApplication.shared.open(url, options: [:]) { opened in result(opened) }
       case "openAccessSettings":
         if let url = URL(string: "shortcuts://") {
           UIApplication.shared.open(url)

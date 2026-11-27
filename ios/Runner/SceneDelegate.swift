@@ -13,7 +13,7 @@ class SceneDelegate: FlutterSceneDelegate {
   ) {
     super.scene(scene, willConnectTo: session, options: connectionOptions)
     // App abierta en frío desde el atajo: el pago queda en cola y Flutter
-    // lo lee con `drainPending` al arrancar.
+    // lo lee con `peekPending` al arrancar.
     for context in connectionOptions.urlContexts {
       paymentHandler?.handlePaymentURL(context.url)
     }

@@ -63,7 +63,9 @@ void main() {
     expect(find.text('Uber'), findsOneWidget);
   });
 
-  testWidgets('Confirmar button dispatches AutoCaptureConfirmed', (tester) async {
+  testWidgets('Confirmar button dispatches AutoCaptureConfirmed', (
+    tester,
+  ) async {
     final bloc = _FakeBloc();
     await tester.pumpWidget(buildSheet(bloc));
     await tester.tap(find.text('Confirmar'));
@@ -75,7 +77,9 @@ void main() {
     );
   });
 
-  testWidgets('Descartar button dispatches AutoCaptureDismissed', (tester) async {
+  testWidgets('Descartar button dispatches AutoCaptureDismissed', (
+    tester,
+  ) async {
     final bloc = _FakeBloc();
     await tester.pumpWidget(buildSheet(bloc));
     await tester.tap(find.text('Descartar'));
@@ -87,9 +91,13 @@ void main() {
     );
   });
 
-  testWidgets('edited note is included in AutoCaptureConfirmed', (tester) async {
+  testWidgets('edited note is included in AutoCaptureConfirmed', (
+    tester,
+  ) async {
     final bloc = _FakeBloc();
     await tester.pumpWidget(buildSheet(bloc));
+    await tester.tap(find.text('Editar'));
+    await tester.pump();
     final noteField = find.widgetWithText(TextFormField, 'Uber');
     await tester.enterText(noteField, 'Uber Eats');
     await tester.tap(find.text('Confirmar'));
@@ -99,10 +107,17 @@ void main() {
     expect(confirmed.editedNote, 'Uber Eats');
   });
 
-  testWidgets('edited amount is included in AutoCaptureConfirmed', (tester) async {
+  testWidgets('edited amount is included in AutoCaptureConfirmed', (
+    tester,
+  ) async {
     final bloc = _FakeBloc();
     await tester.pumpWidget(buildSheet(bloc));
-    await tester.enterText(find.widgetWithText(TextFormField, '75.50'), '99.99');
+    await tester.tap(find.text('Editar'));
+    await tester.pump();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '75.50'),
+      '99.99',
+    );
     await tester.tap(find.text('Confirmar'));
     await tester.pump();
     final confirmed = bloc.events.whereType<AutoCaptureConfirmed>().first;

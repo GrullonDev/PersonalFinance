@@ -96,6 +96,18 @@ class QuickFinanceRepositoryImpl implements QuickFinanceRepository {
 
   @override
   Future<void> addTransaction(TransactionEntity transaction) async {
+    // A capture has the same transaction ID on every confirmation attempt.
+    // Preserve edits and tombstones if a prior attempt already wrote it.
+    final existing = transaction.id.startsWith('capture_')
+        ? await localDataSource.getTransaction(transaction.id) : null;
+    if (existing != null) {
+      if (existing.userId != transaction.userId) {
+        throw StateError('El movimiento pertenece a otra cuenta.');
+      }
+      // SyncManager repairs pending records even if the process stopped
+      // between the transaction write and creation of its sync operation.
+      return;
+    }
     final model = TransactionModel.fromEntity(transaction);
 
     // 1. Guardar localmente (UI se actualiza instantáneamente)

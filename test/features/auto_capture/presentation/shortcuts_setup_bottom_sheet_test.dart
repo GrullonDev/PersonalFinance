@@ -5,23 +5,27 @@ import 'package:personal_finance/features/auto_capture/presentation/shortcuts_se
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Widget buildSheet({required VoidCallback onGotIt, required VoidCallback onRemindLater}) =>
-      MaterialApp(
-        home: Scaffold(
-          body: ShortcutsSetupBottomSheet(
-            onGotIt: onGotIt,
-            onRemindLater: onRemindLater,
-          ),
-        ),
-      );
+  Widget buildSheet({
+    required VoidCallback onOpenShortcuts,
+    required VoidCallback onClose,
+  }) => MaterialApp(
+    home: Scaffold(
+      body: ShortcutsSetupBottomSheet(
+        onOpenShortcuts: onOpenShortcuts,
+        onClose: onClose,
+      ),
+    ),
+  );
 
   testWidgets('shows Shortcuts explanation text', (tester) async {
-    await tester.pumpWidget(buildSheet(onGotIt: () {}, onRemindLater: () {}));
+    await tester.pumpWidget(buildSheet(onOpenShortcuts: () {}, onClose: () {}));
     expect(find.textContaining('Shortcuts'), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('explica la acción "Registrar pago" con variables', (tester) async {
-    await tester.pumpWidget(buildSheet(onGotIt: () {}, onRemindLater: () {}));
+  testWidgets('explica la acción "Registrar pago" con variables', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildSheet(onOpenShortcuts: () {}, onClose: () {}));
     expect(find.textContaining('Registrar pago'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Importe'), findsOneWidget);
     expect(find.textContaining('personalfinance://'), findsNothing);
@@ -31,29 +35,33 @@ void main() {
     );
   });
 
-  testWidgets('Entendido button calls onGotIt', (tester) async {
+  testWidgets('Abrir Atajos button calls onOpenShortcuts', (tester) async {
     var called = false;
-    await tester.pumpWidget(buildSheet(onGotIt: () => called = true, onRemindLater: () {}));
-    await tester.ensureVisible(find.text('Entendido'));
-    await tester.tap(find.text('Entendido'));
+    await tester.pumpWidget(
+      buildSheet(onOpenShortcuts: () => called = true, onClose: () {}),
+    );
+    await tester.ensureVisible(find.text('Abrir Atajos'));
+    await tester.tap(find.text('Abrir Atajos'));
     expect(called, isTrue);
   });
 
-  testWidgets('Recordarme después button calls onRemindLater', (tester) async {
+  testWidgets('Cerrar button calls onClose', (tester) async {
     var called = false;
-    await tester.pumpWidget(buildSheet(onGotIt: () {}, onRemindLater: () => called = true));
-    await tester.ensureVisible(find.text('Recordarme después'));
-    await tester.tap(find.text('Recordarme después'));
+    await tester.pumpWidget(
+      buildSheet(onOpenShortcuts: () {}, onClose: () => called = true),
+    );
+    await tester.ensureVisible(find.text('Cerrar'));
+    await tester.tap(find.text('Cerrar'));
     expect(called, isTrue);
   });
 
-  testWidgets('Entendido does not call onRemindLater', (tester) async {
+  testWidgets('Abrir Atajos does not call onClose', (tester) async {
     var laterCalled = false;
     await tester.pumpWidget(
-      buildSheet(onGotIt: () {}, onRemindLater: () => laterCalled = true),
+      buildSheet(onOpenShortcuts: () {}, onClose: () => laterCalled = true),
     );
-    await tester.ensureVisible(find.text('Entendido'));
-    await tester.tap(find.text('Entendido'));
+    await tester.ensureVisible(find.text('Abrir Atajos'));
+    await tester.tap(find.text('Abrir Atajos'));
     expect(laterCalled, isFalse);
   });
 }

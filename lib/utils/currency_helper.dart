@@ -2,14 +2,14 @@ import 'dart:ui' as ui;
 import 'package:intl/intl.dart';
 
 class CurrencyHelper {
+  static String get code => _getCurrencyCodeForLocale(
+    Intl.defaultLocale ?? ui.PlatformDispatcher.instance.locale.toLanguageTag(),
+  );
+
   /// Obtiene de manera dinámica el símbolo de la moneda según la configuración regional del dispositivo.
   static String get symbol {
     try {
-      final String locale =
-          Intl.defaultLocale ??
-          ui.PlatformDispatcher.instance.locale.toLanguageTag();
-      final String currencyCode = _getCurrencyCodeForLocale(locale);
-      return NumberFormat().simpleCurrencySymbol(currencyCode);
+      return NumberFormat().simpleCurrencySymbol(code);
     } catch (_) {
       return 'Q'; // Fallback a Quetzales si ocurre un error
     }

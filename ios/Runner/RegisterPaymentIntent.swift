@@ -10,12 +10,15 @@ import Foundation
 struct RegisterPaymentIntent: AppIntent {
   static var title: LocalizedStringResource = "Registrar pago"
   static var description = IntentDescription(
-    "Registra un gasto o ingreso en tus finanzas (por ejemplo, un pago desde tu billetera digital)."
+    "Guarda un pago de tu billetera para revisarlo en la aplicación."
   )
   static var openAppWhenRun: Bool = false
 
   @Parameter(title: "Monto", description: "Importe del pago, por ejemplo Q44.00")
-  var monto: String
+  var monto: String?
+
+  @Parameter(title: "Moneda", description: "Código de moneda del pago, si está disponible")
+  var moneda: String?
 
   @Parameter(title: "Comercio", description: "Dónde se pagó")
   var comercio: String?
@@ -25,18 +28,20 @@ struct RegisterPaymentIntent: AppIntent {
 
   static var parameterSummary: some ParameterSummary {
     Summary("Registrar \(\.$monto) en \(\.$comercio)") {
+      \.$moneda
       \.$esIngreso
     }
   }
 
   func perform() async throws -> some IntentResult & ProvidesDialog {
-    PaymentCaptureQueue.enqueue(
-      amount: monto,
+    let accepted = PaymentCaptureQueue.enqueue(
+      amount: monto ?? "",
       merchant: comercio ?? "",
-      kind: esIngreso ? "ingreso" : "gasto"
+      kind: esIngreso ? "ingreso" : "gasto",
+      currency: moneda,
+      fromIntent: true
     )
-    let lugar = (comercio?.isEmpty == false) ? " en " + (comercio ?? "") : ""
-    let mensaje = "Pago de " + monto + lugar + " registrado."
+    let mensaje = accepted ? "Pago guardado para revisar." : "No se pudo guardar el pago para revisar."
     return .result(dialog: IntentDialog(stringLiteral: mensaje))
   }
 }
@@ -65,9 +70,10 @@ struct RegisterBankMessageIntent: AppIntent {
     Summary("Registrar \(\.$mensaje) de \(\.$remitente)")
   }
 
-  func perform() async throws -> some IntentResult {
-    PaymentCaptureQueue.enqueueMessage(sender: remitente ?? "", text: mensaje)
-    return .result()
+  func perform() async throws -> some IntentResult & ProvidesDialog {
+    let accepted = PaymentCaptureQueue.enqueueMessage(sender: remitente ?? "", text: mensaje)
+    let status = accepted ? "Mensaje guardado para revisar." : "No se pudo guardar el mensaje."
+    return .result(dialog: IntentDialog(stringLiteral: status))
   }
 }
 

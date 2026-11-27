@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,10 +65,15 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
   StreamSubscription<SyncResult>? _syncSubscription;
   StreamSubscription<String?>? _authSubscription;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
-  StreamSubscription<AutoCapturedTransaction>? _autoCaptureSubscription;
+  StreamSubscription<void>? _autoCaptureSubscription;
 
   static const _parser = QuickEntryParser();
   int _autoSeq = 0;
+  final _reviewing = <String>{};
+  AutoCaptureService? get _inbox =>
+      GetIt.instance.isRegistered<AutoCaptureService>()
+          ? GetIt.instance<AutoCaptureService>()
+          : null;
 
   QuickFinanceBloc({
     required this.addTransaction,
@@ -96,7 +100,7 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     on<SyncTransactionsRequested>(_onSyncTransactionsRequested);
     on<SyncStateChanged>(_onSyncStateChanged);
     on<ConnectivityChanged>(_onConnectivityChanged);
-    on<AutoCaptureReceived>(_onAutoCaptureReceived);
+    on<CaptureInboxChanged>(_onInboxChanged);
     on<AutoCaptureConfirmed>(_onAutoCaptureConfirmed);
     on<AutoCaptureDismissed>(_onAutoCaptureDismissed);
     on<AutoCapturePermissionFlags>(_onAutoCapturePermissionFlags);
@@ -139,8 +143,13 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     // garantizar que siempre reciben el userId correcto. authStateChanges
     // emite inmediatamente el estado actual (resuelve la race condition) y
     // luego ante cada cambio (re-login, logout).
+    await _autoCaptureSubscription?.cancel();
+    _autoCaptureSubscription = _inbox?.changes.listen((_) {
+      add(const CaptureInboxChanged());
+    });
     await _authSubscription?.cancel();
     _authSubscription = authDataSource.authStateChanges.listen((uid) {
+      add(const CaptureInboxChanged());
       if (uid != null) {
         syncManager.setUserId(uid);
         _subscribeDataStreams(uid);
@@ -167,75 +176,6 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _balanceSubscription = watchBalance(
       userId: userId,
     ).listen((balance) => add(BalanceObserved(balance)));
-
-    _subscribeAutoCapture();
-  }
-
-  /// Registra los pagos detectados automáticamente (Google Wallet, bancos,
-  /// atajos de Apple Pay) en la cola pendiente para revisión del usuario.
-  void _subscribeAutoCapture() {
-    if (!GetIt.instance.isRegistered<AutoCaptureService>()) return;
-    final service = GetIt.instance<AutoCaptureService>();
-    _autoCaptureSubscription?.cancel();
-    _autoCaptureSubscription = service.captured.listen(
-      (tx) => add(AutoCaptureReceived(tx)),
-    );
-    service.start();
-    unawaited(service.processPending());
-    unawaited(_checkCapturePlatformSetup(service));
-  }
-
-  Future<void> _checkCapturePlatformSetup(AutoCaptureService service) async {
-    try {
-      bool needsNotif = false;
-      bool needsShortcuts = false;
-
-      if (_isAndroid()) {
-        final granted = await service.isAccessGranted();
-        if (!granted && GetIt.instance.isRegistered<SharedPreferences>()) {
-          final prefs = GetIt.instance<SharedPreferences>();
-          final suppressUntil = prefs.getInt(
-            'auto_capture_notification_suppress_until',
-          );
-          final now = DateTime.now().millisecondsSinceEpoch;
-          if (suppressUntil == null || now > suppressUntil) {
-            needsNotif = true;
-          }
-        }
-      } else if (_isIOS()) {
-        if (GetIt.instance.isRegistered<SharedPreferences>()) {
-          final prefs = GetIt.instance<SharedPreferences>();
-          final done =
-              prefs.getBool('auto_capture_shortcuts_setup_done') ?? false;
-          if (!done) needsShortcuts = true;
-        }
-      }
-
-      if (needsNotif || needsShortcuts) {
-        add(
-          AutoCapturePermissionFlags(
-            needsNotificationAccess: needsNotif,
-            needsShortcutsSetup: needsShortcuts,
-          ),
-        );
-      }
-    } catch (_) {}
-  }
-
-  bool _isAndroid() {
-    try {
-      return Platform.isAndroid;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  bool _isIOS() {
-    try {
-      return Platform.isIOS;
-    } catch (_) {
-      return false;
-    }
   }
 
   void _cancelDataStreams() {
@@ -243,65 +183,111 @@ class QuickFinanceBloc extends Bloc<QuickFinanceEvent, QuickFinanceState> {
     _transactionsSubscription = null;
     _balanceSubscription?.cancel();
     _balanceSubscription = null;
-    _autoCaptureSubscription?.cancel();
-    _autoCaptureSubscription = null;
   }
 
   // ---------------------------------------------------------------------------
   // Auto-capture handlers
   // ---------------------------------------------------------------------------
 
-  void _onAutoCaptureReceived(
-    AutoCaptureReceived event,
+  void _onInboxChanged(
+    CaptureInboxChanged event,
     Emitter<QuickFinanceState> emit,
   ) {
+    final service = _inbox;
+    final uid = authDataSource.currentUserId;
     emit(
       state.copyWith(
-        pendingCaptures: [...state.pendingCaptures, event.capture],
+        pendingCaptures:
+            uid != null && service?.owner == uid
+                ? service!.suggestions
+                : const [],
       ),
     );
   }
+
+  bool _canReview(
+    AutoCaptureService service,
+    AutoCapturedTransaction capture,
+  ) =>
+      capture.owner == authDataSource.currentUserId &&
+      capture.owner == service.owner &&
+      service.suggestions.any((item) => item.id == capture.id);
 
   Future<void> _onAutoCaptureConfirmed(
     AutoCaptureConfirmed event,
     Emitter<QuickFinanceState> emit,
   ) async {
+    final service = _inbox;
     final capture = event.capture;
-    final note = event.editedNote ?? capture.note;
-    final category = event.editedCategoryId ?? capture.category;
     final amount = event.editedAmount ?? capture.amount;
-
-    // Remove from queue immediately so UI updates without waiting for save
-    emit(
-      state.copyWith(
-        pendingCaptures:
-            state.pendingCaptures.where((c) => c != capture).toList(),
-      ),
-    );
-
-    add(
-      AddTransactionRequested(
-        amount: amount,
-        type: capture.type,
-        note: note,
-        category: category,
-        occurredAt: capture.occurredAt,
-        autoSourceLabel: capture.sourceLabel,
-        autoRawText: capture.rawText,
-      ),
-    );
+    if (service == null ||
+        !_canReview(service, capture) ||
+        (!capture.isSample && (!amount.isFinite || amount <= 0)) ||
+        !_reviewing.add(capture.id))
+      return;
+    try {
+      if (!capture.isSample) {
+        final note = InputSanitizer.sanitizeText(
+          event.editedNote ?? capture.note,
+        );
+        final category = event.editedCategoryId ?? capture.category;
+        final transaction = TransactionEntity(
+          id: capture.transactionId,
+          userId: capture.owner,
+          type: capture.type,
+          amount: amount,
+          note: note,
+          categoryId:
+              category == null
+                  ? null
+                  : TransactionCategorizer.normalize(
+                    InputSanitizer.sanitizeText(category, maxLength: 50),
+                  ),
+          createdAt: capture.occurredAt,
+          updatedAt: DateTime.now(),
+          syncStatus: SyncStatus.pending,
+          version: 1,
+          deviceId: deviceService.deviceId,
+        );
+        await addTransaction(transaction);
+      }
+      if (service.owner == capture.owner) await service.markSaved(capture.id);
+    } catch (_) {
+      emit(
+        state.copyWith(
+          status: QuickFinanceStatus.failure,
+          errorMessage:
+              'No se pudo confirmar el movimiento. Vuelve a intentarlo.',
+        ),
+      );
+    } finally {
+      _reviewing.remove(capture.id);
+    }
   }
 
-  void _onAutoCaptureDismissed(
+  Future<void> _onAutoCaptureDismissed(
     AutoCaptureDismissed event,
     Emitter<QuickFinanceState> emit,
-  ) {
-    emit(
-      state.copyWith(
-        pendingCaptures:
-            state.pendingCaptures.where((c) => c != event.capture).toList(),
-      ),
-    );
+  ) async {
+    final capture = event.capture;
+    final service = _inbox;
+    if (service == null ||
+        !_canReview(service, capture) ||
+        !_reviewing.add(capture.id))
+      return;
+    try {
+      await service.dismiss(capture.id);
+    } catch (_) {
+      emit(
+        state.copyWith(
+          status: QuickFinanceStatus.failure,
+          errorMessage:
+              'No se pudo descartar el movimiento. Vuelve a intentarlo.',
+        ),
+      );
+    } finally {
+      _reviewing.remove(capture.id);
+    }
   }
 
   void _onAutoCapturePermissionFlags(

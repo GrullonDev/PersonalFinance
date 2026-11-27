@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 /// Captura cruda recibida del lado nativo, antes de interpretarla.
 class RawPaymentCapture {
   /// `notification` (Android) o `shortcut` (Atajos de iOS / enlace).
+  final String id;
+  final String? owner;
   final String source;
   final String packageName;
   final String title;
@@ -13,12 +15,15 @@ class RawPaymentCapture {
   /// Sólo para capturas de atajos: monto y comercio ya separados.
   final String? amount;
   final String? merchant;
+  final String? currency;
 
   /// `gasto` o `ingreso`, si el atajo lo indicó.
   final String? kind;
   final DateTime postedAt;
 
   const RawPaymentCapture({
+    this.id = '',
+    this.owner,
     required this.source,
     required this.packageName,
     required this.title,
@@ -26,21 +31,24 @@ class RawPaymentCapture {
     required this.postedAt,
     this.amount,
     this.merchant,
+    this.currency,
     this.kind,
   });
 
   factory RawPaymentCapture.fromMap(Map<Object?, Object?> map) =>
       RawPaymentCapture(
+        id: map['id'] as String? ?? '',
+        owner: map['owner'] as String?,
         source: map['source'] as String? ?? 'notification',
         packageName: map['packageName'] as String? ?? '',
         title: map['title'] as String? ?? '',
         text: map['text'] as String? ?? '',
         amount: map['amount'] as String?,
         merchant: map['merchant'] as String?,
+        currency: map['currency'] as String?,
         kind: map['kind'] as String?,
         postedAt: DateTime.fromMillisecondsSinceEpoch(
-          (map['postedAt'] as num?)?.toInt() ??
-              DateTime.now().millisecondsSinceEpoch,
+          (map['postedAt'] as num?)?.toInt() ?? 0,
         ),
       );
 
@@ -70,17 +78,30 @@ class PaymentCaptureChannel {
   /// Avisa cuando el lado nativo encoló una captura nueva.
   Stream<void> get onNewCapture => _newCaptures.stream;
 
-  Future<List<RawPaymentCapture>> drainPending() async {
+  Future<List<RawPaymentCapture>> peekPending() async {
+    final result = await _invoke<List<Object?>>('peekPending');
+    return (result ?? const [])
+        .whereType<Map<Object?, Object?>>()
+        .map(RawPaymentCapture.fromMap)
+        .toList();
+  }
+
+  Future<void> acknowledge(String id) =>
+      _invoke<void>('acknowledge', {'id': id});
+  Future<void> setOwner(String? owner) =>
+      _invoke<void>('setCaptureOwner', {'owner': owner});
+  Future<void> setSources(Set<String> sources) =>
+      _invoke<void>('setSources', {'sources': sources.toList()});
+  Future<bool> openShortcuts() async =>
+      await _invoke<bool>('openShortcuts') ?? false;
+  Future<bool> isAutomationVerified() async =>
+      await _invoke<bool>('isAutomationVerified') ?? false;
+
+  Future<T?> _invoke<T>(String method, [Object? arguments]) async {
     try {
-      final result = await _channel.invokeMethod<List<Object?>>('drainPending');
-      return (result ?? const [])
-          .whereType<Map<Object?, Object?>>()
-          .map(RawPaymentCapture.fromMap)
-          .toList();
+      return await _channel.invokeMethod<T>(method, arguments);
     } on MissingPluginException {
-      return const [];
-    } on PlatformException {
-      return const [];
+      return null;
     }
   }
 

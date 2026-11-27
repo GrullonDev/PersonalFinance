@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:async';
+import 'package:personal_finance/features/auto_capture/presentation/capture_setup.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -242,16 +245,20 @@ class _AutoCaptureSectionState extends State<_AutoCaptureSection>
   final AutoCaptureService _service = GetIt.instance<AutoCaptureService>();
   bool _enabled = true;
   bool _granted = false;
+  bool _verified = false;
+  StreamSubscription<void>? _changes;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _changes = _service.changes.listen((_) => _refresh());
     _refresh();
   }
 
   @override
   void dispose() {
+    _changes?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -263,86 +270,74 @@ class _AutoCaptureSectionState extends State<_AutoCaptureSection>
   }
 
   Future<void> _refresh() async {
-    final bool granted = await _service.isAccessGranted();
+    final granted = Platform.isAndroid && await _service.isAccessGranted();
+    final verified = Platform.isIOS && await _service.isAutomationVerified();
     if (!mounted) return;
     setState(() {
       _enabled = _service.isEnabled;
       _granted = granted;
+      _verified = verified;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isIOS = Platform.isIOS;
+    String tr(String key) => AppLocalizations.captureText(context, key);
+    if (!isIOS && !Platform.isAndroid) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(
-            'REGISTRO AUTOMÁTICO DE PAGOS',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
+      children: [
+        ListTile(
+          title: Text(
+            tr('captureSettings'),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
         SwitchListTile(
-          title: Text(
-            isIOS
-                ? 'Registrar pagos con Apple Pay'
-                : 'Registrar pagos automáticamente',
-          ),
-          subtitle: Text(
-            isIOS
-                ? 'Cada pago con Apple Pay se registra como gasto con su comercio y categoría.'
-                : 'Detecta pagos e ingresos en las notificaciones de Google Wallet, '
-                    'tu banco o SMS bancarios y los registra con su categoría.',
-          ),
+          title: Text(tr('captureEnabled')),
+          subtitle: Text(tr(isIOS ? 'captureIosIntro' : 'captureAndroidIntro')),
           value: _enabled,
-          activeThumbColor: Colors.blue,
-          onChanged: (bool value) async {
+          onChanged: (value) async {
             await _service.setEnabled(enabled: value);
             await _refresh();
           },
         ),
-        if (_enabled && !isIOS && !_granted)
-          ListTile(
-            leading: const Icon(Icons.lock_open, color: Colors.amber),
-            title: const Text('Falta dar acceso a las notificaciones'),
-            subtitle: const Text(
-              'Android pide que lo autorices manualmente. Sólo leemos '
-              'notificaciones con montos de dinero y nunca salen de tu teléfono.',
-            ),
-            trailing: TextButton(
-              onPressed: _service.openAccessSettings,
-              child: const Text('Permitir'),
-            ),
-          ),
-        if (_enabled && !isIOS && _granted)
-          const ListTile(
-            leading: Icon(Icons.check_circle, color: Colors.green),
-            title: Text('Acceso concedido'),
-            subtitle: Text('Si un pago no se detecta, regístralo manualmente.'),
-          ),
         if (_enabled && isIOS)
           ListTile(
-            leading: const Icon(Icons.bolt, color: Colors.amber),
-            title: const Text('Configura el atajo (una sola vez)'),
-            subtitle: const Text(
-              'Atajos → Automatización → Nueva → Transacción → elige tus '
-              'tarjetas → acción "Abrir URL":\n'
-              'personalfinance://pago?monto=[Importe]&comercio=[Comercio]\n'
-              'y marca "Ejecutar inmediatamente". Los ingresos se registran '
-              'manualmente.',
+            leading: Icon(
+              _verified ? Icons.check_circle : Icons.shortcut_outlined,
             ),
-            isThreeLine: true,
-            trailing: TextButton(
-              onPressed: _service.openAccessSettings,
-              child: const Text('Abrir Atajos'),
+            title: Text(tr('configureApplePay')),
+            subtitle: Text(
+              tr(_verified ? 'captureVerified' : 'captureAwaiting'),
             ),
+            onTap: () => showShortcutsGuide(context, _service),
           ),
+        if (_enabled && !isIOS) ...[
+          ListTile(
+            leading: Icon(_granted ? Icons.check_circle : Icons.lock_open),
+            title: Text(tr(_granted ? 'captureGranted' : 'captureDenied')),
+            onTap: () => showAndroidCaptureSetup(context, _service),
+          ),
+          CaptureSourceChoices(service: _service),
+        ],
+        ListTile(
+          leading: const Icon(Icons.science_outlined),
+          title: Text(tr('captureSample')),
+          subtitle: Text(tr('captureSampleNote')),
+          onTap:
+              _service.owner == null
+                  ? null
+                  : () async {
+                    await _service.addSample();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(tr('captureSampleAdded'))),
+                      );
+                    }
+                  },
+        ),
       ],
     );
   }

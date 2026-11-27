@@ -33,7 +33,20 @@ class MainActivity : FlutterFragmentActivity() {
         val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, paymentCaptureChannel)
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "drainPending" -> result.success(PaymentCaptureStore.drain(applicationContext))
+                "peekPending" -> result.success(PaymentCaptureStore.peek(applicationContext))
+                "acknowledge" -> {
+                    PaymentCaptureStore.acknowledge(applicationContext, call.argument<String>("id"))
+                    result.success(null)
+                }
+                "setCaptureOwner" -> {
+                    PaymentCaptureStore.setOwner(applicationContext, call.argument<String>("owner"))
+                    result.success(null)
+                }
+                "setSources" -> {
+                    PaymentCaptureStore.setSources(applicationContext, call.argument<List<String>>("sources").orEmpty())
+                    result.success(null)
+                }
+                "isAutomationVerified" -> result.success(false)
                 "isAccessGranted" -> result.success(
                     NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
                 )

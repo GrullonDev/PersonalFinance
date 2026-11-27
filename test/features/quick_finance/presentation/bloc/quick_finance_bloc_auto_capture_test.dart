@@ -23,20 +23,36 @@ import 'package:personal_finance/features/quick_finance/domain/entities/transact
 import 'package:personal_finance/features/goals/domain/entities/goal.dart';
 import 'package:personal_finance/features/debts/domain/entities/debt.dart';
 
+class MockInbox extends Mock implements AutoCaptureService {}
+
 // Mocks
 class MockAddTransaction extends Mock implements AddTransaction {}
+
 class MockDeleteTransaction extends Mock implements DeleteTransaction {}
-class MockHydrateCurrentUserTransactions extends Mock implements HydrateCurrentUserTransactions {}
+
+class MockHydrateCurrentUserTransactions extends Mock
+    implements HydrateCurrentUserTransactions {}
+
 class MockWatchBalance extends Mock implements WatchBalance {}
+
 class MockWatchTransactions extends Mock implements WatchTransactions {}
+
 class MockUpdateTransaction extends Mock implements UpdateTransaction {}
+
 class MockSyncManager extends Mock implements SyncManager {}
+
 class MockAuthDataSource extends Mock implements AuthDataSource {}
+
 class MockGoalRepository extends Mock implements GoalRepository {}
+
 class MockDebtRepository extends Mock implements DebtRepository {}
+
 class MockDeviceService extends Mock implements DeviceService {}
+
 class MockNotificationService extends Mock implements NotificationService {}
-class MockLocalNotificationService extends Mock implements LocalNotificationService {}
+
+class MockLocalNotificationService extends Mock
+    implements LocalNotificationService {}
 
 QuickFinanceBloc _buildBloc({required MockAddTransaction mockAdd}) {
   final mockAuth = MockAuthDataSource();
@@ -47,10 +63,14 @@ QuickFinanceBloc _buildBloc({required MockAddTransaction mockAdd}) {
   when(() => mockSync.syncStream).thenAnswer((_) => Stream.empty());
 
   final mockWatchTx = MockWatchTransactions();
-  when(() => mockWatchTx(userId: any(named: 'userId'))).thenAnswer((_) => Stream.empty());
+  when(
+    () => mockWatchTx(userId: any(named: 'userId')),
+  ).thenAnswer((_) => Stream.empty());
 
   final mockWatchBal = MockWatchBalance();
-  when(() => mockWatchBal(userId: any(named: 'userId'))).thenAnswer((_) => Stream.empty());
+  when(
+    () => mockWatchBal(userId: any(named: 'userId')),
+  ).thenAnswer((_) => Stream.empty());
 
   final mockDevice = MockDeviceService();
   when(() => mockDevice.deviceId).thenReturn('test-device');
@@ -113,6 +133,8 @@ void main() {
   });
 
   final capture = AutoCapturedTransaction(
+    id: "stable-1",
+    owner: "test-user",
     type: TransactionType.expense,
     amount: 50.0,
     note: "McDonald's",
@@ -155,12 +177,6 @@ void main() {
       expect(updated.needsShortcutsSetup, isTrue);
     });
 
-    test('AutoCaptureReceived is equatable', () {
-      final e1 = AutoCaptureReceived(capture);
-      final e2 = AutoCaptureReceived(capture);
-      expect(e1, equals(e2));
-    });
-
     test('AutoCaptureConfirmed carries edits', () {
       final e = AutoCaptureConfirmed(
         capture,
@@ -181,122 +197,97 @@ void main() {
   group('QuickFinanceBloc auto-capture handlers', () {
     late QuickFinanceBloc bloc;
     late MockAddTransaction mockAdd;
-    late MockNotificationService mockNotif;
-    late MockLocalNotificationService mockLocalNotif;
-
+    late MockInbox inbox;
+    late List<AutoCapturedTransaction> pending;
     setUp(() {
       mockAdd = MockAddTransaction();
-      mockNotif = MockNotificationService();
-      mockLocalNotif = MockLocalNotificationService();
-
-      when(() => mockNotif.local).thenReturn(mockLocalNotif);
-      when(
-        () => mockLocalNotif.showNotification(
-          id: any(named: 'id'),
-          title: any(named: 'title'),
-          body: any(named: 'body'),
-          payload: any(named: 'payload'),
-        ),
-      ).thenAnswer((_) async {});
-
-      if (GetIt.instance.isRegistered<NotificationService>()) {
-        GetIt.instance.unregister<NotificationService>();
-      }
-      GetIt.instance.registerSingleton<NotificationService>(mockNotif);
-
+      inbox = MockInbox();
+      pending = [capture];
+      when(() => inbox.owner).thenReturn('test-user');
+      when(() => inbox.suggestions).thenAnswer((_) => pending);
+      when(() => inbox.markSaved(any())).thenAnswer((call) async {
+        pending.removeWhere((c) => c.id == call.positionalArguments.first);
+      });
+      when(() => inbox.dismiss(any())).thenAnswer((_) async => pending.clear());
+      GetIt.instance.registerSingleton<AutoCaptureService>(inbox);
       bloc = _buildBloc(mockAdd: mockAdd);
     });
-
-    tearDown(() {
-      bloc.close();
-      if (GetIt.instance.isRegistered<NotificationService>()) {
-        GetIt.instance.unregister<NotificationService>();
-      }
+    tearDown(() async {
+      await bloc.close();
+      await GetIt.instance.unregister<AutoCaptureService>();
     });
+    Future<void> settle() => Future<void>.delayed(Duration.zero);
 
-    test('AutoCaptureReceived appends to pendingCaptures', () async {
-      bloc.add(AutoCaptureReceived(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+    test('restores inbox without posting and dismisses durably', () async {
+      bloc.add(const CaptureInboxChanged());
+      await settle();
       expect(bloc.state.pendingCaptures, [capture]);
-    });
-
-    test('two AutoCaptureReceived events queue both captures', () async {
-      final capture2 = AutoCapturedTransaction(
-        type: TransactionType.expense,
-        amount: 30.0,
-        note: 'KFC',
-        occurredAt: DateTime(2026, 9, 25),
-        sourceLabel: 'Google Wallet',
-      );
-      bloc.add(AutoCaptureReceived(capture));
-      bloc.add(AutoCaptureReceived(capture2));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(bloc.state.pendingCaptures.length, 2);
-    });
-
-    test('AutoCaptureDismissed removes from pendingCaptures without saving', () async {
-      bloc.add(AutoCaptureReceived(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
       bloc.add(AutoCaptureDismissed(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      expect(bloc.state.pendingCaptures, isEmpty);
+      await settle();
+      verify(() => inbox.dismiss(capture.id)).called(1);
       verifyNever(() => mockAdd.call(any()));
     });
 
-    test('AutoCaptureConfirmed removes from pendingCaptures', () async {
-      when(() => mockAdd.call(any())).thenAnswer((_) async {});
+    test(
+      'uses one transaction ID after a failed confirmation and double tap',
+      () async {
+        final writes = <TransactionEntity>[];
+        when(() => mockAdd.call(any())).thenAnswer((call) async {
+          writes.add(call.positionalArguments.first as TransactionEntity);
+          await settle();
+          if (writes.length == 1) throw StateError('interrupted write');
+        });
+        final confirm = AutoCaptureConfirmed(
+          capture,
+          editedNote: 'edited',
+          editedAmount: 9,
+        );
+        bloc.add(confirm);
+        await Future<void>.delayed(const Duration(milliseconds: 15));
+        expect(pending, [capture]);
+        bloc.add(confirm);
+        bloc.add(confirm);
+        await Future<void>.delayed(const Duration(milliseconds: 15));
+        expect(pending, isEmpty);
+        expect(writes.map((t) => t.id), [
+          capture.transactionId,
+          capture.transactionId,
+        ]);
+        expect(writes.last.note, 'edited');
+        expect(writes.last.amount, 9);
+        verify(() => inbox.markSaved(capture.id)).called(1);
+      },
+    );
 
-      bloc.add(AutoCaptureReceived(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+    test(
+      'stale review from a different account cannot post or dismiss',
+      () async {
+        when(() => inbox.owner).thenReturn('another-user');
+        bloc.add(AutoCaptureConfirmed(capture));
+        bloc.add(AutoCaptureDismissed(capture));
+        await settle();
+        verifyNever(() => mockAdd.call(any()));
+        verifyNever(() => inbox.dismiss(any()));
+        expect(pending, [capture]);
+      },
+    );
 
-      bloc.add(AutoCaptureConfirmed(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      expect(bloc.state.pendingCaptures, isEmpty);
-    });
-
-    test('AutoCaptureConfirmed calls addTransaction', () async {
-      when(() => mockAdd.call(any())).thenAnswer((_) async {});
-
-      bloc.add(AutoCaptureReceived(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      bloc.add(AutoCaptureConfirmed(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      verify(() => mockAdd.call(any())).called(1);
-    });
-
-    test('AutoCaptureConfirmed with editedNote passes edited note to addTransaction', () async {
-      TransactionEntity? savedEntity;
-      when(() => mockAdd.call(any())).thenAnswer((inv) async {
-        savedEntity = inv.positionalArguments.first as TransactionEntity;
-      });
-
-      bloc.add(AutoCaptureReceived(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      bloc.add(AutoCaptureConfirmed(capture, editedNote: 'KFC'));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      expect(savedEntity?.note, 'KFC');
-    });
-
-    test('AutoCaptureConfirmed with editedAmount passes edited amount to addTransaction', () async {
-      TransactionEntity? savedEntity;
-      when(() => mockAdd.call(any())).thenAnswer((inv) async {
-        savedEntity = inv.positionalArguments.first as TransactionEntity;
-      });
-
-      bloc.add(AutoCaptureReceived(capture));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      bloc.add(AutoCaptureConfirmed(capture, editedAmount: 99.99));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      expect(savedEntity?.amount, 99.99);
+    test('confirming a sample leaves the ledger untouched', () async {
+      final sample = AutoCapturedTransaction(
+        id: 'sample',
+        owner: 'test-user',
+        isSample: true,
+        amount: 10,
+        type: capture.type,
+        note: 'sample',
+        occurredAt: capture.occurredAt,
+        sourceLabel: 'sample',
+      );
+      pending = [sample];
+      bloc.add(AutoCaptureConfirmed(sample));
+      await settle();
+      verifyNever(() => mockAdd.call(any()));
+      expect(pending, isEmpty);
     });
   });
 }

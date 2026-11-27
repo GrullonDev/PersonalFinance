@@ -1,3 +1,4 @@
+import 'package:personal_finance/features/auth/domain/auth_datasource.dart';
 import 'package:personal_finance/features/categories/data/services/category_auto_creator.dart';
 import 'package:personal_finance/features/categories/domain/repositories/category_repository.dart';
 import 'package:personal_finance/features/quick_finance/domain/services/transaction_categorizer.dart';
@@ -135,15 +136,24 @@ Future<void> init(HiveAesCipher hiveCipher) async {
 
   // Registro automático de pagos (Google Wallet / bancos / Apple Pay).
   if (!sl.isRegistered<AutoCaptureService>()) {
-    sl.registerLazySingleton(
-      () => AutoCaptureService(
-        channel: PaymentCaptureChannel(),
-        prefs: sl<SharedPreferences>(),
-        aiCategorizer:
-            sl.isRegistered<VertexAiService>()
-                ? sl<VertexAiService>().getCategoryForExpense
-                : null,
+    final inbox = AutoCaptureService(
+      channel: PaymentCaptureChannel(),
+      prefs: sl<SharedPreferences>(),
+      inbox: await Hive.openBox<Map>(
+        'payment_capture_inbox_v1',
+        encryptionCipher: hiveCipher,
       ),
+    );
+    inbox.start();
+    final captureAuth = sl<AuthDataSource>().authStateChanges.listen(
+      inbox.setOwner,
+    );
+    sl.registerSingleton<AutoCaptureService>(
+      inbox,
+      dispose: (service) async {
+        await captureAuth.cancel();
+        await service.dispose();
+      },
     );
   }
 

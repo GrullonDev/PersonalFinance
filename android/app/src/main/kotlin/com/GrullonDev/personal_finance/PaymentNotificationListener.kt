@@ -57,6 +57,7 @@ class PaymentNotificationListener : NotificationListenerService() {
         if (pkg == packageName || pkg in IGNORED_PACKAGES) return
         if ((notification.notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
 
+        val owner = PaymentCaptureStore.allowedOwner(applicationContext, pkg) ?: return
         val extras = notification.notification.extras ?: return
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT)
@@ -72,12 +73,12 @@ class PaymentNotificationListener : NotificationListenerService() {
         val capture = JSONObject()
             .put("source", "notification")
             .put("packageName", pkg)
-            .put("title", title)
-            .put("text", text)
+            .put("title", title.take(120))
+            .put("text", text.take(512))
             .put("postedAt", notification.postTime)
 
         try {
-            PaymentCaptureStore.enqueue(applicationContext, capture)
+            PaymentCaptureStore.enqueue(applicationContext, owner, notification.key, capture)
         } catch (e: Exception) {
             // Nunca romper el listener por una notificación mal formada.
         }

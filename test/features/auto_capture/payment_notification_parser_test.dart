@@ -11,6 +11,7 @@ void main() {
   group('parseAmount', () {
     test('formatos comunes', () {
       expect(PaymentNotificationParser.parseAmount('Q45.50'), 45.5);
+      expect(PaymentNotificationParser.parseAmount('Q1234.50'), 1234.5);
       expect(PaymentNotificationParser.parseAmount('Q 1,234.50'), 1234.5);
       expect(PaymentNotificationParser.parseAmount(r'$12,50'), 12.5);
       expect(PaymentNotificationParser.parseAmount('1.234,50 GTQ'), 1234.5);
@@ -196,6 +197,10 @@ void main() {
         ),
         isNull,
       );
+    });
+
+    test('últimos dígitos de tarjeta no son un monto', () {
+      expect(parser.parse(packageName: bank, title: 'Pago aprobado', text: 'Tarjeta ****4321'), isNull);
     });
 
     test('sin monto', () {

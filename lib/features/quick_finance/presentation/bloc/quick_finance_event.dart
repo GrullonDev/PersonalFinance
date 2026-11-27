@@ -150,14 +150,8 @@ class ConnectivityChanged extends QuickFinanceEvent {
 // Auto-capture events
 // ---------------------------------------------------------------------------
 
-/// Emitido cuando el AutoCaptureService detecta un pago; lo encola para
-/// revisión del usuario antes de persistir.
-class AutoCaptureReceived extends QuickFinanceEvent {
-  const AutoCaptureReceived(this.capture);
-  final AutoCapturedTransaction capture;
-
-  @override
-  List<Object?> get props => [capture];
+class CaptureInboxChanged extends QuickFinanceEvent {
+  const CaptureInboxChanged();
 }
 
 /// El usuario confirmó (y opcionalmente editó) un pago auto-capturado.

@@ -1,4 +1,6 @@
-import 'dart:io';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:personal_finance/utils/app_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,8 +13,7 @@ import 'package:personal_finance/features/ai_chat/domain/financial_context_build
 import 'package:personal_finance/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_finance/features/auto_capture/data/auto_capture_service.dart';
 import 'package:personal_finance/features/auto_capture/presentation/auto_capture_bottom_sheet.dart';
-import 'package:personal_finance/features/auto_capture/presentation/notification_access_bottom_sheet.dart';
-import 'package:personal_finance/features/auto_capture/presentation/shortcuts_setup_bottom_sheet.dart';
+import 'package:personal_finance/features/auto_capture/presentation/capture_setup.dart';
 import 'package:personal_finance/features/quick_finance/domain/entities/transaction_entity.dart';
 import 'package:personal_finance/features/settings/presentation/providers/settings_provider.dart';
 import 'package:personal_finance/features/subscription/presentation/bloc/subscription_bloc.dart';
@@ -39,9 +40,68 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
   late final AnimationController _syncAnim;
   final _entryKey = GlobalKey<QuickEntryInputState>();
 
-  /// Prevents stacking multiple bottom sheets when several state changes
-  /// arrive in quick succession.
-  bool _sheetOpen = false;
+  StreamSubscription<void>? _captureChanges;
+  bool _checkingSetup = false;
+  String? _promptOwner;
+
+  Future<void> _checkSetup() async {
+    if (!mounted ||
+        _checkingSetup ||
+        kIsWeb ||
+        !getIt.isRegistered<AutoCaptureService>())
+      return;
+    final ios = defaultTargetPlatform == TargetPlatform.iOS;
+    if (!ios && defaultTargetPlatform != TargetPlatform.android) return;
+    final service = getIt<AutoCaptureService>();
+    final owner = service.owner;
+    if (owner == null || owner == _promptOwner || !service.isEnabled) return;
+    _checkingSetup = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'payment_setup_prompt.${ios ? 'ios' : 'android'}.$owner';
+      if (prefs.getBool(key) == true ||
+          (ios
+              ? await service.isAutomationVerified()
+              : await service.isAccessGranted()))
+        return;
+      if (!mounted ||
+          service.owner != owner ||
+          ModalRoute.of(context)?.isCurrent != true)
+        return;
+      _promptOwner = owner;
+      await prefs.setBool(key, true);
+      if (!mounted || service.owner != owner) return;
+      if (!ios) {
+        await showAndroidCaptureSetup(context, service);
+        return;
+      }
+      final configure = await showDialog<bool>(
+        context: context,
+        builder: (dialog) {
+          String tr(String key) => AppLocalizations.captureText(dialog, key);
+          return AlertDialog(
+            title: const Text('Apple Pay'),
+            content: Text(tr('captureIosIntro')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialog, false),
+                child: Text(tr('captureNotNow')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialog, true),
+                child: Text(tr('configureApplePay')),
+              ),
+            ],
+          );
+        },
+      );
+      if (configure == true && mounted && service.owner == owner) {
+        await showShortcutsGuide(context, service);
+      }
+    } finally {
+      _checkingSetup = false;
+    }
+  }
 
   @override
   void initState() {
@@ -61,6 +121,12 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (getIt.isRegistered<AutoCaptureService>()) {
+        _captureChanges = getIt<AutoCaptureService>().changes.listen(
+          (_) => _checkSetup(),
+        );
+        _checkSetup();
+      }
       if (context.read<QuickFinanceBloc>().state.isSyncing) {
         _syncAnim.repeat();
       }
@@ -69,6 +135,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
 
   @override
   void dispose() {
+    _captureChanges?.cancel();
     _syncAnim.dispose();
     super.dispose();
   }
@@ -97,11 +164,7 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
                   (curr.status == QuickFinanceStatus.failure &&
                       curr.errorMessage != null &&
                       prev.errorMessage != curr.errorMessage) ||
-                  (prev.isSyncing != curr.isSyncing) ||
-                  (prev.pendingCaptures != curr.pendingCaptures) ||
-                  (prev.needsNotificationAccess !=
-                      curr.needsNotificationAccess) ||
-                  (prev.needsShortcutsSetup != curr.needsShortcutsSetup),
+                  (prev.isSyncing != curr.isSyncing),
           listener: (context, state) {
             if (state.status == QuickFinanceStatus.failure &&
                 state.errorMessage != null) {
@@ -126,107 +189,6 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
               _syncAnim
                 ..stop()
                 ..reset();
-            }
-
-            // ── Auto-capture confirmation ──────────────────────────────────
-            if (state.pendingCaptures.isNotEmpty && !_sheetOpen) {
-              _sheetOpen = true;
-              final capture = state.pendingCaptures.first;
-              showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                builder:
-                    (_) => BlocProvider<QuickFinanceBloc>.value(
-                      value: context.read<QuickFinanceBloc>(),
-                      child: AutoCaptureBottomSheet(capture: capture),
-                    ),
-              ).whenComplete(() => _sheetOpen = false);
-            }
-
-            // ── Android notification access ────────────────────────────────
-            if (state.needsNotificationAccess &&
-                Platform.isAndroid &&
-                !_sheetOpen) {
-              _sheetOpen = true;
-              showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                builder:
-                    (_) => NotificationAccessBottomSheet(
-                      onEnable: () async {
-                        Navigator.of(context).pop();
-                        if (getIt.isRegistered<AutoCaptureService>()) {
-                          await getIt<AutoCaptureService>().openAccessSettings();
-                        }
-                        if (context.mounted) {
-                          context.read<QuickFinanceBloc>().add(
-                            const AutoCapturePermissionFlags(
-                              needsNotificationAccess: false,
-                              needsShortcutsSetup: false,
-                            ),
-                          );
-                        }
-                      },
-                      onNotNow: () async {
-                        Navigator.of(context).pop();
-                        final prefs = await SharedPreferences.getInstance();
-                        final suppress = DateTime.now()
-                            .add(const Duration(days: 7))
-                            .millisecondsSinceEpoch;
-                        await prefs.setInt(
-                          'auto_capture_notification_suppress_until',
-                          suppress,
-                        );
-                        if (context.mounted) {
-                          context.read<QuickFinanceBloc>().add(
-                            const AutoCapturePermissionFlags(
-                              needsNotificationAccess: false,
-                              needsShortcutsSetup: false,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-              ).whenComplete(() => _sheetOpen = false);
-            }
-
-            // ── iOS Shortcuts setup ────────────────────────────────────────
-            if (state.needsShortcutsSetup && Platform.isIOS && !_sheetOpen) {
-              _sheetOpen = true;
-              showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                builder:
-                    (_) => ShortcutsSetupBottomSheet(
-                      onGotIt: () async {
-                        Navigator.of(context).pop();
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool(
-                          'auto_capture_shortcuts_setup_done',
-                          true,
-                        );
-                        if (context.mounted) {
-                          context.read<QuickFinanceBloc>().add(
-                            const AutoCapturePermissionFlags(
-                              needsNotificationAccess: false,
-                              needsShortcutsSetup: false,
-                            ),
-                          );
-                        }
-                      },
-                      onRemindLater: () {
-                        Navigator.of(context).pop();
-                        if (context.mounted) {
-                          context.read<QuickFinanceBloc>().add(
-                            const AutoCapturePermissionFlags(
-                              needsNotificationAccess: false,
-                              needsShortcutsSetup: false,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-              ).whenComplete(() => _sheetOpen = false);
             }
           },
           child: BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
@@ -267,7 +229,9 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           Text(
@@ -281,21 +245,24 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
       actions: [
         BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
           buildWhen: (prev, curr) => prev.isSyncing != curr.isSyncing,
-          builder: (context, state) => IconButton(
-            icon: RotationTransition(
-              turns: _syncAnim,
-              child: Icon(
-                Icons.sync_rounded,
-                color: state.isSyncing ? Theme.of(context).primaryColor : null,
+          builder:
+              (context, state) => IconButton(
+                icon: RotationTransition(
+                  turns: _syncAnim,
+                  child: Icon(
+                    Icons.sync_rounded,
+                    color:
+                        state.isSyncing ? Theme.of(context).primaryColor : null,
+                  ),
+                ),
+                tooltip: state.isSyncing ? 'Sincronizando…' : 'Sincronizar',
+                onPressed:
+                    state.isSyncing
+                        ? null
+                        : () => context.read<QuickFinanceBloc>().add(
+                          const SyncTransactionsRequested(),
+                        ),
               ),
-            ),
-            tooltip: state.isSyncing ? 'Sincronizando…' : 'Sincronizar',
-            onPressed: state.isSyncing
-                ? null
-                : () => context.read<QuickFinanceBloc>().add(
-                      const SyncTransactionsRequested(),
-                    ),
-          ),
         ),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
@@ -322,7 +289,6 @@ class _QuickFinanceHomePageState extends State<QuickFinanceHomePage>
     return '$first ${parts.last[0].toUpperCase()}.';
   }
 }
-
 
 // ── AI chat banner ────────────────────────────────────────────────────────────
 
@@ -519,31 +485,32 @@ class _BodyState extends State<_Body> {
     final monday = today.subtract(Duration(days: now.weekday - 1));
 
     final filteredTx = switch (_txFilter) {
-      'hoy' => widget.state.transactions
-          .where(
-            (t) =>
-                t.deletedAt == null &&
-                DateTime(
-                      t.createdAt.year,
-                      t.createdAt.month,
-                      t.createdAt.day,
-                    ) ==
-                    today,
-          )
-          .toList(),
-      'mes' => widget.state.transactions
-          .where(
-            (t) =>
-                t.deletedAt == null &&
-                t.createdAt.year == now.year &&
-                t.createdAt.month == now.month,
-          )
-          .toList(),
-      _ => widget.state.transactions
-          .where(
-            (t) => t.deletedAt == null && !t.createdAt.isBefore(monday),
-          )
-          .toList(),
+      'hoy' =>
+        widget.state.transactions
+            .where(
+              (t) =>
+                  t.deletedAt == null &&
+                  DateTime(
+                        t.createdAt.year,
+                        t.createdAt.month,
+                        t.createdAt.day,
+                      ) ==
+                      today,
+            )
+            .toList(),
+      'mes' =>
+        widget.state.transactions
+            .where(
+              (t) =>
+                  t.deletedAt == null &&
+                  t.createdAt.year == now.year &&
+                  t.createdAt.month == now.month,
+            )
+            .toList(),
+      _ =>
+        widget.state.transactions
+            .where((t) => t.deletedAt == null && !t.createdAt.isBefore(monday))
+            .toList(),
     };
 
     final primary = Theme.of(context).primaryColor;
@@ -565,6 +532,32 @@ class _BodyState extends State<_Body> {
               ),
             ),
           ),
+          if (widget.state.pendingCaptures.isNotEmpty ||
+              (!kIsWeb && (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS) &&
+              getIt.isRegistered<AutoCaptureService>() && getIt<AutoCaptureService>().owner != null))
+            SliverToBoxAdapter(
+              child: ListTile(
+                leading: const Icon(Icons.inbox_outlined),
+                title: Text(
+                  AppLocalizations.captureText(context, 'capturePending'),
+                ),
+                trailing: Chip(
+                  label: Text('${widget.state.pendingCaptures.length}'),
+                ),
+                onTap:
+                    () => showModalBottomSheet<void>(
+                      context: context,
+                      useSafeArea: true,
+                      isScrollControlled: true,
+                      builder:
+                          (_) => BlocProvider.value(
+                            value: context.read<QuickFinanceBloc>(),
+                            child: const _CaptureInbox(),
+                          ),
+                    ),
+              ),
+            ),
           // 2. Quick entry — right below balance for instant capture
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -584,18 +577,18 @@ class _BodyState extends State<_Body> {
                     'Gestión inmediata',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 12),
                   QuickEntryInput(
                     key: widget.entryKey,
-                    onSubmit: (raw) => context.read<QuickFinanceBloc>().add(
-                      RawEntrySubmitted(raw),
-                    ),
+                    onSubmit:
+                        (raw) => context.read<QuickFinanceBloc>().add(
+                          RawEntrySubmitted(raw),
+                        ),
                   ),
                 ],
               ),
@@ -710,9 +703,7 @@ class _BodyState extends State<_Body> {
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color:
-                                      _txFilter == val
-                                          ? Colors.white
-                                          : primary,
+                                      _txFilter == val ? Colors.white : primary,
                                 ),
                               ),
                             ),
@@ -730,9 +721,10 @@ class _BodyState extends State<_Body> {
               child: TransactionsList(
                 hideAmounts: widget.hideAmounts,
                 transactions: filteredTx,
-                onDelete: (id) => context.read<QuickFinanceBloc>().add(
-                  DeleteTransactionRequested(id),
-                ),
+                onDelete:
+                    (id) => context.read<QuickFinanceBloc>().add(
+                      DeleteTransactionRequested(id),
+                    ),
                 onQuickStart: _quickStart,
               ),
             ),
@@ -1015,15 +1007,16 @@ _InsightData? _computeInsight(List<TransactionEntity> transactions) {
           ? DateTime(now.year - 1, 12)
           : DateTime(now.year, now.month - 1);
 
-  final lastMonthExpList = transactions
-      .where(
-        (t) =>
-            t.deletedAt == null &&
-            t.type == TransactionType.expense &&
-            t.createdAt.year == lastMonthDate.year &&
-            t.createdAt.month == lastMonthDate.month,
-      )
-      .toList();
+  final lastMonthExpList =
+      transactions
+          .where(
+            (t) =>
+                t.deletedAt == null &&
+                t.type == TransactionType.expense &&
+                t.createdAt.year == lastMonthDate.year &&
+                t.createdAt.month == lastMonthDate.month,
+          )
+          .toList();
 
   // ── PRIORIDAD 1: Gastos superan ingresos este mes ─────────────────────────
   if (totalInc > 0 && totalExp > totalInc) {
@@ -1087,14 +1080,15 @@ _InsightData? _computeInsight(List<TransactionEntity> transactions) {
 
   // ── PRIORIDAD 4: Categoría dominante esta semana ──────────────────────────
   final weekStart = DateTime(now.year, now.month, now.day - (now.weekday - 1));
-  final weekExp = transactions
-      .where(
-        (t) =>
-            t.deletedAt == null &&
-            t.type == TransactionType.expense &&
-            !t.createdAt.isBefore(weekStart),
-      )
-      .toList();
+  final weekExp =
+      transactions
+          .where(
+            (t) =>
+                t.deletedAt == null &&
+                t.type == TransactionType.expense &&
+                !t.createdAt.isBefore(weekStart),
+          )
+          .toList();
 
   if (weekExp.length >= 3) {
     final catAmounts = <String, double>{};
@@ -1220,15 +1214,16 @@ class _WeeklyBudgetCard extends StatelessWidget {
         )
         .fold<double>(0, (s, t) => s + t.amount);
 
-    final budget =
-        monthlyIncome > 0 ? monthlyIncome : monthlyExpenses * 1.4;
-    final ratio =
-        budget > 0 ? (monthlyExpenses / budget).clamp(0.0, 1.0) : 0.0;
+    final budget = monthlyIncome > 0 ? monthlyIncome : monthlyExpenses * 1.4;
+    final ratio = budget > 0 ? (monthlyExpenses / budget).clamp(0.0, 1.0) : 0.0;
     final pctInt = (ratio * 100).round();
     final indicatorColor = ratio > 0.9 ? Colors.red : primary;
 
-    final monday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final monday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
     final dailyExp = List.generate(7, (i) {
       final day = monday.add(Duration(days: i));
       return transactions
@@ -1243,8 +1238,9 @@ class _WeeklyBudgetCard extends StatelessWidget {
           .fold<double>(0, (s, t) => s + t.amount);
     });
 
-    final maxExp =
-        dailyExp.reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity);
+    final maxExp = dailyExp
+        .reduce((a, b) => a > b ? a : b)
+        .clamp(1.0, double.infinity);
     const labels = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
     final todayIdx = now.weekday - 1;
 
@@ -1324,8 +1320,7 @@ class _WeeklyBudgetCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(7, (i) {
               final isToday = i == todayIdx;
-              final barH =
-                  ((dailyExp[i] / maxExp) * 60).clamp(4.0, 60.0);
+              final barH = ((dailyExp[i] / maxExp) * 60).clamp(4.0, 60.0);
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1334,9 +1329,10 @@ class _WeeklyBudgetCard extends StatelessWidget {
                     width: 32,
                     height: barH,
                     decoration: BoxDecoration(
-                      color: isToday
-                          ? primary
-                          : Colors.grey.withValues(alpha: 0.2),
+                      color:
+                          isToday
+                              ? primary
+                              : Colors.grey.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
@@ -1345,8 +1341,7 @@ class _WeeklyBudgetCard extends StatelessWidget {
                     isToday ? 'Hoy' : labels[i],
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight:
-                          isToday ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                       color: isToday ? primary : Colors.grey.shade500,
                     ),
                   ),
@@ -1412,8 +1407,7 @@ class _FinancialHealthCard extends StatelessWidget {
 
     if (monthIncome == 0 && monthExp == 0) {
       title = 'Sin datos';
-      description =
-          'Registra ingresos y gastos para ver tu salud financiera.';
+      description = 'Registra ingresos y gastos para ver tu salud financiera.';
       score = 0.0;
     } else if (monthIncome == 0) {
       title = 'Regular';
@@ -1556,11 +1550,7 @@ class _InsightsSection extends StatelessWidget {
                       color: primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.auto_awesome,
-                      size: 18,
-                      color: primary,
-                    ),
+                    child: Icon(Icons.auto_awesome, size: 18, color: primary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1580,13 +1570,13 @@ class _InsightsSection extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () =>
-                          Navigator.of(context).pushNamed(RoutePath.goals),
+                      onPressed:
+                          () =>
+                              Navigator.of(context).pushNamed(RoutePath.goals),
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             Theme.of(context).colorScheme.onSurface,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.surface,
+                        foregroundColor: Theme.of(context).colorScheme.surface,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1614,10 +1604,9 @@ class _InsightsSection extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.5),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ),
@@ -1630,4 +1619,54 @@ class _InsightsSection extends StatelessWidget {
       ],
     );
   }
+}
+
+class _CaptureInbox extends StatelessWidget {
+  const _CaptureInbox();
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<QuickFinanceBloc, QuickFinanceState>(
+        builder:
+            (context, state) => SafeArea(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  ListTile(
+                    title: Text(
+                      AppLocalizations.captureText(context, 'capturePending'),
+                    ),
+                    trailing: Text('${state.pendingCaptures.length}'),
+                  ),
+                  for (final capture in state.pendingCaptures)
+                    ListTile(
+                      title: Text(capture.note),
+                      subtitle: Text(
+                        capture.isSample
+                            ? AppLocalizations.captureText(
+                              context,
+                              'captureSampleBadge',
+                            )
+                            : capture.sourceLabel,
+                      ),
+                      trailing: capture.needsAmount ? const Icon(Icons.edit_outlined) :
+                Text([capture.amount.toStringAsFixed(2), if(capture.currency != null) capture.currency!].join(' ')),
+                      onTap:
+                          () => showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            useSafeArea: true,
+                            builder:
+                                (_) => BlocProvider.value(
+                                  value: context.read<QuickFinanceBloc>(),
+                                  child: AutoCaptureBottomSheet(
+                                    capture: capture,
+                                  ),
+                                ),
+                          ),
+                    ),
+                ],
+              ),
+            ),
+      );
 }

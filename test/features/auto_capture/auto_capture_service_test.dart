@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,9 +15,16 @@ void main() {
   const channel = MethodChannel(PaymentCaptureChannel.channelName);
   late List<Map<String, Object?>> nativeQueue;
   late SharedPreferences prefs;
+  late Directory dir;
+  late Box<Map> inbox;
+  bool failAck = false;
+  int sequence = 0;
+  String id() => 'native-${sequence++}';
   final postedAt = DateTime(2026, 9, 20, 13, 5);
 
   Map<String, Object?> notification(String title, String text) => {
+    'id': id(),
+    'owner': 'user-a',
     'source': 'notification',
     'packageName': 'com.google.android.apps.walletnfcrel',
     'title': title,
@@ -24,21 +34,32 @@ void main() {
 
   setUp(() async {
     nativeQueue = [];
+    dir = await Directory.systemTemp.createTemp('payment-inbox-');
+    Hive.init(dir.path);
+    inbox = await Hive.openBox<Map>('inbox');
+    failAck = false;
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
-          if (call.method == 'drainPending') {
-            final items = List<Map<String, Object?>>.from(nativeQueue);
-            nativeQueue.clear();
-            return items;
+          if (call.method == 'peekPending') return List.of(nativeQueue);
+          if (call.method == 'acknowledge') {
+            expect(
+              inbox.isNotEmpty,
+              isTrue,
+              reason: 'durable write before ack',
+            );
+            if (failAck) throw PlatformException(code: 'disk');
+            nativeQueue.removeWhere((r) => r['id'] == call.arguments['id']);
           }
           if (call.method == 'isAccessGranted') return true;
           return null;
         });
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await Hive.close();
+    await dir.delete(recursive: true);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
   });
@@ -47,11 +68,13 @@ void main() {
       AutoCaptureService(
         channel: PaymentCaptureChannel(),
         prefs: prefs,
+        inbox: inbox,
         aiCategorizer: ai,
       );
 
   test('convierte una notificación de Google Wallet en gasto', () async {
     final service = build();
+    await service.setOwner('user-a');
     final received = <AutoCapturedTransaction>[];
     service.captured.listen(received.add);
     nativeQueue.add(notification('Starbucks', r'$4.75 con Visa ••1234'));
@@ -70,9 +93,12 @@ void main() {
 
   test('atajo de Wallet', () async {
     final service = build();
+    await service.setOwner('user-a');
     final received = <AutoCapturedTransaction>[];
     service.captured.listen(received.add);
     nativeQueue.add({
+      'id': id(),
+      'owner': 'user-a',
       'source': 'shortcut',
       'packageName': 'wallet_shortcut',
       'amount': r'$12.30',
@@ -90,6 +116,7 @@ void main() {
 
   test('usa la IA cuando el comercio no es conocido', () async {
     final service = build(ai: (_) async => 'Hogar');
+    await service.setOwner('user-a');
     final received = <AutoCapturedTransaction>[];
     service.captured.listen(received.add);
     nativeQueue.add(notification('Casa Bonita XYZ', 'Q300.00'));
@@ -101,6 +128,7 @@ void main() {
 
   test('no registra dos veces la misma notificación', () async {
     final service = build();
+    await service.setOwner('user-a');
     final received = <AutoCapturedTransaction>[];
     service.captured.listen(received.add);
     final n = notification('Starbucks', r'$4.75');
@@ -115,6 +143,7 @@ void main() {
 
   test('descarta notificaciones que no entiende', () async {
     final service = build();
+    await service.setOwner('user-a');
     final received = <AutoCapturedTransaction>[];
     service.captured.listen(received.add);
     nativeQueue.add({
@@ -127,13 +156,16 @@ void main() {
     expect(received, isEmpty);
   });
 
-  test('sin oyentes o desactivado no vacía la cola nativa', () async {
+  test('sin sesión o desactivado conserva la cola nativa', () async {
     final service = build();
+
     nativeQueue.add(notification('Starbucks', r'$4.75'));
 
     await service.processPending();
     expect(nativeQueue, hasLength(1));
 
+    await prefs.setBool(AutoCaptureService.enabledPref, false);
+    await service.setOwner('user-a');
     await service.setEnabled(enabled: false);
     service.captured.listen((_) {});
     await service.processPending();
@@ -144,12 +176,15 @@ void main() {
     'el mismo pago avisado por Wallet y por el banco se registra una vez',
     () async {
       final service = build();
+      await service.setOwner('user-a');
       final received = <AutoCapturedTransaction>[];
       service.captured.listen(received.add);
       nativeQueue.add(notification('Starbucks', 'Q45.00 con Visa ••1234'));
       await service.processPending();
 
       nativeQueue.add({
+        'id': id(),
+        'owner': 'user-a',
         'source': 'notification',
         'packageName': 'com.banco.app',
         'title': 'Banco',
@@ -166,9 +201,12 @@ void main() {
 
   test('mensaje bancario de iOS se interpreta como notificación', () async {
     final service = build();
+    await service.setOwner('user-a');
     final received = <AutoCapturedTransaction>[];
     service.captured.listen(received.add);
     nativeQueue.add({
+      'id': id(),
+      'owner': 'user-a',
       'source': 'notification',
       'packageName': 'ios.sms',
       'title': 'BI',
@@ -185,4 +223,89 @@ void main() {
     expect(tx.sourceLabel, 'SMS del banco');
     expect(tx.rawText, contains('FARMACIA GALENO'));
   });
+
+  test('reintento tras reinicio conserva revisión e identificador', () async {
+    final service = build();
+    await service.setOwner('user-a');
+    nativeQueue.add(notification('Starbucks', 'Q45.00'));
+    failAck = true;
+    await expectLater(
+      service.processPending(),
+      throwsA(isA<PlatformException>()),
+    );
+    final original = service.suggestions.single;
+    expect(nativeQueue, hasLength(1));
+    await inbox.close();
+    inbox = await Hive.openBox<Map>('inbox');
+    failAck = false;
+    final restarted = build();
+    await restarted.setOwner('user-a');
+    expect(nativeQueue, isEmpty);
+    expect(restarted.suggestions.single.transactionId, original.transactionId);
+    await restarted.dismiss(original.id);
+    await restarted.processPending();
+    expect(restarted.suggestions, isEmpty);
+  });
+
+  test(
+    'una cuenta nueva no recibe capturas ambiguas ni de otra cuenta',
+    () async {
+      final service = build();
+      nativeQueue.addAll([
+        notification('A', 'Q45'),
+        {...notification('Ambigua', 'Q45'), 'owner': null},
+      ]);
+      await service.setOwner('user-b');
+      expect(service.suggestions, isEmpty);
+      expect(nativeQueue, hasLength(2));
+      await service.setOwner('user-a');
+      expect(service.suggestions.single.note, 'A');
+      final aid = service.suggestions.single.id;
+      await service.setOwner('user-b');
+      await service.dismiss(aid);
+      await service.setOwner('user-a');
+      expect(service.suggestions.single.id, aid);
+      expect(nativeQueue.single['owner'], isNull);
+    },
+  );
+
+  test(
+    'compras legítimas del mismo importe conservan sus sugerencias',
+    () async {
+      final service = build();
+      await service.setOwner('user-a');
+      nativeQueue.addAll([
+        notification('Starbucks', 'Q45.00'),
+        notification('Starbucks', 'Q45.00'),
+        {
+          ...notification('Banco', 'Compra por Q45.00 en FARMACIA'),
+          'packageName': 'banco',
+        },
+      ]);
+      await service.processPending();
+      expect(service.suggestions, hasLength(3));
+    },
+  );
+
+  test(
+    'ejemplo e importe ausente nunca se confunden con un pago completo',
+    () async {
+      final service = build();
+      await service.setOwner('user-a');
+      nativeQueue.add({
+        'source': 'shortcut',
+        'id': id(),
+        'owner': 'user-a',
+        'postedAt': 1,
+      });
+      await service.processPending();
+      expect(service.suggestions.single.needsAmount, isTrue);
+      await service.addSample();
+      final sample = service.suggestions.singleWhere((r) => r.isSample);
+      await service.markSaved(sample.id);
+      expect(service.suggestions, hasLength(2));
+      await service.dismiss(sample.id);
+      expect(service.suggestions.single.isSample, isFalse);
+    },
+  );
 }

@@ -176,7 +176,7 @@ class PaymentNotificationParser {
   static final RegExp _amount = RegExp(
     // El símbolo no puede ir pegado a una letra: "el 25" no es "L 25".
     r'(?<![A-Za-zÁÉÍÓÚÑáéíóúñ])(?:(?:GTQ|USD|MXN|EUR|COP|PEN|CLP|ARS|HNL|CRC|DOP|Q|\$|€|£|US\$|L|₡|S/)\.?\s?)'
-    r'(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)'
+    r'(\d{1,3}(?:[.,\s]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)'
     r'|(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})|\d+[.,]\d{1,2})\s?(?:GTQ|USD|MXN|EUR|quetzales|dólares|dolares)',
     caseSensitive: false,
   );
@@ -199,8 +199,10 @@ class PaymentNotificationParser {
     )) {
       return null;
     }
-    final amount = parseAmount(full);
-    if (amount == null || amount <= 0) return null;
+    final matchedAmount = _amount.firstMatch(full);
+    if (matchedAmount == null) return null;
+    final amount = parseAmount(matchedAmount.group(0)!);
+    if (amount == null || !amount.isFinite || amount <= 0) return null;
 
     final isIncome = _incomeKeywords.any(lower.contains);
     final isExpense = _expenseKeywords.any(lower.contains);
